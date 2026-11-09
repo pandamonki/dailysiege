@@ -1,0 +1,40 @@
+/* ribbon */
+.ribbon { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--leather); }
+.ribbon .wrap { padding-block: 8px; }
+.scroll { background: linear-gradient(var(--parchment), var(--parchment-2)); color: var(--ink); border: 2px solid var(--wood-dark); border-radius: 4px; padding: 6px 10px; display: grid; gap: 4px; box-shadow: 0 2px 0 var(--wood-dark), inset 0 0 18px rgba(110,70,20,.25); }
+.scroll .top { display: flex; justify-content: space-between; align-items: baseline; gap: 2px 8px; flex-wrap: wrap; }
+.scroll h1 { white-space: nowrap; margin: 0; font-family: var(--f-display); font-weight: 400; font-size: 24px; color: var(--wax); letter-spacing: .02em; }
+.scroll .when { font-size: 14px; color: var(--ink-soft); text-align: right; }
+.scroll .when b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.purse { display: flex; gap: 14px; flex-wrap: wrap; font-size: 15px; font-variant-numeric: tabular-nums; }
+.purse span { display: inline-flex; align-items: center; gap: 5px; }
+.coin { width: 12px; height: 12px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #f3d27a, var(--gold) 60%, #8a6418); box-shadow: 0 0 0 1px #6e4f12; }
+.seal-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--wax); box-shadow: 0 0 0 1px #4d140e; }
+.star { color: var(--azure); font-size: 13px; }
+.modechip { border: 1px solid var(--wood); background: var(--parchment-2); color: var(--ink); border-radius: 999px; padding: 1px 10px; font: inherit; font-size: 13px; cursor: pointer; }
+.under { margin-left: auto; font-style: italic; color: var(--verdant); font-size: 14px; }
+
+/* battlefield */
+.field { padding-block: 6px 4px; }
+.frame { position: relative; overflow: hidden; border: 6px solid var(--wood); border-radius: 6px; box-shadow: 0 0 0 2px var(--wood-dark), 0 8px 24px rgba(0,0,0,.5), inset 0 0 0 2px var(--wood-dark); background: #4d7430; }
+canvas#map { display: block; width: 100%; max-width: 100%; touch-action: none; cursor: grab; }
+.zoom { position: absolute; top: 8px; right: 8px; display: grid; gap: 6px; }
+.zoom button { width: 38px; height: 38px; border-radius: 6px; border: 2px solid var(--wood-dark); background: linear-gradient(#f3e6c4, #d9c290); color: var(--ink); font-size: 20px; line-height: 1; cursor: pointer; box-shadow: 0 2px 0 rgba(62,39,20,.6); }
+.hint { min-height: 22px; text-align: center; font-style: italic; font-size: 15px; color: var(--parchment-2); padding-top: 6px; }
+.hint button { background: none; border: 0; color: var(--gold); text-decoration: underline; cursor: pointer; padding: 0 4px; font-style: normal; }
+
+/* barracks tray */
+.tray { display: flex; gap: 8px; overflow-x: auto; padding-block: 6px 4px; align-items: center; }
+.tray .lbl { font-family: var(--f-display); font-size: 15px; color: var(--gold); flex: none; }
+.chip { flex: none; display: flex; align-items: center; gap: 6px; padding: 3px 10px 3px 4px; border-radius: 999px; background: var(--leather-2); border: 1px solid var(--wood); color: var(--parchment); cursor: pointer; font-size: 14px; }
+.chip.on { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); color: var(--gold); }
+.chip img { width: 28px; height: 35px; image-rendering: pixelated; }
+.tray .empty { font-style: italic; color: var(--ink-soft); color: #a8916a; font-size: 14px; }
+
+/* command bar */
+.commands { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; background: linear-gradient(transparent, var(--leather) 30%); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.commands .wrap { display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 8px; padding-block: 14px 10px; }
+.plank { border: 2px solid var(--wood-dark); border-radius: 6px; padding: 9px 6px; cursor: pointer; color: var(--parchment); font-family: var(--f-display); font-size: 17px; background: linear-gradient(#835a34, #5e3c1f); box-shadow: inset 0 1px 0 rgba(255,220,160,.25), 0 2px 0 var(--wood-dark); }
+.plank.wax { background: linear-gradient(#a8382b, #7a2219); border-color: #4d140e; }
+.plank.sealed { background: linear-gradient(#5d7a3a, #3f5a24); border-color: #26381a; }
+main { padding-bottom: 96px; }

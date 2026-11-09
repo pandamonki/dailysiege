@@ -1,0 +1,125 @@
+// Entering, refreshing and saving the friends game
+
+// ----- entering and refreshing the friends game -----
+function refreshLiveWorld() {
+  const ck = liveClock(), roster = rosterFor(ck.week), me = roster.findIndex(p => p.uid === LIVE.uid);
+  DAY = ck.dayNo;
+  const L = seatLayout(roster.length);
+  const TC = teamColours(); MY_COLOR = TC[LIVE.uid] || SEAT_COLORS[me]; MY_NAME = (LIVE.names[LIVE.uid] && LIVE.names[LIVE.uid].name) || "You";
+  const prev = ck.dayNo > 1 ? addDays(ck.planDay, -1) : null, pts = standings(ck.week);
+  RIVALS = roster.map((p, i) => ({ p, i })).filter(x => x.i !== me).map(({ p, i }) => {
+    const seen = prev ? latestPlan(p, prev, true) : null;
+    const trust = !seen ? "Unknown" : (seen.targets || [])[0] === LIVE.uid ? "Alarmed" : (seen.offers || {})[LIVE.uid] ? "Loyal" : (seen.targets || []).includes(LIVE.uid) ? "Wary" : "Uneasy";
+    return { id: p.uid, name: nameOf(p.uid), cls: seen ? seen.cls : null, pos: L.castles[i], color: TC[p.uid] || SEAT_COLORS[i], trust, seen, points: pts[p.uid] || 0, live: p, banner: (seen && seen.banner) || (p.state && p.state.banner) || null, ctier: seen ? (seen.castleTier || 1) : 1 };
+  });
+  RARMY = []; RWALLS = [];
+  RIVALS.forEach(rv => { if (!rv.seen) return; const z = zoneFor(rv.pos, L.N, L.castles);
+    (rv.seen.pieces || []).forEach(pc => { if (pc.kind === "wall") { if (wallTiles(pc.r, pc.c, pc.dir).every(([a, b]) => z.has(`${a},${b}`))) RWALLS.push({ rid: rv.id, r: pc.r, c: pc.c, dir: pc.dir }); return; }
+      if (pc.kind === "trap" || !z.has(`${pc.r},${pc.c}`)) return;
+      RARMY.push({ rid: rv.id, r: pc.r, c: pc.c, champ: pc.kind === "champ", key: pc.kind === "champ" ? "c-" + rv.seen.cls : pc.type, lvl: pc.lvl, hp: 1 }); }); });
+  ensureDip();
+  applyLayout(L.N, L.castles[me], RIVALS.map(r => r.pos));
+}
+function rollover() {
+  const ck = liveClock();
+  if (!S || S.week !== ck.week) { const old = S; S = freshLiveState(ck); if (old && old.lobbyPrep) { S.cls = old.cls || "warrior"; S.ranks = old.ranks || S.ranks; S.picks = old.picks || {}; S.banner = old.banner || S.banner; S.ob = old.ob || 0; } return true; }
+  if (S.day === ck.planDay) return false;
+  const g0 = S.gold;
+  for (let d = S.day; d < ck.planDay; d = addDays(d, 1)) {
+    S.gold += incomeFor(LIVE.uid, ck.week, d).total;
+    const b = LIVE.battles[d], mine = b && b.units && b.units[LIVE.uid];
+    (b && b.transfers || []).forEach(tr => { if (tr.from === LIVE.uid) S.gold -= tr.gold; if (tr.to === LIVE.uid) S.gold += tr.gold; });
+    if (mine) S.owned.forEach(u => { if (mine[u.id] === 0) u.hp = .5; else if (mine[u.id] === 1) u.hp = 1; });
+  }
+  S.traps.forEach(t => { const k = placedAt(t.id); if (k) delete S.place[k]; });
+  S.traps = []; S.locked = false; S.offers = {}; S.phase = "muster"; Object.values(S.diplo).forEach(d => { d.clues = []; });
+  S.gain = S.gold - g0; S.day = ck.planDay; S.pactAct = {}; S.pactWhen = {};
+  { const hs = heroState(LIVE.uid, ck.week, ck.planDay); S.lvl = hs.lvl; S.xp = hs.xp; }
+  return true;
+}
+function enterLobbyState() {
+  const mine = LIVE.players[LIVE.uid] || {};
+  if (LIVE_S && LIVE_S.lobbyPrep) S = LIVE_S;
+  else if (!S || !S.lobbyPrep) { const st = mine.state ? JSON.parse(JSON.stringify(mine.state)) : null;
+    S = (st && st.lobbyPrep) ? st : Object.assign(freshLiveState(liveClock()), { cls: (st && st.cls) || "warrior", banner: (st && st.banner) || defaultBanner(), ob: 0, lobbyPrep: true }); }
+  if (mine.fromWeek && mine.fromWeek !== "0000-00-00" && LIVE.db) { // an old "next week" sign-up: pull it into this war so the roster includes them when registration closes
+    mine.fromWeek = "0000-00-00"; myWrite(r => r.update({ fromWeek: "0000-00-00" })).catch(() => {}); }
+  LIVE.stateLoaded = true; LIVE_S = S; MY_COLOR = teamColour(LIVE.uid); MY_NAME = (LIVE.names[LIVE.uid] && LIVE.names[LIVE.uid].name) || "You";
+}
+function enterLive() {
+  if (inLobby()) { enterLobbyState(); return true; }
+  if (!isLive()) return false;
+  const mine = LIVE.players[LIVE.uid];
+  if (!LIVE.stateLoaded) { S = mine.state ? JSON.parse(JSON.stringify(mine.state)) : null; LIVE.stateLoaded = true; } else if (LIVE_S) S = LIVE_S;
+  resolveBattles(); // works out any missed battles first, so overnight results reach the rollover
+  const changed = rollover();
+  refreshLiveWorld(); sanitizePlace();
+  if (changed) queueSave(true);
+  return true;
+}
+function enterPractice() {
+  if (PRACTICE_S) S = PRACTICE_S;
+  else { try { S = JSON.parse(localStorage.getItem(STORE)) || freshState(); } catch (e) { S = freshState(); } migrateS(S); }
+  PRACTICE_S = S; DAY = practiceDay(); MY_COLOR = YOU_COLOR; MY_NAME = "You";
+  setupPractice(); sanitizePlace(); ensureDip();
+}
+function setMode(m) {
+  if (gameMode === "practice") PRACTICE_S = S; else if (S && S.week) LIVE_S = S;
+  gameMode = m; try { localStorage.setItem("lastbanner.mode", m); } catch (e) {}
+  if (m === "friends" && enterLive()) { home(); toast("Friends game"); }
+  else { gameMode = "practice"; enterPractice(); home(); }
+  syncLobby();
+}
+
+// ----- saving my orders to the shared game -----
+// All writes to my own player doc go through one queue: the database allows one write at a time per doc,
+// so overlapping saves (a colour tap's autosave while Register is pressed) used to fail. Transient rejections retry.
+let MY_WRITES = Promise.resolve();
+function myWrite(op) {
+  const run = async () => { for (let i = 0; ; i++) { try { return await op(LIVE.db.doc("players/" + LIVE.uid)); }
+    catch (e) { const c = e && e.code; console.warn("Daily Siege save", i, c || e); if (i >= 4 || c === "invalid_argument" || c === "permission_denied" || c === "not_found") throw e; await new Promise(r => setTimeout(r, 300 * 2 ** i)); } } };
+  const p = MY_WRITES.then(run, run); MY_WRITES = p.catch(() => {}); return p;
+}
+function queueSave(full) {
+  if (inLobby()) { clearTimeout(saveTimer); saveTimer = setTimeout(async () => { saveTimer = null; try { await myWrite(r => r.update({ state: S })); } catch (e) { toast("Couldn't save your choices. Check your connection."); } }, 500); return; }
+  if (!isLive() || LIVE.readOnly) return;
+  clearTimeout(saveTimer); saveTimer = null;
+  if (full) writeMine(true); else saveTimer = setTimeout(() => writeMine(false), 1200);
+}
+async function writeMine(full) {
+  if (saving) { saveAgain = true; return; }
+  saving = true;
+  const ck = liveClock(), snap = mySnapshot();
+  try {
+    if (full) { const cur = LIVE.players[LIVE.uid] || {}, plans = {}; Object.keys(cur.plans || {}).filter(k => k >= ck.week && k < ck.planDay).forEach(k => plans[k] = cur.plans[k]); plans[ck.planDay] = snap;
+      await myWrite(ref => ref.set({ fromWeek: cur.fromWeek || ck.week, joinedAt: cur.joinedAt || Date.now(), nick: cur.nick || "", real: cur.real || "", state: S, plans })); }
+    else await myWrite(ref => ref.update({ state: S, plans: { [ck.planDay]: snap } }));
+  } catch (e) {
+    if (e && e.code === "invalid_argument") { LIVE.readOnly = true; toast("You can watch this game but not play. Ask the host to add you as an Editor."); }
+    else toast("Couldn't save your orders. They'll retry on your next change.");
+  }
+  saving = false;
+  if (saveAgain) { saveAgain = false; writeMine(false); }
+}
+
+// ----- connecting -----
+let liveTimer = null;
+function liveChanged() {
+  syncLobby();
+  if (gameMode === "friends" && isLive()) {
+    if (!LIVE.stateLoaded) { if (enterLive()) home(); }
+    else { const before = S.day; resolveBattles(); rollover(); refreshLiveWorld(); sanitizePlace(); if (S.day !== before) queueSave(true); }
+    const ck = liveClock(), newest = Object.keys(LIVE.battles).filter(k => LIVE.battles[k].week === ck.week).sort().pop();
+    let seen = null; try { seen = localStorage.getItem("lastbanner.seen"); } catch (e) {}
+    if (newest && newest !== seen && mode === "plan" && !sheet && LIVE.stateLoaded && LIVE.namesLoaded) { openReportFor(newest); return; }
+  }
+  render();
+}
+async function refreshNames() {
+  if (!LIVE.user) return; const who = LIVE.user;
+  const ids = Object.keys(LIVE.players); if (!ids.length) return;
+  try { const nm = await who.profiles(ids); if (who !== LIVE.user) return; LIVE.names = nm; LIVE.namesLoaded = true; } catch (e) {}
+  applyNicks();
+  if (replay && replay.day && replay.res.names) Object.keys(replay.res.names).forEach(pid => { if (pid !== LIVE.uid) replay.res.names[pid] = nameOf(pid); });
+  liveChanged();
+}

@@ -1,0 +1,34 @@
+/* Layout: the painted battlefield is the page; a parchment ribbon on top, a barracks tray and three wooden buttons below, parchment sheets slide up for every menu */
+:root {
+  --leather: #231810;
+  --leather-2: #2f2117;
+  --wood: #6b4527;
+  --wood-dark: #3e2714;
+  --parchment: #ecdcb4;
+  --parchment-2: #e2cd9d;
+  --ink: #3a2614;
+  --ink-soft: #6e5538;
+  --gold: #c9962f;
+  --wax: #8e2a20;
+  --azure: #2f5fa8;
+  --verdant: #4f7a2e;
+  --f-display: "IM Fell English SC", "Palatino Linotype", Georgia, serif;
+  --f-body: "Alegreya", Georgia, "Times New Roman", serif;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(201,150,47,.10), transparent 60%),
+    repeating-linear-gradient(115deg, rgba(0,0,0,.08) 0 2px, transparent 2px 7px),
+    var(--leather);
+  color: var(--parchment);
+  font-family: var(--f-body);
+  font-size: 16px; line-height: 1.4;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--leather); }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+button, select { font: inherit; }
+button:focus-visible, select:focus-visible, canvas:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.wrap { max-width: 600px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }

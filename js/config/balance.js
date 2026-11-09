@@ -1,0 +1,51 @@
+// Balance numbers: slots, castle tiers, walls, income, XP, damage table, militia
+
+const OP_MAX = 5, SLOT_START = 3, SLOT_MAX = 6;
+
+// ---- castle tiers, walls, shop items, hero levelling, gold ----
+const CASTLE_TIERS = [
+  { name: "Castle", cost: 0, hp: 1, note: "Where every lord begins. Earns the base 150 gold a day." },
+  { name: "Fortress", cost: 150, hp: 1.15, note: "+15% castle health and +40 gold a day. Opens tier 2 gear, Arrow Slits, Bastions and stronger timber walls." },
+  { name: "Citadel", cost: 300, hp: 1.3, note: "+30% castle health and +90 gold a day. Opens tier 3 gear, the Ballista and stone walls." },
+];
+const CASTLE_INCOME = [0, 40, 90]; // extra gold a day for each castle tier
+const UPGRADE_NEEDS = { weapon: [1, 2, 3], armour: [1, 2, 3], charm: [1, 2, 3], walls: [1, 2], tower: [2, 3] }; // castle tier each upgrade tier needs
+const WALL_TIERS = [{ name: "Palisade", hp: 200 }, { name: "Timber Wall", hp: 340 }, { name: "Stone Wall", hp: 520 }];
+const WALL_COST = 35, WALL_CAP = 6, wallLimit = tier => WALL_CAP;
+function wallTiles(r, c, dir) { return [[r, c]]; } // one block; dir only sets which way the barrier runs
+
+const XP_CAP = 3, xpNeed = L => 90 + 45 * (L - 1), hpLv = L => 1 + .08 * (L - 1), atkLv = L => 1 + .06 * (L - 1);
+const HOLD_END = 120; // orders to hold the battleground dissolve after 2 minutes, then armies march on castles
+const CTR_BONUS = 1.25; // any hero standing on the battleground earns 25% more gold and XP, held or contested
+const CTR_R = 2.0; // the centre: bonus XP and gold for whoever holds it
+const GOLD_KILL = { unit: 2, militia: 1, summon: 1, guard: 2 };
+const BASE_INCOME = 150;
+function catchUpGold(n, idxFromBottom) { const k = Math.max(1, Math.round(n * .3)); return idxFromBottom < k ? Math.round(100 + 140 * (1 - idxFromBottom / k)) : 0; }
+
+const LEADER = "p1"; // top of last week's board: carries the bounty
+// damage types: every attack has a type, every body has an armour class
+const ATK_TYPES = {
+  blade:     { name: "Blade",     note: "Swords and claws. Best against medium armour." },
+  pierce:    { name: "Pierce",    note: "Arrows. Shreds light armour, glances off medium." },
+  magic:     { name: "Magic",     note: "Spells. Good against light and heavy armour." },
+  precision: { name: "Precision", note: "Daggers. Deadly to light armour, poor against heavy." },
+  siege:     { name: "Siege",     note: "Axes and rams. Built for castles." },
+  pure:      { name: "Pure",      note: "Traps and attrition. Ignores armour class." },
+};
+const ARMOUR_TYPES = { light: "Light", medium: "Medium", heavy: "Heavy", fortified: "Fortified" };
+const TYPE_TABLE = {
+  blade:     { light: 1.15, medium: 1.25, heavy: .9,  fortified: .5 },
+  pierce:    { light: 1.5,  medium: .75,  heavy: .9,  fortified: .35 },
+  magic:     { light: 1.25, medium: 1,    heavy: 1.25, fortified: .35 },
+  precision: { light: 1.5,  medium: .75,  heavy: .5,  fortified: .45 },
+  siege:     { light: .9,   medium: .75,  heavy: 1,   fortified: 1.6 },
+  pure:      { light: 1,    medium: 1,    heavy: 1,   fortified: 1 },
+};
+
+const HERO_GUARD = .9;     // heroes take 10% less from soldiers, so massed bowmen can't melt them
+const FINISH_AT = .5, FINISH_BONUS = 1.6; // Rogue: +60% against anything below half health
+// castles send out militia waves through the battle (keeps fights going after the armies trade)
+const MILITIA = { first: 35, every: 25, count: 2, hp: 150, atk: 11 };
+// global balance knobs: movement speed, time between attacks, ability cooldowns, castle health
+const BAL = { move: .85, swing: 1.15, cd: 1.1, castleHp: 600 };
+const SUDDEN = 100, TMAX = 200, FRAME_DT = .2, BURST_MIN = 560;

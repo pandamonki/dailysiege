@@ -1,0 +1,26 @@
+/* War Council: strategy list and alliances grid */
+.sec.tight { gap: 6px; }
+.tgts li.tgt.cp { grid-template-columns: 18px 22px 14px minmax(0, 1fr) auto; }
+.tgts .grip { cursor: grab; color: var(--ink-soft); touch-action: none; user-select: none; text-align: center; }
+.tgts .tn { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.sheet .chips .chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; font-size: 13px; color: var(--ink); background: rgba(255,250,230,.5); border: 1px solid var(--wood-dark); cursor: pointer; }
+.alhead, .alrow { display: grid; grid-template-columns: minmax(0, 1fr) auto 40px 70px 34px; gap: 6px; align-items: center; }
+.alhead { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); }
+.alrow { padding: 6px 0; border-bottom: 1px dashed rgba(62,39,20,.35); } .alrow.allied { background: rgba(79,122,46,.12); }
+.alrow .who { display: flex; align-items: center; gap: 6px; min-width: 0; flex-wrap: wrap; } .alrow .who b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.alrow .inc { color: var(--verdant); font-weight: 700; font-size: 12px; } .alrow .open { justify-self: center; } .alrow select { min-width: 0; width: 100%; }
+.alx { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: flex-end; font-size: 14px; }
+.btn.st-hostile { color: var(--wax); } .btn.st-ally { color: var(--verdant); }
+.nmrow { flex-wrap: wrap; align-items: flex-end; border-bottom: 0; }
+.nmrow label { display: grid; gap: 3px; flex: 1 1 130px; font-size: 13px; color: var(--ink-soft); }
+.nmrow input { font: inherit; font-size: 16px; color: var(--ink); background: rgba(255,250,230,.75); border: 2px solid var(--wood-dark); border-radius: 6px; padding: 6px 8px; min-width: 0; }
+.swatches.team .swt.taken, .swatches.team .swt:disabled:not(.on) { filter: grayscale(1) brightness(.75); opacity: .35; cursor: not-allowed; position: relative; }
+.swatches.team .swt.taken::after { content: "✕"; position: absolute; inset: 0; display: grid; place-items: center; color: #1e140c; font-weight: 700; }
+.stepn { display: inline-grid; place-items: center; width: 24px; height: 24px; margin-right: 8px; border-radius: 50%; background: var(--wax); color: var(--parchment); font-family: var(--f-body); font-size: 14px; font-weight: 700; vertical-align: 2px; }
+.regbar { display: flex; gap: 10px; justify-content: center; align-items: center; }
+.regbar .btn.big { min-width: 220px; }
+.hidhero { width: 36px; height: 36px; display: grid; place-items: center; border: 2px dashed rgba(62,39,20,.4); border-radius: 6px; color: var(--ink-soft); font-family: var(--f-display); font-size: 20px; }
+.summon { display: grid; gap: 6px; padding: 12px 14px; border-radius: 10px; border: 2px solid var(--gold); background: rgba(201,150,47,.12); } .summon p { margin: 0; } .summon .when { font-size: 14px; color: var(--ink-soft); }
+.lcard.emptyseat { grid-template-columns: 1fr; border-style: dashed; background: transparent; opacity: .7; min-height: 52px; }
+.lbox.need { box-shadow: 0 0 0 3px var(--gold), 0 6px 18px rgba(0,0,0,.4); }

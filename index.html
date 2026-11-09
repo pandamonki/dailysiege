@@ -1,0 +1,89 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Daily Siege</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Alegreya:ital,wght@0,400;0,500;0,700;1,400&display=swap">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/sheets.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/screens.css">
+<link rel="stylesheet" href="css/council.css">
+
+<div class="ribbon">
+  <div class="wrap">
+    <div class="scroll">
+      <div class="top"><h1>Daily Siege</h1><div class="when" id="when"></div></div>
+      <div class="purse" id="purse"></div>
+    </div>
+  </div>
+</div>
+
+<main class="wrap">
+  <div class="field"><div class="frame"><canvas id="map" tabindex="0" aria-label="Battlefield map. Drag to pan, pinch or use the buttons to zoom. Tap your castle, your units or a rival."></canvas>
+    <div class="banner" id="banner" hidden></div>
+    <div class="zoom"><button data-act="zin" aria-label="Zoom in">+</button><button data-act="zout" aria-label="Zoom out">−</button><button data-act="zall" aria-label="Show whole map" title="Whole map">⛶</button><button data-act="zhome" aria-label="Go to my castle" title="My castle">⌂</button></div></div></div>
+  <div class="hint" id="hint"></div>
+  <div class="rbar" id="rbar" hidden></div>
+  <div class="tray" id="tray"></div>
+</main>
+
+<nav class="commands" id="commands" aria-label="Commands">
+  <div class="wrap" id="cmdbar"></div>
+</nav>
+
+<div class="veil" id="veil" hidden></div>
+<div class="sheet" id="sheet" hidden role="dialog" aria-modal="true"><div class="paper" id="paper"></div></div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="js/config/classes.js"></script>
+<script src="js/config/units.js"></script>
+<script src="js/config/orders.js"></script>
+<script src="js/config/items.js"></script>
+<script src="js/config/balance.js"></script>
+<script src="js/core/util.js"></script>
+<script src="js/core/layout.js"></script>
+<script src="js/core/practice.js"></script>
+<script src="js/core/state.js"></script>
+<script src="js/core/player.js"></script>
+<script src="js/render/sprites.js"></script>
+<script src="js/render/banners.js"></script>
+<script src="js/render/walls.js"></script>
+<script src="js/render/items.js"></script>
+<script src="js/render/spells.js"></script>
+<script src="js/render/map.js"></script>
+<script src="js/render/camera.js"></script>
+<script src="js/render/frame.js"></script>
+<script src="js/sim/bots.js"></script>
+<script src="js/sim/alliances.js"></script>
+<script src="js/sim/plans.js"></script>
+<script src="js/sim/battle.js"></script>
+<script src="js/replay/flow.js"></script>
+<script src="js/replay/draw.js"></script>
+<script src="js/replay/inspector.js"></script>
+<script src="js/replay/controls.js"></script>
+<script src="js/replay/highlights.js"></script>
+<script src="js/replay/record.js"></script>
+<script src="js/dev/balanceLab.js"></script>
+<script src="js/net/players.js"></script>
+<script src="js/net/clock.js"></script>
+<script src="js/net/roster.js"></script>
+<script src="js/net/battles.js"></script>
+<script src="js/net/session.js"></script>
+<script src="js/net/sandbox.js"></script>
+<script src="js/net/lobby.js"></script>
+<script src="js/ui/hud.js"></script>
+<script src="js/ui/icons.js"></script>
+<script src="js/ui/sheets/castle.js"></script>
+<script src="js/ui/sheets/info.js"></script>
+<script src="js/ui/sheets/army.js"></script>
+<script src="js/ui/sheets/council.js"></script>
+<script src="js/ui/sheets/results.js"></script>
+<script src="js/ui/render.js"></script>
+<script src="js/ui/actions.js"></script>
+<script src="js/ui/input.js"></script>
+<script src="js/audio/tracks.js"></script>
+<script src="js/audio/music.js"></script>
+<script src="js/main.js"></script>
+
+</body></html>
