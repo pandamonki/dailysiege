@@ -183,7 +183,7 @@ test("a lord with a new account gets their castle back from the host", async () 
   await P.host.waitForFunction(u => LIVE.players[u], U.carol, WAIT);
   await P.host.evaluate(([from, to]) => DS.reassignSeat(from, to), [U.bob, U.carol]);
   assert.equal(await P.host.evaluate(() => document.getElementById("toast").textContent), "The castle has a new owner.");
-  await P.carol.waitForFunction(() => rosterFor(liveClock().week).some(r => r.uid === LIVE.uid), null, WAIT); // the castle is theirs...
+  await P.carol.waitForFunction(seat => LIVE.uid === seat && LIVE.config && LIVE.playersLoaded && rosterFor(liveClock().week).some(r => r.uid === seat), U.bob, WAIT); // the castle is theirs...
   await P.carol.evaluate(() => A.playgo());                                                                  // ...and tapping "Play with friends" takes them into the war
   await P.carol.waitForFunction(() => isLive() && S && S.week, null, WAIT);
   assert.equal(await P.carol.evaluate(() => S.gold), bobGold, "the army and gold came across");
