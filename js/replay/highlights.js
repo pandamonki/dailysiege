@@ -4,10 +4,6 @@
 // Key moments are flagged by the battle sim (res.hl). The reel picks the best few, then plays each as a short
 // directed clip: a title card, the camera on the action, a slow-motion beat at the key instant, and a closing podium.
 const PRACTICE_BOARD = { p1: 34, p3: 27, p5: 22, you: 18, p2: 15, p6: 11, p4: 8, p7: 5 };
-function rankMap(pts, pids) {
-  if (!pids.some(p => (pts[p] || 0) > 0)) return {};
-  const o = pids.slice().sort((a, b) => (pts[b] || 0) - (pts[a] || 0)); return Object.fromEntries(o.map((p, i) => [p, i + 1]));
-}
 const HL_WIN = { betray: [1.5, 3.5], bomb: [2, 3], burst: [2.5, 1.5], fall: [4, 2], upset: [4, 2.2], revenge: [4, 2.2], giantslayer: [3, 1.6], firstblood: [3, 1.5], rapierdrop: [2.5, 2], frenzy: [2, 2.5], rapierget: [2, 2.5], winner: [4.5, 2.5] };
 function hlText(h, R) {
   const N = p => (R.names && R.names[p]) || "Someone", you = p => p === R.me, V = (p, a, b) => `${N(p)} ${you(p) ? a : b}`;

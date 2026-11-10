@@ -20,6 +20,7 @@ export const SIM_FILES = [
   "js/config/items.js",
   "js/config/balance.js",
   "js/config/spells.js",
+  "js/config/seats.js",
   "js/core/util.js",
   "js/core/detmath.js",
   "js/core/layout.js",
@@ -29,6 +30,8 @@ export const SIM_FILES = [
   "js/sim/battle.js",
   "js/sim/hash.js",
 ];
+// On top of the sim: the game clock and the code that turns a game's saved data into a battle (what the server runs).
+export const WORLD_FILES = ["js/net/clock.js", "js/net/world.js"];
 
 /**
  * @param {object} [o]

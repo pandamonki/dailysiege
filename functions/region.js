@@ -1,5 +1,7 @@
-// Where the functions run. Firestore triggers must run in the same region as the Firestore database,
-// so this has to match the location chosen when Firestore was created in the Firebase console
-// (Firestore Database -> the location shown at the top, e.g. "nam5" -> us-central1,
-// "australia-southeast1" -> australia-southeast1, "eur3" -> europe-west1).
-module.exports = { REGION: "us-central1" };
+// Where the functions run.
+//
+// TRIGGER_REGION must be the region of the Firestore database (australia-southeast2, Melbourne):
+// a function that reacts to database changes has to live beside the database.
+// REGION is for everything else (the 5-minute battle scheduler and the host's buttons). It is Sydney
+// because Cloud Scheduler, which the scheduler needs, is not offered in Melbourne.
+module.exports = { TRIGGER_REGION: "australia-southeast2", REGION: "australia-southeast1" };

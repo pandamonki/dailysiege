@@ -3,7 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { loadSim, SIM_FILES, ROOT } from "../tools/load-sim.mjs";
+import { loadSim, SIM_FILES, WORLD_FILES, ROOT } from "../tools/load-sim.mjs";
 import { GOLDEN_SCRIPTS } from "../tools/golden.mjs";
 
 test("the sim loads headlessly and runs a battle", () => {
@@ -88,7 +88,7 @@ test("every sim file is loaded by index.html, in the same relative order", () =>
   const order = [...html.matchAll(/<script src="([^"]+)"/g)].map(m => m[1]);
   const self = readFileSync(path.join(ROOT, "selftest.html"), "utf8");
   assert.deepEqual([...self.matchAll(/<script src="([^"]+)"/g)].map(m => m[1]), [...SIM_FILES, ...GOLDEN_SCRIPTS, "js/dev/selftest.js"], "selftest.html must load exactly the sim files");
-  const inGame = SIM_FILES.filter(f => f !== "js/sim/hash.js"); // the hash helper is not needed by the game yet
+  const inGame = [...SIM_FILES, ...WORLD_FILES];
   const pos = inGame.map(f => order.indexOf(f));
   assert.ok(pos.every(p => p >= 0), "missing from index.html: " + inGame.filter((f, i) => pos[i] < 0).join(", "));
   assert.deepEqual(pos, pos.slice().sort((x, y) => x - y), "load order differs from index.html");

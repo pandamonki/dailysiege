@@ -13,7 +13,9 @@ function firstBattleDate(c) { // the date of Day 1's battle once registration cl
 function startOf(c) { if (!c) return null; if (c.startDate) return c.startDate; if (c.lobby && c.lobbyEnds && Date.now() >= c.lobbyEnds) return firstBattleDate(c); return null; }
 const lobbyOpen = c => !!(c && c.lobby && !startOf(c));
 const inLobby = () => gameMode === "friends" && lobbyOpen(LIVE.config) && !!LIVE.uid && !!LIVE.players[LIVE.uid];
-const weekdayOf = key => { const a = typeof LIVE !== "undefined" && startOf(LIVE.config); if (a) return ((dayDiff(key, a) % 7) + 7) % 7 + 1; return ((new Date(key + "T00:00:00Z").getUTCDay() + 6) % 7) + 1; };
+// which day of the war (1 to 7) a date is, counted from the war's first battle
+function wWeekdayOf(key, cfg) { const a = startOf(cfg); if (a) return ((dayDiff(key, a) % 7) + 7) % 7 + 1; return ((new Date(key + "T00:00:00Z").getUTCDay() + 6) % 7) + 1; }
+const weekdayOf = key => wWeekdayOf(key, typeof LIVE !== "undefined" ? LIVE.config : null);
 function planDayNow(tz, lock) { const now = tzNow(tz); return now.h >= lock ? addDays(now.date, 1) : now.date; }
 function liveClock() {
   const cfg = LIVE.config, now = tzNow(cfg.tz), lock = cfg.lockHour;

@@ -16,10 +16,12 @@ function hashString(s) {
   h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
   return (h2 >>> 0).toString(16).padStart(8, "0") + (h1 >>> 0).toString(16).padStart(8, "0");
 }
-// The outcome of a battle: everything that is saved, scored or carried into tomorrow. The same in fast and full runs.
+// The outcome of a battle: everything that is saved, scored or carried into tomorrow. The same in fast and full runs,
+// and the same whoever is watching: display names are left out, because each device shows its own ("You").
 function battleOutcome(res) {
-  return { results: res.results, order: res.order, duration: res.duration, team: res.team, lvl: res.lvl, pairsEnd: res.pairsEnd, feudsNew: res.feudsNew, trapsUsed: res.trapsUsed,
-    awards: res.awards, ultCast: res.ultCast, rapier: res.rapier, rapierEnd: res.rapierEnd, tel: res.tel };
+  const noName = o => { const c = Object.assign({}, o); delete c.name; return c; };
+  return { results: res.results.map(noName), order: res.order, duration: res.duration, team: res.team, lvl: res.lvl, pairsEnd: res.pairsEnd, feudsNew: res.feudsNew, trapsUsed: res.trapsUsed,
+    awards: res.awards, ultCast: res.ultCast, rapier: res.rapier, rapierEnd: res.rapierEnd, tel: Object.assign({}, res.tel, { players: res.tel.players.map(noName) }) };
 }
 const battleHash = res => hashString(stableStringify(battleOutcome(res)));
 // What a replay shows: every frame and event of a full (not fast) run. Catches drift the outcome alone could hide.
