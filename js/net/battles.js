@@ -42,8 +42,16 @@ const PAGE_T0 = Date.now(), SAVING_B = new Set(), LIVE_LOCAL_B = {}; let warnedB
 function withLocalBattles(bt) { Object.keys(LIVE_LOCAL_B).forEach(d => { if (bt[d]) delete LIVE_LOCAL_B[d]; }); return Object.assign({}, LIVE_LOCAL_B, bt); }
 const daySeed = dayKey => (+dayKey.replace(/-/g, "") % 1000003) * 7 + 13;
 const feudsBefore = (dayKey, week) => Array.from(new Set(Object.keys(LIVE.battles).filter(k => k < dayKey && LIVE.battles[k].week === week).flatMap(k => LIVE.battles[k].feuds || [])));
+// the orders exactly as a finished battle fought them, ready to fight again (replays never depend on anyone's current orders)
+function savedBattle(dayKey) {
+  const b = LIVE.battles[dayKey], s = b && b.inputs; if (!s) return null;
+  const plans = JSON.parse(JSON.stringify(s.plans)).map(p => Object.assign(p, { me: p.pid === LIVE.uid, name: nameOf(p.pid) }));
+  if (s.feuds) plans.feuds = s.feuds.slice(); if (b.mercs) plans.mercs = b.mercs;
+  return { N: s.N, final: !!s.final, ultV2: !!s.ultV2, transfers: b.transfers || [], plans };
+}
 async function resolveBattles() {
   if (!isLive() || LIVE.readOnly) return;
+  if (LIVE.db && LIVE.db.serverBattles) return; // on the hosted game the server fights the battles: this device cannot see rivals' orders
   const ck = liveClock(), roster = rosterFor(ck.week);
   if (roster.length < 2) return;
   for (let d = ck.week; d < ck.planDay; d = addDays(d, 1)) {

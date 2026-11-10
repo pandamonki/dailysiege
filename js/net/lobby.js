@@ -88,7 +88,7 @@ function renderLobby() {
       <label class="inline">Battle time<select id="lobbyhour">${[12, 13, 17, 18, 19, 20, 21, 22].map(h => `<option value="${h}"${h === cfg.lockHour ? " selected" : ""}>${hourLabel(h)}</option>`).join("")}</select></label>
       <div class="row"><button class="btn small" data-act="lobbysave">Save</button><button class="btn ${LIVE.beginConfirm ? "wax" : "wood"}" data-act="lobbybegin" ${reg.length < 2 ? "disabled" : ""}>${LIVE.beginConfirm ? "Tap again: lock in and begin" : "Lock in and begin the war"}</button></div>
       ${reg.length < 2 ? `<p class="muted">You need at least two lords to begin.</p>` : ""}</div>` : ""}
-    ${open ? invitePanel(open) : `<div class="lbox"><h3>Every seat is taken</h3><p class="muted">All eight lords are registered.</p></div>`}
+    ${open ? invitePanel(open) : `<div class="lbox"><h3>Every seat is taken</h3><p class="muted">All eight lords are registered.</p></div>`}${hostTools()}
     <div class="row"><button class="btn small" data-act="open" data-v="title">← Menu</button></div></div>`;
 }
 async function registerMe() {
@@ -125,15 +125,16 @@ async function watchLiveBattle(dayKey, how) {
   if (how === "play") { replay.done = false; render(); showIntro(introData(plans, carriedPairs(dayKey), liveYesterdayBets(dayKey), res.names, final), () => { if (replay) replay.playing = true; }); } else if (how === "reel") startReel(false); else open("results");
 }
 function openReportFor(k) { try { localStorage.setItem("lastbanner.seen", k); } catch (e) {} reportBack = k; sheet = { type: "report", id: k }; render(); }
-const GAME_URL = () => { let u = "https://claude.ai/artifact/7WwWgy4irntRjE6ep653Am"; try { if (/claude\.ai/.test(location.href)) u = location.href.split("#")[0]; } catch (e) {} return u; };
+const GAME_URL = () => { if (window.DS && DS.inviteUrl) return DS.inviteUrl(); let u = "https://claude.ai/artifact/7WwWgy4irntRjE6ep653Am"; try { if (/claude\.ai/.test(location.href)) u = location.href.split("#")[0]; } catch (e) {} return u; };
 function invitePanel(open) {
   return `<div class="sec lbox"><h3>Invite friends${open ? ` · ${open} seat${open === 1 ? "" : "s"} open` : ""}</h3>
-    <ol class="muted" style="margin:0 0 8px;padding-left:20px"><li>${LIVE.isOwner ? "Open this page's <b>Share</b> menu and add each friend by email as an <b>Editor</b>, so they can save their orders." : "Ask the host to add your friend as an <b>Editor</b> in the page's Share menu, so they can save their orders."}</li><li>Send them the link below.</li><li>They tap <b>Play with friends</b>, see who's registered, then tap <b>Register</b>.</li></ol>
+    ${window.DS ? `<ol class="muted" style="margin:0 0 8px;padding-left:20px"><li>Send your friends the link below. It's the same link for every war.</li><li>They open it on their phone and sign in once with Google or an emailed link.</li><li>They tap <b>Register</b>.</li></ol>` : `<ol class="muted" style="margin:0 0 8px;padding-left:20px"><li>${LIVE.isOwner ? "Open this page's <b>Share</b> menu and add each friend by email as an <b>Editor</b>, so they can save their orders." : "Ask the host to add your friend as an <b>Editor</b> in the page's Share menu, so they can save their orders."}</li><li>Send them the link below.</li><li>They tap <b>Play with friends</b>, see who's registered, then tap <b>Register</b>.</li></ol>`}
     <div class="row"><button class="btn wood" data-act="copyinvite">Copy invite link</button></div></div>`;
 }
 function gameSheet() {
   const lines = [];
   const can = LIVE.db && LIVE.uid;
+  if (!can && window.DS) return signInSheet();
   if (!can) return head(null, "Friends Game", "Play against your friends") + `<div class="body">
     <p>Friends games run inside this page while you're signed in to Claude.</p>
     <p class="muted">If you're seeing this in a preview, open the published page instead. Each friend needs the page shared with them as an <b>Editor</b> (Share menu, invite by email) so they can save their orders.</p>
@@ -146,18 +147,18 @@ function gameSheet() {
       <p class="muted">Up to eight lords can register. Times use your time zone (${esc(Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC")}). You can lock in early or change the closing time later.</p>
       <div><button class="btn wax" data-act="startgame">Open registration</button></div>
       <p class="muted">You'll register first, then you can invite friends from the Muster Hall.</p>`
-      : `<p>The host hasn't started a game on this page yet.</p>`}
-    <div class="row"><button class="btn" data-act="open" data-v="title">← Back</button></div></div>`;
+      : window.DS ? `<p>You're signed in, but this account isn't in a game yet.</p><p class="muted">Open the invite link your host sent you on this device and you'll be taken straight to the war.</p>` : `<p>The host hasn't started a game on this page yet.</p>`}
+    <div class="row"><button class="btn" data-act="open" data-v="title">← Back</button></div>${accountLine()}</div>`;
   if (lobbyOpen(LIVE.config)) { const mineL = LIVE.players[LIVE.uid], n = lobbyLords().length, open = Math.max(0, 8 - n), hl = hostLabel();
     return head(null, "You're summoned to war", hl === "you" ? "You called the banners" : `${esc(hl)} has called the banners`) + `<div class="body">
       <div class="summon"><p>${hl === "you" ? "You are hosting this war." : `<b>${esc(hl)}</b> is hosting this war and has invited you to take a castle.`} Battles are fought daily at ${lockLabel(LIVE.config)} your time for seven days.</p>
         <p class="when">${closesText(LIVE.config)} · <b>${open}</b> of 8 seats open</p></div>
       <div class="sec"><h3>${n} lord${n === 1 ? " has" : "s have"} registered</h3>${n ? lordCards(false) : `<p class="muted">Nobody yet. Be the first.</p>`}<p class="muted">Heroes stay hidden until the war begins.</p></div>
-      <div class="row">${mineL ? `<button class="btn wax big" data-act="playgo">${mineL.pending ? "Finish registering" : "Enter the Muster Hall"}</button>` : n >= 8 ? `<span class="muted">All eight seats are taken.</span>` : `<button class="btn wax big" data-act="joingame">⚑ Register<small>A short tour, then choose your hero, name, colour and coat of arms</small></button>`}<button class="btn" data-act="open" data-v="title">← Back</button></div></div>`; }
+      <div class="row">${mineL ? `<button class="btn wax big" data-act="playgo">${mineL.pending ? "Finish registering" : "Enter the Muster Hall"}</button>` : n >= 8 ? `<span class="muted">All eight seats are taken.</span>` : `<button class="btn wax big" data-act="joingame">⚑ Register<small>A short tour, then choose your hero, name, colour and coat of arms</small></button>`}<button class="btn" data-act="open" data-v="title">← Back</button></div>${accountLine()}</div>`; }
   const ck = liveClock(), roster = rosterFor(ck.week), mine = LIVE.players[LIVE.uid], pts = standings(ck.week), cfg = LIVE.config, cap = capFor(ck.week), capNext = capFor(addDays(ck.week, 7));
   const signed = Object.entries(LIVE.players).filter(([, p]) => !p.left).length, inNow = roster.some(p => p.uid === LIVE.uid), queued = mine && !inNow;
   const nextWeek = addDays(ck.week, 7), waiting = Object.entries(LIVE.players).filter(([uid, p]) => !p.left && !roster.some(r => r.uid === uid)).map(([uid]) => uid);
-  const status = p => { const pl = p.plans && p.plans[ck.planDay]; return pl && pl.sealed ? ["Sealed", "ok"] : pl ? ["Planning", ""] : ["No orders yet", "muted"]; };
+  const status = p => { const pl = p.plans && p.plans[ck.planDay]; return (pl && pl.sealed) || p.sealedFor === ck.planDay ? ["Sealed", "ok"] : pl || window.DS ? ["Planning", ""] : ["No orders yet", "muted"]; }; // on the hosted game a rival's orders are never sent here, only whether they are sealed
   const clsOf = p => ((p.uid === LIVE.uid || ck.dayNo > 1) && p.state && p.state.week === ck.week && p.state.cls) || null; // rivals' classes are revealed by day 1's battle
   const ranked = roster.map((p, i) => ({ p, i })).sort((a, b) => (pts[b.p.uid] || 0) - (pts[a.p.uid] || 0));
   const battles = Object.keys(LIVE.battles).filter(k => LIVE.battles[k].week === ck.week).sort();
@@ -185,7 +186,30 @@ function gameSheet() {
     <div class="row">${inNow ? `<button class="btn ${gameMode === "friends" ? "on" : "wood"}" data-act="mode" data-v="friends">${gameMode === "friends" ? "Playing friends game" : "Play friends game"}</button>` : ""}
       <button class="btn" data-act="open" data-v="title">← Menu</button></div>
     ${roster.length < 2 ? `<p class="muted">Battles start once at least two players are in.</p>` : ""}
-    ${invitePanel()}</div>`;
+    ${invitePanel()}${hostTools()}${accountLine()}</div>`;
+}
+// ----- the hosted game: signing in, the account line and host tools (window.DS is js/net/backend-firebase.js) -----
+function signInSheet() {
+  const d = window.DS;
+  if (d.available === null) return head(null, "Friends Game", "Connecting…") + `<div class="body"><p class="muted">Reaching the game. If this takes more than a few seconds, check your connection.</p><div class="row"><button class="btn" data-act="open" data-v="title">← Back</button></div></div>`;
+  if (d.available === false) return head(null, "Friends Game", "Not available here") + `<div class="body"><p>${esc(d.error || "The friends game isn't set up on this copy of the page. You can still practise against bots.")}</p><div class="row"><button class="btn" data-act="open" data-v="title">← Back</button></div></div>`;
+  return head(null, "Friends Game", "Sign in to play") + `<div class="body">
+    <p>Sign in once on this device and you'll stay signed in. It's only used to know which castle is yours.</p>
+    <div class="row"><button class="btn wax big" data-act="dsgoogle" ${d.busy ? "disabled" : ""}>Continue with Google</button></div>
+    <div class="sec"><h3>Or get a sign-in link by email</h3>
+      <label class="inline">Email<input id="dsemail" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" value="${esc(d.emailDraft || "")}"></label>
+      <div class="row"><button class="btn wood" data-act="dsemail" ${d.busy ? "disabled" : ""}>${d.busy === "email" ? "Sending…" : "Email me a link"}</button></div>
+      <p class="muted">No password. Open the link on this same device.</p></div>
+    ${d.note ? `<p class="tip">${esc(d.note)}</p>` : ""}${d.error ? `<p class="tip">${esc(d.error)}</p>` : ""}
+    <div class="row"><button class="btn" data-act="open" data-v="title">← Back</button></div></div>`;
+}
+function accountLine() { return window.DS && DS.user ? `<p class="muted">Signed in as ${esc(DS.accountLabel())} · <button class="btn small" data-act="dssignout">Sign out</button></p>` : ""; }
+function hostTools() { // remove a lord, or replace the invite link
+  if (!window.DS || !DS.isHost()) return "";
+  const others = Object.entries(LIVE.players).filter(([uid, p]) => uid !== LIVE.uid && !p.left);
+  return `<div class="sec lbox"><h3>Host tools</h3>${others.map(([uid, p]) => `<div class="spread"><span>${esc(lordLabel(p) || "A lord")}${p.pending ? " · not registered yet" : ""}</span><button class="btn small ${LIVE.kick === uid ? "wax" : ""}" data-act="dskick" data-v="${uid}">${LIVE.kick === uid ? "Tap again to remove" : "Remove"}</button></div>`).join("") || `<p class="muted">Nobody else has joined yet.</p>`}
+    <p class="muted">Removing a lord blocks that account from this game. In the middle of a war it also takes their castle off the map from the next battle, so the map is redrawn.</p>
+    <div class="row"><button class="btn small" data-act="dsnewinvite">Make a new invite link</button></div><p class="muted">A new link stops the old one working. Lords already in the game are not affected.</p></div>`;
 }
 async function saveConfig(patch, msg) {
   const next = Object.assign({}, LIVE.config, patch); Object.keys(next).forEach(k => { if (next[k] === undefined || next[k] === null) delete next[k]; });

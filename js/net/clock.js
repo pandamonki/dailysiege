@@ -33,3 +33,9 @@ function lockLabel(cfg) {
     return `${p.hour}${p.minute !== "00" ? ":" + p.minute : ""}${(p.dayPeriod || "").toLowerCase()}`;
   } catch (e) { return hourLabel(cfg.lockHour); }
 }
+// the instant (ms) at which the clock in `tz` reads `hour`:00 on the date `dayKey`: when that day's orders lock
+function lockInstant(dayKey, tz, hour) {
+  const want = Date.parse(dayKey + "T00:00:00Z") + hour * 36e5; let ms = want;
+  for (let i = 0; i < 3; i++) { const n = tzNow(tz, ms), shown = Date.parse(n.date + "T00:00:00Z") + (n.h * 60 + n.m) * 6e4; ms += want - shown; } // correct for the zone's offset (twice, in case a clock change is crossed)
+  return ms;
+}

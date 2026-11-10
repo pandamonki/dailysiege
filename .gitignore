@@ -4,3 +4,8 @@ dist/
 *.log
 .firebase/
 .env*
+functions/game/
+functions/node_modules/
+js/vendor/
+*-debug.log
+.firebaserc.local

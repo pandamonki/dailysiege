@@ -8,17 +8,23 @@
     "node": ">=20"
   },
   "scripts": {
+    "postinstall": "node tools/vendor.mjs",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
     "test": "node --test",
     "golden:update": "node tools/golden-update.mjs",
+    "functions:sync": "node tools/sync-functions.mjs",
+    "test:rules": "firebase emulators:exec --only firestore --project demo-dailysiege \"node --test emulator-tests/rules.spec.mjs\"",
     "selftest:browsers": "node tools/selftest-browsers.mjs",
     "lint": "eslint ."
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@firebase/rules-unit-testing": "^5.0.2",
     "eslint": "^10.14.0",
+    "firebase": "^13.2.0",
+    "firebase-tools": "^15.35.0",
     "globals": "^17.14.0",
     "vite": "^8.3.7"
   }

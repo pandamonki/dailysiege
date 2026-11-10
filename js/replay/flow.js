@@ -104,7 +104,7 @@ function startBattle() {
   showIntro(intro, () => { if (replay) replay.playing = true; });
 }
 function liveYesterdayBets(dayKey) {
-  try { const prev = addDays(dayKey, -1); if (weekdayOf(dayKey) === 1) return []; const { N, plans, final } = liveBattlePlans(prev), r = runBattle(plans, daySeed(prev), { fast: true, N, finalDay: final, ultV2: ultV2For(prev) }); return r.hl.filter(h => h.kind === "betray"); } catch (e) { return []; }
+  try { const prev = addDays(dayKey, -1); if (weekdayOf(dayKey) === 1) return []; const sv = savedBattle(prev), { N, plans, final } = sv || liveBattlePlans(prev), r = runBattle(plans, daySeed(prev), { fast: true, N, finalDay: final, ultV2: sv ? sv.ultV2 : ultV2For(prev) }); return r.hl.filter(h => h.kind === "betray"); } catch (e) { return []; }
 }
 function leaveBattle() { SAW_REPLAY = true; mode = "plan"; replay = null; document.getElementById("banner").hidden = true; sheet = reportBack ? { type: "report", id: reportBack } : null; render(); home(); }
 const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
