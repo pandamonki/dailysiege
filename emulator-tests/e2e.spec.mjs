@@ -202,7 +202,6 @@ test("a lord with a new account gets their castle back from the host", async () 
 test("the host can remove a lord, who loses access and cannot rejoin", async () => {
   await P.host.evaluate(u => DS.removeLord(u), U.bob); // the seat carol now plays
   await P.host.waitForFunction(() => rosterFor(liveClock().week).length === 2, null, WAIT);
-  console.log("DIAG", await P.host.evaluate(() => document.getElementById("toast").textContent), await read(P.carol, `games/${gameId}/members/${U.carol}`), await P.carol.evaluate(() => ({ cfg: !!LIVE.config, uid: LIVE.uid, seat: DS.seat, game: DS.gameId, toast: document.getElementById("toast").textContent })));
   await P.carol.waitForFunction(() => !LIVE.config, null, WAIT);
   assert.equal(await list(P.carol, `games/${gameId}/players`), "permission-denied");
   assert.equal(await read(P.carol, `games/${gameId}/players/${U.bob}/private/state`), "permission-denied");

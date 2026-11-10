@@ -114,8 +114,8 @@ service cloud.firestore {
       // Accounts that may not rejoin: removed by the host, or replaced by the same lord's new account.
       match /banned/{uid} {
         allow read: if signedIn() && (me() == uid || isHost(g));
-        allow create: if isHost(g) && uid != me();
-        allow update, delete: if false;
+        allow create, update: if isHost(g) && uid != me(); // barring an account that is already barred is harmless
+        allow delete: if false;
       }
 
       // Public profile. Everything here is visible to every lord in the game, so it never holds orders, gold or army.

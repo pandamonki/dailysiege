@@ -184,6 +184,10 @@ test("nobody can point their own membership at someone else's seat", async () =>
   await assertFails(updateDoc(doc(db(B), "games", G, "members", B), { seat: A }));
   await assertFails(updateDoc(doc(db(HOST), "games", G, "members", B), { seat: A })); // not even the host: only the server
   await assertFails(setDoc(doc(db(A), "games", G, "banned", B), { at: 1 }));          // and only the host can bar an account
+  await assertSucceeds(setDoc(doc(db(HOST), "games", G, "banned", B), { at: 1 }));
+  await assertSucceeds(setDoc(doc(db(HOST), "games", G, "banned", B), { at: 2 }));     // barring twice is fine
+  await assertFails(deleteDoc(doc(db(HOST), "games", G, "banned", B)));               // but it cannot be undone from a phone
+  await assertFails(setDoc(doc(db(HOST), "games", G, "banned", HOST), { at: 1 }));    // and the host cannot bar themselves
 });
 
 test("the host can only touch membership fields of someone else's profile", async () => {
