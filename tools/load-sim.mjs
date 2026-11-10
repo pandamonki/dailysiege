@@ -1,37 +1,17 @@
-// Loads the game's battle simulation headlessly, without a browser.
+// Loads the game's battle simulation headlessly, without a browser, for the tests.
 //
-// The game is classic scripts sharing one global scope, so instead of converting it to modules we
-// run the same files, in the same order as index.html, inside a Node `vm` context. Only the
-// DOM-free files are loaded (config, the needed core files, sim). The same loader is meant to be
-// reused by the server-side battle resolver later, so the server and the phones run one sim.
-import vm from "node:vm";
-import { readFileSync } from "node:fs";
+// The game is classic scripts sharing one global scope, so instead of converting it to modules the
+// same files are run, in the same order as index.html, inside a Node `vm` context. The loader and
+// the file lists live in functions/lib/game.js, because the server runs battles the same way.
+import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
-export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const lib = createRequire(import.meta.url)("../functions/lib/game.js");
 
-// Order matters and must follow index.html.
-export const SIM_FILES = [
-  "js/config/classes.js",
-  "js/config/units.js",
-  "js/config/mercs.js",
-  "js/config/orders.js",
-  "js/config/items.js",
-  "js/config/balance.js",
-  "js/config/spells.js",
-  "js/config/seats.js",
-  "js/core/util.js",
-  "js/core/detmath.js",
-  "js/core/layout.js",
-  "js/core/player.js",
-  "js/sim/bots.js",
-  "js/sim/alliances.js",
-  "js/sim/battle.js",
-  "js/sim/hash.js",
-];
-// On top of the sim: the game clock and the code that turns a game's saved data into a battle (what the server runs).
-export const WORLD_FILES = ["js/net/clock.js", "js/net/world.js"];
+export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+export const SIM_FILES = lib.SIM_FILES;     // the simulation and everything it reads
+export const WORLD_FILES = lib.WORLD_FILES; // on top of the sim: the clock and the code that turns saved data into a battle
 
 /**
  * @param {object} [o]
@@ -40,19 +20,5 @@ export const WORLD_FILES = ["js/net/clock.js", "js/net/world.js"];
  * @returns {{ context: object, get: (name: string) => any, run: (code: string) => any }}
  */
 export function loadSim({ extraFiles = [], strict = false } = {}) {
-  const context = vm.createContext({ console });
-  for (const rel of [...SIM_FILES, ...extraFiles]) {
-    vm.runInContext(readFileSync(path.join(ROOT, rel), "utf8"), context, { filename: rel });
-  }
-  if (strict) {
-    vm.runInContext(
-      `Math.random = () => { throw new Error("Math.random reached from the sim"); };
-       Date.now = () => { throw new Error("Date.now reached from the sim"); };
-       Date = new Proxy(Date, { construct() { throw new Error("new Date reached from the sim"); }, apply() { throw new Error("Date() reached from the sim"); } });`,
-      context, { filename: "strict" });
-  }
-  const run = code => vm.runInContext(code, context);
-  // top-level const/let are not properties of the global object, so look names up by evaluating them
-  const get = name => run(name);
-  return { context, get, run };
+  return lib.loadGame([...SIM_FILES, ...extraFiles], { strict });
 }

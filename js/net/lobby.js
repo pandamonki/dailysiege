@@ -115,6 +115,9 @@ async function watchLiveBattle(dayKey, how) {
   if (saved && saved.feuds) plans.feuds = saved.feuds.slice();
   if (saved && LIVE.battles[dayKey].mercs) plans.mercs = LIVE.battles[dayKey].mercs;
   const res = runBattle(plans, daySeed(dayKey), { N: size, finalDay: final, ultV2: saved ? !!saved.ultV2 : ultV2For(dayKey), ranks: rankMap(before, plans.map(p => p.pid)) });
+  { // the saved result is the official one; this device's replay must match it exactly, or what is shown would not be what was scored
+    const want = saved && LIVE.battles[dayKey].resultHash, got = want && battleHash(res);
+    if (want && got !== want) { console.warn("Daily Siege: this device replayed", dayKey, "differently", got, want); toast("This device replayed the battle differently from the official result. Scores shown are the official ones. Please tell the host."); if (window.DS && DS.reportMismatch) DS.reportMismatch(dayKey, got, want); } }
   DAY_FOR_INTRO = weekdayOf(dayKey);
   res.names = Object.fromEntries(plans.map(p => [p.pid, p.pid === LIVE.uid ? (MY_NAME || "You") : p.name]));
   res.transfers = transfers; res.board = before; res.week = week;
@@ -206,8 +209,14 @@ function signInSheet() {
 function accountLine() { return window.DS && DS.user ? `<p class="muted">Signed in as ${esc(DS.accountLabel())} · <button class="btn small" data-act="dssignout">Sign out</button></p>` : ""; }
 function hostTools() { // remove a lord, or replace the invite link
   if (!window.DS || !DS.isHost()) return "";
-  const others = Object.entries(LIVE.players).filter(([uid, p]) => uid !== LIVE.uid && !p.left);
-  return `<div class="sec lbox"><h3>Host tools</h3>${others.map(([uid, p]) => `<div class="spread"><span>${esc(lordLabel(p) || "A lord")}${p.pending ? " · not registered yet" : ""}</span><button class="btn small ${LIVE.kick === uid ? "wax" : ""}" data-act="dskick" data-v="${uid}">${LIVE.kick === uid ? "Tap again to remove" : "Remove"}</button></div>`).join("") || `<p class="muted">Nobody else has joined yet.</p>`}
+  const others = Object.entries(LIVE.players).filter(([uid, p]) => uid !== LIVE.uid && !p.left), inWar = lobbyOpen(LIVE.config) ? [] : rosterFor(liveClock().week).map(r => r.uid), seated = others.filter(([uid]) => inWar.includes(uid)), fresh = others.filter(([uid]) => !inWar.includes(uid));
+  const pend = battlePending();
+  return `<div class="sec lbox"><h3>Host tools</h3>${pend ? `<div class="spread"><span>The battle for ${esc(pend)} hasn't been fought yet.</span><button class="btn small wood" data-act="dsresolve">Resolve now</button></div>` : ""}
+    ${others.map(([uid, p]) => `<div class="spread"><span>${esc(lordLabel(p) || "A lord")}${p.pending ? " · not registered yet" : ""}</span><button class="btn small ${LIVE.kick === uid ? "wax" : ""}" data-act="dskick" data-v="${uid}">${LIVE.kick === uid ? "Tap again to remove" : "Remove"}</button></div>`).join("") || `<p class="muted">Nobody else has joined yet.</p>`}
+    ${fresh.length && seated.length && !lobbyOpen(LIVE.config) ? `<div class="sec tight"><h3>Lost phone?</h3><p class="muted">If a lord had to sign in with a different account, ask them to open the invite link and sign up, then give that new account their old castle here. Their army, gold, points and orders move with it.</p>
+      <label class="inline">Castle of<select id="dsfrom">${seated.map(([uid, p]) => `<option value="${uid}">${esc(lordLabel(p) || "A lord")}</option>`).join("")}</select></label>
+      <label class="inline">goes to<select id="dsto">${fresh.map(([uid, p]) => `<option value="${uid}">${esc(lordLabel(p) || "New account")} (joined ${new Date(p.joinedAt).toLocaleDateString()})</option>`).join("")}</select></label>
+      <div class="row"><button class="btn small ${LIVE.moveSeat ? "wax" : ""}" data-act="dsreassign">${LIVE.moveSeat ? "Tap again to move the castle" : "Move the castle"}</button></div></div>` : ""}
     <p class="muted">Removing a lord blocks that account from this game. In the middle of a war it also takes their castle off the map from the next battle, so the map is redrawn.</p>
     <div class="row"><button class="btn small" data-act="dsnewinvite">Make a new invite link</button></div><p class="muted">A new link stops the old one working. Lords already in the game are not affected.</p></div>`;
 }

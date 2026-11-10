@@ -22,6 +22,7 @@
 
   const LS = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} } };
   const SDK = ["app", "auth", "firestore"].map(n => `js/vendor/firebase/firebase-${n}-compat.js`);
+  const FUNCTIONS_REGION = "australia-southeast1"; // must match REGION in functions/region.js
   const DEMO = { apiKey: "demo-key", authDomain: "demo-dailysiege.firebaseapp.com", projectId: "demo-dailysiege", appId: "demo" };
   const SERVER_KEYS = ["planDay", "nextPlanDay", "nextLockAt", "lockAfter", "clockWar", "resolvedAt"]; // only the server writes these
   const HIDDEN_KEYS = ["nextLockAt", "lockAfter", "resolvedAt"];                                       // timestamps the game has no use for
@@ -305,7 +306,32 @@
     dssignout: () => { DS.signOut(); },
     dskick: uid => { if (LIVE.kick !== uid) { LIVE.kick = uid; } else { LIVE.kick = null; DS.removeLord(uid); } if (typeof renderLobby === "function") renderLobby(); },
     dsnewinvite: () => { DS.newInvite(); },
+    dsresolve: () => { DS.resolveNow(); },
+    dsreassign: () => { const from = (document.getElementById("dsfrom") || {}).value, to = (document.getElementById("dsto") || {}).value; if (!from || !to) return; if (!LIVE.moveSeat) { LIVE.moveSeat = true; return; } LIVE.moveSeat = false; DS.reassignSeat(from, to); },
   });
+
+  // ---------- asking the server ----------
+  let fns = null;
+  async function callServer(name, data) {
+    if (!fns) { await loadScript("js/vendor/firebase/firebase-functions-compat.js"); fns = fb.app().functions(FUNCTIONS_REGION); if (DS.emulator) fns.useEmulator(location.hostname, 5001); }
+    return (await fns.httpsCallable(name)(data)).data;
+  }
+  DS.resolveNow = async () => { // the host's recovery button: fight any battle that is due, now
+    if (!DS.isHost() || DS.busy) return; DS.busy = "resolve"; say("Fighting the battle…");
+    try { const r = await callServer("resolveNow", { gameId: G.id }); say(r.days && r.days.length ? "Done. Results are in." : "Nothing is due yet."); }
+    catch (e) { say("Couldn't resolve: " + ((e && e.message) || "error")); }
+    DS.busy = null; redraw();
+  };
+  DS.reassignSeat = async (fromUid, toUid) => {
+    if (!DS.isHost()) return;
+    try { await callServer("reassignSeat", { gameId: G.id, fromUid, toUid }); say("The castle has a new owner."); } catch (e) { say("Couldn't move the castle: " + ((e && e.message) || "error")); }
+  };
+  // a device that replays a battle differently from the official result tells the host, so it can be looked into
+  DS.mismatches = [];
+  DS.reportMismatch = (day, got, want) => {
+    DS.mismatches.push({ day, got, want });
+    try { gameRef().collection("reports").doc(day + "_" + DS.user.uid).set({ uid: DS.user.uid, day, got, want, device: navigator.userAgent.slice(0, 300), at: Date.now() }).catch(() => {}); } catch (e) {}
+  };
 
   DS.leaveGame = async () => { stopGame(); try { await fs.collection("users").doc(DS.user.uid).set({ gameId: fb.firestore.FieldValue.delete() }, { merge: true }); } catch (e) {} onAuthChange(); };
 })();

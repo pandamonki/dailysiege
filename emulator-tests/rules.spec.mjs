@@ -97,6 +97,15 @@ test("members read battle results; nobody but the server writes them", async () 
   await assertFails(getDoc(doc(db(OUT), "games", G, "battles", "2026-11-11")));
 });
 
+test("a member can report a replay mismatch under their own name; only the host reads reports", async () => {
+  const r = { uid: A, day: "2026-11-11", got: "aaaa", want: "bbbb", device: "test", at: 1 };
+  await assertSucceeds(setDoc(doc(db(A), "games", G, "reports", "2026-11-11_" + A), r));
+  await assertFails(setDoc(doc(db(B), "games", G, "reports", "2026-11-11_" + A), r));          // not as someone else
+  await assertFails(setDoc(doc(db(OUT), "games", G, "reports", "2026-11-11_" + OUT), { ...r, uid: OUT })); // not from outside
+  await assertFails(getDoc(doc(db(B), "games", G, "reports", "2026-11-11_" + A)));
+  await assertSucceeds(getDoc(doc(db(HOST), "games", G, "reports", "2026-11-11_" + A)));
+});
+
 // ---------- public profiles ----------
 test("members see every public profile; outsiders and signed-out visitors see none", async () => {
   await assertSucceeds(getDocs(collection(db(A), "games", G, "players")));

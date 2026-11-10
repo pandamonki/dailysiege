@@ -42,3 +42,10 @@ test("a new war starts its own clock", () => {
   const c = clockFor({ tz: "UTC", lockHour: 9, lobby: true, lobbyEnds: at("2026-11-10T00:00:00Z"), war: 2 }, { planDay: "2026-11-04", clockWar: 1 });
   assert.equal(c.planDay, "2026-11-10"); assert.equal(c.clockWar, 2);
 });
+
+test("the game asks for server functions in the region they are deployed to", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { REGION } = createRequire(import.meta.url)("../functions/region.js");
+  const client = readFileSync(new URL("../js/net/backend-firebase.js", import.meta.url), "utf8").match(/FUNCTIONS_REGION = "([^"]+)"/)[1];
+  assert.equal(client, REGION);
+});

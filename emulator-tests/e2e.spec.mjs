@@ -11,8 +11,8 @@ let browser; const P = {}; // pages by name
 const WAIT = { timeout: 30000 };
 
 // Sign in the way a player does: ask for an emailed link, then open it. (The emulator hands the link over directly.)
-async function signIn(email, startUrl = BASE + "?emulator=1") {
-  const ctx = await browser.newContext(), p = await ctx.newPage();
+async function signIn(email, startUrl = BASE + "?emulator=1", ctxOptions = {}) {
+  const ctx = await browser.newContext(ctxOptions), p = await ctx.newPage();
   p.errors = []; p.on("pageerror", e => p.errors.push(String(e)));
   await p.goto(startUrl);
   await p.waitForFunction(() => window.DS && DS.available === true, null, WAIT);
@@ -38,9 +38,13 @@ before(async () => { browser = await pw.chromium.launch(); });
 after(async () => { await browser.close(); });
 
 let gameId, invite, planDay; const U = {};
+// The host's phone is in a time zone where it is mid-morning right now, whatever the real time is. The game runs on
+// the host's zone, so the test can let a lock pass "for real" by moving the battle time to earlier this morning.
+const off = ((10 - new Date().getUTCHours() + 36) % 24) - 12, HOST_TZ = off === 0 ? "UTC" : `Etc/GMT${off > 0 ? "-" : "+"}${Math.abs(off)}`;
+const replays = p => p.evaluate(() => Object.keys(LIVE.battles).sort().map(day => { const sv = savedBattle(day), res = runBattle(sv.plans, daySeed(day), { N: sv.N, finalDay: sv.final, ultV2: sv.ultV2 }); return battleHash(res) === LIVE.battles[day].resultHash; }));
 
 test("the first person to sign in owns the site and can open a war", async () => {
-  P.host = await signIn("host@example.com");
+  P.host = await signIn("host@example.com", undefined, { timezoneId: HOST_TZ });
   assert.equal(await P.host.evaluate(() => LIVE.isOwner), true);
   assert.equal(await P.host.evaluate(() => LIVE.config), null);
   await P.host.evaluate(() => createGame(20, 0));
@@ -138,13 +142,62 @@ test("a lord can unseal and change orders before the lock", async () => {
   assert.equal(await P.alice.evaluate(day => LIVE.players[LIVE.uid].plans[day].sealed, planDay), false);
 });
 
-test("the host can remove a lord, who loses access and cannot rejoin", async () => {
-  await P.host.evaluate(u => DS.removeLord(u), U.bob);
-  await P.host.waitForFunction(() => rosterFor(liveClock().week).length === 2, null, WAIT);
+test("when the lock passes, orders freeze and everyone is told the battle is being fought", async () => {
+  await P.alice.evaluate(async () => { S.locked = true; queueSave(true); await MY_WRITES; });
+  await P.host.waitForFunction(day => Object.values(LIVE.players).filter(pl => pl.sealedFor === day).length === 3, planDay, WAIT);
+  // the host moves the battle time to earlier this morning (in the game's zone), so today's lock is now behind us
+  await P.host.evaluate(() => saveConfig({ lockHour: tzNow(LIVE.config.tz).h }));
+  for (const p of [P.host, P.alice, P.bob]) await p.waitForFunction(day => liveClock().planDay > day && battlePending() === day, planDay, WAIT);
+  assert.match(await P.bob.evaluate(() => { render(); return document.getElementById("hint").textContent; }), /battle is being fought/);
+  assert.equal(await write(P.alice, `games/${gameId}/players/${U.alice}/orders/${planDay}`, { sealed: true, targets: [], war: 1 }), "permission-denied", "day 1's orders can no longer be changed");
+  assert.equal(await P.alice.evaluate(async g => { try { await firebase.app().functions("australia-southeast1").httpsCallable("resolveNow")({ gameId: g }); return "ok"; } catch (e) { return e.code; } }, gameId), "functions/permission-denied", "only the host has the Resolve now button");
+});
+
+test("the server fights the battle; every device gets the same result and replays it identically", async () => {
+  await P.host.evaluate(() => DS.resolveNow());
+  for (const p of [P.host, P.alice, P.bob]) await p.waitForFunction(day => LIVE.battles[day] && !battlePending() && S.day === liveClock().planDay, planDay, WAIT);
+  const docs = []; for (const p of [P.host, P.alice, P.bob]) { docs.push(await p.evaluate(day => JSON.stringify(LIVE.battles[day]), planDay)); assert.deepEqual(await replays(p), [true]); }
+  assert.equal(docs[0], docs[1]); assert.equal(docs[1], docs[2]);
+  const b = JSON.parse(docs[0]);
+  assert.equal(b.day, 1); assert.equal(b.results.length, 3); assert.match(b.resultHash, /^[0-9a-f]{16}$/);
+  // yesterday's orders are now known to rivals (and only now): bob can see that alice marched on the host
+  assert.equal(await P.bob.evaluate(([a, day]) => LIVE.players[a].plans[day].targets[0], [U.alice, planDay]), U.host);
+  assert.ok(await P.bob.evaluate(a => !!RIVALS.find(r => r.id === a).seen, U.alice), "bob's map shows alice's army from yesterday");
+  // day 2 planning has opened with the day's pay, and today's orders are secret again
+  assert.equal(await P.alice.evaluate(() => S.locked), false);
+  assert.ok(await P.alice.evaluate(() => S.gold) > 300, "income was paid");
+  assert.equal(await P.alice.evaluate(() => liveClock().dayNo), 2);
+  assert.equal(await read(P.bob, `games/${gameId}/players/${U.alice}/orders/${planDay}`), "permission-denied", "even fought orders are only shared through the battle record");
+  assert.equal(await P.host.evaluate(() => (DS.mismatches || []).length), 0);
+});
+
+test("a lord with a new account gets their castle back from the host", async () => {
+  const code = invite.split("/").pop();
+  P.carol = await signIn("bobs-new-phone@example.com", `${BASE}?join=${code}&emulator=1`);
+  await P.carol.waitForFunction(() => LIVE.config && !lobbyOpen(LIVE.config), null, WAIT);
+  await P.carol.evaluate(() => joinGame()); // "Sign up for next week": not in this war
+  U.carol = await uidOf(P.carol);
+  assert.equal(await P.carol.evaluate(() => isLive()), false);
+  const bobGold = await P.bob.evaluate(() => S.gold);
+  await P.host.waitForFunction(u => LIVE.players[u], U.carol, WAIT);
+  await P.host.evaluate(([from, to]) => DS.reassignSeat(from, to), [U.bob, U.carol]);
+  await P.carol.waitForFunction(() => isLive() && S && S.week && rosterFor(liveClock().week).some(r => r.uid === LIVE.uid), null, WAIT);
+  assert.equal(await P.carol.evaluate(() => S.gold), bobGold, "the army and gold came across");
+  assert.equal(await P.carol.evaluate(() => MY_NAME), "The Fox (Bob)");
+  assert.deepEqual(await P.carol.evaluate(day => LIVE.battles[day].results.map(r => r.pid).sort(), planDay), [U.host, U.alice, U.carol].sort(), "the war's history now names the new account");
+  assert.deepEqual(await replays(P.carol), [true], "and still replays to the same result");
   await P.bob.waitForFunction(() => !LIVE.config, null, WAIT);
-  assert.equal(await list(P.bob, `games/${gameId}/players`), "permission-denied");
-  assert.equal(await read(P.bob, `games/${gameId}/players/${U.bob}/private/state`), "permission-denied");
-  assert.equal(await write(P.bob, `games/${gameId}/members/${U.bob}`, { invite: invite.split("/").pop(), at: 2 }), "permission-denied");
+  assert.equal(await read(P.bob, `games/${gameId}/players/${U.bob}/private/state`), "permission-denied", "the old account is out");
+  await P.host.waitForFunction(() => rosterFor(liveClock().week).length === 3, null, WAIT);
+});
+
+test("the host can remove a lord, who loses access and cannot rejoin", async () => {
+  await P.host.evaluate(u => DS.removeLord(u), U.carol);
+  await P.host.waitForFunction(() => rosterFor(liveClock().week).length === 2, null, WAIT);
+  await P.carol.waitForFunction(() => !LIVE.config, null, WAIT);
+  assert.equal(await list(P.carol, `games/${gameId}/players`), "permission-denied");
+  assert.equal(await read(P.carol, `games/${gameId}/players/${U.carol}/private/state`), "permission-denied");
+  assert.equal(await write(P.carol, `games/${gameId}/members/${U.carol}`, { invite: invite.split("/").pop(), at: 2 }), "permission-denied");
 });
 
 test("the host can replace the invite link; the old one stops working", async () => {

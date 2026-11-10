@@ -14,6 +14,13 @@ function savedBattle(dayKey) {
   if (s.feuds) plans.feuds = s.feuds.slice(); if (b.mercs) plans.mercs = b.mercs;
   return { N: s.N, final: !!s.final, ultV2: !!s.ultV2, transfers: b.transfers || [], plans };
 }
+// On the hosted game: the earliest day of this war whose lock has passed but whose result has not arrived yet (or null).
+function battlePending() {
+  if (!isLive() || !LIVE.db || !LIVE.db.serverBattles) return null;
+  const ck = liveClock(); if (rosterFor(ck.week).length < 2) return null;
+  for (let d = ck.week; d < ck.planDay; d = addDays(d, 1)) if (!LIVE.battles[d]) return d;
+  return null;
+}
 async function resolveBattles() {
   if (!isLive() || LIVE.readOnly) return;
   if (LIVE.db && LIVE.db.serverBattles) return; // on the hosted game the server fights the battles: this device cannot see rivals' orders

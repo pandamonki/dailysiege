@@ -51,6 +51,7 @@ function renderHint() {
   renderCamp();
   const h = document.getElementById("hint");
   if (isLive() && LIVE.readOnly) h.innerHTML = "You're watching this game. Ask the host to add you as an Editor to play.";
+  else if (battlePending()) h.innerHTML = `Last night's battle is being fought… results arrive within a few minutes.${window.DS && DS.isHost() ? ` <button data-act="dsresolve">Resolve now</button>` : ""}`;
   else if (S.locked) h.innerHTML = isLive() ? `Orders sealed. The battle is fought at ${lockLabel(LIVE.config)}.` : "Orders sealed. The battle plays out at dusk.";
   else if (sel) h.innerHTML = `Place <b>${esc(pieceName(sel))}</b> on a glowing tile <button data-act="cancel">Cancel</button>`;
   else h.innerHTML = "";

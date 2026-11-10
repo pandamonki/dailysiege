@@ -158,6 +158,14 @@ service cloud.firestore {
         }
       }
 
+      // A device reporting that it replayed a battle differently from the official result. The host reads these.
+      match /reports/{id} {
+        allow create: if isMember(g) && request.resource.data.uid == me() && id == request.resource.data.day + '_' + me()
+          && request.resource.data.keys().hasOnly(['uid', 'day', 'got', 'want', 'device', 'at']);
+        allow read: if isHost(g);
+        allow update, delete: if false;
+      }
+
       // Results, written only by the server.
       match /battles/{day} {
         allow read: if isMember(g);
