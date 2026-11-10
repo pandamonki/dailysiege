@@ -24,9 +24,9 @@
   const SDK = ["app", "auth", "firestore"].map(n => `js/vendor/firebase/firebase-${n}-compat.js`);
   const FUNCTIONS_REGION = "australia-southeast1"; // must match REGION in functions/region.js
   const DEMO = { apiKey: "demo-key", authDomain: "demo-dailysiege.firebaseapp.com", projectId: "demo-dailysiege", appId: "demo" };
-  const SERVER_KEYS = ["planDay", "nextPlanDay", "nextLockAt", "lockAfter", "clockWar", "resolvedAt"]; // only the server writes these
+  const SERVER_KEYS = ["planDay", "nextPlanDay", "nextLockAt", "lockAfter", "clockWar", "startDate", "resolvedAt"]; // only the server writes these
   const HIDDEN_KEYS = ["nextLockAt", "lockAfter", "resolvedAt"];                                       // timestamps the game has no use for
-  const CONFIG_KEYS = ["tz", "lockHour", "lobby", "lobbyEnds", "createdAt", "startDate", "maxPlayers", "capFrom", "capPrev"]; // what the host's settings screen may change
+  const CONFIG_KEYS = ["tz", "lockHour", "lobby", "lobbyEnds", "createdAt", "maxPlayers", "capFrom", "capPrev"]; // what the host's settings screen may change
   const copy = v => (v === undefined ? undefined : JSON.parse(JSON.stringify(v)));
   const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
   const randomId = n => { const abc = "abcdefghjkmnpqrstuvwxyz23456789", a = new Uint32Array(n); crypto.getRandomValues(a); return Array.from(a, x => abc[x % abc.length]).join(""); };
@@ -247,7 +247,7 @@
   }
   async function restartWar(next, patch) { // a new war in the same game: same invite link, same lords, a fresh start
     const g = G, b = fs.batch();
-    b.update(gameRef(), Object.assign(patch, { war: curWar() + 1, lobby: true, lobbyEnds: fb.firestore.FieldValue.delete(), startDate: fb.firestore.FieldValue.delete() }));
+    b.update(gameRef(), Object.assign(patch, { war: curWar() + 1, lobby: true, lobbyEnds: fb.firestore.FieldValue.delete() }));
     Object.entries(g.pubs).forEach(([id, p]) => { if (!p.left && id !== DS.user.uid) b.update(gameRef().collection("players").doc(id), { fromWeek: "0000-00-00" }); });
     await b.commit();
   }

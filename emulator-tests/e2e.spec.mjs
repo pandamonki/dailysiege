@@ -41,7 +41,7 @@ let gameId, invite, planDay; const U = {};
 // The host's phone is in a time zone where it is mid-morning right now, whatever the real time is. The game runs on
 // the host's zone, so the test can let a lock pass "for real" by moving the battle time to earlier this morning.
 const off = ((10 - new Date().getUTCHours() + 36) % 24) - 12, HOST_TZ = off === 0 ? "UTC" : `Etc/GMT${off > 0 ? "-" : "+"}${Math.abs(off)}`;
-const replays = p => p.evaluate(() => Object.keys(LIVE.battles).sort().map(day => { const sv = savedBattle(day), res = runBattle(sv.plans, daySeed(day), { N: sv.N, finalDay: sv.final, ultV2: sv.ultV2 }); return battleHash(res) === LIVE.battles[day].resultHash; }));
+const replays = p => p.evaluate(() => Object.keys(LIVE.battles).sort().map(day => { const sv = savedBattle(day), res = runBattle(sv.plans, daySeed(day), { N: sv.N, finalDay: sv.final, ultV2: sv.ultV2, ranks: sv.ranks }); return battleHash(res) === LIVE.battles[day].resultHash; }));
 
 test("the first person to sign in owns the site and can open a war", async () => {
   P.host = await signIn("host@example.com", undefined, { timezoneId: HOST_TZ });
@@ -150,7 +150,8 @@ test("when the lock passes, orders freeze and everyone is told the battle is bei
   for (const p of [P.host, P.alice, P.bob]) await p.waitForFunction(day => liveClock().planDay > day && battlePending() === day, planDay, WAIT);
   assert.match(await P.bob.evaluate(() => { render(); return document.getElementById("hint").textContent; }), /battle is being fought/);
   assert.equal(await write(P.alice, `games/${gameId}/players/${U.alice}/orders/${planDay}`, { sealed: true, targets: [], war: 1 }), "permission-denied", "day 1's orders can no longer be changed");
-  assert.equal(await P.alice.evaluate(async g => { try { await firebase.app().functions("australia-southeast1").httpsCallable("resolveNow")({ gameId: g }); return "ok"; } catch (e) { return e.code; } }, gameId), "functions/permission-denied", "only the host has the Resolve now button");
+  await P.alice.addScriptTag({ url: BASE + "js/vendor/firebase/firebase-functions-compat.js" });
+  assert.equal(await P.alice.evaluate(async g => { const f = firebase.app().functions("australia-southeast1"); f.useEmulator("127.0.0.1", 5001); try { await f.httpsCallable("resolveNow")({ gameId: g }); return "ok"; } catch (e) { return e.code; } }, gameId), "functions/permission-denied", "only the host can ask for a battle to be fought");
 });
 
 test("the server fights the battle; every device gets the same result and replays it identically", async () => {
@@ -181,6 +182,7 @@ test("a lord with a new account gets their castle back from the host", async () 
   const bobGold = await P.bob.evaluate(() => S.gold);
   await P.host.waitForFunction(u => LIVE.players[u], U.carol, WAIT);
   await P.host.evaluate(([from, to]) => DS.reassignSeat(from, to), [U.bob, U.carol]);
+  assert.equal(await P.host.evaluate(() => document.getElementById("toast").textContent), "The castle has a new owner.");
   await P.carol.waitForFunction(() => isLive() && S && S.week && rosterFor(liveClock().week).some(r => r.uid === LIVE.uid), null, WAIT);
   assert.equal(await P.carol.evaluate(() => S.gold), bobGold, "the army and gold came across");
   assert.equal(await P.carol.evaluate(() => MY_NAME), "The Fox (Bob)");

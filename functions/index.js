@@ -18,19 +18,20 @@ initializeApp();
 // maxInstances keeps a runaway bug from scaling up costs; this game needs one instance at a time.
 setGlobalOptions({ region: REGION, maxInstances: 2, memory: "512MiB", timeoutSeconds: 120 });
 
-const CLOCK_KEYS = ["planDay", "nextPlanDay", "nextLockAt", "lockAfter", "clockWar"];
+const CLOCK_KEYS = ["planDay", "nextPlanDay", "nextLockAt", "lockAfter", "clockWar", "startDate"];
 
 // Keeps a game's clock fields right whenever its settings change (war begins, battle time moved,
 // new war started). Players cannot write these fields; the security rules use them to freeze orders.
 exports.keepGameClock = onDocumentWritten({ document: "games/{gameId}", region: TRIGGER_REGION, memory: "256MiB", timeoutSeconds: 60 }, async event => {
   const after = event.data && event.data.after && event.data.after.exists ? event.data.after.data() : null;
   if (!after) return;
-  const want = clockFor(after, { planDay: after.planDay, clockWar: after.clockWar });
+  const before = event.data.before && event.data.before.exists ? event.data.before.data() : null;
+  const want = clockFor(after, { planDay: after.planDay, clockWar: after.clockWar }, { before });
   const patch = {};
   if (!want) { for (const k of CLOCK_KEYS) if (after[k] !== undefined) patch[k] = FieldValue.delete(); }
   else {
     const ms = v => (v && typeof v.toMillis === "function" ? v.toMillis() : v);
-    for (const k of CLOCK_KEYS) { const v = want[k]; if (ms(after[k]) !== v) patch[k] = k === "nextLockAt" || k === "lockAfter" ? Timestamp.fromMillis(v) : v; }
+    for (const k of CLOCK_KEYS) { const v = want[k]; if (v === undefined) { if (k === "startDate" && after[k] !== undefined) patch[k] = FieldValue.delete(); continue; } if (ms(after[k]) !== v) patch[k] = k === "nextLockAt" || k === "lockAfter" ? Timestamp.fromMillis(v) : v; }
   }
   if (Object.keys(patch).length) await getFirestore().doc(event.data.after.ref.path).update(patch); // the follow-up run finds nothing to change
 });

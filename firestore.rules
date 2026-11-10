@@ -30,7 +30,7 @@ service cloud.firestore {
     function unchanged(keys) { return !request.resource.data.diff(resource.data).affectedKeys().hasAny(keys); }
     function onlyChanges(keys) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys); }
     // fields only the server may set: the day being planned and the instants orders lock
-    function serverFields() { return ['planDay', 'nextLockAt', 'nextPlanDay', 'lockAfter', 'clockWar', 'resolvedAt']; }
+    function serverFields() { return ['planDay', 'nextLockAt', 'nextPlanDay', 'lockAfter', 'clockWar', 'startDate', 'resolvedAt']; }
 
     // ---- site ----
     // The first person to sign in after the site is deployed claims it. Only people on its hosts list may create games.

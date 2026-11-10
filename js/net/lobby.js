@@ -114,7 +114,7 @@ async function watchLiveBattle(dayKey, how) {
     : liveBattlePlans(dayKey);
   if (saved && saved.feuds) plans.feuds = saved.feuds.slice();
   if (saved && LIVE.battles[dayKey].mercs) plans.mercs = LIVE.battles[dayKey].mercs;
-  const res = runBattle(plans, daySeed(dayKey), { N: size, finalDay: final, ultV2: saved ? !!saved.ultV2 : ultV2For(dayKey), ranks: rankMap(before, plans.map(p => p.pid)) });
+  const res = runBattle(plans, daySeed(dayKey), { N: size, finalDay: final, ultV2: saved ? !!saved.ultV2 : ultV2For(dayKey), ranks: (saved && saved.ranks) || rankMap(before, plans.map(p => p.pid)) });
   { // the saved result is the official one; this device's replay must match it exactly, or what is shown would not be what was scored
     const want = saved && LIVE.battles[dayKey].resultHash, got = want && battleHash(res);
     if (want && got !== want) { console.warn("Daily Siege: this device replayed", dayKey, "differently", got, want); toast("This device replayed the battle differently from the official result. Scores shown are the official ones. Please tell the host."); if (window.DS && DS.reportMismatch) DS.reportMismatch(dayKey, got, want); } }

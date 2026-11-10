@@ -115,13 +115,15 @@ test("the game's rules held across the war", () => {
   assert.ok(days.some(d => battles[d].pairs.length > 0), "some alliance formed");
   assert.ok(days.slice(3).some(d => Object.keys(battles[d].mercs).length > 0), "some mercenaries were hired from day 4");
   assert.equal(battles[days[6]].pairs.length, 0);
+  // from day 2 the standings going in are recorded, so the bounty on the top three is the same in the official fight and in replays
+  assert.deepEqual(battles[days[0]].inputs.ranks, {}); assert.equal(Object.keys(battles[days[3]].inputs.ranks).length, SEATS);
   assert.ok(days.slice(0, 3).every(d => Object.keys(battles[d].mercs).length === 0));
 });
 
 test("replaying each battle from its saved orders gives the server's result (Node)", () => {
   for (const day of days) {
     const b = battles[day], plans = JSON.parse(JSON.stringify(b.inputs.plans)); plans.feuds = b.inputs.feuds; plans.mercs = b.mercs;
-    const res = sim.get("runBattle")(plans, sim.get("daySeed")(day), { N: b.inputs.N, finalDay: b.inputs.final, ultV2: b.inputs.ultV2 }); // a full replay run, as a phone does
+    const res = sim.get("runBattle")(plans, sim.get("daySeed")(day), { N: b.inputs.N, finalDay: b.inputs.final, ultV2: b.inputs.ultV2, ranks: b.inputs.ranks }); // a full replay run, as a phone does
     assert.equal(sim.get("battleHash")(res), b.resultHash, day);
   }
 });
@@ -134,7 +136,7 @@ test("a browser signed in as one of the lords replays all seven battles to the s
   const token = await getAuth(app).createCustomToken(uids[1]);
   await p.evaluate(t => firebase.auth().signInWithCustomToken(t), token);
   await p.waitForFunction(() => LIVE.uid && LIVE.playersLoaded && Object.keys(LIVE.battles).length === 7, null, { timeout: 30000 });
-  const got = await p.evaluate(() => Object.keys(LIVE.battles).sort().map(day => { const sv = savedBattle(day), res = runBattle(sv.plans, daySeed(day), { N: sv.N, finalDay: sv.final, ultV2: sv.ultV2 });
+  const got = await p.evaluate(() => Object.keys(LIVE.battles).sort().map(day => { const sv = savedBattle(day), res = runBattle(sv.plans, daySeed(day), { N: sv.N, finalDay: sv.final, ultV2: sv.ultV2, ranks: sv.ranks });
     return { day, same: battleHash(res) === LIVE.battles[day].resultHash, winner: res.results[0].pid === LIVE.battles[day].results[0].pid }; }));
   assert.deepEqual(got, days.map(day => ({ day, same: true, winner: true })));
   // and what this lord's device knows of a rival is exactly what was fought, never today's orders

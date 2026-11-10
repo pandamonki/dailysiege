@@ -184,6 +184,7 @@ test("nobody, not even the host, can move the lock or the day being planned", as
   await assertFails(updateDoc(doc(db(HOST), "games", G), { nextLockAt: Timestamp.fromMillis(now() + 99 * hour) }));
   await assertFails(updateDoc(doc(db(HOST), "games", G), { planDay: "2026-11-11" }));
   await assertFails(updateDoc(doc(db(HOST), "games", G), { nextPlanDay: "2026-11-12" }));
+  await assertFails(updateDoc(doc(db(HOST), "games", G), { startDate: "2026-11-01" }));
 });
 test("the host cannot hand the game to someone else or skip war numbers", async () => {
   await assertFails(updateDoc(doc(db(HOST), "games", G), { host: A }));

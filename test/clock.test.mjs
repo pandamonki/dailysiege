@@ -38,8 +38,26 @@ test("the day being planned never moves backwards within a war; a settings chang
   assert.equal(later.planDay, "2026-11-04"); assert.equal(iso(later.nextLockAt), "2026-11-04T21:00:00.000Z");
 });
 
+test("once registration has closed the war's first day is fixed, even if the battle time is moved earlier", () => {
+  const closed = at("2026-11-12T10:30:00Z"), cfg = { tz: "UTC", lockHour: 20, lobby: true, lobbyEnds: closed, war: 1 };
+  const first = clockFor(cfg, null, { now: closed + 1000 });
+  assert.equal(first.startDate, "2026-11-12"); assert.equal(first.planDay, "2026-11-12");
+  // the host moves the battle to 10am: already past today. Day 1 is still the 12th, and its lock is now behind us.
+  const moved = { ...cfg, lockHour: 10, startDate: first.startDate };
+  const c = clockFor(moved, { planDay: first.planDay, clockWar: 1 }, { now: closed + 60000, before: { ...cfg, startDate: first.startDate } });
+  assert.equal(c.startDate, "2026-11-12"); assert.equal(c.planDay, "2026-11-12"); assert.equal(iso(c.nextLockAt), "2026-11-12T10:00:00.000Z");
+  // even if the first day had not been written down yet, it is worked out from the settings registration closed under
+  const late = clockFor({ ...cfg, lockHour: 10 }, { planDay: "2026-11-12", clockWar: 1 }, { now: closed + 60000, before: cfg });
+  assert.equal(late.startDate, "2026-11-12");
+});
+
+test("while registration is still open with a closing time, the first day is not fixed yet", () => {
+  const c = clockFor({ tz: "UTC", lockHour: 20, lobby: true, lobbyEnds: at("2026-11-12T10:00:00Z"), war: 1 }, null, { now: at("2026-11-11T10:00:00Z") });
+  assert.equal(c.planDay, "2026-11-12"); assert.equal(c.startDate, undefined);
+});
+
 test("a new war starts its own clock", () => {
-  const c = clockFor({ tz: "UTC", lockHour: 9, lobby: true, lobbyEnds: at("2026-11-10T00:00:00Z"), war: 2 }, { planDay: "2026-11-04", clockWar: 1 });
+  const c = clockFor({ tz: "UTC", lockHour: 9, lobby: true, lobbyEnds: at("2026-11-10T00:00:00Z"), war: 2, startDate: "2026-11-01" }, { planDay: "2026-11-04", clockWar: 1 });
   assert.equal(c.planDay, "2026-11-10"); assert.equal(c.clockWar, 2);
 });
 
