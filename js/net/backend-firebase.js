@@ -154,7 +154,7 @@
     await measureClock();
     const found = await findGame(); if (my !== epoch) return;
     const gid = found && found.gid; g.seat = found ? found.seat : DS.user.uid; DS.seat = g.seat;
-    if (!gid) { try { LIVE.isOwner = await mayHost(); } catch (e) {} if (my !== epoch) return; g.game = null; g.pubs = {}; g.state = null; g.orders = {}; g.battles = {}; emit(g, true); return; }
+    if (!gid) { try { g.owner = await mayHost(); LIVE.isOwner = g.owner; } catch (e) {} if (my !== epoch) return; g.game = null; g.pubs = {}; g.state = null; g.orders = {}; g.battles = {}; emit(g, true); return; }
     attach(g, gid);
   }
   function attach(g, gid) {
@@ -274,7 +274,7 @@
     const collection = name => ({ onSnapshot: ok => { const list = name === "players" ? g.plCbs : g.btCbs; list.push(ok); if (g.started) ok(snapCol(name === "players" ? playersView(g) : battlesView(g))); } });
     return { doc, collection, serverBattles: true };
   }
-  const userFacade = { id: async () => { if (!DS.user) return null; if (G && G.ready) await G.ready; return (G && G.seat) || DS.user.uid; }, /* waits until it is known which seat this account plays */ isOwner: async () => false, // set properly once the game has loaded
+  const userFacade = { id: async () => { if (!DS.user) return null; if (G && G.ready) await G.ready; return (G && G.seat) || DS.user.uid; }, /* waits until it is known which seat this account plays */ isOwner: async () => !!(G && DS.user && (G.game ? G.game.host === DS.user.uid : G.owner)), // host of this game, or (with no game yet) allowed to start one
     profiles: async ids => Object.fromEntries(ids.map(id => { const p = (G && G.pubs && G.pubs[id]) || {}; return [id, { name: (typeof lordLabel === "function" && lordLabel(p)) || (DS.user && id === DS.user.uid && DS.user.displayName) || "A lord" }]; })) };
   const downloads = { save: async ({ filename, data }) => { // share sheet on phones, plain download elsewhere
     try { const f = new File([data], filename, { type: data.type }); if (navigator.canShare && navigator.canShare({ files: [f] })) { await navigator.share({ files: [f] }); return; } } catch (e) { if (e && e.name === "AbortError") throw Object.assign(new Error("declined"), { code: "declined" }); }
