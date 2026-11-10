@@ -51,17 +51,18 @@ function hostLabel() { const h = hostUid(); return !h ? "your host" : h === LIVE
 function closesText(cfg) { const left = cfg.lobbyEnds ? Math.max(0, Math.ceil((cfg.lobbyEnds - Date.now()) / 60000)) : null;
   return left === null ? "Registration closes when the host locks in the war." : left > 0 ? `Registration closes in <b>${hrsLabel(left)}</b>` : "Registration is closing…"; }
 function lordCards(withSeats) { // banner and name for every registered lord; rivals' heroes stay hidden until the war begins
-  const reg = lobbyLords(), TC = teamColours(), open = Math.max(0, 8 - reg.length), h = hostUid();
+  const reg = lobbyLords(), TC = teamColours(), open = Math.max(0, seatCap() - reg.length), h = hostUid();
   return `<div class="lcards">${reg.map(([uid, pl], i) => { const isMe = uid === LIVE.uid, st = isMe && S ? S : pl.state || {}, cls = isMe && st.cls && CLASSES[st.cls];
     return `<div class="lcard${isMe ? " me" : ""}"><img class="lban" alt="" src="${bannerURL(st.banner || defaultBanner(), TC[uid] || SEAT_COLORS[i], 40, 54)}"><span><b>${esc(isMe ? (MY_NAME === "You" ? "You" : MY_NAME + " · you") : nameOf(uid))}</b><small>${uid === h ? "Host · " : ""}${cls ? esc(cls.name) : "Hero hidden"}</small></span>${cls ? `<img class="lhero" alt="" src="${spriteURL("c-" + st.cls)}">` : `<span class="hidhero" aria-hidden="true">?</span>`}</div>`; }).join("")}${withSeats ? Array.from({ length: open }, () => `<div class="lcard emptyseat"><span><b>Open seat</b><small>Waiting for a lord</small></span></div>`).join("") : ""}</div>`;
 }
-function lobbyLords() { return Object.entries(LIVE.players).filter(([, p]) => !p.left && !p.pending).sort((a, b) => ((a[1].joinedAt || 0) - (b[1].joinedAt || 0)) || (a[0] < b[0] ? -1 : 1)).slice(0, 8); }
+const seatCap = () => Math.min(MAX_LORDS, (LIVE.config && LIVE.config.maxPlayers) || 8); // seats in this war
+function lobbyLords() { return Object.entries(LIVE.players).filter(([, p]) => !p.left && !p.pending).sort((a, b) => ((a[1].joinedAt || 0) - (b[1].joinedAt || 0)) || (a[0] < b[0] ? -1 : 1)).slice(0, seatCap()); }
 function renderLobby() {
   if (!inLobby()) return; const cfg = LIVE.config; let el = document.getElementById("lobby");
   if (!el) { el = document.createElement("div"); el.id = "lobby"; document.body.appendChild(el); }
   const ae = document.activeElement; if (ae && el.contains(ae) && /SELECT|INPUT/.test(ae.tagName)) return;
   const me = LIVE.players[LIVE.uid], pending = !!me.pending, editing = pending || !!LIVE.lobbyEdit;
-  const reg = lobbyLords(), open = Math.max(0, 8 - reg.length);
+  const reg = lobbyLords(), open = Math.max(0, seatCap() - reg.length);
   const left = cfg.lobbyEnds ? Math.max(0, Math.ceil((cfg.lobbyEnds - Date.now()) / 60000)) : null;
   const closes = left === null ? "Registration closes when the host locks in the war." : left > 0 ? `Registration closes in <b>${hrsLabel(left)}</b>` : "Registration is closing…";
   const TC = teamColours(); MY_COLOR = TC[LIVE.uid] || MY_COLOR;
@@ -73,22 +74,23 @@ function renderLobby() {
     <div class="lbox"><h3><span class="stepn">2</span>Army colour</h3>${armySwatches()}</div>
     <div class="lbox"><h3><span class="stepn">3</span>Coat of arms</h3><div class="lrow"><span class="coat"><img alt="Your coat of arms" src="${bannerURL(S.banner || defaultBanner(), MY_COLOR, 40, 54)}">Pattern, emblem and second colour</span><button class="btn small wood" data-act="lobbyban">Design</button></div></div>
     <div class="lbox"><h3><span class="stepn">4</span>Your hero</h3><div class="lrow"><span class="coat"><img class="lhero" alt="" src="${spriteURL("c-" + S.cls)}"><b>${CLASSES[S.cls].name}</b></span><button class="btn small wood" data-act="lobbyhero">Change hero</button></div></div>
-    <div class="regbar">${pending ? `<button class="btn wax big" data-act="register" ${full ? "disabled" : ""}>⚑ Register<small>${full ? "All eight seats are taken" : "Join the war and enter the Muster Hall"}</small></button>` : `<button class="btn wax big" data-act="register">Save changes</button><button class="btn" data-act="lobbyback">Cancel</button>`}</div>
+    <div class="regbar">${pending ? `<button class="btn wax big" data-act="register" ${full ? "disabled" : ""}>⚑ Register<small>${full ? `All ${seatCap()} seats are taken` : "Join the war and enter the Muster Hall"}</small></button>` : `<button class="btn wax big" data-act="register">Save changes</button><button class="btn" data-act="lobbyback">Cancel</button>`}</div>
     <div class="row"><button class="btn small" data-act="open" data-v="title">← Menu</button></div></div>`;
     return;
   }
   const own = LIVE.isOwner;
   if (own && !cfg.host && LIVE.db) { cfg.host = LIVE.uid; LIVE.db.doc("game/config").update({ host: LIVE.uid }).catch(() => {}); } // older games: record the host
   el.innerHTML = `<div class="lwrap"><h2>The Muster Hall</h2><p class="lsub">${closes} · hosted by ${esc(hostLabel() === "you" ? "you" : hostLabel())}</p>
-    <div class="lbox"><h3>${reg.length} of 8 lords registered · ${open} seat${open === 1 ? "" : "s"} open</h3>${lordCards(true)}
+    <div class="lbox"><h3>${reg.length} of ${seatCap()} lords registered · ${open} seat${open === 1 ? "" : "s"} open</h3>${lordCards(true)}
       <p class="muted">When registration closes the map is built, every castle is placed, and Day 1 planning begins. Battles are fought daily at ${lockLabel(cfg)} (${esc(cfg.tz)}).</p></div>
     <div class="lbox"><h3>You're registered</h3><div class="lrow"><span class="coat"><img alt="" src="${bannerURL(S.banner || defaultBanner(), MY_COLOR, 40, 54)}"><span><b>${esc(myLabel || MY_NAME)}</b><br><small class="muted">${TEAM_COLOR_NAMES[MY_COLOR] || ""} army · ${CLASSES[S.cls].name}</small></span></span><button class="btn small wood" data-act="lobbyedit">Change</button></div></div>
     ${own ? `<div class="lbox"><h3>Host controls</h3>
       <label class="inline">Registration closes<select id="lobbyclose"><option value="">Keep as is</option><option value="0">When I lock it in</option>${[1, 3, 6, 12, 24, 48].map(h => `<option value="${h}">In ${h < 24 ? h + " hour" + (h > 1 ? "s" : "") : h / 24 + " day" + (h > 24 ? "s" : "")}</option>`).join("")}</select></label>
+      ${window.DS ? `<label class="inline">Seats<select id="lobbyseats">${Array.from({ length: MAX_LORDS - 1 }, (_, i) => i + 2).filter(k => k >= Math.max(2, reg.length)).map(k => `<option value="${k}"${k === seatCap() ? " selected" : ""}>${k} lords</option>`).join("")}</select></label>` : ""}
       <label class="inline">Battle time<select id="lobbyhour">${[12, 13, 17, 18, 19, 20, 21, 22].map(h => `<option value="${h}"${h === cfg.lockHour ? " selected" : ""}>${hourLabel(h)}</option>`).join("")}</select></label>
       <div class="row"><button class="btn small" data-act="lobbysave">Save</button><button class="btn ${LIVE.beginConfirm ? "wax" : "wood"}" data-act="lobbybegin" ${reg.length < 2 ? "disabled" : ""}>${LIVE.beginConfirm ? "Tap again: lock in and begin" : "Lock in and begin the war"}</button></div>
       ${reg.length < 2 ? `<p class="muted">You need at least two lords to begin.</p>` : ""}</div>` : ""}
-    ${open ? invitePanel(open) : `<div class="lbox"><h3>Every seat is taken</h3><p class="muted">All eight lords are registered.</p></div>`}${hostTools()}
+    ${open ? invitePanel(open) : `<div class="lbox"><h3>Every seat is taken</h3><p class="muted">All ${seatCap()} lords are registered.</p></div>`}${hostTools()}
     <div class="row"><button class="btn small" data-act="open" data-v="title">← Menu</button></div></div>`;
 }
 async function registerMe() {
@@ -97,7 +99,7 @@ async function registerMe() {
   const nick = cleanName(nEl ? nEl.value : NAME_DRAFT.mynick ?? me.nick, NICK_MAX), real = cleanName(rEl ? rEl.value : NAME_DRAFT.myreal ?? me.real, REAL_MAX);
   if (!nick || !real) { toast(!nick && !real ? "Enter a nickname and your actual name." : !nick ? "Enter a nickname." : "Enter your actual name."); (!nick ? nEl : rEl)?.focus(); return; }
   const wasPending = !!me.pending;
-  if (wasPending && lobbyLords().length >= 8) { toast("Sorry, all eight seats are taken."); renderLobby(); return; }
+  if (wasPending && lobbyLords().length >= seatCap()) { toast(`Sorry, all ${seatCap()} seats are taken.`); renderLobby(); return; }
   const patch = { nick, real, state: S }; if (wasPending) { patch.pending = false; patch.joinedAt = Date.now(); }
   clearTimeout(saveTimer); saveTimer = null; // the patch carries the latest state, so a pending autosave isn't needed
   try { await myWrite(r => r.update(patch)); Object.assign(me, patch); delete NAME_DRAFT.mynick; delete NAME_DRAFT.myreal;
@@ -147,17 +149,17 @@ function gameSheet() {
     ${LIVE.isOwner ? `<p>Gather your friends for a seven-day war. You'll open registration, send the invite link, and your friends choose a hero and a banner. When registration closes the map is built and Day 1 begins. Orders lock and the battle is fought every day at:</p>
       <label class="inline">Battle time<select id="lockhour">${[17, 18, 19, 20, 21, 22].map(h => `<option value="${h}"${h === 20 ? " selected" : ""}>${hourLabel(h)}</option>`).join("")}</select></label>
       <label class="inline">Registration closes<select id="lobbyclose">${[["0", "When I lock it in"], ["1", "In 1 hour"], ["6", "In 6 hours"], ["12", "In 12 hours"], ["24", "In 24 hours"], ["48", "In 2 days"]].map(([v, t]) => `<option value="${v}"${v === "24" ? " selected" : ""}>${t}</option>`).join("")}</select></label>
-      <p class="muted">Up to eight lords can register. Times use your time zone (${esc(Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC")}). You can lock in early or change the closing time later.</p>
+      <p class="muted">Up to ${window.DS ? DEFAULT_LORDS : 8} lords can register${window.DS ? " (you can change the number of seats in the Muster Hall)" : ""}. Times use your time zone (${esc(Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC")}). You can lock in early or change the closing time later.</p>
       <div><button class="btn wax" data-act="startgame">Open registration</button></div>
       <p class="muted">You'll register first, then you can invite friends from the Muster Hall.</p>`
       : window.DS ? `<p>You're signed in, but this account isn't in a game yet.</p><p class="muted">Open the invite link your host sent you on this device and you'll be taken straight to the war.</p>` : `<p>The host hasn't started a game on this page yet.</p>`}
     <div class="row"><button class="btn" data-act="open" data-v="title">← Back</button></div>${accountLine()}</div>`;
-  if (lobbyOpen(LIVE.config)) { const mineL = LIVE.players[LIVE.uid], n = lobbyLords().length, open = Math.max(0, 8 - n), hl = hostLabel();
+  if (lobbyOpen(LIVE.config)) { const mineL = LIVE.players[LIVE.uid], n = lobbyLords().length, open = Math.max(0, seatCap() - n), hl = hostLabel();
     return head(null, "You're summoned to war", hl === "you" ? "You called the banners" : `${esc(hl)} has called the banners`) + `<div class="body">
       <div class="summon"><p>${hl === "you" ? "You are hosting this war." : `<b>${esc(hl)}</b> is hosting this war and has invited you to take a castle.`} Battles are fought daily at ${lockLabel(LIVE.config)} your time for seven days.</p>
-        <p class="when">${closesText(LIVE.config)} · <b>${open}</b> of 8 seats open</p></div>
+        <p class="when">${closesText(LIVE.config)} · <b>${open}</b> of ${seatCap()} seats open</p></div>
       <div class="sec"><h3>${n} lord${n === 1 ? " has" : "s have"} registered</h3>${n ? lordCards(false) : `<p class="muted">Nobody yet. Be the first.</p>`}<p class="muted">Heroes stay hidden until the war begins.</p></div>
-      <div class="row">${mineL ? `<button class="btn wax big" data-act="playgo">${mineL.pending ? "Finish registering" : "Enter the Muster Hall"}</button>` : n >= 8 ? `<span class="muted">All eight seats are taken.</span>` : `<button class="btn wax big" data-act="joingame">⚑ Register<small>A short tour, then choose your hero, name, colour and coat of arms</small></button>`}<button class="btn" data-act="open" data-v="title">← Back</button></div>${accountLine()}</div>`; }
+      <div class="row">${mineL ? `<button class="btn wax big" data-act="playgo">${mineL.pending ? "Finish registering" : "Enter the Muster Hall"}</button>` : n >= seatCap() ? `<span class="muted">All ${seatCap()} seats are taken.</span>` : `<button class="btn wax big" data-act="joingame">⚑ Register<small>A short tour, then choose your hero, name, colour and coat of arms</small></button>`}<button class="btn" data-act="open" data-v="title">← Back</button></div>${accountLine()}</div>`; }
   const ck = liveClock(), roster = rosterFor(ck.week), mine = LIVE.players[LIVE.uid], pts = standings(ck.week), cfg = LIVE.config, cap = capFor(ck.week), capNext = capFor(addDays(ck.week, 7));
   const signed = Object.entries(LIVE.players).filter(([, p]) => !p.left).length, inNow = roster.some(p => p.uid === LIVE.uid), queued = mine && !inNow;
   const nextWeek = addDays(ck.week, 7), waiting = Object.entries(LIVE.players).filter(([uid, p]) => !p.left && !roster.some(r => r.uid === uid)).map(([uid]) => uid);

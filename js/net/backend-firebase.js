@@ -244,7 +244,7 @@
     if (Object.keys(patch).length) await gameRef().update(patch);
   }
   async function createGame(cfg) { // a new game, its invite code, and the host as its first member
-    const uid = DS.user.uid, gid = randomId(20), code = randomId(12), gr = fs.collection("games").doc(gid), b = fs.batch(), doc = { war: 1, inviteCode: code, maxPlayers: 8, host: uid };
+    const uid = DS.user.uid, gid = randomId(20), code = randomId(12), gr = fs.collection("games").doc(gid), b = fs.batch(), doc = { war: 1, inviteCode: code, maxPlayers: DEFAULT_LORDS, host: uid };
     CONFIG_KEYS.forEach(k => { if (cfg[k] !== undefined && cfg[k] !== null) doc[k] = cfg[k]; });
     b.set(gr, doc); b.set(fs.collection("invites").doc(code), { gameId: gid, createdAt: Date.now() }); b.set(gr.collection("members").doc(uid), { invite: code, at: Date.now() });
     b.set(fs.collection("users").doc(uid), { gameId: gid }, { merge: true });

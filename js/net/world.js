@@ -14,7 +14,7 @@ function lordLabel(p) { const n = cleanName(p && p.nick, NICK_MAX), r = cleanNam
 
 // ----- roster, standings, hero levels -----
 const wWeekOf = (W, dayKey) => addDays(dayKey, -(wWeekdayOf(dayKey, W.config) - 1));
-function wCap(W, week) { const c = W.config || {}; return Math.min(8, (c.capFrom && week < c.capFrom ? c.capPrev : c.maxPlayers) || 8); }
+function wCap(W, week) { const c = W.config || {}; return Math.min(MAX_LORDS, (c.capFrom && week < c.capFrom ? c.capPrev : c.maxPlayers) || 8); } // games made before seats were configurable hold 8
 function wRoster(W, week) {
   return Object.entries(W.players).filter(([, p]) => p.fromWeek && p.fromWeek <= week && !p.left && !p.pending)
     .sort((a, b) => (a[1].joinedAt - b[1].joinedAt) || (a[0] < b[0] ? -1 : 1)).slice(0, wCap(W, week)).map(([uid, p]) => ({ uid, ...p }));

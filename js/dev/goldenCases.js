@@ -2,13 +2,13 @@
 // and must be the same on every device. Used by the Node tests and by the phone self-test page.
 // Depends only on the config, core and sim files (no DOM). Not loaded by the game itself.
 
-const GOLDEN_COUNT = 50;
+const GOLDEN_COUNT = 62; // 50 battles of 2 to 8 lords, then 12 battles of 9 to 12 lords
 const GOLDEN_FULL_EVERY = 5; // every 5th case also runs a full (replay) battle and hashes its frames
 
 // One case, built only from its number: who is playing, their armies and orders, and the battle options.
 function goldenCase(i) {
   const rnd = mulberry(1000 + i * 7919), pick = a => a[Math.floor(rnd() * a.length)], chance = p => rnd() < p, int = (lo, hi) => lo + Math.floor(rnd() * (hi - lo + 1));
-  const n = 2 + (i % 7), day = 1 + ((i + Math.floor(i / 7)) % 7), final = day === 7; // 2 to 8 lords, on every day of a war
+  const n = i < 50 ? 2 + (i % 7) : 9 + (i % 4), day = 1 + ((i + Math.floor(i / 7)) % 7), final = day === 7; // 2 to 8 lords (then 9 to 12), on every day of a war
   const L = seatLayout(n), pids = [...Array(n)].map((_, k) => "g" + (k + 1)), clsKeys = Object.keys(CLASSES);
   const itemPool = Object.keys(ITEMS).filter(k => k !== "rapier"), trapKeys = Object.keys(TRAPS);
   const unitPool = UTYPES.filter(k => UNIT_TIER[k] <= (day >= 3 ? 3 : 1));
@@ -30,7 +30,7 @@ function goldenCase(i) {
     const offers = {}, replies = {}, bids = {};
     others.forEach(q => { if (chance(.25)) offers[q] = { gold: 10 * int(0, 30), day: day - 1 }; if (chance(.5)) replies[q] = pick(["accept", "accept", "refuse"]); });
     if (day >= MERC_DAY && chance(.5)) { const id = pick(Object.keys(MERCS)); bids[id] = { gold: MERCS[id].min + 10 * int(0, 8), day }; }
-    return { pid, me: s === 0, name: "Lord " + (s + 1), color: "#" + (0x334455 + s * 0x1a2b3c).toString(16).slice(0, 6), cls, level, xp0: int(0, 60), castle, castleTier: int(1, Math.min(3, 1 + Math.floor(day / 3))), banner: null,
+    return { pid, me: s === 0, name: "Lord " + (s + 1), color: "#" + (0x334455 + (s % 8) * 0x1a2b3c + (s >> 3) * 0x050505).toString(16).slice(0, 6), cls, level, xp0: int(0, 60), castle, castleTier: int(1, Math.min(3, 1 + Math.floor(day / 3))), banner: null,
       ranks: autoRanks(level, int(0, 9999)), picks, triggers: { a1: pick(TRIGGERS), a2: pick(TRIGGERS), a3: pick(TRIGGERS), ult: pick(TRIGGERS) }, ultArm: !chance(.1), blessing: chance(.15) ? pick(["vamp", "ward"]) : null,
       gear: { weapon: gt(), armour: gt(), charm: gt() }, defences: { walls: int(0, 2), tower: int(0, 2) }, items,
       formation: !chance(.2), stance: pick(["aggressive", "skirmish", "cautious", "defensive", "opportunist"]), prio: PRIORITY_OPTS.slice(rot).concat(PRIORITY_OPTS.slice(0, rot)).slice(0, 5),

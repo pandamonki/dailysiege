@@ -3,7 +3,8 @@
 let N = 17, CENTRE = 8, CASTLE = [15, 8], zoneSet = new Set();
 const T = 48;
 // map size and castle ring scale with the number of players
-function mapSizeFor(n) { return n <= 2 ? 11 : n <= 4 ? 13 : n <= 6 ? 15 : 17; }
+// (9 to 12 lords get larger fields, sized so every castle keeps about the same deployment room and distance from its neighbours as with 8)
+function mapSizeFor(n) { return n <= 2 ? 11 : n <= 4 ? 13 : n <= 6 ? 15 : n <= 8 ? 17 : n <= 9 ? 19 : n <= 10 ? 21 : n <= 11 ? 23 : 25; }
 function seatLayout(n) {
   const size = mapSizeFor(n), c = (size - 1) / 2, R = c - 1, castles = [];
   for (let i = 0; i < n; i++) { const a = Math.PI / 2 + 2 * Math.PI * i / n; castles.push([Math.round(c + R * dsin(a)), Math.round(c + R * dcos(a))]); }
