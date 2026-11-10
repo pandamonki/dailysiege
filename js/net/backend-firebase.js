@@ -77,6 +77,7 @@
   function onAuthChange() { // signed in or out after start-up: reconnect the game to the new account
     stopGame();
     try {
+      clearTimeout(saveTimer); saveTimer = null; // drop any autosave still waiting from the game we are leaving
       LIVE.uid = null; LIVE.config = null; LIVE.configLoaded = false; LIVE.players = {}; LIVE.playersLoaded = false; LIVE.battles = {}; LIVE.names = {}; LIVE.stateLoaded = false; LIVE.isOwner = false; LIVE_S = null;
       if (gameMode === "friends") { gameMode = "practice"; enterPractice(); }
       const lob = document.getElementById("lobby"); if (lob) lob.remove();
