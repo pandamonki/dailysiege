@@ -53,10 +53,9 @@ function goldenCase(i) {
   return { name: `#${i}: ${n} lords, day ${day}`, i, seed: 7 + i * 104729, N: L.N, plans, opts: { N: L.N, finalDay: final, ultV2: i % 4 !== 3, ranks } };
 }
 
-// Run one case. The sim reads the map size from the page's layout globals, so set them first, as the game does.
+// Run one case. The battle takes everything it needs from its plans and options, never from the page.
 function runGoldenCase(i, full) {
   const c = goldenCase(i);
-  N = c.N; CENTRE = (N - 1) / 2;
   const res = runBattle(c.plans, c.seed, Object.assign({}, c.opts, { fast: !full }));
   return { name: c.name, res };
 }
@@ -69,3 +68,14 @@ function goldenHashes(i) {
   if (i % GOLDEN_FULL_EVERY === 0) { const full = runGoldenCase(i, true); out.fullOutcome = battleHash(full.res); out.replay = replayHash(full.res); }
   return out;
 }
+
+// A fingerprint of the deterministic maths on its own, so a failing device can tell "the maths differs"
+// apart from "the sim differs". Exact bit patterns are compared, not rounded values.
+function detmathDigest() {
+  const rnd = mulberry(424242), out = [];
+  for (let i = 0; i < 20000; i++) { const a = (rnd() - .5) * (i % 4 ? 14 : 700), b = (rnd() - .5) * 40; out.push(dsin(a), dcos(a), datan2(b, a), dhypot(a, b)); }
+  for (let n = 2; n <= 12; n++) out.push(JSON.stringify(seatLayout(n)));
+  return hashString(out.join(","));
+}
+// One short code for the whole run: two devices that show the same code fought every battle identically.
+const goldenCode = (digest, cases) => hashString(digest + "|" + cases.map(c => [c.outcome, c.fullOutcome || "", c.replay || ""].join(":")).join("|"));

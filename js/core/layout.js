@@ -6,7 +6,7 @@ const T = 48;
 function mapSizeFor(n) { return n <= 2 ? 11 : n <= 4 ? 13 : n <= 6 ? 15 : 17; }
 function seatLayout(n) {
   const size = mapSizeFor(n), c = (size - 1) / 2, R = c - 1, castles = [];
-  for (let i = 0; i < n; i++) { const a = Math.PI / 2 + 2 * Math.PI * i / n; castles.push([Math.round(c + R * Math.sin(a)), Math.round(c + R * Math.cos(a))]); }
+  for (let i = 0; i < n; i++) { const a = Math.PI / 2 + 2 * Math.PI * i / n; castles.push([Math.round(c + R * dsin(a)), Math.round(c + R * dcos(a))]); }
   return { N: size, castles };
 }
 function zoneFor([r, c], size, all) {
@@ -14,11 +14,11 @@ function zoneFor([r, c], size, all) {
   const ctr = (size - 1) / 2, dy = ctr - r, dx = ctr - c, L = Math.sqrt(dx * dx + dy * dy) || 1, zy = r + dy / L * 1.7, zx = c + dx / L * 1.7, z = new Set();
   for (let rr = 0; rr < size; rr++) for (let cc = 0; cc < size; cc++) {
     if (rr === r && cc === c) continue;
-    if (!(Math.sqrt((rr - zy) ** 2 + (cc - zx) ** 2) <= 2.25 || Math.hypot(rr - r, cc - c) <= 3.3)) continue;
-    if (Math.hypot(rr - ctr, cc - ctr) <= 1.3) continue;
+    if (!(hyp(rr - zy, cc - zx) <= 2.25 || hyp(rr - r, cc - c) <= 3.3)) continue;
+    if (hyp(rr - ctr, cc - ctr) <= 1.3) continue;
     if (all) {
-      const mine = Math.hypot(rr - r, cc - c); let ok = true;
-      for (const [or, oc] of all) { if (or === r && oc === c) continue; if (or === rr && oc === cc) { ok = false; break; } const dd = Math.hypot(rr - or, cc - oc); if (dd < mine - 1e-9 || (Math.abs(dd - mine) <= 1e-9 && or * 100 + oc < r * 100 + c)) { ok = false; break; } }
+      const mine = hyp(rr - r, cc - c); let ok = true;
+      for (const [or, oc] of all) { if (or === r && oc === c) continue; if (or === rr && oc === cc) { ok = false; break; } const dd = hyp(rr - or, cc - oc); if (dd < mine - 1e-9 || (Math.abs(dd - mine) <= 1e-9 && or * 100 + oc < r * 100 + c)) { ok = false; break; } }
       if (!ok) continue;
     }
     z.add(`${rr},${cc}`);

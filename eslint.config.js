@@ -7,4 +7,6 @@ export default [
   { ignores: ["js/**", "dist/**", "node_modules/**"] },
   js.configs.recommended,
   { files: ["**/*.js", "**/*.mjs"], languageOptions: { ecmaVersion: 2023, sourceType: "module", globals: globals.node } },
+  // this one passes small functions into a browser page, where window and document exist
+  { files: ["tools/selftest-browsers.mjs"], languageOptions: { globals: { ...globals.node, window: "readonly", document: "readonly", runBattle: "readonly" } } },
 ];

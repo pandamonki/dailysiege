@@ -10,6 +10,7 @@ export function computeGolden({ strict = true } = {}) {
   const sim = loadSim({ extraFiles: GOLDEN_SCRIPTS, strict });
   const count = sim.get("GOLDEN_COUNT"), cases = [];
   for (let i = 0; i < count; i++) cases.push(JSON.parse(JSON.stringify(sim.run(`goldenHashes(${i})`))));
-  return cases;
+  const detmath = sim.run("detmathDigest()");
+  return { detmath, code: sim.get("goldenCode")(detmath, cases), cases };
 }
 export const readGolden = () => JSON.parse(readFileSync(GOLDEN_FILE, "utf8"));

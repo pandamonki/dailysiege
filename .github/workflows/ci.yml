@@ -25,3 +25,22 @@ jobs:
       - name: Golden determinism tests
         run: npm test
       - run: npm run build
+
+  # The phone self-test page, run in three real browser engines. WebKit is the engine iPhones use,
+  # so this catches a device fighting a battle differently before a player ever sees it.
+  browsers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Install browsers
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium firefox webkit
+      - name: Self-test in Chromium, Firefox and WebKit
+        run: node tools/selftest-browsers.mjs chromium firefox webkit

@@ -13,6 +13,7 @@
     "preview": "vite preview",
     "test": "node --test",
     "golden:update": "node tools/golden-update.mjs",
+    "selftest:browsers": "node tools/selftest-browsers.mjs",
     "lint": "eslint ."
   },
   "devDependencies": {

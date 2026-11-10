@@ -19,6 +19,12 @@ npm run build      # copy the game into dist/ ready for hosting
 - `test/golden/hashes.json` holds the result hashes of 50 fixed battles (`js/dev/goldenCases.js`).
   `npm test` fails if any battle plays out differently. If a change is *meant* to alter battles
   (a balance tweak, a sim fix), run `npm run golden:update` and commit the new hashes with it.
+- `selftest.html` fights the same 50 battles in a browser and shows Pass/Fail plus a short code.
+  Open it on any phone: the same code on two devices means they fight identical battles.
+  `node tools/selftest-browsers.mjs chromium firefox webkit` runs it in real browser engines (CI does this).
+- **Deterministic maths:** anything a battle or the map layout depends on must use `dsin`, `dcos`,
+  `datan2`, `dhypot`/`hyp` from `js/core/detmath.js`, never `Math.sin/cos/atan2/hypot/pow/exp/log` or `**`.
+  Those differ in the last digit between browsers, which is enough to change a fight. Drawing code may use `Math.*`.
 - CI (`.github/workflows/ci.yml`) runs lint, the tests and the build on every pull request.
 - The hosting plan and its phases are in `daily-siege-hosting-plan.md`.
 
@@ -26,7 +32,7 @@ npm run build      # copy the game into dist/ ready for hosting
 |---|---|
 | `css/` | Styles in cascade order: base, layout, sheets, components, screens, council |
 | `js/config/` | Pure game data: classes, units, items, spells, order options, balance numbers. **Balance tweaks go here.** |
-| `js/core/` | Utilities (seeded hash/RNG), map layout, practice lobby, saved state, hero levels and pieces |
+| `js/core/` | Utilities (seeded hash/RNG), deterministic maths, map layout, practice lobby, saved state, hero levels and pieces |
 | `js/render/` | Canvas drawing: sprites, banners, walls, item and spell icons, map, camera, frame loop |
 | `js/sim/` | Battle simulation: `runBattle(plans, seed)` is deterministic, plus bots, alliances, plan building, result hashing |
 | `js/replay/` | Watching a battle: muster/hero pick, replay drawing, inspector, controls, highlights, video export |

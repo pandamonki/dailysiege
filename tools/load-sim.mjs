@@ -21,6 +21,7 @@ export const SIM_FILES = [
   "js/config/balance.js",
   "js/config/spells.js",
   "js/core/util.js",
+  "js/core/detmath.js",
   "js/core/layout.js",
   "js/core/player.js",
   "js/sim/bots.js",
@@ -28,12 +29,6 @@ export const SIM_FILES = [
   "js/sim/battle.js",
   "js/sim/hash.js",
 ];
-
-// Globals the sim files expect from files we do not load (they are browser-only):
-//  - DAY and S come from js/core/state.js, which reads localStorage and the clock.
-//    The sim only falls back to DAY when a plan carries no hero level; it is pinned here so a
-//    headless battle can never depend on the real date.
-const PRELUDE = "let DAY = 1, S = null;";
 
 /**
  * @param {object} [o]
@@ -43,7 +38,6 @@ const PRELUDE = "let DAY = 1, S = null;";
  */
 export function loadSim({ extraFiles = [], strict = false } = {}) {
   const context = vm.createContext({ console });
-  vm.runInContext(PRELUDE, context, { filename: "prelude" });
   for (const rel of [...SIM_FILES, ...extraFiles]) {
     vm.runInContext(readFileSync(path.join(ROOT, rel), "utf8"), context, { filename: rel });
   }

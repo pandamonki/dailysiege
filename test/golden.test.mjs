@@ -6,8 +6,16 @@ import assert from "node:assert/strict";
 import { computeGolden, readGolden } from "../tools/golden.mjs";
 
 // computed once, with Math.random and the clock set to throw (strict), so the sim provably uses neither
-const computed = computeGolden({ strict: true });
-const recorded = readGolden().cases;
+const now = computeGolden({ strict: true }), file = readGolden();
+const computed = now.cases, recorded = file.cases;
+
+test("the deterministic maths gives the recorded fingerprint", () => {
+  assert.equal(now.detmath, file.detmath);
+});
+
+test("the overall code matches (this is the code the phone self-test shows)", () => {
+  assert.equal(now.code, file.code);
+});
 
 test("the recorded golden file covers every case", () => {
   assert.equal(recorded.length, computed.length);

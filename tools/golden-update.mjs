@@ -3,6 +3,6 @@
 import { writeFileSync } from "node:fs";
 import { computeGolden, GOLDEN_FILE } from "./golden.mjs";
 
-const cases = computeGolden();
-writeFileSync(GOLDEN_FILE, JSON.stringify({ note: "Recorded by `npm run golden:update`. Do not edit by hand.", cases }, null, 1) + "\n");
-console.log(`Recorded ${cases.length} golden battles to ${GOLDEN_FILE}`);
+const g = computeGolden();
+writeFileSync(GOLDEN_FILE, JSON.stringify({ note: "Recorded by `npm run golden:update`. Do not edit by hand.", ...g }, null, 1) + "\n");
+console.log(`Recorded ${g.cases.length} golden battles to ${GOLDEN_FILE} (code ${g.code})`);

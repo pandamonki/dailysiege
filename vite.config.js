@@ -6,7 +6,7 @@ import { cpSync } from "node:fs";
 import path from "node:path";
 
 // Folders and files the page loads by path at run time. Vite only bundles the stylesheets.
-const STATIC = ["js", "icons", "items", "title.jpg"];
+const STATIC = ["js", "icons", "items", "title.jpg", "test/golden/hashes.json"]; // the last one is read by selftest.html
 
 function classicScripts() {
   let outDir;
@@ -29,6 +29,6 @@ export default defineConfig({
   publicDir: false,
   plugins: [classicScripts()],
   server: { host: true, port: 5173 },
-  build: { outDir: "dist", emptyOutDir: true },
+  build: { outDir: "dist", emptyOutDir: true, rollupOptions: { input: { main: "index.html", selftest: "selftest.html" } } },
   logLevel: "info",
 });

@@ -21,7 +21,7 @@ function setupPractice() {
   RIVALS = BOTS; RARMY = []; RWALLS = [];
   BOTS.forEach((b, i) => { b.banner = BOT_BANNERS[i % BOT_BANNERS.length]; b.ctier = 1 + (hash(i, 7, 41) > .6 ? 1 : 0); });
   { const ctr0 = (L.N - 1) / 2;
-    BOTS.forEach((b, i) => { if (i % 2) return; const dy = ctr0 - b.pos[0], dx = ctr0 - b.pos[1], LL = Math.hypot(dx, dy) || 1, uy = dy / LL, ux = dx / LL;
+    BOTS.forEach((b, i) => { if (i % 2) return; const dy = ctr0 - b.pos[0], dx = ctr0 - b.pos[1], LL = hyp(dx, dy) || 1, uy = dy / LL, ux = dx / LL;
       const r = Math.round(b.pos[0] + uy * 3), c = Math.round(b.pos[1] + ux * 3), dir = Math.abs(uy) >= Math.abs(ux) ? "h" : "v", z = zoneFor(b.pos, L.N, L.castles);
       (dir === "h" ? [[r, c - 1], [r, c], [r, c + 1]] : [[r - 1, c], [r, c], [r + 1, c]]).forEach(([a, bb]) => { if (z.has(`${a},${bb}`)) RWALLS.push({ rid: b.id, r: a, c: bb, dir }); }); }); }
   RIVALS.forEach((rv, i) => { const sp = armySpots(rv.pos, L.N);
