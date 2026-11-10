@@ -38,6 +38,10 @@ npm run build      # copy the game into dist/ ready for hosting
     `js/net/world.js` turns a game's saved data into a battle and is the one implementation used by
     both the server and the phones; keep it free of the DOM and of page state.
   - The server reuses the game's own files: `npm run functions:sync` copies them into `functions/game/`.
+- **Seats.** A war holds up to `MAX_LORDS` (12) lords; new hosted wars default to `DEFAULT_LORDS` (10) and the host
+  can change it in the Muster Hall. Colours and the limits are in `js/config/seats.js`, map sizes in `mapSizeFor`
+  (`js/core/layout.js`). `npm run balance` fights many random battles at 8, 10 and 12 lords and prints battle length,
+  hero win rates and wins by seat.
 - CI (`.github/workflows/ci.yml`) runs lint, the tests and the build on every pull request.
 - The hosting plan and its phases are in `daily-siege-hosting-plan.md`.
 

@@ -20,6 +20,7 @@
     "test:e2e": "npm run build && npm run functions:sync && firebase emulators:exec --project demo-dailysiege \"node --test emulator-tests/e2e.spec.mjs\"",
     "test:war": "npm run build && npm run functions:sync && firebase emulators:exec --project demo-dailysiege \"node --test emulator-tests/war.spec.mjs\"",
     "selftest:browsers": "node tools/selftest-browsers.mjs",
+    "balance": "node tools/balance.mjs",
     "lint": "eslint ."
   },
   "devDependencies": {
