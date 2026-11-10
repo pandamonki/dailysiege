@@ -1,0 +1,24 @@
+{
+  "name": "daily-siege",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Daily Siege: a daily asynchronous siege game for a group of friends",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "node --test",
+    "golden:update": "node tools/golden-update.mjs",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.14.0",
+    "globals": "^17.14.0",
+    "vite": "^8.3.7"
+  }
+}

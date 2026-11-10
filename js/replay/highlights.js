@@ -8,7 +8,6 @@ function rankMap(pts, pids) {
   if (!pids.some(p => (pts[p] || 0) > 0)) return {};
   const o = pids.slice().sort((a, b) => (pts[b] || 0) - (pts[a] || 0)); return Object.fromEntries(o.map((p, i) => [p, i + 1]));
 }
-const STREAKS = [[4, "Quad Squad"], [6, "Mowing the Lawn"], [8, "Pitchfork Panic"], [11, "Heads Will Roll"], [15, "Butcher of the Realm"], [20, "Daily Siege Legend"]]; // [kill weight in a chain, name]
 const HL_WIN = { betray: [1.5, 3.5], bomb: [2, 3], burst: [2.5, 1.5], fall: [4, 2], upset: [4, 2.2], revenge: [4, 2.2], giantslayer: [3, 1.6], firstblood: [3, 1.5], rapierdrop: [2.5, 2], frenzy: [2, 2.5], rapierget: [2, 2.5], winner: [4.5, 2.5] };
 function hlText(h, R) {
   const N = p => (R.names && R.names[p]) || "Someone", you = p => p === R.me, V = (p, a, b) => `${N(p)} ${you(p) ? a : b}`;
