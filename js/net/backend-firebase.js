@@ -117,10 +117,12 @@
   // G holds what the listeners have delivered. Nothing is passed on to the game until every part has
   // arrived once: the game must never mistake "not loaded yet" for "this player has no saved state".
   let G = null;
-  const newG = id => ({ id, game: undefined, pubs: null, state: undefined, orders: null, battles: null, unsub: [], cfgCbs: [], plCbs: [], btCbs: [], member: false, started: false });
-  function stopGame() { epoch++; if (G) G.unsub.forEach(u => { try { u(); } catch (e) {} }); G = null; DS.gameId = null; }
+  const newG = id => ({ id, seat: null, ready: null, game: undefined, pubs: null, state: undefined, orders: null, battles: null, unsub: [], cfgCbs: [], plCbs: [], btCbs: [], member: false, started: false });
+  function stopGame() { epoch++; if (G) G.unsub.forEach(u => { try { u(); } catch (e) {} }); G = null; DS.gameId = null; DS.seat = null; }
+  // Who I am in the game. Normally my account id; if the host moved my old castle to this new account, the old seat's id.
+  const meId = () => (G && G.seat) || DS.user.uid;
   const gameRef = () => fs.collection("games").doc(G.id);
-  const myRef = () => gameRef().collection("players").doc(DS.user.uid);
+  const myRef = () => gameRef().collection("players").doc(meId());
   const curWar = () => (G && G.game && G.game.war) || 1;
 
   let clockSkew = 0; // server time minus this device's clock, so a wrong phone clock can't break registration
@@ -140,26 +142,29 @@
         else { const gid = inv.get("gameId"), mem = fs.collection("games").doc(gid).collection("members").doc(uid);
           let ok = false; try { ok = (await mem.get()).exists; } catch (e) {}
           if (!ok) await mem.set({ invite: code, at: Date.now() });
-          await users.set({ gameId: gid }, { merge: true }); return gid; }
+          await users.set({ gameId: gid }, { merge: true }); return { gid, seat: (await mem.get()).get("seat") || uid }; }
       } catch (e) { console.warn("invite", e); say(legacyErr(e).code === "permission_denied" ? "The host has removed this account from the game." : "Couldn't open the invite. Check your connection and try the link again."); }
     }
     try { const u = await users.get(), gid = u.exists && u.get("gameId");
-      if (gid && (await fs.collection("games").doc(gid).collection("members").doc(uid).get()).exists) return gid; } catch (e) {}
+      if (gid) { const m = await fs.collection("games").doc(gid).collection("members").doc(uid).get(); if (m.exists) return { gid, seat: m.get("seat") || uid }; } } catch (e) {}
     return null;
   }
   async function startGame() { // called once per connection, after sign-in
     const my = ++epoch, g = G;
     await measureClock();
-    const gid = await findGame(); if (my !== epoch) return;
+    const found = await findGame(); if (my !== epoch) return;
+    const gid = found && found.gid; g.seat = found ? found.seat : DS.user.uid; DS.seat = g.seat;
     if (!gid) { try { LIVE.isOwner = await mayHost(); } catch (e) {} if (my !== epoch) return; g.game = null; g.pubs = {}; g.state = null; g.orders = {}; g.battles = {}; emit(g, true); return; }
     attach(g, gid);
   }
   function attach(g, gid) {
     g.id = gid; DS.gameId = gid; g.member = true;
-    const gr = fs.collection("games").doc(gid), me = gr.collection("players").doc(DS.user.uid);
+    const gr = fs.collection("games").doc(gid), me = gr.collection("players").doc(g.seat || DS.user.uid);
     const lost = e => { console.warn("Daily Siege listener", e && e.code); if (G === g && legacyErr(e).code === "permission_denied") { say("This account is no longer in that game."); DS.leaveGame(); } }; // removed by the host
     const on = (ref, fn) => g.unsub.push(ref.onSnapshot(s => { if (G === g) { fn(s); emit(g); } }, lost));
     on(gr, s => { g.game = s.exists ? s.data() : null; });
+    // my membership: if the host removes me, or hands me my old castle, start again with the new standing
+    on(gr.collection("members").doc(DS.user.uid), s => { if (!g.joined) { g.joined = s.exists; return; } if (!s.exists) { say("This account is no longer in that game."); DS.leaveGame(); } else if ((s.get("seat") || DS.user.uid) !== g.seat) { say("Your castle is back in your hands."); onAuthChange(); } });
     on(gr.collection("players"), q => { g.pubs = {}; q.forEach(d => { g.pubs[d.id] = d.data(); }); });
     on(me.collection("private").doc("state"), s => { g.state = s.exists ? s.data() : null; });
     // only recent days are needed: this week's orders and battles (a plain range on the day key needs no index)
@@ -172,7 +177,7 @@
   function configView(g) { if (!g.game) return null; const c = copy(Object.fromEntries(Object.entries(g.game).filter(([k]) => !HIDDEN_KEYS.includes(k)))); return c; }
   const battlesView = g => Object.fromEntries(Object.entries(g.battles || {}).filter(([, b]) => (b.war || 1) === curWar()).map(([k, b]) => [k, copy(b)]));
   function playersView(g) {
-    const uid = DS.user.uid, bt = Object.entries(battlesView(g)).sort((a, b) => (a[0] < b[0] ? -1 : 1)), out = {};
+    const uid = g.seat || DS.user.uid, bt = Object.entries(battlesView(g)).sort((a, b) => (a[0] < b[0] ? -1 : 1)), out = {};
     for (const [id, pub] of Object.entries(g.pubs || {})) {
       const base = { fromWeek: pub.fromWeek, joinedAt: pub.joinedAt, nick: pub.nick || "", real: pub.real || "" };
       if (pub.pending) base.pending = true; if (pub.left) base.left = true; if (pub.sealedFor) base.sealedFor = pub.sealedFor;
@@ -213,7 +218,7 @@
     return copy(pub);
   }
   async function writeMine(doc) { // split the game's single player record into public profile, private state and today's orders
-    const g = G, cur = g.pubs[DS.user.uid] || null, pub = publicFrom(doc, cur), state = doc.state ? copy(doc.state) : null;
+    const g = G, cur = g.pubs[meId()] || null, pub = publicFrom(doc, cur), state = doc.state ? copy(doc.state) : null;
     const from = (g.game && g.game.planDay) || null, orders = Object.entries(doc.plans || {}).filter(([k, p]) => p && (!from || k >= from)).map(([k, p]) => [k, Object.assign(copy(p), { war: curWar() })]).filter(([k, p]) => !same(p, g.orders[k]));
     const commit = withOrders => { const b = fs.batch(); let n = 0;
       const p = withOrders ? pub : Object.assign({}, pub, { sealedFor: (cur && cur.sealedFor) || null });
@@ -228,7 +233,7 @@
     catch (e) { // orders refused (that day has locked): still save the rest, then say so
       if (orders.length && legacyErr(e).code === "permission_denied") { await commit(false).catch(() => {}); throw Object.assign(new Error("Orders are locked for that day"), { code: "permission-denied" }); } throw e; }
   }
-  const mineNow = () => playersView(G)[DS.user.uid] || {};
+  const mineNow = () => playersView(G)[meId()] || {};
   async function writeConfig(next) {
     const g = G, cur = g.game;
     if (!cur) return createGame(next);
@@ -243,12 +248,12 @@
     b.set(gr, doc); b.set(fs.collection("invites").doc(code), { gameId: gid, createdAt: Date.now() }); b.set(gr.collection("members").doc(uid), { invite: code, at: Date.now() });
     b.set(fs.collection("users").doc(uid), { gameId: gid }, { merge: true });
     await b.commit();
-    const g = G; g.game = doc; attach(g, gid); // the game goes on to register the host straight away
+    const g = G; g.game = doc; g.seat = uid; attach(g, gid); // the game goes on to register the host straight away
   }
   async function restartWar(next, patch) { // a new war in the same game: same invite link, same lords, a fresh start
     const g = G, b = fs.batch();
     b.update(gameRef(), Object.assign(patch, { war: curWar() + 1, lobby: true, lobbyEnds: fb.firestore.FieldValue.delete() }));
-    Object.entries(g.pubs).forEach(([id, p]) => { if (!p.left && id !== DS.user.uid) b.update(gameRef().collection("players").doc(id), { fromWeek: "0000-00-00" }); });
+    Object.entries(g.pubs).forEach(([id, p]) => { if (!p.left && id !== meId()) b.update(gameRef().collection("players").doc(id), { fromWeek: "0000-00-00" }); });
     await b.commit();
   }
 
@@ -261,15 +266,15 @@
       if (kind === "game") return { onSnapshot: ok => { g.cfgCbs.push(ok); if (g.started) ok(snapDoc(configView(g))); }, get: async () => snapDoc(configView(g)),
         set: c => wrap((async () => { need(); await writeConfig(c); })()), update: c => wrap((async () => { need(); await writeConfig(Object.assign({}, configView(g), c)); })()) };
       if (kind === "players") return { get: async () => snapDoc(playersView(g)[id]),
-        set: d => wrap((async () => { need(); if (id === DS.user.uid) await writeMine(d); /* the host re-registering others for a new war is done in restartWar */ })()),
-        update: d => wrap((async () => { need(); if (id !== DS.user.uid) throw Object.assign(new Error("not yours"), { code: "permission-denied" }); if (!g.pubs[id]) throw Object.assign(new Error("no player"), { code: "not-found" }); await writeMine(Object.assign({}, mineNow(), copy(d))); })()) };
+        set: d => wrap((async () => { need(); if (id === meId()) await writeMine(d); /* the host re-registering others for a new war is done in restartWar */ })()),
+        update: d => wrap((async () => { need(); if (id !== meId()) throw Object.assign(new Error("not yours"), { code: "permission-denied" }); if (!g.pubs[id]) throw Object.assign(new Error("no player"), { code: "not-found" }); await writeMine(Object.assign({}, mineNow(), copy(d))); })()) };
       if (kind === "battles") return { get: async () => snapDoc(battlesView(g)[id]), set: async () => { throw Object.assign(new Error("battles are fought by the server"), { code: "permission_denied" }); } };
       throw new Error("unknown path " + path);
     };
     const collection = name => ({ onSnapshot: ok => { const list = name === "players" ? g.plCbs : g.btCbs; list.push(ok); if (g.started) ok(snapCol(name === "players" ? playersView(g) : battlesView(g))); } });
     return { doc, collection, serverBattles: true };
   }
-  const userFacade = { id: async () => (DS.user ? DS.user.uid : null), isOwner: async () => false, // set properly once the game has loaded
+  const userFacade = { id: async () => { if (!DS.user) return null; if (G && G.ready) await G.ready; return (G && G.seat) || DS.user.uid; }, // waits until it is known which seat this account plays isOwner: async () => false, // set properly once the game has loaded
     profiles: async ids => Object.fromEntries(ids.map(id => { const p = (G && G.pubs && G.pubs[id]) || {}; return [id, { name: (typeof lordLabel === "function" && lordLabel(p)) || (DS.user && id === DS.user.uid && DS.user.displayName) || "A lord" }]; })) };
   const downloads = { save: async ({ filename, data }) => { // share sheet on phones, plain download elsewhere
     try { const f = new File([data], filename, { type: data.type }); if (navigator.canShare && navigator.canShare({ files: [f] })) { await navigator.share({ files: [f] }); return; } } catch (e) { if (e && e.name === "AbortError") throw Object.assign(new Error("declined"), { code: "declined" }); }
@@ -279,17 +284,22 @@
     if (kind === "downloads") return downloads; // saving a file needs no account
     if (!(await init())) return null;
     if (kind === "user") return userFacade;
-    if (kind === "db") { if (!DS.user) return dbFacade(null); stopGame(); G = newG(null); const g = G; startGame().catch(e => console.warn("Daily Siege: could not open the game", e)); return dbFacade(g); }
+    if (kind === "db") { if (!DS.user) return dbFacade(null); stopGame(); G = newG(null); const g = G; g.ready = startGame().catch(e => console.warn("Daily Siege: could not open the game", e)); return dbFacade(g); }
     return null;
   } };
 
   // ---------- invites and host tools ----------
   DS.inviteUrl = () => (G && G.game && G.game.inviteCode ? location.origin + "/join/" + G.game.inviteCode : location.origin + "/");
   DS.isHost = () => !!(G && G.game && DS.user && G.game.host === DS.user.uid);
-  DS.removeLord = async uid => { // the host removes a lord: they lose access and cannot rejoin with the same account
-    if (!DS.isHost() || uid === DS.user.uid) return;
-    const b = fs.batch(); b.update(gameRef().collection("players").doc(uid), { left: true, kicked: true }); b.delete(gameRef().collection("members").doc(uid));
-    try { await b.commit(); say("Removed from the game."); } catch (e) { say("Couldn't remove them (" + (legacyErr(e).code || "error") + ")."); }
+  DS.removeLord = async seat => { // the host removes a lord: every account that plays that castle loses access and cannot rejoin
+    if (!DS.isHost() || seat === meId()) return;
+    try {
+      const members = gameRef().collection("members"), banned = gameRef().collection("banned"), b = fs.batch(), accounts = new Set([seat]);
+      (await members.where("seat", "==", seat).get()).forEach(d => accounts.add(d.id)); // a lord playing from a replacement account
+      b.update(gameRef().collection("players").doc(seat), { left: true, kicked: true });
+      accounts.forEach(uid => { b.delete(members.doc(uid)); b.set(banned.doc(uid), { at: Date.now(), why: "removed" }); });
+      await b.commit(); say("Removed from the game.");
+    } catch (e) { say("Couldn't remove them (" + (legacyErr(e).code || "error") + ")."); }
   };
   DS.newInvite = async () => { // replace the invite link, so an old link that got around stops working
     if (!DS.isHost()) return;

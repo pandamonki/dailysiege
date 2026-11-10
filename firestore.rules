@@ -27,6 +27,11 @@ service cloud.firestore {
     function isHost(g) { return signedIn() && game(g).host == me(); }
     function isMember(g) { return signedIn() && exists(/databases/$(database)/documents/games/$(g)/members/$(me())); }
     function isMemberAfter(g) { return signedIn() && existsAfter(/databases/$(database)/documents/games/$(g)/members/$(me())); }
+    // A seat is a castle in a game, named after the account that first registered it. Normally you hold the seat with
+    // your own id. If you had to sign in with a new account, the server can point your membership at your old seat.
+    function owns(g, uid) {
+      return isMember(g) && get(/databases/$(database)/documents/games/$(g)/members/$(me())).data.get('seat', me()) == uid;
+    }
     function unchanged(keys) { return !request.resource.data.diff(resource.data).affectedKeys().hasAny(keys); }
     function onlyChanges(keys) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys); }
     // fields only the server may set: the day being planned and the instants orders lock
@@ -95,7 +100,8 @@ service cloud.firestore {
         allow create: if signedIn() && me() == uid
           && request.resource.data.keys().hasOnly(['invite', 'at'])
           && request.resource.data.invite == getAfter(gamePath(g)).data.inviteCode
-          && !wasRemoved(uid);
+          && !wasRemoved(uid)
+          && !exists(/databases/$(database)/documents/games/$(g)/banned/$(uid));
         allow update: if false;
         allow delete: if signedIn() && (me() == uid || isHost(g));
 
@@ -105,11 +111,18 @@ service cloud.firestore {
         }
       }
 
+      // Accounts that may not rejoin: removed by the host, or replaced by the same lord's new account.
+      match /banned/{uid} {
+        allow read: if signedIn() && (me() == uid || isHost(g));
+        allow create: if isHost(g) && uid != me();
+        allow update, delete: if false;
+      }
+
       // Public profile. Everything here is visible to every lord in the game, so it never holds orders, gold or army.
       match /players/{uid} {
         allow read: if isMember(g);
         allow create: if signedIn() && me() == uid && isMemberAfter(g) && validProfile();
-        allow update: if (signedIn() && me() == uid && isMember(g) && validProfile() && namesOk() && joinedOk())
+        allow update: if (owns(g, uid) && validProfile() && namesOk() && joinedOk())
           || (isHost(g) && onlyChanges(['left', 'kicked', 'fromWeek', 'pending']));
         allow delete: if false;
 
@@ -138,14 +151,14 @@ service cloud.firestore {
 
         // Gold, army, items, everything not yet revealed by a battle.
         match /private/{doc} {
-          allow read, write: if signedIn() && me() == uid && doc == 'state' && isMember(g);
+          allow read, write: if owns(g, uid) && doc == 'state';
         }
 
         // One day's orders. Readable only by their owner, and frozen the moment that day's lock passes:
         // the server reads them after the lock, so nobody can peek and nobody can edit after the fact.
         match /orders/{day} {
-          allow read: if signedIn() && me() == uid && isMember(g);
-          allow create, update: if signedIn() && me() == uid && isMember(g)
+          allow read: if owns(g, uid);
+          allow create, update: if owns(g, uid)
             && day.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$') && ordersOpen(day);
           allow delete: if false;
 

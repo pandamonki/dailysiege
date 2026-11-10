@@ -162,11 +162,30 @@ test("the host can remove a lord, who then loses all access and cannot rejoin", 
   const h = db(HOST), batch = writeBatch(h);
   batch.update(doc(h, "games", G, "players", B), { left: true, kicked: true });
   batch.delete(doc(h, "games", G, "members", B));
+  batch.set(doc(h, "games", G, "banned", B), { at: 1, why: "removed" });
   await assertSucceeds(batch.commit());
   await assertFails(getDocs(collection(db(B), "games", G, "players")));
   await assertFails(getDoc(doc(db(B), "games", G, "players", B, "private", "state")));
   await assertFails(setDoc(doc(db(B), "games", G, "members", B), { invite: CODE, at: 2 }));
 });
+test("a lord given their old castle on a new account plays that seat, and the old account is shut out", async () => {
+  const NEW = "alice-new-phone";
+  await env.withSecurityRulesDisabled(async ctx => { const d = ctx.firestore(); // what the server's reassignSeat does
+    await setDoc(doc(d, "games", G, "members", NEW), { invite: CODE, at: 2, seat: A }); await deleteDoc(doc(d, "games", G, "members", A)); await setDoc(doc(d, "games", G, "banned", A), { at: 2, why: "replaced" }); });
+  await assertSucceeds(getDoc(doc(db(NEW), "games", G, "players", A, "private", "state")));
+  await assertSucceeds(setDoc(doc(db(NEW), "games", G, "players", A, "orders", "2026-11-12"), { sealed: true, targets: [B] }));
+  await assertSucceeds(updateDoc(doc(db(NEW), "games", G, "players", A), { sealedFor: "2026-11-12" }));
+  await assertFails(getDoc(doc(db(NEW), "games", G, "players", B, "private", "state")));   // still only their own seat
+  await assertFails(getDoc(doc(db(A), "games", G, "players", A, "private", "state")));     // the old account is out
+  await assertFails(setDoc(doc(db(A), "games", G, "members", A), { invite: CODE, at: 3 })); // and cannot rejoin
+});
+test("nobody can point their own membership at someone else's seat", async () => {
+  await assertFails(setDoc(doc(db(OUT), "games", G, "members", OUT), { invite: CODE, at: 1, seat: A }));
+  await assertFails(updateDoc(doc(db(B), "games", G, "members", B), { seat: A }));
+  await assertFails(updateDoc(doc(db(HOST), "games", G, "members", B), { seat: A })); // not even the host: only the server
+  await assertFails(setDoc(doc(db(A), "games", G, "banned", B), { at: 1 }));          // and only the host can bar an account
+});
+
 test("the host can only touch membership fields of someone else's profile", async () => {
   await assertFails(updateDoc(doc(db(HOST), "games", G, "players", A), { nick: "Renamed" }));
   await assertFails(updateDoc(doc(db(HOST), "games", G, "players", A), { banner: {} }));

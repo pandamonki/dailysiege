@@ -45,8 +45,9 @@ jobs:
       - name: Self-test in Chromium, Firefox and WebKit
         run: node tools/selftest-browsers.mjs chromium firefox webkit
 
-  # The hosted game against the Firebase emulators: the security rules, then three accounts in real
-  # browsers registering, sealing orders and failing to read each other's secrets.
+  # The hosted game against the Firebase emulators: the security rules; three accounts in real browsers
+  # registering, sealing orders, failing to read each other's secrets and getting a server-fought battle;
+  # then a full seven-day war fought by the server and replayed in a browser.
   firebase:
     runs-on: ubuntu-latest
     steps:
@@ -65,3 +66,5 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Three accounts, end to end
         run: npm run test:e2e
+      - name: A seven-day war fought by the server
+        run: npm run test:war

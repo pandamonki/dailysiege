@@ -33,6 +33,10 @@ npm run build      # copy the game into dist/ ready for hosting
     `http://127.0.0.1:5000/?emulator=1`. Nothing touches the real project.
   - `npm run test:rules` tests the security rules; `npm run test:e2e` drives three accounts through
     registering and sealing orders in real browsers. Both run in the emulators.
+  - `npm run test:war` has the server fight a full seven-day war and a browser replay every battle to the same hash.
+  - **Battles are fought by the server** (`functions/lib/resolve.js`), within five minutes of the lock.
+    `js/net/world.js` turns a game's saved data into a battle and is the one implementation used by
+    both the server and the phones; keep it free of the DOM and of page state.
   - The server reuses the game's own files: `npm run functions:sync` copies them into `functions/game/`.
 - CI (`.github/workflows/ci.yml`) runs lint, the tests and the build on every pull request.
 - The hosting plan and its phases are in `daily-siege-hosting-plan.md`.

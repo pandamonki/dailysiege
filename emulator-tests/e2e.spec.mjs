@@ -183,22 +183,28 @@ test("a lord with a new account gets their castle back from the host", async () 
   await P.host.waitForFunction(u => LIVE.players[u], U.carol, WAIT);
   await P.host.evaluate(([from, to]) => DS.reassignSeat(from, to), [U.bob, U.carol]);
   assert.equal(await P.host.evaluate(() => document.getElementById("toast").textContent), "The castle has a new owner.");
-  await P.carol.waitForFunction(() => isLive() && S && S.week && rosterFor(liveClock().week).some(r => r.uid === LIVE.uid), null, WAIT);
+  await P.carol.waitForFunction(() => rosterFor(liveClock().week).some(r => r.uid === LIVE.uid), null, WAIT); // the castle is theirs...
+  await P.carol.evaluate(() => A.playgo());                                                                  // ...and tapping "Play with friends" takes them into the war
+  await P.carol.waitForFunction(() => isLive() && S && S.week, null, WAIT);
   assert.equal(await P.carol.evaluate(() => S.gold), bobGold, "the army and gold came across");
   assert.equal(await P.carol.evaluate(() => MY_NAME), "The Fox (Bob)");
-  assert.deepEqual(await P.carol.evaluate(day => LIVE.battles[day].results.map(r => r.pid).sort(), planDay), [U.host, U.alice, U.carol].sort(), "the war's history now names the new account");
+  assert.equal(await P.carol.evaluate(() => LIVE.uid), U.bob, "the new account plays the same seat");
+  assert.deepEqual(await P.carol.evaluate(day => LIVE.battles[day].results.map(r => r.pid).sort(), planDay), [U.host, U.alice, U.bob].sort(), "the war's history is untouched");
   assert.deepEqual(await replays(P.carol), [true], "and still replays to the same result");
+  await P.carol.evaluate(async () => { S.locked = true; queueSave(true); await MY_WRITES; }); // and they can seal orders for it
+  await P.host.waitForFunction(u => LIVE.players[u].sealedFor === liveClock().planDay, U.bob, WAIT);
   await P.bob.waitForFunction(() => !LIVE.config, null, WAIT);
   assert.equal(await read(P.bob, `games/${gameId}/players/${U.bob}/private/state`), "permission-denied", "the old account is out");
+  assert.equal(await write(P.bob, `games/${gameId}/members/${U.bob}`, { invite: code, at: 9 }), "permission-denied", "and cannot rejoin");
   await P.host.waitForFunction(() => rosterFor(liveClock().week).length === 3, null, WAIT);
 });
 
 test("the host can remove a lord, who loses access and cannot rejoin", async () => {
-  await P.host.evaluate(u => DS.removeLord(u), U.carol);
+  await P.host.evaluate(u => DS.removeLord(u), U.bob); // the seat carol now plays
   await P.host.waitForFunction(() => rosterFor(liveClock().week).length === 2, null, WAIT);
   await P.carol.waitForFunction(() => !LIVE.config, null, WAIT);
   assert.equal(await list(P.carol, `games/${gameId}/players`), "permission-denied");
-  assert.equal(await read(P.carol, `games/${gameId}/players/${U.carol}/private/state`), "permission-denied");
+  assert.equal(await read(P.carol, `games/${gameId}/players/${U.bob}/private/state`), "permission-denied");
   assert.equal(await write(P.carol, `games/${gameId}/members/${U.carol}`, { invite: invite.split("/").pop(), at: 2 }), "permission-denied");
 });
 

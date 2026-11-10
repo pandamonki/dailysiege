@@ -58,7 +58,7 @@ exports.resolveNow = onCall(async request => {
 });
 
 exports.reassignSeat = onCall(async request => {
-  const gameId = await hostOnly(request), { fromUid, toUid } = request.data || {};
+  const gameId = await hostOnly(request), { fromUid, toUid } = request.data || {}; // fromUid: the seat (the lord as listed in the game)
   if (typeof fromUid !== "string" || typeof toUid !== "string" || !fromUid || !toUid || fromUid === toUid) throw new HttpsError("invalid-argument", "Choose the lord and their new account.");
   try { await reassignSeat(getFirestore(), gameId, fromUid, toUid); return { ok: true }; }
   catch (e) { throw new HttpsError("failed-precondition", (e && e.message) || "Could not move the seat."); }

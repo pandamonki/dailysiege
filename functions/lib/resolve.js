@@ -67,26 +67,24 @@ async function resolveAllDue(db, { now = Date.now() } = {}) {
 }
 
 /**
- * Give one lord's castle to another account (a lord who lost their phone and signed in afresh).
- * Everything the old account had in this game moves to the new one, and this war's battles are
- * rewritten to name the new account, so standings, hero level and replays carry on unbroken.
+ * Give a lord's castle to that lord's new account (lost phone, or signed in with a different address).
+ * Nothing about the castle changes: its army, gold, orders and its place in every past battle stay
+ * exactly as they are, under the same seat id. Only who may play it changes: the new account's
+ * membership is pointed at the seat, and the old account is shut out.
  */
-async function reassignSeat(db, gameId, fromUid, toUid) {
-  const gameRef = db.collection("games").doc(gameId), from = gameRef.collection("players").doc(fromUid), to = gameRef.collection("players").doc(toUid);
-  const [cfg, fromPub, toPub, toMember, state, orders, battles] = await Promise.all([gameRef.get(), from.get(), to.get(), gameRef.collection("members").doc(toUid).get(),
-    from.collection("private").doc("state").get(), from.collection("orders").get(), gameRef.collection("battles").get()]);
-  if (!fromPub.exists || fromPub.get("left")) throw new Error("That lord is not in the game.");
+async function reassignSeat(db, gameId, seatId, toUid) {
+  const gameRef = db.collection("games").doc(gameId), members = gameRef.collection("members"), seat = gameRef.collection("players").doc(seatId);
+  const [cfg, seatPub, toMember, toPub, holders] = await Promise.all([gameRef.get(), seat.get(), members.doc(toUid).get(), gameRef.collection("players").doc(toUid).get(), members.where("seat", "==", seatId).get()]);
+  if (!seatPub.exists || seatPub.get("left")) throw new Error("That lord is not in the game.");
+  if (seatId === cfg.get("host")) throw new Error("The host's own seat cannot be moved.");
   if (!toMember.exists) throw new Error("The new account has not opened the invite link yet.");
+  if (toMember.get("seat")) throw new Error("The new account already plays another lord's castle.");
   const queued = toPub.exists && String(toPub.get("fromWeek") || "") > String(cfg.get("planDay") || ""); // signed up after the war began: waiting for next week
   if (toPub.exists && !toPub.get("pending") && !toPub.get("left") && !queued) throw new Error("The new account already has a castle of its own in this game.");
-  if (fromUid === cfg.get("host")) throw new Error("The host's own seat cannot be moved.");
-  const war = cfg.get("war") || 1, swap = v => JSON.parse(JSON.stringify(v).split(fromUid).join(toUid)), batch = db.batch();
-  batch.set(to, Object.assign({}, fromPub.data(), { pending: false }));
-  if (state.exists) batch.set(to.collection("private").doc("state"), swap(state.data()));
-  orders.forEach(o => batch.set(to.collection("orders").doc(o.id), o.data()));
-  battles.forEach(b => { if ((b.get("war") || 1) === war && JSON.stringify(b.data()).includes(fromUid)) batch.set(b.ref, swap(b.data())); });
-  batch.update(from, { left: true, kicked: true });
-  batch.delete(gameRef.collection("members").doc(fromUid));
+  const batch = db.batch(), out = uid => { if (uid === toUid) return; batch.delete(members.doc(uid)); batch.set(gameRef.collection("banned").doc(uid), { at: Date.now(), why: "replaced" }); };
+  batch.set(members.doc(toUid), { seat: seatId }, { merge: true });
+  out(seatId); holders.forEach(h => out(h.id)); // the original account, and any earlier replacement
+  if (toPub.exists) batch.update(toPub.ref, { left: true }); // the sign-up they made with the new account is no longer needed
   await batch.commit();
 }
 
