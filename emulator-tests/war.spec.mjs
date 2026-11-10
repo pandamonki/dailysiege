@@ -1,5 +1,5 @@
 // A full seven-day war fought by the server, in the Firebase emulators.   npm run test:war
-// Ten lords sign up (the first eight get castles until the cap is raised), orders go in each day,
+// Twelve lords sign up for a ten-seat war (the last two wait for a seat), orders go in each day,
 // the server fights each battle once its lock has passed, and a real browser signed in as one of
 // the lords replays every battle and must arrive at the server's result hash.
 import { test, before, after } from "node:test";
@@ -17,15 +17,15 @@ let pw; try { pw = createRequire(import.meta.url)("playwright"); } catch { pw = 
 
 const sim = loadSim({ extraFiles: [...WORLD_FILES, "js/dev/goldenCases.js"] });
 const { addDays, lockInstant } = { addDays: sim.get("addDays"), lockInstant: sim.get("lockInstant") };
-const GAME = "wargame0000000000001", LORDS = 10, SEATS = 8, uids = [...Array(LORDS)].map((_, i) => "bot" + String(i + 1).padStart(2, "0"));
+const GAME = "wargame0000000000001", LORDS = 12, SEATS = 10, uids = [...Array(LORDS)].map((_, i) => "bot" + String(i + 1).padStart(2, "0"));
 const today = new Date().toISOString().slice(0, 10), D1 = addDays(today, -6), days = [...Array(7)].map((_, i) => addDays(D1, i)); // day 7 is today; every lock (00:00 UTC) is behind us
 let app, db, browser;
-const cfg = { tz: "UTC", lockHour: 0, lobby: true, lobbyEnds: Date.parse(addDays(D1, -1) + "T12:00:00Z"), startDate: D1, createdAt: 1, host: uids[0], war: 1, inviteCode: "war-invite-code", maxPlayers: 8 };
+const cfg = { tz: "UTC", lockHour: 0, lobby: true, lobbyEnds: Date.parse(addDays(D1, -1) + "T12:00:00Z"), startDate: D1, createdAt: 1, host: uids[0], war: 1, inviteCode: "war-invite-code", maxPlayers: SEATS };
 const gameRef = () => db.collection("games").doc(GAME);
 
-// One lord's orders for a day: taken from a golden battle with the same number of lords, so they are varied and legal.
+// One lord's orders for a day: taken from a golden battle with the same number of lords (ten), so they are varied and legal.
 function ordersFor(dayIndex, seat) {
-  const day = days[dayIndex], g = sim.run(`goldenCase(${6 + 7 * dayIndex})`).plans[seat], rnd = sim.get("mulberry")(1000 * dayIndex + seat);
+  const day = days[dayIndex], g = sim.run(`goldenCase(${53 + 4 * dayIndex})`).plans[seat], rnd = sim.get("mulberry")(1000 * dayIndex + seat);
   const others = uids.slice(0, SEATS).filter((_, k) => k !== seat), offers = {}, bids = {};
   if (rnd() < .5) offers[others[Math.floor(rnd() * others.length)]] = { gold: 40, day: addDays(day, rnd() < .7 ? 0 : -1) };
   if (dayIndex >= 3 && rnd() < .6) { const ids = Object.keys(sim.get("MERCS")), m = ids[Math.floor(rnd() * ids.length)]; bids[m] = { gold: sim.get("MERCS")[m].min + 10 * seat, day }; }
@@ -45,7 +45,7 @@ before(async () => {
   const c = clockFor(cfg, null), batch = db.batch();
   batch.set(gameRef(), { ...cfg, planDay: c.planDay, nextPlanDay: c.nextPlanDay, nextLockAt: Timestamp.fromMillis(c.nextLockAt), lockAfter: Timestamp.fromMillis(c.lockAfter), clockWar: 1 });
   uids.forEach((u, i) => {
-    const p = gameRef().collection("players").doc(u), banner = { pat: "solid", c1: sim.get("SEAT_COLORS")[i % 8], c2: "#ecdcb4", em: "none" };
+    const p = gameRef().collection("players").doc(u), banner = { pat: "solid", c1: sim.get("SEAT_COLORS")[i % 12], c2: "#ecdcb4", em: "none" };
     batch.set(gameRef().collection("members").doc(u), { invite: cfg.inviteCode, at: 1 });
     batch.set(p, { fromWeek: "0000-00-00", joinedAt: 1000 + i, nick: "Lord " + (i + 1), real: "Bot " + (i + 1), pending: false, banner, hasRapier: false, sealedFor: null, week: D1, war: 1 });
     batch.set(p.collection("private").doc("state"), { week: D1, day: D1, cls: ["warrior", "mage", "archer", "shaman", "rogue"][i % 5], banner, gold: 300, owned: [], items: [] });
@@ -87,13 +87,15 @@ test("the server fights all seven days, each once its lock has passed", async ()
 });
 
 let battles;
-test("every battle is saved with results for the eight seated lords, in war order", async () => {
+test("every battle is saved with results for the ten seated lords, in war order", async () => {
   battles = Object.fromEntries((await gameRef().collection("battles").get()).docs.map(d => [d.id, d.data()]));
   assert.deepEqual(Object.keys(battles).sort(), days);
   days.forEach((day, i) => {
     const b = battles[day];
     assert.equal(b.day, i + 1); assert.equal(b.week, D1); assert.equal(b.war, 1);
-    assert.deepEqual(b.results.map(r => r.pid).sort(), uids.slice(0, SEATS), "lords 9 and 10 wait for a seat");
+    assert.deepEqual(b.results.map(r => r.pid).sort(), uids.slice(0, SEATS), "lords 11 and 12 wait for a seat");
+    assert.equal(b.inputs.N, 21, "ten lords fight on the 21x21 field");
+    assert.equal(new Set(b.inputs.plans.map(p => p.color)).size, SEATS, "every lord has their own colour");
     assert.match(b.resultHash, /^[0-9a-f]{16}$/);
     assert.equal(b.inputs.plans.length, SEATS);
     assert.equal(b.inputs.final, i === 6);

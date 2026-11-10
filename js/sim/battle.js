@@ -802,9 +802,9 @@ function runBattle(plans, seed, opts = {}) {
   }
   for (let i = 0; i < 10; i++) { t = +(t + FRAME_DT).toFixed(2); record(); }
   ents.filter(e => e.kind === "champ" && e.gains < MIN_GAIN && e.heroLvl < MAX_HERO_LVL).forEach(e => { while (e.gains < MIN_GAIN && e.heroLvl < MAX_HERO_LVL) levelUp(e); }); // every hero earns at least two levels a day
-  const PTS = [10, 7, 5, 4, 3, 2, 1, 0];
+  const PTS = [10, 7, 5, 4, 3, 2, 1, 0]; // placement points; from 8th place down a lord scores only for kills and castles
   const results = order.map(pid => ({ pid, name: nm(pid), color: P[pid].color, cls: P[pid].cls, place: P[pid].place, kills: P[pid].kills, ukills: P[pid].ukills, castles: P[pid].castles,
-    points: PTS[P[pid].place - 1] + P[pid].kills + 2 * P[pid].castles, fellAt: P[pid].elimT, gold: Math.round(P[pid].gold) })).sort((a, b) => a.place - b.place);
+    points: (PTS[P[pid].place - 1] || 0) + P[pid].kills + 2 * P[pid].castles, fellAt: P[pid].elimT, gold: Math.round(P[pid].gold) })).sort((a, b) => a.place - b.place);
   const invest = (type, lvl) => { const c = UNITS[type].cost; let g = c; for (let l = 1; l < lvl; l++) g += Math.round(c * .5 * l); return g; };
   const tel = { duration: Math.min(t, TMAX),
     players: order.map(pid => ({ pid, name: nm(pid), cls: P[pid].cls, level: P[pid].level || 1, place: P[pid].place, points: results.find(r => r.pid === pid).points, elimT: P[pid].elimT, trapDmg: Math.round(P[pid].trapDmg || 0) })),
