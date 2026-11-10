@@ -14,7 +14,7 @@
 .btn.st-hostile { color: var(--wax); } .btn.st-ally { color: var(--verdant); }
 .nmrow { flex-wrap: wrap; align-items: flex-end; border-bottom: 0; }
 .nmrow label { display: grid; gap: 3px; flex: 1 1 130px; font-size: 13px; color: var(--ink-soft); }
-.nmrow input { font: inherit; font-size: 16px; color: var(--ink); background: rgba(255,250,230,.75); border: 2px solid var(--wood-dark); border-radius: 6px; padding: 6px 8px; min-width: 0; }
+.nmrow input, #dsemail { font: inherit; font-size: 16px; color: var(--ink); background: rgba(255,250,230,.75); border: 2px solid var(--wood-dark); border-radius: 6px; padding: 6px 8px; min-width: 0; }
 .swatches.team .swt.taken, .swatches.team .swt:disabled:not(.on) { filter: grayscale(1) brightness(.75); opacity: .35; cursor: not-allowed; position: relative; }
 .swatches.team .swt.taken::after { content: "✕"; position: absolute; inset: 0; display: grid; place-items: center; color: #1e140c; font-weight: 700; }
 .stepn { display: inline-grid; place-items: center; width: 24px; height: 24px; margin-right: 8px; border-radius: 50%; background: var(--wax); color: var(--parchment); font-family: var(--f-body); font-size: 14px; font-weight: 700; vertical-align: 2px; }

@@ -44,3 +44,24 @@ jobs:
           npx playwright install --with-deps chromium firefox webkit
       - name: Self-test in Chromium, Firefox and WebKit
         run: node tools/selftest-browsers.mjs chromium firefox webkit
+
+  # The hosted game against the Firebase emulators: the security rules, then three accounts in real
+  # browsers registering, sealing orders and failing to read each other's secrets.
+  firebase:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm ci --prefix functions
+      - name: Security rules
+        run: npm run test:rules
+      - name: Install a browser
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Three accounts, end to end
+        run: npm run test:e2e

@@ -25,6 +25,15 @@ npm run build      # copy the game into dist/ ready for hosting
 - **Deterministic maths:** anything a battle or the map layout depends on must use `dsin`, `dcos`,
   `datan2`, `dhypot`/`hyp` from `js/core/detmath.js`, never `Math.sin/cos/atan2/hypot/pow/exp/log` or `**`.
   Those differ in the last digit between browsers, which is enough to change a fight. Drawing code may use `Math.*`.
+- **The hosted (Firebase) game.** `js/net/backend-firebase.js` gives the game the storage API it
+  already used, on top of Firebase Auth and Firestore, and only switches on outside Claude. Data is
+  split so orders stay secret: public profile, private state, and one orders document per day
+  (see the top of that file and `firestore.rules`). `functions/` holds the server code.
+  - `npm run emulators` builds the game and runs everything locally (needs Java). Open
+    `http://127.0.0.1:5000/?emulator=1`. Nothing touches the real project.
+  - `npm run test:rules` tests the security rules; `npm run test:e2e` drives three accounts through
+    registering and sealing orders in real browsers. Both run in the emulators.
+  - The server reuses the game's own files: `npm run functions:sync` copies them into `functions/game/`.
 - CI (`.github/workflows/ci.yml`) runs lint, the tests and the build on every pull request.
 - The hosting plan and its phases are in `daily-siege-hosting-plan.md`.
 
@@ -36,7 +45,7 @@ npm run build      # copy the game into dist/ ready for hosting
 | `js/render/` | Canvas drawing: sprites, banners, walls, item and spell icons, map, camera, frame loop |
 | `js/sim/` | Battle simulation: `runBattle(plans, seed)` is deterministic, plus bots, alliances, plan building, result hashing |
 | `js/replay/` | Watching a battle: muster/hero pick, replay drawing, inspector, controls, highlights, video export |
-| `js/net/` | Friends game over the artifact database: players, clock, roster, daily battles, session, lobby, test sandbox |
+| `js/net/` | Friends game: players, clock, roster, daily battles, session, lobby, test sandbox, and the Firebase backend |
 | `js/ui/` | HUD, sheets (castle, info, army, council, results), `render()`, button actions, map input |
 | `js/audio/` | Music player, and the tracks as embedded data (`tracks.js`) |
 | `js/dev/` | Balance lab (simulates many battles), golden battles for the determinism tests |

@@ -161,8 +161,10 @@
     on(gr, s => { g.game = s.exists ? s.data() : null; });
     on(gr.collection("players"), q => { g.pubs = {}; q.forEach(d => { g.pubs[d.id] = d.data(); }); });
     on(me.collection("private").doc("state"), s => { g.state = s.exists ? s.data() : null; });
-    on(me.collection("orders").orderBy(fb.firestore.FieldPath.documentId()).limitToLast(8), q => { g.orders = {}; q.forEach(d => { g.orders[d.id] = d.data(); }); });
-    on(gr.collection("battles").orderBy(fb.firestore.FieldPath.documentId()).limitToLast(10), q => { g.battles = {}; q.forEach(d => { g.battles[d.id] = d.data(); }); });
+    // only recent days are needed: this week's orders and battles (a plain range on the day key needs no index)
+    const since = new Date(Date.now() - 10 * 864e5).toISOString().slice(0, 10), byDay = fb.firestore.FieldPath.documentId();
+    on(me.collection("orders").where(byDay, ">=", since), q => { g.orders = {}; q.forEach(d => { g.orders[d.id] = d.data(); }); });
+    on(gr.collection("battles").where(byDay, ">=", since), q => { g.battles = {}; q.forEach(d => { g.battles[d.id] = d.data(); }); });
   }
 
   // ---------- what the game sees ----------

@@ -14,8 +14,10 @@
     "preview": "vite preview",
     "test": "node --test",
     "golden:update": "node tools/golden-update.mjs",
+    "emulators": "npm run build && npm run functions:sync && firebase emulators:start --project demo-dailysiege",
     "functions:sync": "node tools/sync-functions.mjs",
     "test:rules": "firebase emulators:exec --only firestore --project demo-dailysiege \"node --test emulator-tests/rules.spec.mjs\"",
+    "test:e2e": "npm run build && npm run functions:sync && firebase emulators:exec --project demo-dailysiege \"node --test emulator-tests/e2e.spec.mjs\"",
     "selftest:browsers": "node tools/selftest-browsers.mjs",
     "lint": "eslint ."
   },
