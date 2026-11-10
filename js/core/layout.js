@@ -33,7 +33,7 @@ function armySpots([r, c], size) {
 
 // ================= seat layout =================
 let W = N * T, MID = (CENTRE + .5) * T, castleTiles = [], roadTiles = new Set(), occupied = new Set(), RARMY = [];
-const UTYPES = Object.keys(UNITS);
+const UTYPES = Object.keys(UNITS).filter(k => !UNITS[k].castleOnly && !UNITS[k].merc); // rival lords field regular soldiers only
 const seeArmies = () => DAY > 1;
 let MY_NAME = "You";
 const myName = () => MY_NAME; // day 1: only castles are known; later days show yesterday's armies

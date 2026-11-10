@@ -1,9 +1,9 @@
 // Gear, castle defences and shop items
 
 const GEAR = {
-  weapon: [{ name: "Iron Blade", cost: 60, desc: "+15% attack" }, { name: "Steel Blade", cost: 120, desc: "+30% attack" }, { name: "Runed Blade", cost: 200, desc: "+45% attack, heals 10% of damage dealt" }],
-  armour: [{ name: "Padded Coat", cost: 60, desc: "+15% health" }, { name: "Chainmail", cost: 120, desc: "+30% health, 10% less damage taken" }, { name: "Plate Armour", cost: 200, desc: "+45% health, 20% less damage taken" }],
-  charm:  [{ name: "Hare's Foot", cost: 50, desc: "+15% move speed" }, { name: "Sage's Amulet", cost: 110, desc: "Also: abilities recharge 20% faster" }, { name: "Phoenix Feather", cost: 180, desc: "Also: revives twice as fast, at full health" }],
+  weapon: [{ name: "Iron Blade", cost: 60, desc: "All soldiers +15% attack" }, { name: "Steel Blade", cost: 120, desc: "All soldiers +30% attack" }, { name: "Runed Blade", cost: 200, desc: "All soldiers +45% attack, heal 10% of damage dealt" }],
+  armour: [{ name: "Padded Coat", cost: 60, desc: "All soldiers +15% health" }, { name: "Chainmail", cost: 120, desc: "All soldiers +30% health, 10% less damage taken" }, { name: "Plate Armour", cost: 200, desc: "All soldiers +45% health, 20% less damage taken" }],
+  charm:  [{ name: "Hare's Foot", cost: 50, desc: "+15% move speed" }, { name: "Sage's Amulet", cost: 110, desc: "Also: abilities recharge 20% faster" }, { name: "Phoenix Feather", cost: 180, desc: "Also: you return from the dead twice as fast" }],
 };
 const GEAR_SLOTS = [["weapon", "Weapon"], ["armour", "Armour"], ["charm", "Charm"]];
 const DEFENCES = {
@@ -12,6 +12,8 @@ const DEFENCES = {
 };
 
 const ITEM_SLOTS = 6;
+const ITEM_MULT = [1, 1.4, 1.8]; // shop price by item tier: everything is always on sale, higher tiers just cost more
+const itemCost = k => { const it = ITEMS[k]; return it.fixed ? it.cost : Math.round(it.cost * ITEM_MULT[it.tier - 1] / 5) * 5; };
 const ITEMS = {
   boots:       { name: "Boots of Speed",     g: "»", col: "#5aa0d8", cost: 80,  tier: 1, kind: "passive", desc: "+10% move speed. Catch the fleeing, or run from the strong." },
   gauntlets:   { name: "Gauntlets of Power", g: "✊", col: "#c9962f", cost: 100, tier: 1, kind: "passive", desc: "+15% attack damage." },
@@ -27,5 +29,6 @@ const ITEMS = {
   scroll:      { name: "Scroll of Retreat",  g: "↺", col: "#b48cff", cost: 90,  tier: 2, kind: "use", cd: 90, desc: "Below 30% health with foes near: teleports you home and heals 20%." },
   banner:      { name: "Banner of Might",    g: "⚑", col: "#e2b33c", cost: 140, tier: 2, kind: "aura", desc: "Aura: allies within 3 tiles deal 12% more damage." },
   standard:    { name: "Iron Standard",      g: "⛨", col: "#7fb2ff", cost: 140, tier: 2, kind: "aura", desc: "Aura: allies within 3 tiles take 12% less damage." },
+  rapier:      { name: "Divine Rapier",     g: "⚔", col: "#ffd34d", cost: 1000, fixed: true, tier: 3, kind: "passive", unique: true, desc: "Doubles your hero's damage. Drops where you fall: any hero can grab it and keep it." },
   mender:      { name: "Mender's Charm",     g: "❀", col: "#9cf09c", cost: 150, tier: 3, kind: "aura", desc: "Aura: heals allies within 3 tiles for 4 health per second." },
 };

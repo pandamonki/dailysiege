@@ -9,7 +9,7 @@ async function connectLive() {
   if (!LIVE.uid) { render(); return; }
   db.doc("game/config").onSnapshot(s => { if (PREVIEW) { PREVIEW.keep.config = s.exists ? s.data() : null; PREVIEW.keep.configLoaded = true; return; } LIVE.config = s.exists ? s.data() : null; LIVE.configLoaded = true; liveChanged(); }, () => { LIVE.configLoaded = true; render(); });
   db.collection("players").onSnapshot(q => { const pl = {}; q.docs.forEach(d => { pl[d.id] = d.data(); }); if (PREVIEW) { PREVIEW.keep.players = pl; PREVIEW.keep.playersLoaded = true; return; } LIVE.players = pl; LIVE.playersLoaded = true; refreshNames(); liveChanged(); }, () => render());
-  db.collection("battles").onSnapshot(q => { const bt = {}; q.docs.forEach(d => { bt[d.id] = d.data(); }); if (PREVIEW) { PREVIEW.keep.battles = bt; return; } LIVE.battles = bt; liveChanged(); }, () => {});
+  db.collection("battles").onSnapshot(q => { const bt = {}; q.docs.forEach(d => { bt[d.id] = d.data(); }); if (PREVIEW) { PREVIEW.keep.battles = bt; return; } LIVE.battles = withLocalBattles(bt); liveChanged(); }, () => {});
   clearInterval(liveTimer); liveTimer = setInterval(() => { if (isLive() || inLobby() || LIVE.wasLobby) liveChanged(); }, 30000);
 }
 async function createGame(lockHour, closeHours) {
@@ -81,7 +81,7 @@ function renderLobby() {
   if (own && !cfg.host && LIVE.db) { cfg.host = LIVE.uid; LIVE.db.doc("game/config").update({ host: LIVE.uid }).catch(() => {}); } // older games: record the host
   el.innerHTML = `<div class="lwrap"><h2>The Muster Hall</h2><p class="lsub">${closes} · hosted by ${esc(hostLabel() === "you" ? "you" : hostLabel())}</p>
     <div class="lbox"><h3>${reg.length} of 8 lords registered · ${open} seat${open === 1 ? "" : "s"} open</h3>${lordCards(true)}
-      <p class="muted">When registration closes the map is built, every castle is placed, and Day 1 planning begins. Battles are fought daily at ${hourLabel(cfg.lockHour)} (${esc(cfg.tz)}).</p></div>
+      <p class="muted">When registration closes the map is built, every castle is placed, and Day 1 planning begins. Battles are fought daily at ${lockLabel(cfg)} (${esc(cfg.tz)}).</p></div>
     <div class="lbox"><h3>You're registered</h3><div class="lrow"><span class="coat"><img alt="" src="${bannerURL(S.banner || defaultBanner(), MY_COLOR, 40, 54)}"><span><b>${esc(myLabel || MY_NAME)}</b><br><small class="muted">${TEAM_COLOR_NAMES[MY_COLOR] || ""} army · ${CLASSES[S.cls].name}</small></span></span><button class="btn small wood" data-act="lobbyedit">Change</button></div></div>
     ${own ? `<div class="lbox"><h3>Host controls</h3>
       <label class="inline">Registration closes<select id="lobbyclose"><option value="">Keep as is</option><option value="0">When I lock it in</option>${[1, 3, 6, 12, 24, 48].map(h => `<option value="${h}">In ${h < 24 ? h + " hour" + (h > 1 ? "s" : "") : h / 24 + " day" + (h > 24 ? "s" : "")}</option>`).join("")}</select></label>
@@ -108,7 +108,13 @@ async function registerMe() {
 async function watchLiveBattle(dayKey, how) {
   const week = addDays(dayKey, -(weekdayOf(dayKey) - 1)), before = {};
   Object.entries(LIVE.battles).forEach(([k, b]) => { if (b.week === week && k < dayKey) (b.results || []).forEach(r => { before[r.pid] = (before[r.pid] || 0) + r.points; }); });
-  const { N: size, plans, transfers, final } = liveBattlePlans(dayKey), res = runBattle(plans, daySeed(dayKey), { N: size, finalDay: final, ranks: rankMap(before, plans.map(p => p.pid)) });
+  const saved = LIVE.battles[dayKey] && LIVE.battles[dayKey].inputs;
+  const { N: size, plans, transfers, final } = saved
+    ? { N: saved.N, final: !!saved.final, transfers: LIVE.battles[dayKey].transfers || [], plans: JSON.parse(JSON.stringify(saved.plans)).map(p => Object.assign(p, { me: p.pid === LIVE.uid, name: nameOf(p.pid) })) }
+    : liveBattlePlans(dayKey);
+  if (saved && saved.feuds) plans.feuds = saved.feuds.slice();
+  if (saved && LIVE.battles[dayKey].mercs) plans.mercs = LIVE.battles[dayKey].mercs;
+  const res = runBattle(plans, daySeed(dayKey), { N: size, finalDay: final, ultV2: saved ? !!saved.ultV2 : ultV2For(dayKey), ranks: rankMap(before, plans.map(p => p.pid)) });
   DAY_FOR_INTRO = weekdayOf(dayKey);
   res.names = Object.fromEntries(plans.map(p => [p.pid, p.pid === LIVE.uid ? (MY_NAME || "You") : p.name]));
   res.transfers = transfers; res.board = before; res.week = week;
@@ -144,7 +150,7 @@ function gameSheet() {
     <div class="row"><button class="btn" data-act="open" data-v="title">← Back</button></div></div>`;
   if (lobbyOpen(LIVE.config)) { const mineL = LIVE.players[LIVE.uid], n = lobbyLords().length, open = Math.max(0, 8 - n), hl = hostLabel();
     return head(null, "You're summoned to war", hl === "you" ? "You called the banners" : `${esc(hl)} has called the banners`) + `<div class="body">
-      <div class="summon"><p>${hl === "you" ? "You are hosting this war." : `<b>${esc(hl)}</b> is hosting this war and has invited you to take a castle.`} Battles are fought daily at ${hourLabel(LIVE.config.lockHour)} (${esc(LIVE.config.tz)}) for seven days.</p>
+      <div class="summon"><p>${hl === "you" ? "You are hosting this war." : `<b>${esc(hl)}</b> is hosting this war and has invited you to take a castle.`} Battles are fought daily at ${lockLabel(LIVE.config)} your time for seven days.</p>
         <p class="when">${closesText(LIVE.config)} · <b>${open}</b> of 8 seats open</p></div>
       <div class="sec"><h3>${n} lord${n === 1 ? " has" : "s have"} registered</h3>${n ? lordCards(false) : `<p class="muted">Nobody yet. Be the first.</p>`}<p class="muted">Heroes stay hidden until the war begins.</p></div>
       <div class="row">${mineL ? `<button class="btn wax big" data-act="playgo">${mineL.pending ? "Finish registering" : "Enter the Muster Hall"}</button>` : n >= 8 ? `<span class="muted">All eight seats are taken.</span>` : `<button class="btn wax big" data-act="joingame">⚑ Register<small>A short tour, then choose your hero, name, colour and coat of arms</small></button>`}<button class="btn" data-act="open" data-v="title">← Back</button></div></div>`; }
@@ -156,7 +162,7 @@ function gameSheet() {
   const ranked = roster.map((p, i) => ({ p, i })).sort((a, b) => (pts[b.p.uid] || 0) - (pts[a.p.uid] || 0));
   const battles = Object.keys(LIVE.battles).filter(k => LIVE.battles[k].week === ck.week).sort();
   const sealedN = roster.filter(p => status(p)[0] === "Sealed").length;
-  return head(null, "Friends Game", `Battles daily at ${hourLabel(cfg.lockHour)} · Day ${ck.dayNo} of 7`) + `<div class="body">
+  return head(null, "Friends Game", `Battles daily at ${lockLabel(cfg)} · Day ${ck.dayNo} of 7`) + `<div class="body">
     <div class="stats"><div class="stat"><b>${countdown()}</b><span>until orders lock</span></div><div class="stat"><b>${sealedN} / ${roster.length}</b><span>lords have sealed</span></div><div class="stat"><b>${roster.length} / ${cap}</b><span>seats filled</span></div></div>
     <div class="sec"><h3>This week's lords</h3>
       ${ranked.length ? ranked.map(({ p, i }, n) => { const [st, cl] = status(p), c = clsOf(p);

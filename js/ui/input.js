@@ -7,11 +7,11 @@ function tapAt(clientX, clientY) {
   if (mode === "replay") { pickInReplay(wx / ts, wy / ts); return; }
   const q = Math.floor(wx / ts), r = Math.floor(wy / ts);
   if (r < 0 || q < 0 || r >= N || q >= N) return;
-  const key = `${r},${q}`;
-  if (r === CASTLE[0] && q === CASTLE[1]) { sel = null; if (S.phase === "orders") { toast("Recruit and upgrade in step 1, Muster."); return; } open("castle"); return; }
-  const rv = RIVALS.find(x => x.pos[0] === r && x.pos[1] === q) || RIVALS.find(x => RARMY.some(u => u.rid === x.id && u.r === r && u.c === q));
+  const key = `${r},${q}`, near = sel ? null : pieceNear(wx / ts, wy / ts);
+  if (!near && r === CASTLE[0] && q === CASTLE[1]) { sel = null; S.phase = "muster"; open("castle"); return; }
+  const rv = near ? null : RIVALS.find(x => x.pos[0] === r && x.pos[1] === q) || RIVALS.find(x => RARMY.some(u => u.rid === x.id && u.r === r && u.c === q));
   if (rv) { sel = null; open("rival", rv.id); return; }
-  if (isCentre(r, q) && !sel) { toast("The centre hill. Hold it for bonus points."); return; }
+  if (isCentre(r, q) && !sel && !near) { toast("The centre hill. Hold it for bonus points."); return; }
   const pn = sel ? null : pieceNear(wx / ts, wy / ts);
   if (!inZone(r, q) && !wallRefAt(r, q) && !pn) { if (sel) toast("You can only deploy inside your fenced field."); return; }
   const wref = wallRefAt(r, q), here = pn || S.place[key] || wref;
@@ -32,7 +32,7 @@ function tapAt(clientX, clientY) {
 const ptrs = new Map(); let drag = null, pinch = null, moved = false;
 const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 function pieceNear(tx, ty) { // the placed piece closest to a point (in tiles), measured from the middle of its sprite so a finger on the head still counts
-  let best = null, bd = .62;
+  let best = null, bd = Math.max(.62, 30 / (ts * cam.z));
   Object.entries(S.place).forEach(([k, ref]) => { if (findWall(ref)) return; const [r, c] = k.split(",").map(Number), dd = Math.hypot(tx - (c + .5), ty - (r + .42)); if (dd < bd) { bd = dd; best = ref; } });
   return best || wallRefAt(Math.floor(ty), Math.floor(tx)) || S.place[`${Math.floor(ty)},${Math.floor(tx)}`] || null;
 }
@@ -69,7 +69,7 @@ cvs.addEventListener("pointermove", e => {
     zoomAt((a.x + b.x) / 2 - rc.left, (a.y + b.y) / 2 - rc.top, pinch.z * dist(a, b) / pinch.d);
   } else if (drag) {
     const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-    if (!moved && Math.hypot(dx, dy) > 8) moved = true;
+    if (!moved && Math.hypot(dx, dy) > 14) moved = true;
     if (moved && replay) replay.auto = false;
     if (moved) { cam.x = drag.cx - dx / cam.z; cam.y = drag.cy - dy / cam.z; clampCam(); }
   }

@@ -33,10 +33,12 @@ function defaultPlace(ids) {
 }
 let S;
 const OLDTXT = { "My champion's HP < 30%": "My hero's HP < 30%", "Retreat champion to castle": "Retreat hero to castle", "Enemy champions": "Enemy heroes" };
-function migrateS(s) { if (!s) return; if (s.prio && s.prio.length > 5) s.prio = s.prio.slice(0, 5); const m = x => OLDTXT[x] || x; (s.rules || []).forEach(r => { r.if = m(r.if); r.then = m(r.then); }); if (s.prio) s.prio = s.prio.map(m); }
+function migrateS(s) { if (!s) return; if (!s.rapierFix) { s.rapierFix = 1; if ((s.items || []).includes("rapier")) { s.items = s.items.filter(k => k !== "rapier"); s.gold = (s.gold || 0) + 1; } } // one-off: the rapier was briefly sold for 1g by a pricing bug
+  (s.owned || []).forEach(u => { u.hp = 1; }); if (s.traps && s.traps.some(t => !TRAPS[t.type])) { s.traps.filter(t => !TRAPS[t.type]).forEach(t => { Object.keys(s.place || {}).forEach(k => { if (s.place[k] === t.id) delete s.place[k]; }); s.gold = (s.gold || 0) + 20; }); s.traps = s.traps.filter(t => TRAPS[t.type]); } if (s.prio && s.prio.length > 5) s.prio = s.prio.slice(0, 5); const m = x => OLDTXT[x] || x; (s.rules || []).forEach(r => { r.if = m(r.if); r.then = m(r.then); }); if (s.prio) s.prio = s.prio.map(m); }
 let sel = null, sheet = null;
 // drop placements that fall outside the current deployment field (the map changes size with the player count)
 function sanitizePlace() {
+  dedupePlace(S.place);
   Object.keys(S.place || {}).forEach(k => { if (!zoneSet.has(k)) delete S.place[k]; });
   (S.walls || []).forEach(w => { const k = Object.keys(S.place).find(x => S.place[x] === w.id); if (k) { const [r, c] = k.split(",").map(Number); if (!wallTiles(r, c, w.dir).every(([a, b]) => zoneSet.has(`${a},${b}`))) delete S.place[k]; } });
   if (!Object.values(S.place).includes("champ")) { const sp = armySpots(CASTLE, N), k = sp.champ.join(","); if (zoneSet.has(k) && !S.place[k]) S.place[k] = "champ"; }

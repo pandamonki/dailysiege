@@ -146,6 +146,9 @@ function drawTrap(c, type, x, y, s) {
   } else if (type === "snare") {
     c.strokeStyle = "#c9a46a"; c.lineWidth = s * .07; c.beginPath(); c.ellipse(x, y + s * .06, s * .26, s * .13, 0, 0, 7); c.stroke();
     c.beginPath(); c.moveTo(x + s * .24, y + s * .02); c.quadraticCurveTo(x + s * .38, y - s * .2, x + s * .2, y - s * .3); c.stroke();
+  } else if (type === "blade") {
+    c.fillStyle = "#4a3a2a"; c.fillRect(x - s * .3, y - s * .12, s * .6, s * .24); c.fillStyle = "#1e140c"; [-.2, 0, .2].forEach(dx => c.fillRect(x + dx * s - s * .035, y - s * .08, s * .07, s * .16));
+    c.fillStyle = "#d7dde2"; [-.2, 0, .2].forEach(dx => { c.beginPath(); c.moveTo(x + dx * s - s * .05, y - s * .1); c.lineTo(x + dx * s, y - s * .3); c.lineTo(x + dx * s + s * .05, y - s * .1); c.fill(); });
   } else {
     c.fillStyle = "#e2b33c"; c.beginPath(); c.moveTo(x - s * .22, y + s * .16); c.quadraticCurveTo(x - s * .2, y - s * .28, x, y - s * .28); c.quadraticCurveTo(x + s * .2, y - s * .28, x + s * .22, y + s * .16); c.closePath(); c.fill();
     c.strokeStyle = "#7a5a10"; c.lineWidth = s * .04; c.stroke();
@@ -153,11 +156,13 @@ function drawTrap(c, type, x, y, s) {
   }
 }
 function drawSprite(key, color, cx, by, scale, o) {
-  const s = spr(key, color), h0 = ts * scale, w = h0 * SW / SH; o = o || {};
+  const s = spr(key, color, o && o.pose), h0 = ts * scale, w = h0 * SW / SH; o = o || {};
   ctx.fillStyle = "rgba(0,0,0,.3)"; ctx.beginPath(); ctx.ellipse(cx, by - ts * .02, w * .32, ts * .09, 0, 0, 7); ctx.fill();
   const h = h0 * (o.sq || 1), x = cx + (o.dx || 0), y = by + (o.dy || 0);
   ctx.imageSmoothingEnabled = false;
-  if (o.flip) { ctx.save(); ctx.translate(x, 0); ctx.scale(-1, 1); ctx.drawImage(s, -w / 2, y - h, w, h); ctx.restore(); } else ctx.drawImage(s, x - w / 2, y - h, w, h);
+  const put = () => { if (o.flip) { ctx.save(); ctx.translate(x, 0); ctx.scale(-1, 1); ctx.drawImage(s, -w / 2, y - h, w, h); ctx.restore(); } else ctx.drawImage(s, x - w / 2, y - h, w, h); };
+  if (o.aura) { ctx.save(); ctx.shadowColor = o.aura; ctx.shadowBlur = ts * .5; put(); ctx.restore(); }
+  put();
   ctx.imageSmoothingEnabled = true;
   return y - h + ts * .12; // top of the figure (sprite has headroom for hats)
 }
@@ -184,11 +189,11 @@ function nameTag(cx, y, text, color, lvl) {
 function drawFigure(key, color, r, q, isChamp, frac, friendly, t, extra) {
   const cx = (q + .5) * ts, by = (r + .95) * ts;
   if (isChamp) {
-    glow(cx, by - ts * .4, ts * .75, ts * .75, color, .55 + Math.sin(t * 3 + q) * .12);
+    glow(cx, by - ts * .5, ts * 1.0, ts * 1.05, color, .8 + Math.sin(t * 3 + q) * .12);
     ctx.strokeStyle = color; ctx.lineWidth = ts * .06; ctx.beginPath(); ctx.ellipse(cx, by - ts * .05, ts * .36, ts * .13, 0, 0, 7); ctx.stroke();
   }
   if (extra && extra.ring) { ctx.strokeStyle = "#ffe082"; ctx.lineWidth = ts * .06; ctx.beginPath(); ctx.ellipse(cx, by - ts * .05, ts * .42, ts * .16, 0, 0, 7); ctx.stroke(); }
-  const top = drawSprite(key, color, cx, by, isChamp ? 1.15 : .95);
+  const top = drawSprite(key, color, cx, by, isChamp ? 1.15 : .95, isChamp ? { aura: color } : undefined);
   const y = hpBar(cx, top, frac, friendly);
   if (extra && extra.name) nameTag(cx, y - ts * .02, extra.name, color, isChamp ? extra.lvl : null);
   if (extra && extra.lvl && !(isChamp && extra.name)) {

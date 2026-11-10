@@ -30,7 +30,8 @@ async function saveName() {
 }
 function latestPlan(p, dayKey, inclusive) {
   const keys = Object.keys(p.plans || {}).filter(k => (inclusive ? k <= dayKey : k < dayKey) && k >= addDays(dayKey, -(weekdayOf(dayKey) - 1))).sort();
-  return keys.length ? p.plans[keys[keys.length - 1]] : null;
+  const sealed = keys.filter(k => p.plans[k] && p.plans[k].sealed); // only sealed orders count: drafts and unsealed edits are never fought
+  return sealed.length ? p.plans[sealed[sealed.length - 1]] : null;
 }
 function standings(week, through) {
   const pts = {};
@@ -40,7 +41,7 @@ function standings(week, through) {
 // a champion's level and spare experience on a given day, rebuilt from the week's battles (every client gets the same answer)
 function heroState(uid, week, dayKey) {
   let lvl = 1, xp = 0;
-  Object.keys(LIVE.battles).filter(k => LIVE.battles[k].week === week && k < dayKey).sort().forEach(k => { const b = LIVE.battles[k]; lvl += b.gain ? (b.gain[uid] || 0) : 1; xp = (b.xp && b.xp[uid]) || 0; });
+  Object.keys(LIVE.battles).filter(k => LIVE.battles[k].week === week && k < dayKey).sort().forEach(k => { const b = LIVE.battles[k]; lvl += b.gain ? Math.min(XP_CAP, b.gain[uid] || 0) : 1; xp = (b.xp && b.xp[uid]) || 0; });
   return { lvl: Math.min(MAX_HERO_LVL, lvl), xp };
 }
 function carriedPairs(dayKey) {
@@ -57,15 +58,16 @@ function incomeFor(uid, week, dayKey) {
 }
 const standingsThrough = (week, dayKey) => standings(week, dayKey);
 function freshLiveState(ck) {
-  return { week: ck.week, day: ck.planDay, gold: 300 + 150 * (ck.dayNo - 1), cls: "warrior", ranks: { a1: 0, a2: 0, a3: 0, ult: 0 }, picks: {},
+  return { week: ck.week, day: ck.planDay, gold: 300 + BASE_INCOME * (ck.dayNo - 1), cls: "warrior", ranks: { a1: 0, a2: 0, a3: 0, ult: 0 }, picks: {},
     triggers: { a1: TRIGGERS[1], a2: TRIGGERS[2], a3: TRIGGERS[0], ult: TRIGGERS[1] }, owned: [], slots: SLOT_START, traps: [], place: defaultPlace([]),
     stance: "skirmish", prio: PRIORITIES.slice(), rules: [{ if: IFS[0], then: THENS[0] }, { if: IFS[1], then: THENS[0] }], diplo: {}, locked: false, phase: "muster",
     gear: { weapon: 0, armour: 0, charm: 0 }, defences: { walls: 0, tower: 0 }, lvl: 1, xp: 0,
-    castle: 1, items: [], walls: [], banner: defaultBanner(), pairs: [], pactAct: {}, pactWhen: {}, ob: 1 };
+    castle: 1, items: [], walls: [], banner: defaultBanner(), pairs: [], pactAct: {}, pactWhen: {}, ob: 1,
+    paid: (() => { const o = {}; for (let d = ck.week; d < ck.planDay; d = addDays(d, 1)) o[d] = 1; return o; })() };
 }
 function mySnapshot() {
   const pieces = myPieces();
   ensureDip();
-  return { items: (S.items || []).slice(), castleTier: S.castle || 1, banner: S.banner, ...pactPlan(), cls: S.cls, ranks: S.ranks, picks: S.picks, triggers: S.triggers, gear: S.gear, defences: S.defences, stance: S.stance, prio: S.prio, rules: S.rules, pieces,
-    targets: S.lists.hostile.slice(), offers: Object.fromEntries(S.lists.ally.filter(id => S.offers[id]).map(id => [id, S.offers[id]])), terms: S.terms, tmode: S.strategy.mode, heading: S.strategy.heading, sealed: !!S.locked };
+  return { formation: S.formation !== false, ultArm: planUlt(), blessing: planBless(), items: (S.items || []).slice(), castleTier: S.castle || 1, banner: S.banner, ...pactPlan(), cls: S.cls, ranks: S.ranks, picks: S.picks, triggers: S.triggers, gear: S.gear, defences: S.defences, stance: S.stance, prio: S.prio, rules: S.rules, pieces,
+    targets: S.lists.hostile.slice(), offers: Object.assign({}, S.offers), replies: Object.assign({}, S.replies), terms: S.terms, bids: Object.assign({}, S.bids), tmode: S.strategy.mode, heading: S.strategy.heading, sealed: !!S.locked };
 }

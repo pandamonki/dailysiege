@@ -82,8 +82,10 @@ function tickReplay(ms) {
   if (replay.playing) {
     const t0 = replay.time;
     replay.time += dt * replay.speed;
+    if (!replay.reel) { replay.bdone = replay.bdone || {}; const bt = (replay.res.hl || []).find(h => h.kind === "betray" && h.t > t0 && h.t <= replay.time && !replay.bdone[h.t]); // freeze on the betrayal
+      if (bt) { replay.bdone[bt.t] = 1; replay.time = bt.t; replay.playing = false; betrayCinematic(bt, replay.res, () => { if (replay) replay.playing = true; }); return; } }
     try { const E = replay.res.events || [], me = replay.res.me; if (replay.time - t0 < .6) for (let i = lowerBound(E, t0); i < E.length && E[i].t <= replay.time; i++) if (E[i].ty === "lvl" && E[i].t > t0) { const m = replay.res.meta[E[i].id]; MUSIC.sfx("levelup", m && m.pid === me ? 1 : .3); } } catch (e) {}
-    if (replay.time >= replay.res.duration) { replay.time = replay.res.duration; replay.playing = false; if (!replay.done) { replay.done = true; if (reportBack) leaveBattle(); else open("results"); } }
+    if (replay.time >= replay.res.duration) { replay.time = replay.res.duration; replay.playing = false; if (!replay.done) { replay.done = true; const fin = () => { if (reportBack) leaveBattle(); else open("results"); }; if (replay.reel || !replay.res.awards) fin(); else victoryCeremony(replay.res, fin); } }
   }
   if (replay.auto) autoCam();
   updateReplayUI();

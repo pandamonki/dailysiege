@@ -13,8 +13,10 @@ const freePts = () => Math.max(0, level() - spent());
 const opUsed = () => S.rules.length;
 const inZone = (r, c) => zoneSet.has(`${r},${c}`);
 const placedAt = ref => Object.keys(S.place).find(k => S.place[k] === ref);
-const upgradeCost = u => Math.round(UNITS[u.type].cost * 0.6 * u.lvl);
-const unitStats = u => { const b = UNITS[u.type], m = 1 + 0.15 * (u.lvl - 1); return { hp: Math.round(b.hp * m), atk: Math.round(b.atk * m) }; };
+const unitValue = u => { const c = UNITS[u.type].cost; let g = c; for (let l = 1; l < u.lvl; l++) g += Math.round(c * .5 * l); return g; };
+const unitSellPrice = u => Math.floor(unitValue(u) * .25);
+const upgradeCost = u => Math.round(UNITS[u.type].cost * 0.5 * u.lvl);
+const unitStats = u => { const b = UNITS[u.type], m = 1 + UNIT_LVL_GAIN * (u.lvl - 1), g = (S && S.gear) || {}; return { hp: Math.round(b.hp * m * (1 + .15 * (g.armour || 0))), atk: Math.round(b.atk * m * (1 + .15 * (g.weapon || 0))) }; };
 const pieces = () => ["champ", ...S.owned.map(u => u.id), ...(S.walls || []).map(w => w.id), ...S.traps.map(t => t.id)];
 const unplaced = () => pieces().filter(p => !placedAt(p));
 const findUnit = id => S.owned.find(u => u.id === id);
@@ -39,7 +41,11 @@ function canRank(k) {
 
 // ----- banner, walls, carried alliances -----
 function defaultBanner() { return { pat: "solid", c1: null, c2: "#ecdcb4", em: "none" }; }
+function dedupePlace(place) { // a piece can only stand on one tile; if an old tile survived a merged save, the later (newer) one wins
+  const seen = new Set(); Object.keys(place || {}).reverse().forEach(k => { const ref = place[k]; if (seen.has(ref)) delete place[k]; else seen.add(ref); }); return place;
+}
 function myPieces() {
+  dedupePlace(S.place);
   return Object.entries(S.place).map(([k, ref]) => {
     const [r, c] = k.split(",").map(Number);
     if (ref === "champ") return { kind: "champ", r, c, order: S.uorders.champ || "army" };
@@ -53,7 +59,7 @@ function carriedPartners() { // players I was still allied with at the end of th
   const live = isLive(), me = live ? LIVE.uid : "you", src = live ? carriedPairs(liveClock().planDay) : (S.pairs || []);
   return src.map(s => s.split("|")).filter(p => p.includes(me)).map(p => (p[0] === me ? p[1] : p[0])).filter(id => RIVALS.some(r => r.id === id));
 }
-function pactPlan() { // what I've decided about each carried alliance: keep, break at the start, or betray later
+function pactPlan() { // what I've decided about each carried alliance: keep, break at the start, or betray when the set condition is met
   const breaks = [], pbetray = {};
   carriedPartners().forEach(id => { const a = (S.pactAct || {})[id]; if (a === "break") breaks.push(id); else if (a === "betray") pbetray[id] = (S.pactWhen || {})[id] || BETRAY_WHEN[0]; });
   return { breaks, pbetray };

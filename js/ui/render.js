@@ -17,12 +17,13 @@ function renderSheet() {
   if (!sheet) { sh.hidden = veil.hidden = true; return; }
   const p = document.getElementById("paper"), scroll = p.querySelector(".body")?.scrollTop || 0;
   const html = { castle: castleSheet, champ: champSheet, unit: () => unitSheet(sheet.id), trap: () => trapSheet(sheet.id), rival: () => rivalSheet(sheet.id),
-    title: titleSheet, board: boardSheet, report: () => reportSheet(sheet.id), guide: guideSheet, spells: spellsSheet, wall: () => wallSheet(sheet.id),
+    title: titleSheet, patch: patchSheet, gold: goldSheet, day: daySheet, board: boardSheet, report: () => reportSheet(sheet.id), invites: inviteSheet, whatsnew: newsSheet, camp: campSheet, guide: guideSheet, spells: spellsSheet, wall: () => wallSheet(sheet.id),
     council: councilSheet, uorder: () => uorderSheet(sheet.id), game: gameSheet, orders: ordersSheet, seal: sealSheet, results: resultsSheet, lab: labSheet, deploy: () => deploySheet(sheet.id) }[sheet.type]();
   p.innerHTML = html; sh.hidden = veil.hidden = false; sh.classList.toggle("splash", sheet.type === "title" && sheet.tab !== "test");
   const b = p.querySelector(".body"); if (b && sheet.keep) b.scrollTop = scroll;
 }
 function render(keepScroll = true) {
+  try { if (mode === "plan" && !sheet && !reportBack && !document.getElementById("wizring") && S && !S.ob) { if (inviteDue()) { S.invSeen = planDayKey(); sheet = { type: "invites" }; } else if (newsDue()) { sheet = { type: "whatsnew" }; } else if (mercDue()) { S.mercSeen = isLive() ? liveClock().week : "p"; sheet = { type: "camp", news: true }; } } } catch (e) {}
   if (sheet) sheet.keep = keepScroll;
   const rp = mode === "replay";
   document.getElementById("hint").hidden = rp; document.getElementById("tray").hidden = rp;
@@ -30,5 +31,12 @@ function render(keepScroll = true) {
   renderTop(); renderHint(); renderTray(); renderSheet(); save();
   try { MUSIC.sync(); } catch (e) {}
 }
-function open(type, id) { sheet = { type, id }; render(false); }
+let wizCtx = null; // the screen the player was on before opening Options, so the tour can start there
+function open(type, id) { if (type === "title" && sheet && sheet.type !== "title") wizCtx = { type: sheet.type, grp: sheet.grp, tab: sheet.tab }; else if (type !== "title") wizCtx = null; sheet = { type, id }; render(false); }
+function wizStartStep() { const c = wizCtx; wizCtx = null; if (!c) return Math.max(0, WIZARD.findIndex(w => w[0] === "#map"));
+  const find = sel => WIZARD.findIndex(w => w[0] === (sel.startsWith("[") ? "#cmdbar " + sel : sel));
+  const k = c.type === "castle" ? (c.grp === "army" || c.tab === "recruit" || c.tab === "train" ? '[data-act="opencastle"][data-v="recruit"]' : '[data-act="opencastle"][data-v="keep"]')
+    : c.type === "champ" ? '[data-act="openhero"]' : c.type === "orders" ? (c.grp === "alli" ? '[data-act="openorders"][data-v="alli"]' : '[data-act="openorders"][data-v="ord"]')
+    : ["gold", "day", "board", "rep"].includes(c.type) ? ".topchips" : null;
+  const i = k ? find(k) : find("#map"); return i < 0 ? 0 : i; }
 function close() { sheet = null; if (mode === "plan") reportBack = null; render(); }

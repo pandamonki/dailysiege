@@ -9,7 +9,7 @@ function rankMap(pts, pids) {
   const o = pids.slice().sort((a, b) => (pts[b] || 0) - (pts[a] || 0)); return Object.fromEntries(o.map((p, i) => [p, i + 1]));
 }
 const STREAKS = [[4, "Quad Squad"], [6, "Mowing the Lawn"], [8, "Pitchfork Panic"], [11, "Heads Will Roll"], [15, "Butcher of the Realm"], [20, "Daily Siege Legend"]]; // [kill weight in a chain, name]
-const HL_WIN = { betray: [1.5, 3.5], bomb: [2, 3], burst: [2.5, 1.5], fall: [4, 2], upset: [4, 2.2], revenge: [4, 2.2], giantslayer: [3, 1.6], firstblood: [3, 1.5], winner: [4.5, 2.5] };
+const HL_WIN = { betray: [1.5, 3.5], bomb: [2, 3], burst: [2.5, 1.5], fall: [4, 2], upset: [4, 2.2], revenge: [4, 2.2], giantslayer: [3, 1.6], firstblood: [3, 1.5], rapierdrop: [2.5, 2], frenzy: [2, 2.5], rapierget: [2, 2.5], winner: [4.5, 2.5] };
 function hlText(h, R) {
   const N = p => (R.names && R.names[p]) || "Someone", you = p => p === R.me, V = (p, a, b) => `${N(p)} ${you(p) ? a : b}`;
   const poss = p => (you(p) ? "Your" : N(p) + "'s"), rk = p => (R.ranks && R.ranks[p] ? `#${R.ranks[p]} ` : "");
@@ -23,21 +23,25 @@ function hlText(h, R) {
     case "fall": return [h.rank && h.rank <= 3 ? "A giant falls" : "A castle falls", `${you(h.pid) ? `Your castle (${rk(h.pid).trim()})` : rk(h.pid) + N(h.pid) + "'s castle"} falls${h.other ? ` to ${N(h.other)}` : ""}`];
     case "giantslayer": return ["Giant slayer", `${you(h.pid) ? "You slay" : rk(h.pid) + N(h.pid) + " slays"} ${you(h.other) ? "your" : rk(h.other) + N(h.other) + "'s"} hero`];
     case "firstblood": return ["First blood", `${V(h.pid, "draw", "draws")} first blood against ${you(h.other) ? "you" : N(h.other)}`];
-    case "ult": return h.ab === "Meteor" ? ["Meteor!", `${poss(h.pid)} Meteor crashes into ${h.n} foes`] : ["Assassinated", `${poss(h.pid)} Rogue executes ${you(h.other) ? "your" : N(h.other) + "'s"} hero`];
+    case "cart": return ["Powder cart!", `${poss(h.pid)} powder cart goes off${h.castle ? " at a castle" : ""}${h.n ? `, catching ${h.n} soldier${h.n > 1 ? "s" : ""} in the blast` : ""}`];
+    case "rapierdrop": return ["Rapier dropped!", `${poss(h.pid)} hero falls and the Divine Rapier lies in the dust`];
+    case "rapierget": return ["Rapier seized!", `${V(h.pid, "snatch", "snatches")} up the Divine Rapier`];
+    case "frenzy": return ["Desperation Frenzy", `${poss(h.pid)} keep is nearly lost and its defenders fight like demons`];
+    case "ult": if (h.gen) return [h.ab + "!", `${poss(h.pid)} ultimate: ${h.ab}`]; return h.ab === "Meteor" ? ["Meteor!", `${poss(h.pid)} Meteor crashes into ${h.n} foes`] : ["Assassinated", `${poss(h.pid)} Rogue executes ${you(h.other) ? "your" : N(h.other) + "'s"} hero`];
     case "winner": return [`${V(h.pid, "win", "wins")} the Daily Siege`, h.timeout ? "Night falls with the strongest castle standing" : h.clutch ? `Clutch! The castle held on at ${Math.max(1, Math.round(h.hpFrac * 100))}%` : "Last castle standing"];
   }
   return ["", ""];
 }
 function hlWindow(h) {
-  if (h.kind === "spree") return [Math.max(h.t0 - 1, h.t2 - 8), h.t2 + 2, h.t2];
+  if (h.kind === "spree") return [Math.max(h.t0 - 1, h.t2 - 5), h.t2 + 2, h.t2];
   if (h.kind === "ult") return h.ab === "Meteor" ? [h.t - 2.6, h.t + 1.6, h.t] : [h.t - 1.5, h.t + 2, h.t];
   const w = HL_WIN[h.kind] || [3, 2]; return [h.t - w[0], h.t + w[1], h.t];
 }
 function buildReel(R) {
   const hl = (R.hl || []).filter(h => h.kind !== "winner" && !(h.kind === "fall" && !(h.rank && h.rank <= 3)));
-  const picked = [];
-  hl.slice().sort((a, b) => b.score - a.score).forEach(h => {
-    if (picked.length >= 6 || picked.filter(p => p.kind === h.kind).length >= 2) return; const [a, b] = hlWindow(h);
+  const picked = hl.filter(h => h.kind === "ult"); // every ultimate cast gets its clip
+  hl.filter(h => h.kind !== "ult").sort((a, b) => b.score - a.score).forEach(h => {
+    if (picked.filter(p => p.kind !== "ult").length >= 6 || picked.filter(p => p.kind === h.kind).length >= 2) return; const [a, b] = hlWindow(h);
     if (picked.some(p => { const [c, d] = hlWindow(p); return a < d + .5 && c < b + .5; })) return; picked.push(h);
   });
   const win = (R.hl || []).find(h => h.kind === "winner");
@@ -45,7 +49,7 @@ function buildReel(R) {
   if (win) { const [a] = hlWindow(win); for (let i = picked.length - 1; i >= 0; i--) if (hlWindow(picked[i])[1] > a - .5) picked.splice(i, 1); picked.push(win); }
   const champIdx = pid => R.meta.findIndex(m => m.pid === pid && m.kind === "champ");
   return picked.map(h => { const [a, b, key] = hlWindow(h), [title, sub] = hlText(h, R);
-    const follow = ["spree", "burst", "betray", "firstblood", "giantslayer"].includes(h.kind) || (h.kind === "ult" && h.ab !== "Meteor") ? champIdx(h.kind === "giantslayer" || h.kind === "firstblood" ? h.other : h.pid) : -1;
+    const follow = ["spree", "burst", "betray", "firstblood", "giantslayer", "rapierdrop", "rapierget"].includes(h.kind) || (h.kind === "ult" && h.ab !== "Meteor") ? champIdx(h.kind === "giantslayer" || h.kind === "firstblood" ? h.other : h.pid) : -1;
     return { h, a: Math.max(0, a), b: Math.min(R.duration, b), key, title, sub, follow, color: R.colors[h.kind === "fall" || h.kind === "upset" ? (h.other || h.pid) : h.kind === "revenge" ? h.other : h.pid] || "#ffe082" }; });
 }
 const REEL_CARD = 1.3, REEL_INTRO = 2.2, REEL_OUTRO = 4;
@@ -143,3 +147,78 @@ function drawReel() {
   ctx.textAlign = "start";
 }
 function lighten(hex) { const n = parseInt(hex.slice(1), 16), f = v => Math.min(255, Math.round(v + (255 - v) * .45)); return `rgb(${f(n >> 16)},${f((n >> 8) & 255)},${f(n & 255)})`; }
+
+// ----- broadcast flourishes: a short synthesised sting, the betrayal cinematic and the victory ceremony -----
+let _ac = null;
+function sting(kind) {
+  try { _ac = _ac || new (window.AudioContext || window.webkitAudioContext)(); const a = _ac, now = a.currentTime, g = a.createGain(); g.connect(a.destination);
+    const note = (f, t0, dur, type, vol) => { const o = a.createOscillator(), e = a.createGain(); o.type = type; o.frequency.value = f; e.gain.setValueAtTime(0, now + t0); e.gain.linearRampToValueAtTime(vol, now + t0 + .02); e.gain.exponentialRampToValueAtTime(.001, now + t0 + dur); o.connect(e); e.connect(g); o.start(now + t0); o.stop(now + t0 + dur + .05); };
+    g.gain.value = .5;
+    if (kind === "betray") { note(110, 0, .9, "sawtooth", .5); note(116.5, 0, .9, "sawtooth", .4); note(55, .05, 1.2, "square", .35); }
+    else { [523, 659, 784, 1047].forEach((f, i) => note(f, i * .14, .5, "triangle", .35)); note(1319, .6, .9, "triangle", .35); for (let i = 0; i < 10; i++) note(300 + Math.random() * 600, .2 + Math.random() * .8, .12, "square", .05); }
+  } catch (e) {}
+}
+function betrayCinematic(h, R, resume) {
+  const nm = p => (R.names && R.names[p]) || "A traitor";
+  const el = document.createElement("div"); el.className = "betrayfx";
+  el.innerHTML = `<div class="bf-banner">BETRAYAL!</div><div class="bf-sub">${esc(nm(h.pid))} turns on ${esc(nm(h.other))}</div><svg class="bf-knives" viewBox="0 0 200 200" aria-hidden="true"><g class="k1"><path d="M20 180 L150 50 L160 60 L40 190 Z" fill="#dfe6ec" stroke="#222" stroke-width="3"/><rect x="146" y="30" width="30" height="12" transform="rotate(45 160 40)" fill="#6b3a1a"/></g><g class="k2"><path d="M180 180 L50 50 L40 60 L160 190 Z" fill="#dfe6ec" stroke="#222" stroke-width="3"/><rect x="24" y="30" width="30" height="12" transform="rotate(-45 40 40)" fill="#6b3a1a"/></g></svg>`;
+  document.body.appendChild(el); sting("betray");
+  setTimeout(() => { el.remove(); resume(); }, 2600);
+}
+function victoryCeremony(R, done) {
+  const win = (R.results || []).slice().sort((a, b) => a.place - b.place)[0]; if (!win) { done(); return; }
+  const N = p => (R.names && R.names[p]) || (R.results.find(r => r.pid === p) || {}).name || "Someone", you = win.pid === R.me;
+  const el = document.createElement("div"); el.className = "victory";
+  const A = R.awards, aw = A ? [["🏆", "MVP", A.mvp.pid, `${A.mvp.pts} points`], ["⚔", "Most Kills", A.kills.pid, `${A.kills.n} kills`], ["☠", "Highest K/D", A.kd.pid, `${A.kd.v} per death`], ["🥉", "Bronze Spoils", A.spoils.pid, `${A.spoils.g}g looted`]] : [];
+  el.innerHTML = `<canvas class="confetti"></canvas><div class="vbox"><div class="vt">${R.team ? "Victory, together!" : you ? "VICTORY!" : esc(N(win.pid)) + " wins!"}</div><img class="vhero" alt="" src="${spriteURL("c-" + win.cls)}"><div class="vs">${esc(N(win.pid))} · ${esc(clsName(win.cls))}</div>
+    <div class="vawards">${aw.map(([g, t, p, d]) => `<div><span>${g}</span><b>${t}</b><small>${esc(N(p))}<br>${d}</small></div>`).join("")}</div><button class="btn wax" id="vgo">Continue →</button></div>`;
+  document.body.appendChild(el); sting("win");
+  const cv = el.querySelector("canvas"), c = cv.getContext && cv.getContext("2d"); let alive = true;
+  if (c) { cv.width = innerWidth; cv.height = innerHeight; const P = Array.from({ length: 140 }, () => ({ x: Math.random() * cv.width, y: -Math.random() * cv.height, v: 2 + Math.random() * 4, s: 4 + Math.random() * 6, a: Math.random() * 6, col: ["#e2b33c", "#d4402f", "#47b04b", "#5aa0d8", "#fff"][Math.floor(Math.random() * 5)] }));
+    (function frame() { if (!alive) return; c.clearRect(0, 0, cv.width, cv.height); P.forEach(p => { p.y += p.v; p.x += Math.sin(p.a += .05) * 1.5; if (p.y > cv.height) { p.y = -10; p.x = Math.random() * cv.width; } c.fillStyle = p.col; c.fillRect(p.x, p.y, p.s, p.s * .6); }); requestAnimationFrame(frame); })(); }
+  el.querySelector("#vgo").addEventListener("click", () => { alive = false; el.remove(); done(); });
+}
+
+// ----- interactive first-login tour: a steward walks new lords through the planning screen -----
+const WIZARD = [
+  [null, "Welcome, m'lord", "I am Aldric, your steward. Your friends have holed up in their castles and declared war. Each evening every army marches out and fights at once. You don't steer the battle, you prepare for it, and the last castle standing wins the day."],
+  [null, "The seven-day war", "Each day has two phases: planning, then battle. The timer shows how long until orders lock. After every battle you replan, spend gold, level your hero and forge (or break) alliances. Day 7 is the final showdown."],
+  ['.topchips', "The top row", "Day, gold, unit count, ultimate, leaderboard, battle report and options. You can retake this tour from Options, and it opens at the screen you were on."],
+  ["#map", "The map", "Drag to pan. Pinch or use + and − to zoom. The ⛶ button fits the whole field and the home button returns to your castle. Your army is the one under your colour."],
+  ['#cmdbar [data-act="opencastle"][data-v="keep"]', "Base", "Raise your castle to a Fortress or Citadel, build walls and traps, forge hero gear and shop for items. A stronger castle unlocks better soldiers and more gold each day."],
+  ['#cmdbar [data-act="opencastle"][data-v="recruit"]', "Army", "Recruit soldiers, then use the Roster tab to see every soldier you own. Deploy reserves to the map, recall units to reserve, train them up to Lv3 or sell the ones you no longer want."],
+  ['.topchips [data-act="opencastle"][data-v="recruit"]', "Your units", "The shield shows soldiers owned out of your supply. New recruits wait in a strip above Seal Orders: tap one, then tap a glowing tile near your castle. Tap a soldier on the map to select and move it."],
+  ['#cmdbar [data-act="openhero"]', "Hero", "Your champion for the week. Every level grants a skill point to spend here. Your ultimate is a once-per-battle game changer."],
+  ['#cmdbar [data-act="openorders"][data-v="ord"]', "Orders", "Choose who to attack and how your soldiers fight. Plan your ultimate and weekly blessing under Rituals."],
+  ['#cmdbar [data-act="openorders"][data-v="alli"]', "Allies", "Alliances are an active choice. Nobody is allied by default: you invite, they answer, and the alliance starts at the next battle. The next three steps walk through it."],
+  [null, "1 · Send an invitation", "Open Allies, pick a lord and tap Invite. You can add a gold dowry (optional), which is set aside and paid only if they accept. At most 2 invitations can be open at once. You can change or withdraw a draft until planning ends.",
+    `<div class="mk-row"><b>Sam</b><span class="mk-step">− 150g +</span><span class="mk-btn">Withdraw</span></div><div class="mk-row"><b>Riley</b><span class="mk-chip">Pending · 0g</span></div><p class="mk-cap">Your invitations <b>2/2 open</b></p>`],
+  [null, "2 · Answer an invitation", "After you watch the battle and return to planning, a pop-up shows each invitation sent to you. Accept or Decline, or choose Decide later and answer in the Allies tab. The sender sees Pending until you answer. If you accept, the alliance is announced to everyone at the start of the next battle.",
+    `<div class="mk-card"><div class="mk-row"><span><b>Sam</b> invites you to ally</span><span class="mk-chip">150g dowry</span></div><div class="mk-row"><span class="mk-btn wax">Accept</span><span class="mk-btn">Decline</span></div><p class="mk-cap">You can betray an ally at any point in the game.</p></div>`],
+  [null, "3 · Allies, betrayal and winning", "Allies share a banner on the muster screen and win the day together if only allies remain. At least two opposing sides must always stay in the fight. In Allies you can Keep, Break (clean) or Betray an ally at any time: pick the moment, and your hero plants a bomb that blows up their keep for half its health, and they will remember.",
+    `<div class="mk-row"><b>Sam</b><span class="mk-sel">Allied ▾</span></div><div class="mk-row"><span class="mk-sel">Betray ▾</span><span class="mk-chip bad">Their keep loses half its health</span></div>`],
+  [null, "Mercenary camp (day 4+)", "From day 4 each week a Camp bubble appears at the top of the map. Six mercenary groups are for hire. Bids are sealed and the highest bidder fights with that group for one battle, paying their own bid. Place your bid before sealing. A hired group recharges for 2 days for everyone.",
+    `<div class="mk-row"><b>Troll Warlord</b><span class="mk-chip">from 200g</span></div><div class="mk-row"><span class="mk-step">− 240g +</span><span class="mk-btn">Clear</span></div><p class="mk-cap">Your sealed bid is set aside while you plan. Only the winner pays.</p>`],
+  [".sealbar", "Seal your orders", "When you're happy, seal your orders. You can break the seal and change your plans until the timer locks. Good luck!"],
+];
+function startWizard(force, at) {
+  try { if (!force && localStorage.getItem("ds.wizard")) return; localStorage.setItem("ds.wizard", "1"); } catch (e) {}
+  let i = at || 0; const old = document.getElementById("wiz"); if (old) old.remove(); document.getElementById("wizring")?.remove();
+  const el = document.createElement("div"); el.id = "wiz"; document.body.appendChild(el);
+  const ring = document.createElement("div"); ring.id = "wizring"; document.body.appendChild(ring);
+  const N = WIZARD.length;
+  // the highlight is a floating ring that follows the target, so it survives the game redrawing its buttons
+  const place = () => { const sel = WIZARD[i][0], tg = sel && document.querySelector(sel), r = tg && tg.getBoundingClientRect();
+    if (!r || !r.width) { ring.style.display = "none"; return; }
+    Object.assign(ring.style, { display: "block", left: r.left - 4 + "px", top: r.top - 4 + "px", width: r.width + 8 + "px", height: r.height + 8 + "px" }); };
+  const timer = setInterval(() => { if (!document.getElementById("wiz")) { clearInterval(timer); ring.remove(); } else place(); }, 250);
+  const paint = () => { const [sel, head, msg, mock] = WIZARD[i];
+    const dots = WIZARD.map((_, k) => `<i class="${k === i ? "on" : k < i ? "done" : ""}"></i>`).join("");
+    el.innerHTML = `<div class="wiz-card"><div class="wiz-face"><img alt="" src="${spriteURL("c-mage")}"></div><div class="wiz-msg"><h3>${esc(head)}</h3><p>${esc(msg)}</p>${mock ? `<div class="wmock">${mock}</div>` : ""}<div class="wiz-dots">${dots}</div><div class="wiz-row"><small>${i + 1}/${N}</small><button class="btn small" id="wskip">${i < N - 1 ? "Skip" : "Close"}</button><button class="btn small" id="wback"${i ? "" : " disabled"}>← Back</button><button class="btn wax small" id="wnext">${i < N - 1 ? "Next →" : "Done"}</button></div></div></div>`;
+    place(); const tg0 = sel && document.querySelector(sel), r0 = tg0 && tg0.getBoundingClientRect(), card = el.firstChild;
+    el.style.top = r0 && sel !== "#map" && r0.top < innerHeight * .3 ? Math.round(r0.bottom + 14) + "px" : "70px";
+    el.querySelector("#wskip").onclick = end; el.querySelector("#wback").onclick = () => { if (i > 0) { i--; paint(); } };
+    el.querySelector("#wnext").onclick = () => { if (i < N - 1) { i++; paint(); } else end(); }; };
+  function end() { clearInterval(timer); ring.remove(); el.remove(); }
+  paint();
+}

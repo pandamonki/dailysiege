@@ -23,3 +23,13 @@ function liveClock() {
   return { planDay, dayNo, week, minsToLock: mins };
 }
 const hourLabel = h => `${((h + 11) % 12) + 1}${h < 12 ? "am" : "pm"}`;
+
+// the battle time as it reads on the viewer's own clock (the countdown itself is the same instant for everyone)
+function lockLabel(cfg) {
+  cfg = cfg || (typeof LIVE !== "undefined" && LIVE.config); if (!cfg) return "";
+  try {
+    const now = tzNow(cfg.tz); let mins = cfg.lockHour * 60 - (now.h * 60 + now.m); if (mins <= 0) mins += 1440;
+    const p = Object.fromEntries(new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", hour12: true }).formatToParts(new Date(Date.now() + mins * 60000)).map(x => [x.type, x.value]));
+    return `${p.hour}${p.minute !== "00" ? ":" + p.minute : ""}${(p.dayPeriod || "").toLowerCase()}`;
+  } catch (e) { return hourLabel(cfg.lockHour); }
+}

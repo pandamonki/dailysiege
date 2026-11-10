@@ -14,31 +14,50 @@ function underdogChip() {
   const ck = liveClock(), pts = standings(ck.week), ids = rosterFor(ck.week).map(p => p.uid), order = ids.slice().sort((a, b) => (pts[a] || 0) - (pts[b] || 0)), i = order.indexOf(LIVE.uid), g = i > -1 ? catchUpGold(ids.length, i) : 0;
   return g ? `<span class="under" title="The bottom 30% earn extra gold every day to catch up">Catch-up gold +${g}</span>` : `<span class="under"></span>`;
 }
+function ultChip() {
+  if (!(S.ranks && S.ranks.ult)) return ["⚡", "–", "off", "Ultimate not learned yet"];
+  if (ultCooling()) return ["⚡", "1d", "off", "Ultimate recharging, ready tomorrow"];
+  return S.ultArm ? ["⚡", "Set", "ok", "Ultimate planned for tonight"] : ["⚡", "Rdy", "ok", "Ultimate ready. Plan it in Orders"];
+}
+const UIIMG = (n, alt = "") => `<img class="ui" alt="${alt}" src="icons/ui/${n}.png">`;
 function renderTop() {
-  if (isLive()) { const ck = liveClock(); document.getElementById("when").innerHTML = `Day <b>${DAY}</b> of 7 · ⏳ Battle in <b>${Math.floor(ck.minsToLock / 60)}h ${String(ck.minsToLock % 60).padStart(2, "0")}m</b> <small>(${hourLabel(LIVE.config.lockHour)})</small>`; }
-  else document.getElementById("when").innerHTML = `Day <b>${DAY}</b> of 7 · ⏳ Battle in <b>${countdown()}</b>`;
-  const gp = S.gain > 0 ? `<small class="gain" title="Gold received this round">+${S.gain}</small>` : "";
-  document.getElementById("purse").innerHTML = `<span title="Gold"><i class="coin"></i><b>${avail()}</b> gold${gp}${reserved() ? ` <small class="muted">${reserved()} offered</small>` : ""}</span><span title="Your hero's level"><span class="star">★</span>Hero <b>Lv ${level()}</b></span><span class="${freePts() ? "hot" : ""}" title="Unspent ability points"><span class="star">✦</span><b>${freePts()}</b> skill pt${freePts() === 1 ? "" : "s"}</span>${underdogChip()}<button class="modechip" data-act="open" data-v="title">${isLive() ? "Friends game" : "Test mode"} ▾</button><span class="icons"><button class="ico" data-act="open" data-v="board" aria-label="Leaderboard" title="Leaderboard">♛</button><button class="ico" data-act="rep" aria-label="Last battle report" title="Last battle">⚔</button><button class="ico" data-act="open" data-v="guide" aria-label="How to play" title="How to play">?</button><button class="ico" data-act="open" data-v="title" aria-label="Menu" title="Menu: continue or new game">☰</button></span>`;
+  const un = typeof unplaced === "function" ? unplaced().length : 0, u = ultChip(), pts = freePts();
+  const chip = (act, v, ico, val, title, cls = "") => `<button class="chip2 ${cls}" data-act="${act}" ${v != null ? `data-v="${v}"` : ""} aria-label="${title}" title="${title}"><span class="ci">${ico}</span><b>${val}</b></button>`;
+  document.getElementById("chips").innerHTML =
+    chip("open", "day", UIIMG("day"), `${DAY}/7`, "Day of the war and battle countdown") +
+    chip("open", "gold", UIIMG("gold"), avail(), "Gold and tomorrow's income") +
+    chip("opencastle", "recruit", UIIMG("units"), `${S.owned.length}/${S.slots}${un ? `<sup class="dot">${un}</sup>` : ""}`, un ? `${un} soldier${un === 1 ? "" : "s"} still to place` : "Soldiers and supply", un ? "hot" : "") +
+    chip("ulti", null, UIIMG("ultimate"), u[1], u[3], u[2]) +
+    chip("open", "board", UIIMG("board"), "", "Leaderboard") +
+    chip("rep", null, UIIMG("report"), "", "Last battle report") +
+    chip("open", "title", UIIMG("options"), "", "Options and menu");
   renderCommands(); return;
   const sb = document.getElementById("sealbtn"); sb.textContent = S.locked ? "Sealed ✓" : "Seal Orders"; sb.className = "plank " + (S.locked ? "sealed" : "wax");
 }
 function renderCommands() {
   const o = S.phase === "orders";
-  document.getElementById("cmdbar").innerHTML = o
-    ? `<button class="plank" data-act="phase" data-v="muster">← Muster</button><button class="plank" data-act="open" data-v="orders">War Council</button><button class="plank ${S.locked ? "sealed" : "wax"}" data-act="open" data-v="seal">${S.locked ? "Sealed ✓" : "Seal Orders"}</button>`
-    : `<button class="plank" data-act="open" data-v="castle">Castle</button><button class="plank" data-act="open" data-v="champ" data-k="champ">Hero</button><button class="plank wax" data-act="phase" data-v="orders">Orders →</button>`;
+  const seal = `<button class="sealbar ${S.locked ? "sealed" : "wax"}" data-act="open" data-v="seal"><b>${S.locked ? "ORDERS SEALED ✓" : "SEAL ORDERS"}</b><small>${S.locked ? "tap to review" : "battle in " + countdown()}</small></button>`;
+  const nb = (act, v, ico, label, extra = "") => `<button class="nb2" data-act="${act}" ${v != null ? `data-v="${v}"` : ""}><span class="ni">${ico}</span><span>${label}${extra}</span></button>`;
+  document.getElementById("cmdbar").innerHTML = nb("opencastle", "keep", UIIMG("base"), "Base") + nb("opencastle", "recruit", UIIMG("army"), "Army") + nb("openhero", null, S.cls ? UIIMG("hero_" + S.cls) : "🧙", "Hero", freePts() ? `<sup class="dot">${freePts()}</sup>` : "") + nb("openorders", "ord", UIIMG("orders"), "Orders") + nb("openorders", "alli", UIIMG("allies"), "Allies") + seal;
+}
+function renderCamp() {
+  const b = document.getElementById("campbtn"); if (!b) return;
+  let show = false, n = 0, fresh = false;
+  try { show = !!S && mode === "plan" && mercOpen() && !(isLive() && LIVE.readOnly); n = show ? myBids().length : 0; fresh = show && S.mercSeen !== (isLive() ? liveClock().week : "p"); } catch (e) {}
+  b.hidden = !show; b.classList.toggle("pulse", fresh);
+  const bd = b.querySelector(".cbadge"); bd.hidden = !n; bd.textContent = n;
 }
 function renderHint() {
+  renderCamp();
   const h = document.getElementById("hint");
   if (isLive() && LIVE.readOnly) h.innerHTML = "You're watching this game. Ask the host to add you as an Editor to play.";
-  else if (S.locked) h.innerHTML = isLive() ? `Orders sealed. The battle is fought at ${hourLabel(LIVE.config.lockHour)}.` : "Orders sealed. The battle plays out at dusk.";
+  else if (S.locked) h.innerHTML = isLive() ? `Orders sealed. The battle is fought at ${lockLabel(LIVE.config)}.` : "Orders sealed. The battle plays out at dusk.";
   else if (sel) h.innerHTML = `Place <b>${esc(pieceName(sel))}</b> on a glowing tile <button data-act="cancel">Cancel</button>`;
-  else if (S.phase === "orders") h.innerHTML = `<b>Step 2 · Orders.</b> Choose who to attack and who to ally with in the War Council. Tap a soldier to give it its own target.`;
-  else h.innerHTML = `<b>Step 1 · Muster.</b> Level your hero, recruit and upgrade at your castle, and place your army. Drag your hero or soldiers to move them. Then tap <b>Orders →</b>.`;
+  else h.innerHTML = "";
 }
 function renderTray() {
   const up = unplaced();
-  document.getElementById("tray").innerHTML = `<span class="lbl" title="Soldiers you own out of the barracks beds you have built">Units ${S.owned.length}/${S.slots}<small class="muted"> · ${S.owned.filter(u => placedAt(u.id)).length} placed</small></span>` + (up.length
+  document.getElementById("tray").innerHTML = `<span class="lbl" title="Soldiers you own out of the supply you have built">Units ${S.owned.length}/${S.slots}<small class="muted"> · ${S.owned.filter(u => placedAt(u.id)).length} placed</small></span>` + (up.length
     ? up.map(p => `<button class="chip${sel === p ? " on" : ""}" data-act="pick" data-v="${p}" ${dis()}><img class="${findWall(p) ? "wide" : ""}" alt="" src="${pieceImg(p)}">${esc(pieceName(p).replace(" (your hero)", ""))}</button>`).join("")
     : `<span class="empty">Everyone is on the field.</span>`);
 }

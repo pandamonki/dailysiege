@@ -1,10 +1,12 @@
 // Balance numbers: slots, castle tiers, walls, income, XP, damage table, militia
 
-const OP_MAX = 5, SLOT_START = 3, SLOT_MAX = 6;
+const OP_MAX = 5, SLOT_START = 3, SLOT_MAX = 8;
+const SLOT_COSTS = [0, 0, 0, 60, 100, 160, 240, 340]; // gold for bed n+1 is SLOT_COSTS[n] (n beds owned)
+const slotCost = n => SLOT_COSTS[Math.min(n, SLOT_COSTS.length - 1)];
 
 // ---- castle tiers, walls, shop items, hero levelling, gold ----
 const CASTLE_TIERS = [
-  { name: "Castle", cost: 0, hp: 1, note: "Where every lord begins. Earns the base 150 gold a day." },
+  { name: "Castle", cost: 0, hp: 1, note: "Where every lord begins. Earns the base 200 gold a day." },
   { name: "Fortress", cost: 150, hp: 1.15, note: "+15% castle health and +40 gold a day. Opens tier 2 gear, Arrow Slits, Bastions and stronger timber walls." },
   { name: "Citadel", cost: 300, hp: 1.3, note: "+30% castle health and +90 gold a day. Opens tier 3 gear, the Ballista and stone walls." },
 ];
@@ -14,14 +16,17 @@ const WALL_TIERS = [{ name: "Palisade", hp: 200 }, { name: "Timber Wall", hp: 34
 const WALL_COST = 35, WALL_CAP = 6, wallLimit = tier => WALL_CAP;
 function wallTiles(r, c, dir) { return [[r, c]]; } // one block; dir only sets which way the barrier runs
 
+const MIN_GAIN = 2; // every hero gains at least this many levels after each battle
 const XP_CAP = 3, xpNeed = L => 90 + 45 * (L - 1), hpLv = L => 1 + .08 * (L - 1), atkLv = L => 1 + .06 * (L - 1);
 const HOLD_END = 120; // orders to hold the battleground dissolve after 2 minutes, then armies march on castles
 const CTR_BONUS = 1.25; // any hero standing on the battleground earns 25% more gold and XP, held or contested
 const CTR_R = 2.0; // the centre: bonus XP and gold for whoever holds it
 const GOLD_KILL = { unit: 2, militia: 1, summon: 1, guard: 2 };
-const BASE_INCOME = 150;
-function catchUpGold(n, idxFromBottom) { const k = Math.max(1, Math.round(n * .3)); return idxFromBottom < k ? Math.round(100 + 140 * (1 - idxFromBottom / k)) : 0; }
+const BASE_INCOME = 200;
+function catchUpGold(n, idxFromBottom) { const k = Math.max(1, Math.round(n * .3)); return idxFromBottom < k ? Math.round(140 + 160 * (1 - idxFromBottom / k)) : 0; }
 
+const BOUNTY = { base: 15, rank: [40, 25, 15], perLvl: 5 }; // gold on the heads of the top three: base + board position + hero level x 5
+const bountyGold = (rank, lvl) => rank && rank <= 3 ? BOUNTY.base + BOUNTY.rank[rank - 1] + BOUNTY.perLvl * (lvl || 1) : 0;
 const LEADER = "p1"; // top of last week's board: carries the bounty
 // damage types: every attack has a type, every body has an armour class
 const ATK_TYPES = {
