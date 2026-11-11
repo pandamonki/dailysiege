@@ -200,7 +200,8 @@ function signInSheet() {
   if (d.available === false) return head(null, "Friends Game", "Not available here") + `<div class="body"><p>${esc(d.error || "The friends game isn't set up on this copy of the page. You can still practise against bots.")}</p><div class="row"><button class="btn" data-act="open" data-v="title">← Back</button></div></div>`;
   return head(null, "Friends Game", "Sign in to play") + `<div class="body">
     <p>Sign in once on this device and you'll stay signed in. It's only used to know which castle is yours.</p>
-    <div class="row"><button class="btn wax big" data-act="dsgoogle" ${d.busy ? "disabled" : ""}>Continue with Google</button></div>
+    ${d.inAppBrowser && d.inAppBrowser() ? `<p class="tip">You've opened this inside another app, where Google sign-in doesn't work. Tap the ⋮ or share button and choose <b>Open in Chrome</b> (or Safari), or use an emailed link below.</p>` : ""}
+    <div class="row"><button class="btn wax big" data-act="dsgoogle" ${d.busy ? "disabled" : ""}>${d.busy === "google" ? "Opening Google…" : "Continue with Google"}</button></div>
     <div class="sec"><h3>Or get a sign-in link by email</h3>
       <label class="inline">Email<input id="dsemail" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" value="${esc(d.emailDraft || "")}"></label>
       <div class="row"><button class="btn wood" data-act="dsemail" ${d.busy ? "disabled" : ""}>${d.busy === "email" ? "Sending…" : "Email me a link"}</button></div>
