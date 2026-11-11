@@ -41,7 +41,7 @@ let gameId, invite, planDay; const U = {};
 // The host's phone is in a time zone where it is mid-morning right now, whatever the real time is. The game runs on
 // the host's zone, so the test can let a lock pass "for real" by moving the battle time to earlier this morning.
 const off = ((10 - new Date().getUTCHours() + 36) % 24) - 12, HOST_TZ = off === 0 ? "UTC" : `Etc/GMT${off > 0 ? "-" : "+"}${Math.abs(off)}`;
-const replays = p => p.evaluate(() => Object.keys(LIVE.battles).sort().map(day => { const sv = savedBattle(day), res = runBattle(sv.plans, daySeed(day), { N: sv.N, finalDay: sv.final, ultV2: sv.ultV2, ranks: sv.ranks }); return battleHash(res) === LIVE.battles[day].resultHash; }));
+const replays = p => p.evaluate(() => Object.keys(LIVE.battles).sort().map(day => { const sv = savedBattle(day), res = runBattle(sv.plans, daySeed(day), { N: sv.N, finalDay: sv.final, ultV2: sv.ultV2, balV2: sv.balV2, dayNo: sv.dayNo, ranks: sv.ranks }); return battleHash(res) === LIVE.battles[day].resultHash; }));
 
 test("the first person to sign in owns the site and can open a war", async () => {
   P.host = await signIn("host@example.com", undefined, { timezoneId: HOST_TZ });

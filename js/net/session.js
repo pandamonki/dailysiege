@@ -52,7 +52,7 @@ function rollover() {
   if (S.day === ck.planDay) return false;
   const g0 = S.gold;
   payDays(ck);
-  S.ultArm = false; S.locked = false; S.offers = Object.fromEntries(Object.entries(S.offers || {}).filter(([, o]) => o.day === addDays(ck.planDay, -1))); S.replies = {}; S.bids = {}; S.phase = "muster"; Object.values(S.diplo).forEach(d => { d.clues = []; });
+  S.ultArm = false; S.locked = false; S.sealedSnap = null; S.offers = Object.fromEntries(Object.entries(S.offers || {}).filter(([, o]) => o.day === addDays(ck.planDay, -1))); S.replies = {}; S.bids = {}; S.phase = "muster"; Object.values(S.diplo).forEach(d => { d.clues = []; });
   S.gain = S.gold - g0; S.day = ck.planDay; S.pactAct = {}; S.pactWhen = {};
   { const hs = heroState(LIVE.uid, ck.week, ck.planDay); S.lvl = hs.lvl; S.xp = hs.xp; }
   return true;

@@ -21,7 +21,12 @@ A short guide for the host. No coding needed for anything here.
 3. Register yourself, then in the Muster Hall tap **Copy invite link** and send it to your friends.
    It is the same link for every war.
 4. In the Muster Hall you can change the number of seats (2 to 12, normally 10) and the battle time.
-5. When everyone is in, tap **Lock in and begin the war** (or let the closing time pass).
+5. Short of friends? In the Muster Hall, **Bot lords** fills empty seats with computer-played lords (**+ Bot**,
+   **− Bot**, **Fill every empty seat**, **Remove all bots**). Each bot takes one seat and plays every day with its own
+   orders, so you can run a whole seven-day war on the normal daily battle schedule, alone or with a few friends. If a
+   friend registers when the war is full, they take a bot's seat. Bots can only be changed while registration is open.
+   (This needs the `setBots` server function, which deploys with the rest of the functions.)
+6. When everyone is in, tap **Lock in and begin the war** (or let the closing time pass).
 
 Friends open the link, sign in once (Google, or a link sent to their email), and tap **Register**.
 On a phone they should then add the game to their Home Screen (the **Install app** button explains how) and

@@ -195,7 +195,7 @@
     const uid = g.seat || DS.user.uid, bt = Object.entries(battlesView(g)).sort((a, b) => (a[0] < b[0] ? -1 : 1)), out = {};
     for (const [id, pub] of Object.entries(g.pubs || {})) {
       const base = { fromWeek: pub.fromWeek, joinedAt: pub.joinedAt, nick: pub.nick || "", real: pub.real || "" };
-      if (pub.pending) base.pending = true; if (pub.left) base.left = true; if (pub.sealedFor) base.sealedFor = pub.sealedFor;
+      if (pub.pending) base.pending = true; if (pub.left) base.left = true; if (pub.bot) base.bot = true; if (pub.sealedFor) base.sealedFor = pub.sealedFor;
       if (id === uid) { // me: my real state and my real orders
         base.plans = Object.fromEntries(Object.entries(g.orders || {}).filter(([, o]) => (o.war || 1) === curWar()).map(([k, o]) => { const p = copy(o); delete p.war; return [k, p]; }));
         if (g.state) base.state = copy(g.state);
@@ -332,6 +332,7 @@
     dskick: uid => { if (LIVE.kick !== uid) { LIVE.kick = uid; } else { LIVE.kick = null; DS.removeLord(uid); } if (typeof renderLobby === "function") renderLobby(); },
     dsnewinvite: () => { DS.newInvite(); },
     dsresolve: () => { DS.resolveNow(); },
+    dsbots: v => { DS.setBots(v); },
     dspush: () => { DS.enablePush(); },
     dsreassign: () => { const from = (document.getElementById("dsfrom") || {}).value, to = (document.getElementById("dsto") || {}).value; if (!from || !to) return; if (!LIVE.moveSeat) { LIVE.moveSeat = true; return; } LIVE.moveSeat = false; DS.reassignSeat(from, to); },
   });
@@ -347,6 +348,16 @@
     try { const r = await callServer("resolveNow", { gameId: G.id }); say(r.days && r.days.length ? "Done. Results are in." : "Nothing is due yet."); }
     catch (e) { say("Couldn't resolve: " + ((e && e.message) || "error")); }
     DS.busy = null; redraw();
+  };
+  DS.setBots = async how => { // the host fills or empties seats with bot lords: "+1", "-1", "fill" or "0" (remove all)
+    if (!DS.isHost() || DS.busy || typeof lobbyLords !== "function") return;
+    const lords = lobbyLords(), bots = lords.filter(([, p]) => p.bot).length, humans = lords.length - bots, free = Math.max(0, seatCap() - humans);
+    const want = how === "fill" ? free : how === "0" ? 0 : Math.max(0, Math.min(free, bots + (parseInt(how, 10) || 0)));
+    if (want === bots) { say(how === "fill" || how === "+1" ? "Every seat is already taken." : "There are no bots to remove."); return; }
+    DS.busy = "bots"; if (typeof renderLobby === "function") renderLobby();
+    try { const r = await callServer("setBots", { gameId: G.id, count: want }); say(r.bots ? `${r.bots} bot lord${r.bots === 1 ? "" : "s"} seated.` : "All bots removed."); }
+    catch (e) { say("Couldn't change the bots: " + ((e && e.message) || "error")); }
+    DS.busy = null; if (typeof renderLobby === "function") renderLobby();
   };
   DS.reassignSeat = async (fromUid, toUid) => {
     if (!DS.isHost()) return;

@@ -194,7 +194,7 @@ const WIZARD = [
     `<div class="mk-row"><b>Sam</b><span class="mk-sel">Allied ▾</span></div><div class="mk-row"><span class="mk-sel">Betray ▾</span><span class="mk-chip bad">Their keep loses half its health</span></div>`],
   [null, "Mercenary camp (day 4+)", "From day 4 each week a Camp bubble appears at the top of the map. Six mercenary groups are for hire. Bids are sealed and the highest bidder fights with that group for one battle, paying their own bid. Place your bid before sealing. A hired group recharges for 2 days for everyone.",
     `<div class="mk-row"><b>Troll Warlord</b><span class="mk-chip">from 200g</span></div><div class="mk-row"><span class="mk-step">− 240g +</span><span class="mk-btn">Clear</span></div><p class="mk-cap">Your sealed bid is set aside while you plan. Only the winner pays.</p>`],
-  [".sealbar", "Seal your orders", "When you're happy, seal your orders. You can break the seal and change your plans until the timer locks. Good luck!"],
+  [".sealbar", "Seal your orders", "When you're happy, seal your orders. You can draft new orders until the timer locks: the orders you sealed stay in effect until you seal the new ones. Good luck!"],
 ];
 function startWizard(force, at) {
   try { if (!force && localStorage.getItem("ds.wizard")) return; localStorage.setItem("ds.wizard", "1"); } catch (e) {}

@@ -103,7 +103,7 @@ const GUIDE = [
   ["Gold and the shop", "You earn 200 gold after each battle, and upgrading your castle raises your daily income. Unit, hero and castle kills also pay a reward. Extra gold is awarded for holding the centre, for bringing down a player in the top 3, and for sitting in the bottom third of the leaderboard. Gold can be spent at the shop in your castle to equip your hero.", "Some items are passives that are always on, others trigger by themselves and then recharge during the battle."],
   ["The battleground", "The hill in the middle of the map is the battleground. Any hero standing there earns bonus experience, and extra gold for every kill made there. It's also where every army wants to be so they can level up fastest, so expect company.", "Nobody can build in the centre, but anyone can march on it."],
   ["Mercenary camp", "From day 4 of each week the mercenaries, drawn by all the bloodshed, offer their services to the highest bidder. Open the Camp bubble at the top of the map. Six groups are for hire, each with a minimum price.\n\nBids are sealed: nobody sees yours. Your bid is set aside from your gold while you plan, and only the winner pays, and pays their own bid. Ties are settled by lot. If nobody bids, the group stays put. You can hire several groups as long as you can afford them, and they do not count toward your siege engine limit.\n\nHired mercenaries fight one battle for you, on your side and alongside your allies, with no supply needed. After a group fights it is recharging for 2 days for everyone, so the camp is a shared prize. Remember to place your bid before sealing orders."],
-  ["Friends and traitors", "Alliances are an active choice. In planning, open Allies, pick a lord and tap Invite, with an optional gold dowry. You can have 2 invitations open at a time, and drafts can be changed or withdrawn until planning ends.\n\nThe invited lord gets a pop-up in their next planning phase (after they watch the battle) and can Accept or Decline. You see Pending until they answer. If they accept, the dowry is paid and the alliance is announced to everyone at the start of the next battle.\n\nAllies win the day together if only allies remain, but at least two opposing sides must always stay in the fight. You can break a pact cleanly, or betray an ally at any point in the game: their keep is blown up for half its health at the moment you turn, and they will remember. Alliances all end on day 7, when only one banner can win."],
+  ["Friends and traitors", "Alliances are an active choice. In planning, open Allies, pick a lord and tap Invite, with an optional gold dowry. You can have 2 invitations open at a time, and drafts can be changed or withdrawn until planning ends.\n\nThe invited lord gets a pop-up in their next planning phase (after they watch the battle) and can Accept or Decline. You see Pending until they answer. If they accept, the dowry is paid and the alliance is announced to everyone at the start of the next battle.\n\nAllies win the day together if only allies remain, but at least two opposing sides must always stay in the fight, and an alliance holds at most 3 lords. A pact lasts from day to day until someone ends it. You can break a pact cleanly, or betray an ally at any point in the game: their keep is blown up for half its health at the moment you turn, and they will remember. A betrayer whose bomb goes off earns 3 points and a share of the victim's spoils. Alliances all end on day 7, when only one banner can win."],
   ["Ready?", "Choose your hero, design your castle's banner, and the map is yours to command. Tap ? at the top whenever you want to read this again, and \u265b to see the leaderboard.\n\nOn the first screen, Play takes you to your friends' war and Test is a private sandbox against bots where you can try out ideas.", "Good luck, m'lord."],
 ];
 function titleSheet() {
@@ -157,6 +157,18 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "Rules update: fairer endings", date: "12 Nov", fixes: [
+    "Orders you drafted but never sealed are now fought when the day locks, so a lord who set up but forgot to seal no longer fights with a lone hero.",
+  ], balance: [
+    "Castles that fall on the same instant are now ranked by the siege damage their army dealt, then hero kills, instead of by sign-up order.",
+    "Alliances last until someone ends them, even if a castle fell in the battle. Keep, Break and Betray now appear for every pact.",
+    "An alliance can hold at most 3 lords.",
+    "A betrayer whose bomb goes off earns 3 points and a quarter of the victim's spoils for the day. The feud stays as the price.",
+    "Points count 1.5 times on days 5 and 6 and double on day 7.",
+    "A lord whose castle falls keeps their hero and soldiers in the fight. They can no longer fall back, heal at the castle, teleport home or respawn, and their alliances end. Placing is still decided by when the castle fell.",
+  ], changes: [
+    "After the day 7 battle, a war finale shows the podium and the war's prizes.",
+  ] },
   { v: "Day 3 update, part 8", date: "10 Nov", fixes: [], balance: [
     "Ultimates take a small step back, starting with tonight's battle (10 Nov); earlier battles are unchanged: damage is 25% lower, and the area is smaller at ult rank 1 (70%), rank 2 (85%) and full size at rank 3.",
   ], changes: [

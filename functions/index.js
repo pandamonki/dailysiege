@@ -3,6 +3,7 @@
 //   keepGameClock       keeps each game's planning day and lock times right when its settings change
 //   resolveDueBattles   every 5 minutes: fights the battle of every game whose lock time has passed
 //   resolveNow          the host's "Resolve now" button: the same, at once, for one game (for recovery)
+//   setBots             the host fills or empties seats with bot lords while registration is open
 //   reassignSeat        the host gives a lord's castle to that lord's new account (lost phone)
 const { onDocumentWritten } = require("firebase-functions/v2/firestore");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
@@ -13,6 +14,7 @@ const { getFirestore, Timestamp, FieldValue } = require("firebase-admin/firestor
 const { clockFor } = require("./lib/clock");
 const { getMessaging } = require("firebase-admin/messaging");
 const { resolveDue, resolveAllDue, reassignSeat, remindAll } = require("./lib/resolve");
+const { setBots } = require("./lib/bots");
 const { REGION, TRIGGER_REGION } = require("./region");
 
 initializeApp();
@@ -70,4 +72,11 @@ exports.reassignSeat = onCall(async request => {
   if (typeof fromUid !== "string" || typeof toUid !== "string" || !fromUid || !toUid || fromUid === toUid) throw new HttpsError("invalid-argument", "Choose the lord and their new account.");
   try { await reassignSeat(getFirestore(), gameId, fromUid, toUid); return { ok: true }; }
   catch (e) { throw new HttpsError("failed-precondition", (e && e.message) || "Could not move the seat."); }
+});
+
+exports.setBots = onCall(async request => {
+  const gameId = await hostOnly(request), n = Number(request.data && request.data.count);
+  if (!Number.isFinite(n) || n < 0 || n > 12) throw new HttpsError("invalid-argument", "How many bots?");
+  try { return await setBots(getFirestore(), gameId, n); }
+  catch (e) { throw new HttpsError("failed-precondition", (e && e.message) || "Could not change the bots."); }
 });

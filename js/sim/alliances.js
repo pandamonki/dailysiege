@@ -8,6 +8,7 @@ function resolveAlliances(plans, o = {}) {
     const par = {}, f = x => (par[x] === undefined || par[x] === x ? (par[x] = x) : (par[x] = f(par[x])));
     plans.forEach(q => f(q.pid)); pairs.concat([[a.pid, b.pid]]).forEach(([x, y]) => { par[f(x)] = f(y); });
     if ((o.feuds || []).some(k => { const [x, y] = k.split("|"); return par[x] !== undefined && par[y] !== undefined && f(x) === f(y); })) return false; // bad blood: betrayers and the betrayed never share a team again
+    if (o.blocMax && plans.filter(q => f(q.pid) === f(a.pid)).length > o.blocMax) return false; // a pact group holds at most blocMax lords
     return new Set(plans.map(q => f(q.pid))).size >= 2; };
   const feudHit = (a, b) => (o.feuds || []).some(k => { const [x, y] = k.split("|"); return (x === a.pid || x === b.pid || y === a.pid || y === b.pid); });
   const link = (a, b) => { a.pacts.push(b.pid); b.pacts.push(a.pid); pairs.push([a.pid, b.pid]); };
@@ -33,7 +34,7 @@ function resolveAlliances(plans, o = {}) {
     else ok = (b.replies || {})[a.pid] === "accept";
     if (!ok) { notes.push(b.auto || (b.replies || {})[a.pid] ? `${b.name} turned down ${a.name}'s invitation.` : `${b.name} never answered ${a.name}'s invitation.`); return; }
     done.add(key);
-    if (!canLink(a, b)) { notes.push((o.feuds || []).includes([a.pid, b.pid].sort().join("|")) ? `${a.name} and ${b.name} cannot ally again after the betrayal.` : `${a.name} and ${b.name} could not ally: at least two sides must stay in the fight, and betrayers never rejoin their victims.`); return; }
+    if (!canLink(a, b)) { notes.push((o.feuds || []).includes([a.pid, b.pid].sort().join("|")) ? `${a.name} and ${b.name} cannot ally again after the betrayal.` : `${a.name} and ${b.name} could not ally: ${o.blocMax ? `an alliance holds at most ${o.blocMax} lords, ` : ""}at least two sides must stay in the fight, and betrayers never rejoin their victims.`); return; }
     link(a, b);
     if (mutual) notes.push(`${a.name} and ${b.name} invited each other and ally for free.`);
     else { transfers.push({ from: a.pid, to: b.pid, gold: off.gold || 0 }); notes.push(`${b.name} accepted ${a.name}'s invitation${off.gold ? ` and a dowry of ${off.gold} gold` : ""}. They fight as allies.`); }
