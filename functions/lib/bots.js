@@ -10,14 +10,19 @@ const isBot = p => !!(p && p.bot);
 
 /**
  * Make the number of bots in a game `want`, within the seats people have not taken.
- * Only while registration is open. Adds bots with the next free names, colours and heroes; removes the newest first.
- * @returns {Promise<{ bots: number, humans: number, seats: number }>}
+ * Only while registration is open. Adds bots with the next free names, colours and heroes; removes the newest first, or one named bot with `removeId`.
+ * @returns {Promise<{ bots: number, humans: number, seats: number } | { removed: string }>}
  */
-async function setBots(db, gameId, want, { now = Date.now() } = {}) {
+async function setBots(db, gameId, want, { now = Date.now(), removeId = null } = {}) {
   const gameRef = db.collection("games").doc(gameId), snap = await gameRef.get();
   if (!snap.exists) throw new Error("That game does not exist.");
   const cfg = snap.data();
   if (!cfg.lobby || (cfg.lobbyEnds && now >= cfg.lobbyEnds)) throw new Error("Bots can only be added or removed while registration is open.");
+  if (removeId) { // take out one particular bot (the minus on its seat)
+    const ref = gameRef.collection("players").doc(removeId), d = await ref.get();
+    if (!d.exists || !isBot(d.data())) throw new Error("That seat is not a bot.");
+    await ref.delete(); return { removed: removeId };
+  }
   const { MAX_LORDS, SEAT_COLORS, CLASSES, BOT_LORD_NAMES, BOT_LORD_BANNERS } = Object.fromEntries(["MAX_LORDS", "SEAT_COLORS", "CLASSES", "BOT_LORD_NAMES", "BOT_LORD_BANNERS"].map(k => [k, g().get(k)]));
   const seats = Math.min(MAX_LORDS, cfg.maxPlayers || 8), pubs = await gameRef.collection("players").get();
   const live = pubs.docs.filter(d => !d.get("left")), humans = live.filter(d => !isBot(d.data()) && !d.get("pending")).length;
