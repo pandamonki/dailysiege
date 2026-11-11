@@ -5,6 +5,7 @@ const ULT_V2_FROM = "2026-11-10", ultV2For = d => String(d) >= ULT_V2_FROM;
 // Fairer endings and longer alliances (battles fought on or after this day; earlier saved battles replay as fought):
 //   - castles that fall on the same tick are ranked by siege damage, then hero kills, never by seat order
 //   - pacts last until someone ends them, a pact group holds at most BLOC_MAX lords, and a betrayer who sets off the bomb is paid for it
+//   - castles no longer burn down on their own from 100s (a castle only falls to an attack)
 //   - the last days of the week score more (DAY_WEIGHT), and orders drafted but not sealed are fought at the lock
 const BAL_V2_FROM = "2026-11-12", balV2For = d => String(d) >= BAL_V2_FROM;
 const BLOC_MAX = 3, TREACHERY_PTS = 3, TREACHERY_LOOT = .25, DAY_WEIGHT = { 5: 1.5, 6: 1.5, 7: 2 };
@@ -754,7 +755,7 @@ function runBattle(plans, seed, opts = {}) {
         return;
       }
       if (e.dots.length) { e.dots = e.dots.filter(x => x.until > t); e.dots.forEach(x => { if (!e.dead) deal(x.src, e, x.dps * DT, { aoe: 1, ab: x.ab }); }); if (e.dead) return; }
-      if (t >= SUDDEN && e.kind === "castle") deal(null, e, e.maxhp * .015 * DT, { aoe: 1 });
+      if (t >= SUDDEN && e.kind === "castle" && !BV) deal(null, e, e.maxhp * .015 * DT, { aoe: 1 });
       if (!e.dead) think(e);
     });
     traps.forEach(tr => {
