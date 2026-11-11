@@ -42,6 +42,15 @@ npm run build      # copy the game into dist/ ready for hosting
   can change it in the Muster Hall. Colours and the limits are in `js/config/seats.js`, map sizes in `mapSizeFor`
   (`js/core/layout.js`). `npm run balance` fights many random battles at 8, 10 and 12 lords and prints battle length,
   hero win rates and wins by seat.
+- **Installable app.** `manifest.webmanifest`, the icons in `app/`, and a service worker make the game installable
+  and let it start with no connection. The worker is `sw.src.js`; the build writes `dist/sw.js` from it with the list
+  of files and a version made from their contents, so phones fetch a new version exactly when something changed.
+  It only caches this site's own files, never game data. `js/pwa.js` registers it and offers the Install button.
+- **Notifications.** The server sends "results are in" after each battle and "orders lock soon" an hour before the
+  lock to lords who have not sealed (`functions/lib/notify.js`). Phones subscribe from the Friends Game screen. They
+  are off until the project's public Web Push key is put in `js/config/site.js`.
+- **Assets.** Images are lossless WebP. Music is a real file in `audio/`, listed in `js/audio/tracks.js` and fetched
+  the first time it plays.
 - CI (`.github/workflows/ci.yml`) runs lint, the tests and the build on every pull request.
 - The hosting plan and its phases are in `daily-siege-hosting-plan.md`.
 
@@ -55,9 +64,9 @@ npm run build      # copy the game into dist/ ready for hosting
 | `js/replay/` | Watching a battle: muster/hero pick, replay drawing, inspector, controls, highlights, video export |
 | `js/net/` | Friends game: players, clock, roster, daily battles, session, lobby, test sandbox, and the Firebase backend |
 | `js/ui/` | HUD, sheets (castle, info, army, council, results), `render()`, button actions, map input |
-| `js/audio/` | Music player, and the tracks as embedded data (`tracks.js`) |
+| `js/audio/` | Music player and the list of tracks (`tracks.js`); the audio files are in `audio/` |
 | `js/dev/` | Balance lab (simulates many battles), golden battles for the determinism tests |
-| `icons/`, `items/`, `title.jpg` | Images |
+| `icons/`, `items/`, `title.jpg`, `app/` | Images (WebP), and the app icons |
 
 ## Rules for the scripts
 
