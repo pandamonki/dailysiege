@@ -9,7 +9,7 @@
 // Not modelled: alliances, mercenary bids, scripted if-then rules. Lords are simple, so read the trend, not the decimals.
 import { loadSim } from "./load-sim.mjs";
 
-const sim = loadSim(), V2 = !process.env.BAL_OLD, DOCTRINE = process.env.DOCTRINE || "none"; // none | raider | march | marchhero | mixed: how armies pick targets by group
+const sim = loadSim(), V2 = !process.env.BAL_OLD, DOCTRINE = process.env.DOCTRINE || "none"; // none | raider | march | marchhero | mixed | two | twomix (army heads for the castle, combat priorities pick fights within reach; ENGAGE=tiles): how armies pick targets by group
 const wars = +process.argv[2] || 12, nLords = +process.argv[3] || 10;
 const STYLES = ["soldiers", "siege", "hero", "balanced"];
 // what each style buys, in order; every step is bought when affordable and the list restarts each day
@@ -17,7 +17,8 @@ sim.run(`globalThis.__lab = (function () {
   const mk = (seed, pids, wars) => {};
   return {
     unitCost: t => UNITS[t].cost, upCost: (t, l) => Math.round(UNITS[t].cost * .5 * l),
-    play(seed, n, V2, doctrine) {
+    play(seed, n, V2, doctrine, engage) {
+      const DOC2 = { hunter: { hero: ["hero", "ranged", "melee"], melee: ["ranged", "hero", "melee"], ranged: ["hero", "melee"] }, raider: { hero: ["melee", "hero"], melee: ["melee"], ranged: ["melee"] }, brawler: { hero: ["melee", "hero"], melee: ["melee", "ranged", "hero"], ranged: ["ranged", "melee"] }, sniper: { hero: ["ranged", "hero"], melee: ["ranged"], ranged: ["hero", "ranged"] }, balanced: { hero: ["hero"], melee: ["melee"], ranged: ["hero", "ranged"] } };
       const DOC = { hunter: { hero: ["hero", "ranged", "melee", "castle"], melee: ["ranged", "hero", "melee", "castle"], ranged: ["hero", "melee", "castle"] }, raider: { hero: ["castle", "hero"], melee: ["castle"], ranged: ["castle"] },
         brawler: { hero: ["melee", "hero", "castle"], melee: ["melee", "ranged", "hero", "castle"], ranged: ["ranged", "melee", "castle"] }, sniper: { hero: ["ranged", "hero", "castle"], melee: ["ranged", "castle"], ranged: ["hero", "ranged", "castle"] }, balanced: { hero: ["hero", "castle"], melee: ["melee", "castle"], ranged: ["hero", "ranged", "castle"] } };
       const rnd = mulberry(seed), pick = a => a[Math.floor(rnd() * a.length)], L = seatLayout(n), clsKeys = Object.keys(CLASSES);
@@ -54,7 +55,7 @@ sim.run(`globalThis.__lab = (function () {
           const rot = l.seedR % PRIORITIES.length, others = lords.filter(o => o !== l).map(o => o.pid), targets = others.filter(() => rnd() < .5);
           return { pid: l.pid, me: i === 0, name: "Lord " + (i + 1), color: SEAT_COLORS[i % SEAT_COLORS.length], cls: l.cls, level, xp0: 0, castle: l.castle, castleTier: l.tier, ranks: autoRanks(level, l.seedR), picks,
             triggers: { a1: pick(TRIGGERS.slice(0, 2)), a2: pick(TRIGGERS.slice(0, 3)), a3: pick(TRIGGERS.slice(0, 3)), ult: pick(TRIGGERS.slice(0, 2)) }, ultArm: true, blessing: null, gear: { ...l.gear }, defences: { ...l.defences }, items: l.items.slice(),
-            formation: true, stance: l.stance, prio: PRIORITY_OPTS.slice(rot).concat(PRIORITY_OPTS.slice(0, rot)).slice(0, 5), rules: [], pieces, targets, tmode: l.tmode, heading: l.heading, rank: 1, leader: false, offers: {}, replies: {}, terms: {}, bids: {}, gprio: doctrine === "raider" ? DOC.raider : doctrine === "march" ? { hero: ["castle"], melee: ["castle"], ranged: ["castle"] } : doctrine === "marchhero" ? { hero: ["hero", "castle"], melee: ["castle"], ranged: ["castle"] } : doctrine === "mixed" ? DOC[l.doc] : null, breaks: [], pbetray: {}, pacts: [], hostile: [], betray: {} };
+            formation: true, stance: l.stance, prio: PRIORITY_OPTS.slice(rot).concat(PRIORITY_OPTS.slice(0, rot)).slice(0, 5), rules: [], pieces, targets, tmode: l.tmode, heading: doctrine === "two" || doctrine === "twomix" ? "castle" : l.heading, rank: 1, leader: false, offers: {}, replies: {}, terms: {}, bids: {}, engage: engage || 0, gprio: doctrine === "two" ? { hero: ["hero", "ranged", "melee"], melee: ["melee", "ranged", "hero"], ranged: ["hero", "ranged", "melee"] } : doctrine === "twomix" ? DOC2[l.doc] : doctrine === "raider" ? DOC.raider : doctrine === "march" ? { hero: ["castle"], melee: ["castle"], ranged: ["castle"] } : doctrine === "marchhero" ? { hero: ["hero", "castle"], melee: ["castle"], ranged: ["castle"] } : doctrine === "mixed" ? DOC[l.doc] : null, breaks: [], pbetray: {}, pacts: [], hostile: [], betray: {} };
         });
         const order = lords.slice().sort((a, b) => b.pts - a.pts), ranks = {}; order.forEach((l, i) => { ranks[l.pid] = i + 1; });
         const res = runBattle(plans, 7919 * day + seed, { fast: true, N: L.N, finalDay: day === 7, ultV2: true, balV2: V2, dayNo: day, ranks: day > 1 ? ranks : undefined });
@@ -75,7 +76,7 @@ sim.run(`globalThis.__lab = (function () {
 })()`);
 const TMAX = sim.get("TMAX"), rows = Array.from({ length: 7 }, (_, i) => ({ day: i + 1, len: [], first: [], standing: [], siege: [], units: [], tier3: [], timeUp: 0, n: 0 }));
 for (let w = 0; w < wars; w++) {
-  const days = sim.run(`__lab.play(${5000 + w * 131}, ${nLords}, ${V2}, "${DOCTRINE}")`);
+  const days = sim.run(`__lab.play(${5000 + w * 131}, ${nLords}, ${V2}, "${DOCTRINE}", ${+process.env.ENGAGE || 0})`);
   days.forEach((d, i) => { const r = rows[i]; r.n++; r.len.push(d.len); if (d.first != null) r.first.push(d.first); r.standing.push(d.standing); r.siege.push(d.siege); r.units.push(d.units); r.tier3.push(d.tier3); if (d.len >= TMAX) r.timeUp++; });
 }
 const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : NaN, f = (v, d = 0) => (Number.isNaN(v) ? "-" : v.toFixed(d)).padStart(6);

@@ -376,7 +376,7 @@ function runBattle(plans, seed, opts = {}) {
     const list = P[e.pid].gprio[grpOf(e)]; if (!list) return null;
     for (const cat of list) {
       if (cat === "castle") { const g = goalPid(e), c = g && ents.find(o => !o.dead && o.kind === "castle" && o.pid === g); if (c) return c; continue; }
-      const pool = ents.filter(o => !o.dead && hostile(e.pid, o.pid) && fighting(o.pid) && !fxv(o, "vanish") && catOf(o) === cat && d(o, e) <= ENGAGE);
+      const pool = ents.filter(o => !o.dead && hostile(e.pid, o.pid) && fighting(o.pid) && !fxv(o, "vanish") && catOf(o) === cat && d(o, e) <= (P[e.pid].engage || ENGAGE));
       if (pool.length) return minBy(pool, o => d(o, e));
     }
     return null;
@@ -396,7 +396,7 @@ function runBattle(plans, seed, opts = {}) {
     const runners = ents.filter(o => !o.dead && o.retreating && o.kind !== "castle" && hostile(e.pid, o.pid) && !fxv(o, "vanish") && d(o, e) <= ENGAGE + 1.5);
     if (runners.length && !guard) return minBy(runners, o => o.hp / o.maxhp + d(o, e) * .1);
     if (BV && p.gprio && !guard && !escort) { const t2 = groupPick(e); if (t2) return t2; } // per-group priorities: the lord's order of what this kind of fighter goes for
-    const anchor = guard ? p.castle : escort ? p.champ : e, radius = guard ? (t - p.castleHitT < 6 ? 7 : 4) : ENGAGE;
+    const anchor = guard ? p.castle : escort ? p.champ : e, radius = guard ? (t - p.castleHitT < 6 ? 7 : 4) : (BV && p.engage) || ENGAGE;
     const near = ents.filter(o => !o.dead && o.kind !== "castle" && hostile(e.pid, o.pid) && fighting(o.pid) && !fxv(o, "vanish") && d(o, anchor) <= radius);
     if (near.length) return byPrio(e, near);
     if (guard || escort) return null;
