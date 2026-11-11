@@ -17,7 +17,10 @@ const PWA = (() => {
   return {
     ready: () => (st.ok && navigator.serviceWorker.ready) || Promise.reject(new Error("no service worker")),
     standalone, isIOS,
-    canOffer: () => st.ok && !standalone() && (!!st.prompt || isIOS()), // worth showing an "Install" button
+    // Worth showing an "Install" button: whenever the game is not already running from the home screen. If the browser
+    // offers a one-tap install we use it; otherwise the button shows how to do it from the browser's menu. (Chrome does
+    // not offer the one-tap install inside another app's browser tab, so waiting for the offer hid the button there.)
+    canOffer: () => st.ok && !standalone(),
     install: async () => { if (!st.prompt) return false; const p = st.prompt; st.prompt = null; p.prompt(); try { await p.userChoice; } catch (e) {} return true; },
     hasPrompt: () => !!st.prompt,
   };
