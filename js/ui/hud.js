@@ -36,7 +36,7 @@ function renderTop() {
 }
 function renderCommands() {
   const o = S.phase === "orders";
-  const seal = `<button class="sealbar ${S.locked ? "sealed" : "wax"}" data-act="open" data-v="seal"><b>${S.locked ? "ORDERS SEALED ✓" : "SEAL ORDERS"}</b><small>${S.locked ? "tap to review" : "battle in " + countdown()}</small></button>`;
+  const seal = `<button class="sealbar ${S.locked ? "sealed" : "wax"}" data-act="open" data-v="seal"><b>${S.locked ? "ORDERS SEALED ✓" : S.sealedSnap && isLive() ? "SEAL NEW ORDERS" : "SEAL ORDERS"}</b><small>${S.locked ? "tap to review" : S.sealedSnap && isLive() ? "sealed orders stand until then" : "battle in " + countdown()}</small></button>`;
   const nb = (act, v, ico, label, extra = "") => `<button class="nb2" data-act="${act}" ${v != null ? `data-v="${v}"` : ""}><span class="ni">${ico}</span><span>${label}${extra}</span></button>`;
   document.getElementById("cmdbar").innerHTML = nb("opencastle", "keep", UIIMG("base"), "Base") + nb("opencastle", "recruit", UIIMG("army"), "Army") + nb("openhero", null, S.cls ? UIIMG("hero_" + S.cls) : "🧙", "Hero", freePts() ? `<sup class="dot">${freePts()}</sup>` : "") + nb("openorders", "ord", UIIMG("orders"), "Orders") + nb("openorders", "alli", UIIMG("allies"), "Allies") + seal;
 }

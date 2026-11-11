@@ -132,3 +132,27 @@ test("a betrayer who sets off the bomb is paid: points and a share of the victim
   assert.ok(on.feudsNew.includes("a|b") && r.points >= 3, "the feud remains the price, the prize is at least 3 points");
   assert.ok(r.gold > r0.gold, `a keeps a share of b's spoils (${r.gold} against ${r0.gold})`);
 });
+
+// ----- sealed orders stay in effect until new ones are sealed -----
+test("a lord who sealed, then reopened the orders and wrecked their army, is fought on what they sealed", () => {
+  const W = world(ids), mine = W.players.a.plans[D1], sealedCopy = J(mine);
+  W.players.a.plans[D1] = { ...mine, sealed: false, pieces: [], gear: {}, sealedPlan: sealedCopy }; // unsealed, army deleted, forgot to reseal
+  const a = buildBattleInputs(W, D1).plans.find(p => p.pid === "a");
+  assert.ok(!a.noOrders); assert.deepEqual(J(a.pieces.filter(p => p.kind !== "champ").length > 0), true, "the sealed army stands");
+  assert.deepEqual(J(a.gear), J(sealedCopy.gear));
+});
+
+test("once they seal again, the new orders replace the old", () => {
+  const W = world(ids), sealedCopy = J(W.players.a.plans[D1]);
+  W.players.a.plans[D1] = { ...W.players.a.plans[D1], stance: "cautious", sealed: true, sealedPlan: undefined };
+  assert.equal(buildBattleInputs(W, D1).plans.find(p => p.pid === "a").stance, "cautious"); assert.notEqual(sealedCopy.stance, "cautious");
+});
+
+test("yesterday's sealed orders beat today's unsealed draft; a lord who never sealed is fought on their draft", () => {
+  const W = world(ids); W.battles[D1] = fightDay(W, D1, 1); const D2 = addDays(D1, 1);
+  W.players.a.plans[D2] = { ...W.players.a.plans[D1], sealed: false, pieces: [], stance: "cautious" }; // a drafted a wrecked day 2 and did not seal
+  const plans = buildBattleInputs(W, D2).plans;
+  assert.ok(plans.find(p => p.pid === "a").pieces.length > 1 && plans.find(p => p.pid === "a").stance !== "cautious", "day 1's sealed orders are still in effect");
+  const W2 = world([]); W2.players.b.plans[D1] = { ...world(ids).players.b.plans[D1], sealed: false };
+  assert.ok(buildBattleInputs(W2, D1).plans.find(p => p.pid === "b").pieces.length > 1, "never sealed: the draft is used");
+});
