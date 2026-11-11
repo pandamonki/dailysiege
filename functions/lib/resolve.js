@@ -21,6 +21,7 @@ async function loadWorld(gameRef, cfg, day) {
   await Promise.all(pubs.docs.map(async d => {
     const pub = d.data();
     if (pub.left || pub.pending) return; // not fighting: no need to read their orders
+    if (pub.bot) { W.players[d.id] = { fromWeek: pub.fromWeek, joinedAt: pub.joinedAt, nick: pub.nick || "", real: pub.real || "", bot: true, state: { cls: pub.cls || "warrior", banner: pub.banner || null }, plans: {} }; return; } // a bot has no saved state or orders: the game works its orders out
     const [state, orders] = await Promise.all([d.ref.collection("private").doc("state").get(), d.ref.collection("orders").where(byDay, ">=", week).get()]);
     const plans = {}; orders.forEach(o => { const p = o.data(); if ((p.war || 1) === war && o.id <= day) plans[o.id] = p; });
     const st = state.exists ? state.data() : {};

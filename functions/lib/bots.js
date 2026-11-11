@@ -1,0 +1,42 @@
+// Bot lords: seats the host fills with computer-played lords while registration is open.
+//
+// A bot is a public player profile with { bot: true }. It has no account, no private state and no saved orders;
+// the game works its orders out each day (lordBotPlan in js/sim/bots.js), the same on the server and on every phone.
+const { loadGame, SIM_FILES } = require("./game");
+
+let game;
+const g = () => game || (game = loadGame(SIM_FILES));
+const isBot = p => !!(p && p.bot);
+
+/**
+ * Make the number of bots in a game `want`, within the seats people have not taken.
+ * Only while registration is open. Adds bots with the next free names, colours and heroes; removes the newest first.
+ * @returns {Promise<{ bots: number, humans: number, seats: number }>}
+ */
+async function setBots(db, gameId, want, { now = Date.now() } = {}) {
+  const gameRef = db.collection("games").doc(gameId), snap = await gameRef.get();
+  if (!snap.exists) throw new Error("That game does not exist.");
+  const cfg = snap.data();
+  if (!cfg.lobby || (cfg.lobbyEnds && now >= cfg.lobbyEnds)) throw new Error("Bots can only be added or removed while registration is open.");
+  const { MAX_LORDS, SEAT_COLORS, CLASSES, BOT_LORD_NAMES, BOT_LORD_BANNERS } = Object.fromEntries(["MAX_LORDS", "SEAT_COLORS", "CLASSES", "BOT_LORD_NAMES", "BOT_LORD_BANNERS"].map(k => [k, g().get(k)]));
+  const seats = Math.min(MAX_LORDS, cfg.maxPlayers || 8), pubs = await gameRef.collection("players").get();
+  const live = pubs.docs.filter(d => !d.get("left")), humans = live.filter(d => !isBot(d.data()) && !d.get("pending")).length;
+  const bots = live.filter(d => isBot(d.data())).sort((a, b) => (b.get("joinedAt") || 0) - (a.get("joinedAt") || 0) || (a.id < b.id ? -1 : 1)); // newest first
+  const target = Math.max(0, Math.min(Math.floor(Number(want)) || 0, seats - humans));
+  const batch = db.batch();
+  if (target < bots.length) bots.slice(0, bots.length - target).forEach(d => batch.delete(d.ref));
+  else if (target > bots.length) {
+    const ids = new Set(pubs.docs.map(d => d.id)), names = new Set(live.map(d => d.get("nick"))), colours = new Set(live.map(d => (d.get("banner") || {}).c1).filter(Boolean)), heroes = Object.keys(CLASSES);
+    const used = pubs.docs.filter(d => isBot(d.data())).length;
+    for (let k = 0, n = 1; k < target - bots.length; k++) {
+      while (ids.has("bot_" + n)) n++;
+      const id = "bot_" + n, nick = BOT_LORD_NAMES.find(x => !names.has(x)) || "Bot " + n, c1 = SEAT_COLORS.find(c => !colours.has(c)) || null, i = used + k;
+      ids.add(id); names.add(nick); if (c1) colours.add(c1);
+      batch.set(gameRef.collection("players").doc(id), { bot: true, fromWeek: "0000-00-00", joinedAt: now + k, nick, real: "Bot", pending: false, cls: heroes[(i * 5 + 1) % heroes.length], week: null, war: cfg.war || 1, banner: JSON.parse(JSON.stringify(Object.assign({}, BOT_LORD_BANNERS[i % BOT_LORD_BANNERS.length], { c1 }))) });
+    }
+  }
+  await batch.commit();
+  return { bots: target, humans, seats };
+}
+
+module.exports = { setBots };

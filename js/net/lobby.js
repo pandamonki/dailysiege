@@ -53,10 +53,11 @@ function closesText(cfg) { const left = cfg.lobbyEnds ? Math.max(0, Math.ceil((c
 function lordCards(withSeats) { // banner and name for every registered lord; rivals' heroes stay hidden until the war begins
   const reg = lobbyLords(), TC = teamColours(), open = Math.max(0, seatCap() - reg.length), h = hostUid();
   return `<div class="lcards">${reg.map(([uid, pl], i) => { const isMe = uid === LIVE.uid, st = isMe && S ? S : pl.state || {}, cls = isMe && st.cls && CLASSES[st.cls];
-    return `<div class="lcard${isMe ? " me" : ""}"><img class="lban" alt="" src="${bannerURL(st.banner || defaultBanner(), TC[uid] || SEAT_COLORS[i], 40, 54)}"><span><b>${esc(isMe ? (MY_NAME === "You" ? "You" : MY_NAME + " · you") : nameOf(uid))}</b><small>${uid === h ? "Host · " : ""}${cls ? esc(cls.name) : "Hero hidden"}</small></span>${cls ? `<img class="lhero" alt="" src="${spriteURL("c-" + st.cls)}">` : `<span class="hidhero" aria-hidden="true">?</span>`}</div>`; }).join("")}${withSeats ? Array.from({ length: open }, () => `<div class="lcard emptyseat"><span><b>Open seat</b><small>Waiting for a lord</small></span></div>`).join("") : ""}</div>`;
+    return `<div class="lcard${isMe ? " me" : ""}"><img class="lban" alt="" src="${bannerURL(st.banner || defaultBanner(), TC[uid] || SEAT_COLORS[i], 40, 54)}"><span><b>${esc(isMe ? (MY_NAME === "You" ? "You" : MY_NAME + " · you") : nameOf(uid))}</b><small>${uid === h ? "Host · " : ""}${pl.bot ? "Bot · " : ""}${cls ? esc(cls.name) : "Hero hidden"}</small></span>${cls ? `<img class="lhero" alt="" src="${spriteURL("c-" + st.cls)}">` : `<span class="hidhero" aria-hidden="true">?</span>`}</div>`; }).join("")}${withSeats ? Array.from({ length: open }, () => `<div class="lcard emptyseat"><span><b>Open seat</b><small>Waiting for a lord</small></span></div>`).join("") : ""}</div>`;
 }
 const seatCap = () => Math.min(MAX_LORDS, (LIVE.config && LIVE.config.maxPlayers) || 8); // seats in this war
-function lobbyLords() { return Object.entries(LIVE.players).filter(([, p]) => !p.left && !p.pending).sort((a, b) => ((a[1].joinedAt || 0) - (b[1].joinedAt || 0)) || (a[0] < b[0] ? -1 : 1)).slice(0, seatCap()); }
+function lobbyLords() { return Object.entries(LIVE.players).filter(([, p]) => !p.left && !p.pending).sort((a, b) => (!!a[1].bot - !!b[1].bot) || ((a[1].joinedAt || 0) - (b[1].joinedAt || 0)) || (a[0] < b[0] ? -1 : 1)).slice(0, seatCap()); } // bots sit after people, so a person registering takes a bot's seat
+const peopleSeated = () => lobbyLords().filter(([, p]) => !p.bot).length; // seats held by people: what decides whether another person can register
 function renderLobby() {
   if (!inLobby()) return; const cfg = LIVE.config; let el = document.getElementById("lobby");
   if (!el) { el = document.createElement("div"); el.id = "lobby"; document.body.appendChild(el); }
@@ -68,7 +69,7 @@ function renderLobby() {
   const TC = teamColours(); MY_COLOR = TC[LIVE.uid] || MY_COLOR;
   const myLabel = lordLabel(me);
   if (editing) { // the registration form: name, army colour, coat of arms, hero, then Register
-    const full = pending && open === 0;
+    const full = pending && peopleSeated() >= seatCap();
     el.innerHTML = `<div class="lwrap"><h2>${pending ? "Register for the war" : "Your preparations"}</h2><p class="lsub">${closes} · ${open} seat${open === 1 ? "" : "s"} open</p>
     <div class="lbox"><h3><span class="stepn">1</span>Your name</h3>${nameForm(`Shown over your castle and hero as <b>Nickname (Name)</b>. Fixed once registration closes.`, false)}</div>
     <div class="lbox"><h3><span class="stepn">2</span>Army colour</h3>${armySwatches()}</div>
@@ -88,6 +89,7 @@ function renderLobby() {
       <label class="inline">Registration closes<select id="lobbyclose"><option value="">Keep as is</option><option value="0">When I lock it in</option>${[1, 3, 6, 12, 24, 48].map(h => `<option value="${h}">In ${h < 24 ? h + " hour" + (h > 1 ? "s" : "") : h / 24 + " day" + (h > 24 ? "s" : "")}</option>`).join("")}</select></label>
       ${window.DS ? `<label class="inline">Seats<select id="lobbyseats">${Array.from({ length: MAX_LORDS - 1 }, (_, i) => i + 2).filter(k => k >= Math.max(2, reg.length)).map(k => `<option value="${k}"${k === seatCap() ? " selected" : ""}>${k} lords</option>`).join("")}</select></label>` : ""}
       <label class="inline">Battle time<select id="lobbyhour">${[12, 13, 17, 18, 19, 20, 21, 22].map(h => `<option value="${h}"${h === cfg.lockHour ? " selected" : ""}>${hourLabel(h)}</option>`).join("")}</select></label>
+      ${botControls(reg)}
       <div class="row"><button class="btn small" data-act="lobbysave">Save</button><button class="btn ${LIVE.beginConfirm ? "wax" : "wood"}" data-act="lobbybegin" ${reg.length < 2 ? "disabled" : ""}>${LIVE.beginConfirm ? "Tap again: lock in and begin" : "Lock in and begin the war"}</button></div>
       ${reg.length < 2 ? `<p class="muted">You need at least two lords to begin.</p>` : ""}</div>` : ""}
     ${open ? invitePanel(open) : `<div class="lbox"><h3>Every seat is taken</h3><p class="muted">All ${seatCap()} lords are registered.</p></div>`}${hostTools()}${pushLine()}
@@ -99,7 +101,7 @@ async function registerMe() {
   const nick = cleanName(nEl ? nEl.value : NAME_DRAFT.mynick ?? me.nick, NICK_MAX), real = cleanName(rEl ? rEl.value : NAME_DRAFT.myreal ?? me.real, REAL_MAX);
   if (!nick || !real) { toast(!nick && !real ? "Enter a nickname and your actual name." : !nick ? "Enter a nickname." : "Enter your actual name."); (!nick ? nEl : rEl)?.focus(); return; }
   const wasPending = !!me.pending;
-  if (wasPending && lobbyLords().length >= seatCap()) { toast(`Sorry, all ${seatCap()} seats are taken.`); renderLobby(); return; }
+  if (wasPending && peopleSeated() >= seatCap()) { toast(`Sorry, all ${seatCap()} seats are taken.`); renderLobby(); return; }
   const patch = { nick, real, state: S }; if (wasPending) { patch.pending = false; patch.joinedAt = Date.now(); }
   clearTimeout(saveTimer); saveTimer = null; // the patch carries the latest state, so a pending autosave isn't needed
   try { await myWrite(r => r.update(patch)); Object.assign(me, patch); delete NAME_DRAFT.mynick; delete NAME_DRAFT.myreal;
@@ -159,7 +161,7 @@ function gameSheet() {
       <div class="summon"><p>${hl === "you" ? "You are hosting this war." : `<b>${esc(hl)}</b> is hosting this war and has invited you to take a castle.`} Battles are fought daily at ${lockLabel(LIVE.config)} your time for seven days.</p>
         <p class="when">${closesText(LIVE.config)} · <b>${open}</b> of ${seatCap()} seats open</p></div>
       <div class="sec"><h3>${n} lord${n === 1 ? " has" : "s have"} registered</h3>${n ? lordCards(false) : `<p class="muted">Nobody yet. Be the first.</p>`}<p class="muted">Heroes stay hidden until the war begins.</p></div>
-      <div class="row">${mineL ? `<button class="btn wax big" data-act="playgo">${mineL.pending ? "Finish registering" : "Enter the Muster Hall"}</button>` : n >= seatCap() ? `<span class="muted">All ${seatCap()} seats are taken.</span>` : `<button class="btn wax big" data-act="joingame">⚑ Register<small>A short tour, then choose your hero, name, colour and coat of arms</small></button>`}<button class="btn" data-act="open" data-v="title">← Back</button></div>${accountLine()}</div>`; }
+      <div class="row">${mineL ? `<button class="btn wax big" data-act="playgo">${mineL.pending ? "Finish registering" : "Enter the Muster Hall"}</button>` : peopleSeated() >= seatCap() ? `<span class="muted">All ${seatCap()} seats are taken.</span>` : `<button class="btn wax big" data-act="joingame">⚑ Register<small>A short tour, then choose your hero, name, colour and coat of arms</small></button>`}<button class="btn" data-act="open" data-v="title">← Back</button></div>${accountLine()}</div>`; }
   const ck = liveClock(), roster = rosterFor(ck.week), mine = LIVE.players[LIVE.uid], pts = standings(ck.week), cfg = LIVE.config, cap = capFor(ck.week), capNext = capFor(addDays(ck.week, 7));
   const signed = Object.entries(LIVE.players).filter(([, p]) => !p.left).length, inNow = roster.some(p => p.uid === LIVE.uid), queued = mine && !inNow;
   const nextWeek = addDays(ck.week, 7), waiting = Object.entries(LIVE.players).filter(([uid, p]) => !p.left && !roster.some(r => r.uid === uid)).map(([uid]) => uid);
@@ -225,9 +227,17 @@ function installSheet() { // how to put the game on the home screen
     <div class="row"><button class="btn" data-act="open" data-v="title">← Back</button></div></div>`;
 }
 function accountLine() { return window.DS && DS.user ? `<p class="muted">Signed in as ${esc(DS.accountLabel())} · <button class="btn small" data-act="dssignout">Sign out</button></p>` : ""; }
+function botControls(reg) { // the host fills empty seats with bot lords, or takes them out again, while registration is open
+  if (!window.DS || !DS.isHost || !DS.isHost()) return "";
+  const bots = reg.filter(([, p]) => p.bot).length, people = reg.length - bots, free = Math.max(0, seatCap() - people), off = DS.busy ? " disabled" : "";
+  return `<div class="sec tight"><h3>Bot lords</h3><p class="muted">A bot takes a seat and plays itself every day with its own orders, so you can run a full war on your own or with a few friends. If a friend registers when the war is full, they take a bot's seat.</p>
+    <div class="spread"><span><b>${bots}</b> bot${bots === 1 ? "" : "s"} · ${people} ${people === 1 ? "person" : "people"} · ${Math.max(0, free - bots)} seat${free - bots === 1 ? "" : "s"} empty</span>
+      <span><button class="btn small" data-act="dsbots" data-v="-1"${off}${bots ? "" : " disabled"}>− Bot</button> <button class="btn small wood" data-act="dsbots" data-v="+1"${off}${bots < free ? "" : " disabled"}>+ Bot</button></span></div>
+    <div class="row"><button class="btn small wood" data-act="dsbots" data-v="fill"${off}${bots < free ? "" : " disabled"}>Fill every empty seat</button><button class="btn small" data-act="dsbots" data-v="0"${off}${bots ? "" : " disabled"}>Remove all bots</button></div></div>`;
+}
 function hostTools() { // remove a lord, or replace the invite link
   if (!window.DS || !DS.isHost()) return "";
-  const others = Object.entries(LIVE.players).filter(([uid, p]) => uid !== LIVE.uid && !p.left), inWar = lobbyOpen(LIVE.config) ? [] : rosterFor(liveClock().week).map(r => r.uid), seated = others.filter(([uid]) => inWar.includes(uid)), fresh = others.filter(([uid]) => !inWar.includes(uid));
+  const others = Object.entries(LIVE.players).filter(([uid, p]) => uid !== LIVE.uid && !p.left && !p.bot), inWar = lobbyOpen(LIVE.config) ? [] : rosterFor(liveClock().week).map(r => r.uid), seated = others.filter(([uid]) => inWar.includes(uid)), fresh = others.filter(([uid]) => !inWar.includes(uid));
   const pend = battlePending();
   return `<div class="sec lbox"><h3>Host tools</h3>${pend ? `<div class="spread"><span>The battle for ${esc(pend)} hasn't been fought yet.</span><button class="btn small wood" data-act="dsresolve">Resolve now</button></div>` : ""}
     ${others.map(([uid, p]) => `<div class="spread"><span>${esc(lordLabel(p) || "A lord")}${p.pending ? " · not registered yet" : ""}</span><button class="btn small ${LIVE.kick === uid ? "wax" : ""}" data-act="dskick" data-v="${uid}">${LIVE.kick === uid ? "Tap again to remove" : "Remove"}</button></div>`).join("") || `<p class="muted">Nobody else has joined yet.</p>`}

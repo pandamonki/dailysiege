@@ -57,7 +57,7 @@ async function remindUnsealed(db, send, { now = Date.now(), ahead = 60 * 60000, 
     const cfg = g.data(); if (!cfg.planDay || cfg.remindedFor === cfg.planDay) continue;
     const pubs = Object.fromEntries((await g.ref.collection("players").get()).docs.map(d => [d.id, d.data()]));
     const fighting = wRoster ? wRoster(pubs, cfg) : Object.keys(pubs).filter(u => !pubs[u].left && !pubs[u].pending);
-    const late = fighting.filter(u => pubs[u].sealedFor !== cfg.planDay), mins = Math.max(1, Math.round((cfg.nextLockAt.toMillis() - now) / 60000));
+    const late = fighting.filter(u => !pubs[u].bot && pubs[u].sealedFor !== cfg.planDay), mins = Math.max(1, Math.round((cfg.nextLockAt.toMillis() - now) / 60000));
     await g.ref.update({ remindedFor: cfg.planDay }); // marked first: a reminder must never be sent twice
     const msg = { title: "Daily Siege: orders lock soon", body: `Your orders are not sealed yet, and the battle is in ${mins >= 55 ? "an hour" : mins + " minutes"}.`, tag: "reminder", link: "/" };
     out[g.id] = { reminded: late, sent: late.length && fighting.length >= 2 ? await deliver(db, g.ref, Object.fromEntries(late.map(u => [u, msg])), send) : 0 };

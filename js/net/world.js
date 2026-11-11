@@ -16,8 +16,9 @@ function lordLabel(p) { const n = cleanName(p && p.nick, NICK_MAX), r = cleanNam
 const wWeekOf = (W, dayKey) => addDays(dayKey, -(wWeekdayOf(dayKey, W.config) - 1));
 function wCap(W, week) { const c = W.config || {}; return Math.min(MAX_LORDS, (c.capFrom && week < c.capFrom ? c.capPrev : c.maxPlayers) || 8); } // games made before seats were configurable hold 8
 function wRoster(W, week) {
+  // bots take the seats that people leave free: when the war is full, it is the bots that give way
   return Object.entries(W.players).filter(([, p]) => p.fromWeek && p.fromWeek <= week && !p.left && !p.pending)
-    .sort((a, b) => (a[1].joinedAt - b[1].joinedAt) || (a[0] < b[0] ? -1 : 1)).slice(0, wCap(W, week)).map(([uid, p]) => ({ uid, ...p }));
+    .sort((a, b) => (!!a[1].bot - !!b[1].bot) || (a[1].joinedAt - b[1].joinedAt) || (a[0] < b[0] ? -1 : 1)).slice(0, wCap(W, week)).map(([uid, p]) => ({ uid, ...p }));
 }
 function wStandings(W, week, through) {
   const pts = {};
@@ -69,11 +70,13 @@ function buildBattleInputs(W, dayKey, opts = {}) {
   const nameOf = opts.nameOf || (uid => lordLabel(W.players[uid]) || "A lord");
   const raw = roster.map((p, i) => {
     let plan;
-    const hs = wHeroState(W, p.uid, week, dayKey), lvl = hs.lvl;
+    const hs = wHeroState(W, p.uid, week, dayKey), lvl = hs.lvl, z = zoneFor(L.castles[i], L.N, L.castles), sp = armySpots(L.castles[i], L.N);
+    const botDay = n => lordBotPlan({ uid: p.uid, cls: (p.state && p.state.cls) || "warrior", i, ids: roster.map(q => q.uid), L, zone: z, dayNo: n, lvl: wHeroState(W, p.uid, week, addDays(week, n - 1)).lvl });
     if (opts.test && p.uid === opts.uid) plan = opts.test.mine;
+    else if (p.bot) plan = opts.test ? (dayNo > 1 ? botDay(dayNo - 1) : null) : botDay(dayNo); // bots have no saved orders: theirs are worked out. In a test only yesterday's are known
     else if (opts.test) plan = lvl > 1 ? wLatestPlan(W, p, dayKey, false) : null; // fog: only yesterday's orders are known
     else plan = wLatestPlan(W, p, dayKey, true);
-    const z = zoneFor(L.castles[i], L.N, L.castles), sp = armySpots(L.castles[i], L.N), noOrders = !plan;
+    const noOrders = !plan;
     if (plan) plan = JSON.parse(JSON.stringify(plan)); // the battle must never change the saved orders it reads, or replaying it later gives a different fight
     plan = plan || { cls: (p.state && p.state.week === week && p.state.cls) || "warrior", ranks: autoRanks(lvl, i + 1), picks: {}, triggers: { a1: TRIGGERS[1], a2: TRIGGERS[2], a3: TRIGGERS[0], ult: TRIGGERS[1] },
       gear: {}, defences: {}, stance: "aggressive", prio: PRIORITIES.slice(), rules: [], pieces: [], pacts: [], hostile: [], betray: {} };
