@@ -1,17 +1,10 @@
 // Roster, names, standings, hero levels and income from past battles
 
 // ----- roster -----
-function rosterFor(week) {
-  return Object.entries(LIVE.players).filter(([, p]) => p.fromWeek && p.fromWeek <= week && !p.left && !p.pending)
-    .sort((a, b) => (a[1].joinedAt - b[1].joinedAt) || (a[0] < b[0] ? -1 : 1)).slice(0, capFor(week)).map(([uid, p]) => ({ uid, ...p }));
-}
-function capFor(week) { const c = LIVE.config || {}; return Math.min(8, (c.capFrom && week < c.capFrom ? c.capPrev : c.maxPlayers) || 8); }
+const rosterFor = week => wRoster(LIVE, week);
+const capFor = week => wCap(LIVE, week);
 const isLive = () => gameMode === "friends" && !lobbyOpen(LIVE.config) && !!LIVE.config && !!LIVE.uid && !!LIVE.players[LIVE.uid] && rosterFor(liveClock().week).some(p => p.uid === LIVE.uid);
 const nameOf = uid => (uid === LIVE.uid ? "You" : (LIVE.names[uid] && LIVE.names[uid].name) || "A player");
-// players can register a nickname and their actual name; everyone sees them as "Nickname (Actual name)"
-const NICK_MAX = 16, REAL_MAX = 20;
-const cleanName = (v, max) => String(v || "").replace(/\s+/g, " ").trim().slice(0, max);
-function lordLabel(p) { const n = cleanName(p && p.nick, NICK_MAX), r = cleanName(p && p.real, REAL_MAX); return n && r && n.toLowerCase() !== r.toLowerCase() ? `${n} (${r})` : n || r || ""; }
 function applyNicks() { for (const [uid, p] of Object.entries(LIVE.players)) { const l = lordLabel(p); if (l) LIVE.names[uid] = Object.assign({}, LIVE.names[uid], { name: l }); }
   if (LIVE.names[LIVE.uid] && LIVE.names[LIVE.uid].name && (isLive() || inLobby())) MY_NAME = LIVE.names[LIVE.uid].name; }
 const NAME_DRAFT = {};
@@ -28,26 +21,10 @@ async function saveName() {
     if (isLive()) refreshLiveWorld(); toast(`You'll appear as ${lordLabel({ nick, real })}.`); document.activeElement && document.activeElement.blur && document.activeElement.blur(); if (inLobby()) renderLobby(); render(); }
   catch (e) { console.warn("name save failed", e); toast(`Couldn't save your name${e && e.code ? " (" + e.code + ")" : ""}. Try again.`); }
 }
-function latestPlan(p, dayKey, inclusive) {
-  const keys = Object.keys(p.plans || {}).filter(k => (inclusive ? k <= dayKey : k < dayKey) && k >= addDays(dayKey, -(weekdayOf(dayKey) - 1))).sort();
-  const sealed = keys.filter(k => p.plans[k] && p.plans[k].sealed); // only sealed orders count: drafts and unsealed edits are never fought
-  return sealed.length ? p.plans[sealed[sealed.length - 1]] : null;
-}
-function standings(week, through) {
-  const pts = {};
-  Object.entries(LIVE.battles).forEach(([k, b]) => { if (b.week !== week || (through && k > through)) return; (b.results || []).forEach(r => { pts[r.pid] = (pts[r.pid] || 0) + r.points; }); });
-  return pts;
-}
-// a champion's level and spare experience on a given day, rebuilt from the week's battles (every client gets the same answer)
-function heroState(uid, week, dayKey) {
-  let lvl = 1, xp = 0;
-  Object.keys(LIVE.battles).filter(k => LIVE.battles[k].week === week && k < dayKey).sort().forEach(k => { const b = LIVE.battles[k]; lvl += b.gain ? Math.min(XP_CAP, b.gain[uid] || 0) : 1; xp = (b.xp && b.xp[uid]) || 0; });
-  return { lvl: Math.min(MAX_HERO_LVL, lvl), xp };
-}
-function carriedPairs(dayKey) {
-  const week = addDays(dayKey, -(weekdayOf(dayKey) - 1)); if (dayKey === week) return [];
-  const b = LIVE.battles[addDays(dayKey, -1)]; return b && b.week === week && b.pairsEnd ? b.pairsEnd : [];
-}
+const latestPlan = (p, dayKey, inclusive) => wLatestPlan(LIVE, p, dayKey, inclusive);
+const standings = (week, through) => wStandings(LIVE, week, through);
+const heroState = (uid, week, dayKey) => wHeroState(LIVE, uid, week, dayKey);
+const carriedPairs = dayKey => wCarriedPairs(LIVE, dayKey);
 // what a player earns after battle `dayKey`: base pay, spoils from kills, and the catch-up for the bottom 30% of the board
 function incomeFor(uid, week, dayKey) {
   const b = LIVE.battles[dayKey], pts = standingsThrough(week, dayKey), ids = rosterFor(week).map(p => p.uid);

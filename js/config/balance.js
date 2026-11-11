@@ -54,3 +54,6 @@ const MILITIA = { first: 35, every: 25, count: 2, hp: 150, atk: 11 };
 // global balance knobs: movement speed, time between attacks, ability cooldowns, castle health
 const BAL = { move: .85, swing: 1.15, cd: 1.1, castleHp: 600 };
 const SUDDEN = 100, TMAX = 200, FRAME_DT = .2, BURST_MIN = 560;
+
+// kill streaks: the battle sim names a streak as it happens, so the table lives with the balance numbers
+const STREAKS = [[4, "Quad Squad"], [6, "Mowing the Lawn"], [8, "Pitchfork Panic"], [11, "Heads Will Roll"], [15, "Butcher of the Realm"], [20, "Daily Siege Legend"]]; // [kill weight in a chain, name]

@@ -1,0 +1,11 @@
+{
+  "name": "daily-siege-functions",
+  "private": true,
+  "description": "Daily Siege server: keeps each game's clock; fights the daily battles (Phase 3)",
+  "main": "index.js",
+  "engines": { "node": "22" },
+  "dependencies": {
+    "firebase-admin": "^13.0.0",
+    "firebase-functions": "^6.3.0"
+  }
+}

@@ -23,7 +23,7 @@ function buildPlans() {
       rules: [{ if: IFS[0], then: THENS[0] }],
       pieces: RARMY.filter(u => u.rid === rv.id).map(u => u.champ ? { kind: "champ", r: u.r, c: u.c } : { kind: "unit", type: u.key, lvl: u.lvl, hp: u.hp, r: u.r, c: u.c }).concat(RWALLS.filter(w => w.rid === rv.id).map(w => ({ kind: "wall", r: w.r, c: w.c, dir: w.dir }))),
       targets: (ai.hostile || []).concat(["you", ...RIVALS.map(r => r.id)].filter(q => q !== rv.id && !(ai.hostile || []).includes(q) && !Object.keys(ai.offers || {}).includes(q))
-        .sort((x, y) => { const px = x === "you" ? CASTLE : RIVALS.find(r => r.id === x).pos, py = y === "you" ? CASTLE : RIVALS.find(r => r.id === y).pos; return Math.hypot(px[0] - rv.pos[0], px[1] - rv.pos[1]) - Math.hypot(py[0] - rv.pos[0], py[1] - rv.pos[1]); })),
+        .sort((x, y) => { const px = x === "you" ? CASTLE : RIVALS.find(r => r.id === x).pos, py = y === "you" ? CASTLE : RIVALS.find(r => r.id === y).pos; return hyp(px[0] - rv.pos[0], px[1] - rv.pos[1]) - hyp(py[0] - rv.pos[0], py[1] - rv.pos[1]); })),
       auto: true, offers: Object.fromEntries(Object.entries(ai.offers || {}).map(([k, v]) => [k, Object.assign({}, v, { day: DAY - 1 })])), terms: ai.terms || {},
       bids: DAY >= MERC_DAY && hash(i, DAY, 91) > .35 ? (() => { const ids = Object.keys(MERCS), id = ids[Math.floor(hash(i, DAY, 92) * ids.length)]; return { [id]: { gold: MERCS[id].min + 10 * Math.floor(hash(i, DAY, 93) * 7), day: DAY } }; })() : {},
     });

@@ -19,7 +19,7 @@ function ultChip() {
   if (ultCooling()) return ["⚡", "1d", "off", "Ultimate recharging, ready tomorrow"];
   return S.ultArm ? ["⚡", "Set", "ok", "Ultimate planned for tonight"] : ["⚡", "Rdy", "ok", "Ultimate ready. Plan it in Orders"];
 }
-const UIIMG = (n, alt = "") => `<img class="ui" alt="${alt}" src="icons/ui/${n}.png">`;
+const UIIMG = (n, alt = "") => `<img class="ui" alt="${alt}" src="icons/ui/${n}.webp">`;
 function renderTop() {
   const un = typeof unplaced === "function" ? unplaced().length : 0, u = ultChip(), pts = freePts();
   const chip = (act, v, ico, val, title, cls = "") => `<button class="chip2 ${cls}" data-act="${act}" ${v != null ? `data-v="${v}"` : ""} aria-label="${title}" title="${title}"><span class="ci">${ico}</span><b>${val}</b></button>`;
@@ -51,6 +51,7 @@ function renderHint() {
   renderCamp();
   const h = document.getElementById("hint");
   if (isLive() && LIVE.readOnly) h.innerHTML = "You're watching this game. Ask the host to add you as an Editor to play.";
+  else if (battlePending()) h.innerHTML = `Last night's battle is being fought… results arrive within a few minutes.${window.DS && DS.isHost() ? ` <button data-act="dsresolve">Resolve now</button>` : ""}`;
   else if (S.locked) h.innerHTML = isLive() ? `Orders sealed. The battle is fought at ${lockLabel(LIVE.config)}.` : "Orders sealed. The battle plays out at dusk.";
   else if (sel) h.innerHTML = `Place <b>${esc(pieceName(sel))}</b> on a glowing tile <button data-act="cancel">Cancel</button>`;
   else h.innerHTML = "";

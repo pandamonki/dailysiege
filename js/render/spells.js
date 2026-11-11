@@ -1,29 +1,6 @@
 // Spell icons and spell effects
 
 // ----- spells: icons and effects -----
-const SPELL_ART = {
-  hero_a4: { n: "Vigour", c: "#e0584a", sym: "sunburst", fx: "ring", r: 1 },
-  warrior_a1: { n: "Cleave", c: "#d9d9e0", sym: "slash", fx: "arc", r: 1.6 },
-  warrior_a2: { n: "Shield Wall", c: "#7fb2ff", sym: "shield", fx: "shield", r: 1.1 },
-  warrior_a3: { n: "War Cry", c: "#e2a33c", sym: "horn", fx: "ring", r: 3 },
-  warrior_ult: { n: "Last Stand", c: "#ffe082", sym: "sunburst", fx: "pillar", r: 1.2 },
-  mage_a1: { n: "Fireball", c: "#ff7a2a", sym: "fire", fx: "burst", r: 1.3, at: "t" },
-  mage_a2: { n: "Frost Nova", c: "#8fd8ff", sym: "snow", fx: "nova", r: 2.4 },
-  mage_a3: { n: "Blink", c: "#c9a0ff", sym: "blink", fx: "swirl", r: 1 },
-  mage_ult: { n: "Meteor", c: "#ff5a2a", sym: "meteor", fx: "meteor", r: 2, at: "t" },
-  archer_a1: { n: "Piercing Shot", c: "#e6e6c8", sym: "arrow", fx: "streak", r: 1.4, at: "t" },
-  archer_a2: { n: "Volley", c: "#c8e07a", sym: "volley", fx: "rain", r: 1.6, at: "t" },
-  archer_a3: { n: "Evasion", c: "#9fe0b0", sym: "feather", fx: "swirl", r: .9 },
-  archer_ult: { n: "Rain of Arrows", c: "#ffd36a", sym: "rain", fx: "rain", r: 2.5, at: "t" },
-  shaman_a1: { n: "Healing Totem", c: "#7fe08a", sym: "totem", fx: "heal", r: 2.5 },
-  shaman_a2: { n: "Lightning Bolt", c: "#9fd0ff", sym: "bolt", fx: "bolt", r: 1, at: "t" },
-  shaman_a3: { n: "Bloodlust", c: "#e0443a", sym: "blood", fx: "ring", r: 4 },
-  shaman_ult: { n: "Spirit Wolves", c: "#c9d6e3", sym: "wolf", fx: "swirl", r: 1.5 },
-  rogue_a1: { n: "Backstab", c: "#d34a4a", sym: "dagger", fx: "arc", r: 1, at: "t" },
-  rogue_a2: { n: "Smoke Bomb", c: "#9a9aa8", sym: "smoke", fx: "smoke", r: 2 },
-  rogue_a3: { n: "Poison Blade", c: "#7ad84a", sym: "drop", fx: "swirl", r: .9 },
-  rogue_ult: { n: "Assassinate", c: "#b02a5a", sym: "skull", fx: "streak", r: 1, at: "t" },
-};
 const SPELL_DUR = { arc: .35, shield: .9, ring: .8, pillar: .9, burst: .55, nova: .75, swirl: .8, meteor: 1.0, streak: .3, rain: 1.0, heal: 1.3, bolt: .4, smoke: 1.3 };
 function symPaint(c, sym, x, y, s, col) { // s = half-size
   c.save(); c.translate(x, y); c.fillStyle = col; c.strokeStyle = "#1e140c"; c.lineWidth = Math.max(1.2, s * .1); c.lineJoin = "round"; c.lineCap = "round";
@@ -56,7 +33,7 @@ function symPaint(c, sym, x, y, s, col) { // s = half-size
 const SPELL_CV = {};
 const ART_FILES = { warrior_a1: "warrior_cleave", warrior_a2: "warrior_shield_wall", warrior_a3: "warrior_war_cry", warrior_ult: "warrior_last_stand", mage_a1: "mage_fireball", mage_a2: "mage_frost_nova", mage_a3: "mage_blink", mage_ult: "mage_meteor", archer_a1: "archer_piercing_shot", archer_a2: "archer_volley", archer_a3: "archer_evasion", archer_ult: "archer_rain_of_arrows", shaman_a1: "shaman_healing_totem", shaman_a2: "shaman_lightning_bolt", shaman_a3: "shaman_bloodlust", shaman_ult: "shaman_spirit_wolves", rogue_a1: "rogue_backstab", rogue_a2: "rogue_smoke_bomb", rogue_a3: "rogue_poison_blade", rogue_ult: "rogue_assassinate" };
 const ART_IMG = {};
-const loadSpellArt = () => Object.keys(ART_FILES).forEach(k => { const im = new Image(); im.onload = () => { Object.keys(SPELL_CV).forEach(x => delete SPELL_CV[x]); Object.keys(SPELL_URL).forEach(x => delete SPELL_URL[x]); }; im.src = "icons/" + ART_FILES[k] + ".png"; ART_IMG[k] = im; });
+const loadSpellArt = () => Object.keys(ART_FILES).forEach(k => { const im = new Image(); im.onload = () => { Object.keys(SPELL_CV).forEach(x => delete SPELL_CV[x]); Object.keys(SPELL_URL).forEach(x => delete SPELL_URL[x]); }; im.src = "icons/" + ART_FILES[k] + ".webp"; ART_IMG[k] = im; });
 addEventListener("load", () => setTimeout(loadSpellArt, 400));
 function spellIconCv(sp, size = 64) {
   const id = sp + size; if (SPELL_CV[id]) return SPELL_CV[id];

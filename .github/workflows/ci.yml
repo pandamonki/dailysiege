@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - name: Golden determinism tests
+        run: npm test
+      - run: npm run build
+
+  # The phone self-test page, run in three real browser engines. WebKit is the engine iPhones use,
+  # so this catches a device fighting a battle differently before a player ever sees it.
+  browsers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Install browsers
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium firefox webkit
+      - name: Self-test in Chromium, Firefox and WebKit
+        run: node tools/selftest-browsers.mjs chromium firefox webkit
+
+  # The hosted game against the Firebase emulators: the security rules; three accounts in real browsers
+  # registering, sealing orders, failing to read each other's secrets and getting a server-fought battle;
+  # then a full seven-day war fought by the server and replayed in a browser.
+  firebase:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm ci --prefix functions
+      - name: Security rules
+        run: npm run test:rules
+      - name: Install a browser
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Three accounts, end to end
+        run: npm run test:e2e
+      - name: A seven-day war fought by the server
+        run: npm run test:war

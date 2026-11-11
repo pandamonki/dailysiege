@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Daily Siege self-test</title>
+<style>
+  body { margin: 0; padding: 20px 16px 40px; font: 16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #1e140c; color: #ecdcb4; }
+  main { max-width: 560px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  p { margin: 8px 0; } .muted { opacity: .7; font-size: 14px; }
+  #verdict { font-size: 26px; font-weight: 700; margin: 18px 0 6px; }
+  #verdict.pass { color: #7ad84a; } #verdict.fail { color: #ff6b5a; }
+  #code { font: 700 28px ui-monospace, Menlo, Consolas, monospace; letter-spacing: 2px; word-break: break-all; }
+  progress { width: 100%; height: 14px; }
+  pre { background: #120c07; padding: 10px; border-radius: 6px; white-space: pre-wrap; word-break: break-word; font-size: 12px; }
+  button { font: inherit; padding: 10px 16px; border-radius: 6px; border: 1px solid #ecdcb4; background: #3a2817; color: inherit; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Daily Siege self-test</h1>
+  <p class="muted">Fights 50 fixed battles on this device and checks every result against the recorded ones. Takes up to a minute. Keep this page open.</p>
+  <progress id="bar" value="0" max="1"></progress>
+  <p id="status">Starting…</p>
+  <div id="verdict"></div>
+  <p id="codeline" hidden>This device's code:<br><span id="code"></span></p>
+  <p id="explain" class="muted"></p>
+  <p><button id="copy" hidden>Copy report</button></p>
+  <pre id="report" hidden></pre>
+</main>
+<script src="js/config/classes.js"></script>
+<script src="js/config/units.js"></script>
+<script src="js/config/mercs.js"></script>
+<script src="js/config/orders.js"></script>
+<script src="js/config/items.js"></script>
+<script src="js/config/balance.js"></script>
+<script src="js/config/spells.js"></script>
+<script src="js/config/seats.js"></script>
+<script src="js/core/util.js"></script>
+<script src="js/core/detmath.js"></script>
+<script src="js/core/layout.js"></script>
+<script src="js/core/player.js"></script>
+<script src="js/sim/bots.js"></script>
+<script src="js/sim/alliances.js"></script>
+<script src="js/sim/battle.js"></script>
+<script src="js/sim/hash.js"></script>
+<script src="js/dev/goldenCases.js"></script>
+<script src="js/dev/selftest.js"></script>
+</body>
+</html>

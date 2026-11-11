@@ -51,17 +51,18 @@ function hostLabel() { const h = hostUid(); return !h ? "your host" : h === LIVE
 function closesText(cfg) { const left = cfg.lobbyEnds ? Math.max(0, Math.ceil((cfg.lobbyEnds - Date.now()) / 60000)) : null;
   return left === null ? "Registration closes when the host locks in the war." : left > 0 ? `Registration closes in <b>${hrsLabel(left)}</b>` : "Registration is closing…"; }
 function lordCards(withSeats) { // banner and name for every registered lord; rivals' heroes stay hidden until the war begins
-  const reg = lobbyLords(), TC = teamColours(), open = Math.max(0, 8 - reg.length), h = hostUid();
+  const reg = lobbyLords(), TC = teamColours(), open = Math.max(0, seatCap() - reg.length), h = hostUid();
   return `<div class="lcards">${reg.map(([uid, pl], i) => { const isMe = uid === LIVE.uid, st = isMe && S ? S : pl.state || {}, cls = isMe && st.cls && CLASSES[st.cls];
     return `<div class="lcard${isMe ? " me" : ""}"><img class="lban" alt="" src="${bannerURL(st.banner || defaultBanner(), TC[uid] || SEAT_COLORS[i], 40, 54)}"><span><b>${esc(isMe ? (MY_NAME === "You" ? "You" : MY_NAME + " · you") : nameOf(uid))}</b><small>${uid === h ? "Host · " : ""}${cls ? esc(cls.name) : "Hero hidden"}</small></span>${cls ? `<img class="lhero" alt="" src="${spriteURL("c-" + st.cls)}">` : `<span class="hidhero" aria-hidden="true">?</span>`}</div>`; }).join("")}${withSeats ? Array.from({ length: open }, () => `<div class="lcard emptyseat"><span><b>Open seat</b><small>Waiting for a lord</small></span></div>`).join("") : ""}</div>`;
 }
-function lobbyLords() { return Object.entries(LIVE.players).filter(([, p]) => !p.left && !p.pending).sort((a, b) => ((a[1].joinedAt || 0) - (b[1].joinedAt || 0)) || (a[0] < b[0] ? -1 : 1)).slice(0, 8); }
+const seatCap = () => Math.min(MAX_LORDS, (LIVE.config && LIVE.config.maxPlayers) || 8); // seats in this war
+function lobbyLords() { return Object.entries(LIVE.players).filter(([, p]) => !p.left && !p.pending).sort((a, b) => ((a[1].joinedAt || 0) - (b[1].joinedAt || 0)) || (a[0] < b[0] ? -1 : 1)).slice(0, seatCap()); }
 function renderLobby() {
   if (!inLobby()) return; const cfg = LIVE.config; let el = document.getElementById("lobby");
   if (!el) { el = document.createElement("div"); el.id = "lobby"; document.body.appendChild(el); }
   const ae = document.activeElement; if (ae && el.contains(ae) && /SELECT|INPUT/.test(ae.tagName)) return;
   const me = LIVE.players[LIVE.uid], pending = !!me.pending, editing = pending || !!LIVE.lobbyEdit;
-  const reg = lobbyLords(), open = Math.max(0, 8 - reg.length);
+  const reg = lobbyLords(), open = Math.max(0, seatCap() - reg.length);
   const left = cfg.lobbyEnds ? Math.max(0, Math.ceil((cfg.lobbyEnds - Date.now()) / 60000)) : null;
   const closes = left === null ? "Registration closes when the host locks in the war." : left > 0 ? `Registration closes in <b>${hrsLabel(left)}</b>` : "Registration is closing…";
   const TC = teamColours(); MY_COLOR = TC[LIVE.uid] || MY_COLOR;
@@ -73,22 +74,23 @@ function renderLobby() {
     <div class="lbox"><h3><span class="stepn">2</span>Army colour</h3>${armySwatches()}</div>
     <div class="lbox"><h3><span class="stepn">3</span>Coat of arms</h3><div class="lrow"><span class="coat"><img alt="Your coat of arms" src="${bannerURL(S.banner || defaultBanner(), MY_COLOR, 40, 54)}">Pattern, emblem and second colour</span><button class="btn small wood" data-act="lobbyban">Design</button></div></div>
     <div class="lbox"><h3><span class="stepn">4</span>Your hero</h3><div class="lrow"><span class="coat"><img class="lhero" alt="" src="${spriteURL("c-" + S.cls)}"><b>${CLASSES[S.cls].name}</b></span><button class="btn small wood" data-act="lobbyhero">Change hero</button></div></div>
-    <div class="regbar">${pending ? `<button class="btn wax big" data-act="register" ${full ? "disabled" : ""}>⚑ Register<small>${full ? "All eight seats are taken" : "Join the war and enter the Muster Hall"}</small></button>` : `<button class="btn wax big" data-act="register">Save changes</button><button class="btn" data-act="lobbyback">Cancel</button>`}</div>
+    <div class="regbar">${pending ? `<button class="btn wax big" data-act="register" ${full ? "disabled" : ""}>⚑ Register<small>${full ? `All ${seatCap()} seats are taken` : "Join the war and enter the Muster Hall"}</small></button>` : `<button class="btn wax big" data-act="register">Save changes</button><button class="btn" data-act="lobbyback">Cancel</button>`}</div>
     <div class="row"><button class="btn small" data-act="open" data-v="title">← Menu</button></div></div>`;
     return;
   }
   const own = LIVE.isOwner;
   if (own && !cfg.host && LIVE.db) { cfg.host = LIVE.uid; LIVE.db.doc("game/config").update({ host: LIVE.uid }).catch(() => {}); } // older games: record the host
   el.innerHTML = `<div class="lwrap"><h2>The Muster Hall</h2><p class="lsub">${closes} · hosted by ${esc(hostLabel() === "you" ? "you" : hostLabel())}</p>
-    <div class="lbox"><h3>${reg.length} of 8 lords registered · ${open} seat${open === 1 ? "" : "s"} open</h3>${lordCards(true)}
+    <div class="lbox"><h3>${reg.length} of ${seatCap()} lords registered · ${open} seat${open === 1 ? "" : "s"} open</h3>${lordCards(true)}
       <p class="muted">When registration closes the map is built, every castle is placed, and Day 1 planning begins. Battles are fought daily at ${lockLabel(cfg)} (${esc(cfg.tz)}).</p></div>
     <div class="lbox"><h3>You're registered</h3><div class="lrow"><span class="coat"><img alt="" src="${bannerURL(S.banner || defaultBanner(), MY_COLOR, 40, 54)}"><span><b>${esc(myLabel || MY_NAME)}</b><br><small class="muted">${TEAM_COLOR_NAMES[MY_COLOR] || ""} army · ${CLASSES[S.cls].name}</small></span></span><button class="btn small wood" data-act="lobbyedit">Change</button></div></div>
     ${own ? `<div class="lbox"><h3>Host controls</h3>
       <label class="inline">Registration closes<select id="lobbyclose"><option value="">Keep as is</option><option value="0">When I lock it in</option>${[1, 3, 6, 12, 24, 48].map(h => `<option value="${h}">In ${h < 24 ? h + " hour" + (h > 1 ? "s" : "") : h / 24 + " day" + (h > 24 ? "s" : "")}</option>`).join("")}</select></label>
+      ${window.DS ? `<label class="inline">Seats<select id="lobbyseats">${Array.from({ length: MAX_LORDS - 1 }, (_, i) => i + 2).filter(k => k >= Math.max(2, reg.length)).map(k => `<option value="${k}"${k === seatCap() ? " selected" : ""}>${k} lords</option>`).join("")}</select></label>` : ""}
       <label class="inline">Battle time<select id="lobbyhour">${[12, 13, 17, 18, 19, 20, 21, 22].map(h => `<option value="${h}"${h === cfg.lockHour ? " selected" : ""}>${hourLabel(h)}</option>`).join("")}</select></label>
       <div class="row"><button class="btn small" data-act="lobbysave">Save</button><button class="btn ${LIVE.beginConfirm ? "wax" : "wood"}" data-act="lobbybegin" ${reg.length < 2 ? "disabled" : ""}>${LIVE.beginConfirm ? "Tap again: lock in and begin" : "Lock in and begin the war"}</button></div>
       ${reg.length < 2 ? `<p class="muted">You need at least two lords to begin.</p>` : ""}</div>` : ""}
-    ${open ? invitePanel(open) : `<div class="lbox"><h3>Every seat is taken</h3><p class="muted">All eight lords are registered.</p></div>`}
+    ${open ? invitePanel(open) : `<div class="lbox"><h3>Every seat is taken</h3><p class="muted">All ${seatCap()} lords are registered.</p></div>`}${hostTools()}${pushLine()}
     <div class="row"><button class="btn small" data-act="open" data-v="title">← Menu</button></div></div>`;
 }
 async function registerMe() {
@@ -97,7 +99,7 @@ async function registerMe() {
   const nick = cleanName(nEl ? nEl.value : NAME_DRAFT.mynick ?? me.nick, NICK_MAX), real = cleanName(rEl ? rEl.value : NAME_DRAFT.myreal ?? me.real, REAL_MAX);
   if (!nick || !real) { toast(!nick && !real ? "Enter a nickname and your actual name." : !nick ? "Enter a nickname." : "Enter your actual name."); (!nick ? nEl : rEl)?.focus(); return; }
   const wasPending = !!me.pending;
-  if (wasPending && lobbyLords().length >= 8) { toast("Sorry, all eight seats are taken."); renderLobby(); return; }
+  if (wasPending && lobbyLords().length >= seatCap()) { toast(`Sorry, all ${seatCap()} seats are taken.`); renderLobby(); return; }
   const patch = { nick, real, state: S }; if (wasPending) { patch.pending = false; patch.joinedAt = Date.now(); }
   clearTimeout(saveTimer); saveTimer = null; // the patch carries the latest state, so a pending autosave isn't needed
   try { await myWrite(r => r.update(patch)); Object.assign(me, patch); delete NAME_DRAFT.mynick; delete NAME_DRAFT.myreal;
@@ -114,7 +116,10 @@ async function watchLiveBattle(dayKey, how) {
     : liveBattlePlans(dayKey);
   if (saved && saved.feuds) plans.feuds = saved.feuds.slice();
   if (saved && LIVE.battles[dayKey].mercs) plans.mercs = LIVE.battles[dayKey].mercs;
-  const res = runBattle(plans, daySeed(dayKey), { N: size, finalDay: final, ultV2: saved ? !!saved.ultV2 : ultV2For(dayKey), ranks: rankMap(before, plans.map(p => p.pid)) });
+  const res = runBattle(plans, daySeed(dayKey), { N: size, finalDay: final, ultV2: saved ? !!saved.ultV2 : ultV2For(dayKey), ranks: (saved && saved.ranks) || rankMap(before, plans.map(p => p.pid)) });
+  { // the saved result is the official one; this device's replay must match it exactly, or what is shown would not be what was scored
+    const want = saved && LIVE.battles[dayKey].resultHash, got = want && battleHash(res);
+    if (want && got !== want) { console.warn("Daily Siege: this device replayed", dayKey, "differently", got, want); toast("This device replayed the battle differently from the official result. Scores shown are the official ones. Please tell the host."); if (window.DS && DS.reportMismatch) DS.reportMismatch(dayKey, got, want); } }
   DAY_FOR_INTRO = weekdayOf(dayKey);
   res.names = Object.fromEntries(plans.map(p => [p.pid, p.pid === LIVE.uid ? (MY_NAME || "You") : p.name]));
   res.transfers = transfers; res.board = before; res.week = week;
@@ -125,15 +130,16 @@ async function watchLiveBattle(dayKey, how) {
   if (how === "play") { replay.done = false; render(); showIntro(introData(plans, carriedPairs(dayKey), liveYesterdayBets(dayKey), res.names, final), () => { if (replay) replay.playing = true; }); } else if (how === "reel") startReel(false); else open("results");
 }
 function openReportFor(k) { try { localStorage.setItem("lastbanner.seen", k); } catch (e) {} reportBack = k; sheet = { type: "report", id: k }; render(); }
-const GAME_URL = () => { let u = "https://claude.ai/artifact/7WwWgy4irntRjE6ep653Am"; try { if (/claude\.ai/.test(location.href)) u = location.href.split("#")[0]; } catch (e) {} return u; };
+const GAME_URL = () => { if (window.DS && DS.inviteUrl) return DS.inviteUrl(); let u = "https://claude.ai/artifact/7WwWgy4irntRjE6ep653Am"; try { if (/claude\.ai/.test(location.href)) u = location.href.split("#")[0]; } catch (e) {} return u; };
 function invitePanel(open) {
   return `<div class="sec lbox"><h3>Invite friends${open ? ` · ${open} seat${open === 1 ? "" : "s"} open` : ""}</h3>
-    <ol class="muted" style="margin:0 0 8px;padding-left:20px"><li>${LIVE.isOwner ? "Open this page's <b>Share</b> menu and add each friend by email as an <b>Editor</b>, so they can save their orders." : "Ask the host to add your friend as an <b>Editor</b> in the page's Share menu, so they can save their orders."}</li><li>Send them the link below.</li><li>They tap <b>Play with friends</b>, see who's registered, then tap <b>Register</b>.</li></ol>
+    ${window.DS ? `<ol class="muted" style="margin:0 0 8px;padding-left:20px"><li>Send your friends the link below. It's the same link for every war.</li><li>They open it on their phone and sign in once with Google or an emailed link.</li><li>They tap <b>Register</b>.</li></ol>` : `<ol class="muted" style="margin:0 0 8px;padding-left:20px"><li>${LIVE.isOwner ? "Open this page's <b>Share</b> menu and add each friend by email as an <b>Editor</b>, so they can save their orders." : "Ask the host to add your friend as an <b>Editor</b> in the page's Share menu, so they can save their orders."}</li><li>Send them the link below.</li><li>They tap <b>Play with friends</b>, see who's registered, then tap <b>Register</b>.</li></ol>`}
     <div class="row"><button class="btn wood" data-act="copyinvite">Copy invite link</button></div></div>`;
 }
 function gameSheet() {
   const lines = [];
   const can = LIVE.db && LIVE.uid;
+  if (!can && window.DS) return signInSheet();
   if (!can) return head(null, "Friends Game", "Play against your friends") + `<div class="body">
     <p>Friends games run inside this page while you're signed in to Claude.</p>
     <p class="muted">If you're seeing this in a preview, open the published page instead. Each friend needs the page shared with them as an <b>Editor</b> (Share menu, invite by email) so they can save their orders.</p>
@@ -143,21 +149,21 @@ function gameSheet() {
     ${LIVE.isOwner ? `<p>Gather your friends for a seven-day war. You'll open registration, send the invite link, and your friends choose a hero and a banner. When registration closes the map is built and Day 1 begins. Orders lock and the battle is fought every day at:</p>
       <label class="inline">Battle time<select id="lockhour">${[17, 18, 19, 20, 21, 22].map(h => `<option value="${h}"${h === 20 ? " selected" : ""}>${hourLabel(h)}</option>`).join("")}</select></label>
       <label class="inline">Registration closes<select id="lobbyclose">${[["0", "When I lock it in"], ["1", "In 1 hour"], ["6", "In 6 hours"], ["12", "In 12 hours"], ["24", "In 24 hours"], ["48", "In 2 days"]].map(([v, t]) => `<option value="${v}"${v === "24" ? " selected" : ""}>${t}</option>`).join("")}</select></label>
-      <p class="muted">Up to eight lords can register. Times use your time zone (${esc(Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC")}). You can lock in early or change the closing time later.</p>
+      <p class="muted">Up to ${window.DS ? DEFAULT_LORDS : 8} lords can register${window.DS ? " (you can change the number of seats in the Muster Hall)" : ""}. Times use your time zone (${esc(Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC")}). You can lock in early or change the closing time later.</p>
       <div><button class="btn wax" data-act="startgame">Open registration</button></div>
       <p class="muted">You'll register first, then you can invite friends from the Muster Hall.</p>`
-      : `<p>The host hasn't started a game on this page yet.</p>`}
-    <div class="row"><button class="btn" data-act="open" data-v="title">← Back</button></div></div>`;
-  if (lobbyOpen(LIVE.config)) { const mineL = LIVE.players[LIVE.uid], n = lobbyLords().length, open = Math.max(0, 8 - n), hl = hostLabel();
+      : window.DS ? `<p>You're signed in, but this account isn't in a game yet.</p><p class="muted">Open the invite link your host sent you on this device and you'll be taken straight to the war.</p>` : `<p>The host hasn't started a game on this page yet.</p>`}
+    <div class="row"><button class="btn" data-act="open" data-v="title">← Back</button></div>${accountLine()}</div>`;
+  if (lobbyOpen(LIVE.config)) { const mineL = LIVE.players[LIVE.uid], n = lobbyLords().length, open = Math.max(0, seatCap() - n), hl = hostLabel();
     return head(null, "You're summoned to war", hl === "you" ? "You called the banners" : `${esc(hl)} has called the banners`) + `<div class="body">
       <div class="summon"><p>${hl === "you" ? "You are hosting this war." : `<b>${esc(hl)}</b> is hosting this war and has invited you to take a castle.`} Battles are fought daily at ${lockLabel(LIVE.config)} your time for seven days.</p>
-        <p class="when">${closesText(LIVE.config)} · <b>${open}</b> of 8 seats open</p></div>
+        <p class="when">${closesText(LIVE.config)} · <b>${open}</b> of ${seatCap()} seats open</p></div>
       <div class="sec"><h3>${n} lord${n === 1 ? " has" : "s have"} registered</h3>${n ? lordCards(false) : `<p class="muted">Nobody yet. Be the first.</p>`}<p class="muted">Heroes stay hidden until the war begins.</p></div>
-      <div class="row">${mineL ? `<button class="btn wax big" data-act="playgo">${mineL.pending ? "Finish registering" : "Enter the Muster Hall"}</button>` : n >= 8 ? `<span class="muted">All eight seats are taken.</span>` : `<button class="btn wax big" data-act="joingame">⚑ Register<small>A short tour, then choose your hero, name, colour and coat of arms</small></button>`}<button class="btn" data-act="open" data-v="title">← Back</button></div></div>`; }
+      <div class="row">${mineL ? `<button class="btn wax big" data-act="playgo">${mineL.pending ? "Finish registering" : "Enter the Muster Hall"}</button>` : n >= seatCap() ? `<span class="muted">All ${seatCap()} seats are taken.</span>` : `<button class="btn wax big" data-act="joingame">⚑ Register<small>A short tour, then choose your hero, name, colour and coat of arms</small></button>`}<button class="btn" data-act="open" data-v="title">← Back</button></div>${accountLine()}</div>`; }
   const ck = liveClock(), roster = rosterFor(ck.week), mine = LIVE.players[LIVE.uid], pts = standings(ck.week), cfg = LIVE.config, cap = capFor(ck.week), capNext = capFor(addDays(ck.week, 7));
   const signed = Object.entries(LIVE.players).filter(([, p]) => !p.left).length, inNow = roster.some(p => p.uid === LIVE.uid), queued = mine && !inNow;
   const nextWeek = addDays(ck.week, 7), waiting = Object.entries(LIVE.players).filter(([uid, p]) => !p.left && !roster.some(r => r.uid === uid)).map(([uid]) => uid);
-  const status = p => { const pl = p.plans && p.plans[ck.planDay]; return pl && pl.sealed ? ["Sealed", "ok"] : pl ? ["Planning", ""] : ["No orders yet", "muted"]; };
+  const status = p => { const pl = p.plans && p.plans[ck.planDay]; return (pl && pl.sealed) || p.sealedFor === ck.planDay ? ["Sealed", "ok"] : pl || window.DS ? ["Planning", ""] : ["No orders yet", "muted"]; }; // on the hosted game a rival's orders are never sent here, only whether they are sealed
   const clsOf = p => ((p.uid === LIVE.uid || ck.dayNo > 1) && p.state && p.state.week === ck.week && p.state.cls) || null; // rivals' classes are revealed by day 1's battle
   const ranked = roster.map((p, i) => ({ p, i })).sort((a, b) => (pts[b.p.uid] || 0) - (pts[a.p.uid] || 0));
   const battles = Object.keys(LIVE.battles).filter(k => LIVE.battles[k].week === ck.week).sort();
@@ -185,7 +191,51 @@ function gameSheet() {
     <div class="row">${inNow ? `<button class="btn ${gameMode === "friends" ? "on" : "wood"}" data-act="mode" data-v="friends">${gameMode === "friends" ? "Playing friends game" : "Play friends game"}</button>` : ""}
       <button class="btn" data-act="open" data-v="title">← Menu</button></div>
     ${roster.length < 2 ? `<p class="muted">Battles start once at least two players are in.</p>` : ""}
-    ${invitePanel()}</div>`;
+    ${invitePanel()}${hostTools()}${pushLine()}${accountLine()}</div>`;
+}
+// ----- the hosted game: signing in, the account line and host tools (window.DS is js/net/backend-firebase.js) -----
+function signInSheet() {
+  const d = window.DS;
+  if (d.available === null) return head(null, "Friends Game", "Connecting…") + `<div class="body"><p class="muted">Reaching the game. If this takes more than a few seconds, check your connection.</p><div class="row"><button class="btn" data-act="open" data-v="title">← Back</button></div></div>`;
+  if (d.available === false) return head(null, "Friends Game", "Not available here") + `<div class="body"><p>${esc(d.error || "The friends game isn't set up on this copy of the page. You can still practise against bots.")}</p><div class="row"><button class="btn" data-act="open" data-v="title">← Back</button></div></div>`;
+  return head(null, "Friends Game", "Sign in to play") + `<div class="body">
+    <p>Sign in once on this device and you'll stay signed in. It's only used to know which castle is yours.</p>
+    <div class="row"><button class="btn wax big" data-act="dsgoogle" ${d.busy ? "disabled" : ""}>Continue with Google</button></div>
+    <div class="sec"><h3>Or get a sign-in link by email</h3>
+      <label class="inline">Email<input id="dsemail" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" value="${esc(d.emailDraft || "")}"></label>
+      <div class="row"><button class="btn wood" data-act="dsemail" ${d.busy ? "disabled" : ""}>${d.busy === "email" ? "Sending…" : "Email me a link"}</button></div>
+      <p class="muted">No password. Open the link on this same device.${typeof PWA !== "undefined" && PWA.isIOS() && PWA.standalone() ? " In this Home Screen app, Google is the simplest: an emailed link opens in Safari instead." : ""}</p></div>
+    ${d.note ? `<p class="tip">${esc(d.note)}</p>` : ""}${d.error ? `<p class="tip">${esc(d.error)}</p>` : ""}
+    <div class="row"><button class="btn" data-act="open" data-v="title">← Back</button></div></div>`;
+}
+function pushLine() { // battle alerts on this device
+  const st = window.DS && DS.pushState ? DS.pushState() : "off";
+  return st === "on" ? `<p class="muted">🔔 Battle alerts are on for this device.</p>`
+    : st === "ask" ? `<div class="sec tight"><div class="row"><button class="btn small wood" data-act="dspush">🔔 Turn on battle alerts</button></div><p class="muted">A nudge an hour before orders lock (only if yours aren't sealed), and when the battle's results are in.</p></div>`
+    : st === "install" ? `<p class="muted">🔔 To get battle alerts on an iPhone, add the game to your Home Screen first, then open it from there.${typeof PWA !== "undefined" && PWA.canOffer() ? ` <button class="btn small" data-act="pwainstall">Show me how</button>` : ""}</p>`
+    : st === "blocked" ? `<p class="muted">🔔 Battle alerts are blocked for this site in your browser's settings.</p>` : "";
+}
+function installSheet() { // how to put the game on the home screen
+  const ios = typeof PWA !== "undefined" && PWA.isIOS();
+  return head(null, "Install Daily Siege", "Play it like an app") + `<div class="body">
+    <p>Added to your Home Screen, the game opens full-screen, starts instantly and can send battle alerts.</p>
+    ${ios ? `<ol><li>Open this page in <b>Safari</b> (not inside another app).</li><li>Tap the <b>Share</b> button (the square with an arrow).</li><li>Choose <b>Add to Home Screen</b>, then <b>Add</b>.</li><li>Open <b>Daily Siege</b> from your Home Screen and sign in there.</li></ol><p class="muted">On iPhone the Home Screen app keeps its own sign-in. Signing in with Google is the simplest there; an emailed link opens in Safari instead.</p>`
+      : `<ol><li>Open your browser's menu (⋮).</li><li>Choose <b>Install app</b> or <b>Add to Home screen</b>.</li></ol>`}
+    <div class="row"><button class="btn" data-act="open" data-v="title">← Back</button></div></div>`;
+}
+function accountLine() { return window.DS && DS.user ? `<p class="muted">Signed in as ${esc(DS.accountLabel())} · <button class="btn small" data-act="dssignout">Sign out</button></p>` : ""; }
+function hostTools() { // remove a lord, or replace the invite link
+  if (!window.DS || !DS.isHost()) return "";
+  const others = Object.entries(LIVE.players).filter(([uid, p]) => uid !== LIVE.uid && !p.left), inWar = lobbyOpen(LIVE.config) ? [] : rosterFor(liveClock().week).map(r => r.uid), seated = others.filter(([uid]) => inWar.includes(uid)), fresh = others.filter(([uid]) => !inWar.includes(uid));
+  const pend = battlePending();
+  return `<div class="sec lbox"><h3>Host tools</h3>${pend ? `<div class="spread"><span>The battle for ${esc(pend)} hasn't been fought yet.</span><button class="btn small wood" data-act="dsresolve">Resolve now</button></div>` : ""}
+    ${others.map(([uid, p]) => `<div class="spread"><span>${esc(lordLabel(p) || "A lord")}${p.pending ? " · not registered yet" : ""}</span><button class="btn small ${LIVE.kick === uid ? "wax" : ""}" data-act="dskick" data-v="${uid}">${LIVE.kick === uid ? "Tap again to remove" : "Remove"}</button></div>`).join("") || `<p class="muted">Nobody else has joined yet.</p>`}
+    ${fresh.length && seated.length && !lobbyOpen(LIVE.config) ? `<div class="sec tight"><h3>Lost phone?</h3><p class="muted">If a lord had to sign in with a different account, ask them to open the invite link and sign up, then give that new account their old castle here. Their army, gold, points and orders move with it.</p>
+      <label class="inline">Castle of<select id="dsfrom">${seated.map(([uid, p]) => `<option value="${uid}">${esc(lordLabel(p) || "A lord")}</option>`).join("")}</select></label>
+      <label class="inline">goes to<select id="dsto">${fresh.map(([uid, p]) => `<option value="${uid}">${esc(lordLabel(p) || "New account")} (joined ${new Date(p.joinedAt).toLocaleDateString()})</option>`).join("")}</select></label>
+      <div class="row"><button class="btn small ${LIVE.moveSeat ? "wax" : ""}" data-act="dsreassign">${LIVE.moveSeat ? "Tap again to move the castle" : "Move the castle"}</button></div></div>` : ""}
+    <p class="muted">Removing a lord blocks that account from this game. In the middle of a war it also takes their castle off the map from the next battle, so the map is redrawn.</p>
+    <div class="row"><button class="btn small" data-act="dsnewinvite">Make a new invite link</button></div><p class="muted">A new link stops the old one working. Lords already in the game are not affected.</p></div>`;
 }
 async function saveConfig(patch, msg) {
   const next = Object.assign({}, LIVE.config, patch); Object.keys(next).forEach(k => { if (next[k] === undefined || next[k] === null) delete next[k]; });

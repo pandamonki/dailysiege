@@ -117,6 +117,7 @@ function queueSave(full) {
   if (full) writeMine(true); else saveTimer = setTimeout(() => writeMine(false), 1200);
 }
 async function writeMine(full) {
+  if (!isLive()) return; // a delayed autosave can fire after this device has left the game (signed out, removed, reconnecting)
   if (saving) { saveAgain = true; return; }
   if (stateGuard()) return;
   saving = true;

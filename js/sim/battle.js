@@ -58,7 +58,7 @@ function runBattle(plans, seed, opts = {}) {
     const p = P[pl.pid], [cr, cc] = pl.castle, def = pl.defences || {};
     p.castle = add({ pid: pl.pid, kind: "castle", x: cc + .5, y: cr + .5, maxhp: BAL.castleHp * (1 + .25 * (def.walls || 0)) * CASTLE_TIERS[Math.max(0, Math.min(2, (pl.castleTier || 1) - 1))].hp, atk: 20 * [1, 1.5, 2][def.tower || 0], range: (def.tower || 0) >= 2 ? 3.6 : 3, as: 1.5, spd: 0, armor: .25, shot: "#e8e2d0" });
     p.castle.hp = p.castle.maxhp; p.castle.atype = "pierce"; p.castle.armour = "fortified";
-    const lvl = pl.level || DAY, g = pl.gear || {};
+    const lvl = pl.level || 1, g = pl.gear || {};
     pl.pieces.forEach(pc => {
       if (pc.kind === "champ") {
         const b = CHAMP[pl.cls], hpMul = (1 + .08 * (lvl - 1)) * vigMul(pl.ranks.a4), atkMul = (1 + .06 * (lvl - 1)) * vigMul(pl.ranks.a4);
@@ -89,7 +89,7 @@ function runBattle(plans, seed, opts = {}) {
     });
     // every castle keeps one free guard at home: it holds the gate and chases off raiders
     if (!opts.duel) {
-      const gx = CENTRE + .5 - p.castle.x, gy = CENTRE + .5 - p.castle.y, GL = hyp(gx, gy) || 1, gm = 1 + .08 * (lvl - 1);
+      const gx = NN / 2 - p.castle.x, gy = NN / 2 - p.castle.y, GL = hyp(gx, gy) || 1, gm = 1 + .08 * (lvl - 1);
       const gd = add({ order: "guard", pid: pl.pid, kind: "unit", key: "guard", free: true, lvl: 1, x: p.castle.x + gx / GL * .9, y: p.castle.y + gy / GL * .9, maxhp: 300 * gm, atk: 14 * gm, range: 1.1, as: 1.0, spd: 1.5, armor: .2 });
       gd.hp = gd.maxhp; gd.atype = "blade"; gd.armour = "medium"; gd.retreats = 1;
     }
@@ -97,7 +97,7 @@ function runBattle(plans, seed, opts = {}) {
   });
   const meta = () => ents.map(e => ({ kind: e.kind, pid: e.pid, key: e.key, merc: !!e.merc, champ: e.kind === "champ", maxhp: e.maxhp, tile: e.kind === "castle" ? [Math.floor(e.y), Math.floor(e.x)] : null,
     atk: e.atk, range: e.range, as: e.as, spd: e.spd, armor: Math.min(.8, (e.armor || 0) + (e.dmgRed || 0)), atype: e.atype || null, armour: e.armour || null,
-    lvl: e.kind === "champ" ? (e.lvl0 || DAY) : (e.lvl || null), lvlTo: e.kind === "champ" ? e.heroLvl : null, items: e.itemSet ? [...e.itemSet] : null, cls: e.cls || null, ranks: e.ranks0 || e.ranks || null, picks: e.picks || null, evade: e.evade || 0,
+    lvl: e.kind === "champ" ? (e.lvl0 || 1) : (e.lvl || null), lvlTo: e.kind === "champ" ? e.heroLvl : null, items: e.itemSet ? [...e.itemSet] : null, cls: e.cls || null, ranks: e.ranks0 || e.ranks || null, picks: e.picks || null, evade: e.evade || 0,
     ctier: e.kind === "castle" ? (P[e.pid].castleTier || 1) : null, banner: e.kind === "castle" ? (P[e.pid].banner || null) : null,
     gear: e.kind === "champ" ? (P[e.pid].gear || {}) : null, defences: e.kind === "castle" ? (P[e.pid].defences || {}) : null, heal: e.healer || e.healAmt || 0 }));
 
@@ -658,13 +658,13 @@ function runBattle(plans, seed, opts = {}) {
     if (!live(e.tgt) || e.rt <= 0 || fxv(e.tgt, "vanish") || !hostile(e.pid, e.tgt.pid)) { e.tgt = (e.cls === "rogue" && rogueTarget(e)) || pickTarget(e); e.rt = .6; }
     if (e.kind === "champ") tryAbilities(e);
     const o = e.tgt;
-    if (!live(o)) { if (e.order === "escort" && live(p.champ)) moveToward(e, p.champ.x, p.champ.y + .3, 1.1); else if (p.heading === "centre" && t < HOLD_END && e.order !== "guard" && !e.militia && (e.kind === "champ" || e.kind === "unit")) { const a = e.id * 2.399, rr = .4 + (e.id % 4) * .35; moveToward(e, ctrX + Math.cos(a) * rr, ctrY + Math.sin(a) * rr, .15); } else moveToward(e, e.hx, e.hy, .2); return; }
+    if (!live(o)) { if (e.order === "escort" && live(p.champ)) moveToward(e, p.champ.x, p.champ.y + .3, 1.1); else if (p.heading === "centre" && t < HOLD_END && e.order !== "guard" && !e.militia && (e.kind === "champ" || e.kind === "unit")) { const a = e.id * 2.399, rr = .4 + (e.id % 4) * .35; moveToward(e, ctrX + dcos(a) * rr, ctrY + dsin(a) * rr, .15); } else moveToward(e, e.hx, e.hy, .2); return; }
     const reach = e.range + (o.kind === "castle" ? .45 : 0);
     if (d(e, o) > reach) {
       if (e.range < 1.5 && o.kind !== "castle" && d(e, o) < 4) { // melee spread around the target to box it in
         const mates = ents.filter(x => !x.dead && x.pid === e.pid && x.tgt === o && x.range < 1.5), n = Math.max(3, mates.length), i = mates.indexOf(e);
-        const base = Math.atan2(mates[0].y - o.y, mates[0].x - o.x), a = base + (i < 0 ? 0 : i) * 2 * Math.PI / n;
-        moveToward(e, o.x + Math.cos(a) * reach * .8, o.y + Math.sin(a) * reach * .8, .05);
+        const base = datan2(mates[0].y - o.y, mates[0].x - o.x), a = base + (i < 0 ? 0 : i) * 2 * Math.PI / n;
+        moveToward(e, o.x + dcos(a) * reach * .8, o.y + dsin(a) * reach * .8, .05);
       } else moveToward(e, o.x, o.y, reach * .9);
       return;
     }
@@ -709,7 +709,7 @@ function runBattle(plans, seed, opts = {}) {
     // reinforcements: every living castle musters militia on a timer, so the field never empties into hero-only sieges
     if (!opts.duel && t >= MILITIA.first && Math.abs(((t - MILITIA.first) % MILITIA.every)) < DT / 2) order.forEach(pid => {
       const p = P[pid]; if (!p.alive) return;
-      const c = p.castle, dx = CENTRE + .5 - c.x, dy = CENTRE + .5 - c.y, L = hyp(dx, dy) || 1;
+      const c = p.castle, dx = NN / 2 - c.x, dy = NN / 2 - c.y, L = hyp(dx, dy) || 1;
       for (let i = 0; i < (nP <= 4 ? 1 : MILITIA.count); i++) {
         const m = add({ order: "army", pid, kind: "unit", key: "militia", militia: true, lvl: 1, x: c.x + dx / L * .9 + (i - .5) * .5, y: c.y + dy / L * .9, maxhp: MILITIA.hp, atk: MILITIA.atk, range: 1.1, as: 1.0 * BAL.swing, spd: 1.5 * BAL.move, armor: .1, atype: "blade", armour: "medium" });
         m.hp = m.maxhp; m.hx = m.x; m.hy = m.y; m.retreats = 1;
@@ -802,12 +802,12 @@ function runBattle(plans, seed, opts = {}) {
   }
   for (let i = 0; i < 10; i++) { t = +(t + FRAME_DT).toFixed(2); record(); }
   ents.filter(e => e.kind === "champ" && e.gains < MIN_GAIN && e.heroLvl < MAX_HERO_LVL).forEach(e => { while (e.gains < MIN_GAIN && e.heroLvl < MAX_HERO_LVL) levelUp(e); }); // every hero earns at least two levels a day
-  const PTS = [10, 7, 5, 4, 3, 2, 1, 0];
+  const PTS = [10, 7, 5, 4, 3, 2, 1, 0]; // placement points; from 8th place down a lord scores only for kills and castles
   const results = order.map(pid => ({ pid, name: nm(pid), color: P[pid].color, cls: P[pid].cls, place: P[pid].place, kills: P[pid].kills, ukills: P[pid].ukills, castles: P[pid].castles,
-    points: PTS[P[pid].place - 1] + P[pid].kills + 2 * P[pid].castles, fellAt: P[pid].elimT, gold: Math.round(P[pid].gold) })).sort((a, b) => a.place - b.place);
+    points: (PTS[P[pid].place - 1] || 0) + P[pid].kills + 2 * P[pid].castles, fellAt: P[pid].elimT, gold: Math.round(P[pid].gold) })).sort((a, b) => a.place - b.place);
   const invest = (type, lvl) => { const c = UNITS[type].cost; let g = c; for (let l = 1; l < lvl; l++) g += Math.round(c * .5 * l); return g; };
   const tel = { duration: Math.min(t, TMAX),
-    players: order.map(pid => ({ pid, name: nm(pid), cls: P[pid].cls, level: P[pid].level || DAY, place: P[pid].place, points: results.find(r => r.pid === pid).points, elimT: P[pid].elimT, trapDmg: Math.round(P[pid].trapDmg || 0) })),
+    players: order.map(pid => ({ pid, name: nm(pid), cls: P[pid].cls, level: P[pid].level || 1, place: P[pid].place, points: results.find(r => r.pid === pid).points, elimT: P[pid].elimT, trapDmg: Math.round(P[pid].trapDmg || 0) })),
     ents: ents.filter(e => (e.kind === "champ" || e.kind === "unit") && !e.militia && !e.free).map(e => ({ pid: e.pid, ref: e.ref || null, kind: e.kind, cls: e.cls, type: e.kind === "unit" ? e.key : null, lvl: e.lvl || null, gold: e.kind === "unit" ? invest(e.key, e.lvl || 1) : null,
       ranks: e.ranks || null, survived: !e.tel.deaths, ...e.tel })) };
   const awards = (() => { const per = {}; order.forEach(pid => per[pid] = { k: 0, d: 0 }); tel.ents.forEach(e => { if (per[e.pid]) { per[e.pid].k += e.kills || 0; per[e.pid].d += e.deaths || 0; } });
