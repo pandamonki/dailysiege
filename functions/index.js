@@ -75,8 +75,8 @@ exports.reassignSeat = onCall(async request => {
 });
 
 exports.setBots = onCall(async request => {
-  const gameId = await hostOnly(request), n = Number(request.data && request.data.count);
-  if (!Number.isFinite(n) || n < 0 || n > 12) throw new HttpsError("invalid-argument", "How many bots?");
-  try { return await setBots(getFirestore(), gameId, n); }
+  const gameId = await hostOnly(request), data = request.data || {}, n = Number(data.count), removeId = typeof data.removeId === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(data.removeId) ? data.removeId : null;
+  if (!removeId && (!Number.isFinite(n) || n < 0 || n > 12)) throw new HttpsError("invalid-argument", "How many bots?");
+  try { return await setBots(getFirestore(), gameId, n, { removeId }); }
   catch (e) { throw new HttpsError("failed-precondition", (e && e.message) || "Could not change the bots."); }
 });

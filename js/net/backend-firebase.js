@@ -349,8 +349,11 @@
     catch (e) { say("Couldn't resolve: " + ((e && e.message) || "error")); }
     DS.busy = null; redraw();
   };
-  DS.setBots = async how => { // the host fills or empties seats with bot lords: "+1", "-1", "fill" or "0" (remove all)
+  DS.setBots = async how => { // the host fills or empties seats with bot lords: "+1" (one more), "fill" (every empty seat), "rm:<seat id>" (take that bot out)
     if (!DS.isHost() || DS.busy || typeof lobbyLords !== "function") return;
+    if (/^rm:/.test(how)) { DS.busy = "bots"; if (typeof renderLobby === "function") renderLobby();
+      try { await callServer("setBots", { gameId: G.id, removeId: how.slice(3) }); say("Bot removed."); } catch (e) { say("Couldn't remove the bot: " + ((e && e.message) || "error")); }
+      DS.busy = null; if (typeof renderLobby === "function") renderLobby(); return; }
     const lords = lobbyLords(), bots = lords.filter(([, p]) => p.bot).length, humans = lords.length - bots, free = Math.max(0, seatCap() - humans);
     const want = how === "fill" ? free : how === "0" ? 0 : Math.max(0, Math.min(free, bots + (parseInt(how, 10) || 0)));
     if (want === bots) { say(how === "fill" || how === "+1" ? "Every seat is already taken." : "There are no bots to remove."); return; }

@@ -7,7 +7,7 @@ const { setBots } = createRequire(import.meta.url)("../functions/lib/bots.js");
 function fakeDb(game, players) {
   const store = { "games/g1": game, ...Object.fromEntries(Object.entries(players).map(([id, p]) => [`games/g1/players/${id}`, p])) };
   const snap = (path, d) => ({ id: path.split("/").pop(), ref: { path }, exists: d !== undefined, data: () => d, get: k => (d || {})[k] });
-  const doc = path => ({ path, get: async () => snap(path, store[path]), collection: n => col(`${path}/${n}`) });
+  const doc = path => ({ path, get: async () => snap(path, store[path]), delete: async () => { delete store[path]; }, collection: n => col(`${path}/${n}`) });
   const col = path => ({ doc: id => doc(`${path}/${id}`), get: async () => ({ docs: Object.keys(store).filter(k => k.startsWith(path + "/") && k.split("/").length === path.split("/").length + 1).map(k => snap(k, store[k])) }) });
   return { store, collection: n => col(n), batch: () => { const ops = []; return { set: (ref, d) => ops.push(() => { store[ref.path] = JSON.parse(JSON.stringify(d)); }), delete: ref => ops.push(() => { delete store[ref.path]; }), commit: async () => ops.forEach(f => f()) }; } };
 }
@@ -43,4 +43,13 @@ test("people who have registered or are registering leave bots less room; people
 test("bots cannot be changed once registration has closed", async () => {
   await assert.rejects(setBots(fakeDb({ lobby: false, maxPlayers: 4, war: 1 }, { host: person(1) }), "g1", 2), /registration is open/);
   await assert.rejects(setBots(fakeDb({ lobby: true, lobbyEnds: 5, maxPlayers: 4, war: 1 }, { host: person(1) }), "g1", 2, { now: 10 }), /registration is open/);
+});
+
+test("the host can take out one particular bot, but nobody else's seat", async () => {
+  const db = fakeDb({ lobby: true, maxPlayers: 8, war: 1 }, { host: person(1) });
+  await setBots(db, "g1", 3); const [first] = botsOf(db).map(([k]) => k.split("/").pop());
+  assert.deepEqual(await setBots(db, "g1", 0, { removeId: first }), { removed: first });
+  assert.equal(botsOf(db).length, 2); assert.ok(!botsOf(db).some(([k]) => k.endsWith("/" + first)));
+  await assert.rejects(setBots(db, "g1", 0, { removeId: "host" }), /not a bot/);
+  assert.ok(db.store["games/g1/players/host"], "a person's seat is untouched");
 });

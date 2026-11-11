@@ -50,11 +50,14 @@ function hostUid() { const c = LIVE.config || {}; if (c.host) return c.host; con
 function hostLabel() { const h = hostUid(); return !h ? "your host" : h === LIVE.uid ? "you" : nameOf(h); }
 function closesText(cfg) { const left = cfg.lobbyEnds ? Math.max(0, Math.ceil((cfg.lobbyEnds - Date.now()) / 60000)) : null;
   return left === null ? "Registration closes when the host locks in the war." : left > 0 ? `Registration closes in <b>${hrsLabel(left)}</b>` : "Registration is closing…"; }
-function lordCards(withSeats) { // banner and name for every registered lord; rivals' heroes stay hidden until the war begins
-  const reg = lobbyLords(), TC = teamColours(), open = Math.max(0, seatCap() - reg.length), h = hostUid();
+function lordCards(withSeats, botCtl) { // banner and name for every registered lord; rivals' heroes stay hidden until the war begins. botCtl (the host, in the Muster Hall): a + on each empty seat and a − on each bot
+  const reg = lobbyLords(), TC = teamColours(), open = Math.max(0, seatCap() - reg.length), h = hostUid(), off = DS_BUSY() ? " disabled" : "";
   return `<div class="lcards">${reg.map(([uid, pl], i) => { const isMe = uid === LIVE.uid, st = isMe && S ? S : pl.state || {}, cls = isMe && st.cls && CLASSES[st.cls];
-    return `<div class="lcard${isMe ? " me" : ""}"><img class="lban" alt="" src="${bannerURL(st.banner || defaultBanner(), TC[uid] || SEAT_COLORS[i], 40, 54)}"><span><b>${esc(isMe ? (MY_NAME === "You" ? "You" : MY_NAME + " · you") : nameOf(uid))}</b><small>${uid === h ? "Host · " : ""}${pl.bot ? "Bot · " : ""}${cls ? esc(cls.name) : "Hero hidden"}</small></span>${cls ? `<img class="lhero" alt="" src="${spriteURL("c-" + st.cls)}">` : `<span class="hidhero" aria-hidden="true">?</span>`}</div>`; }).join("")}${withSeats ? Array.from({ length: open }, () => `<div class="lcard emptyseat"><span><b>Open seat</b><small>Waiting for a lord</small></span></div>`).join("") : ""}</div>`;
+    const third = botCtl && pl.bot ? `<button class="btn small" data-act="dsbots" data-v="rm:${esc(uid)}" aria-label="Remove ${esc(nameOf(uid))}"${off}>\u2212 Bot</button>` : cls ? `<img class="lhero" alt="" src="${spriteURL("c-" + st.cls)}">` : `<span class="hidhero" aria-hidden="true">?</span>`;
+    return `<div class="lcard${isMe ? " me" : ""}"><img class="lban" alt="" src="${bannerURL(st.banner || defaultBanner(), TC[uid] || SEAT_COLORS[i], 40, 54)}"><span><b>${esc(isMe ? (MY_NAME === "You" ? "You" : MY_NAME + " \u00b7 you") : nameOf(uid))}</b><small>${uid === h ? "Host \u00b7 " : ""}${pl.bot ? "Bot \u00b7 " : ""}${cls ? esc(cls.name) : "Hero hidden"}</small></span>${third}</div>`; }).join("")}${withSeats ? Array.from({ length: open }, () => `<div class="lcard emptyseat${botCtl ? " hasbtn" : ""}"><span><b>Open seat</b><small>Waiting for a lord</small></span>${botCtl ? `<button class="btn small wood" data-act="dsbots" data-v="+1"${off}>+ Bot</button>` : ""}</div>`).join("") : ""}</div>`;
 }
+const DS_BUSY = () => !!(window.DS && DS.busy);
+const isHostLobby = () => !!(window.DS && DS.isHost && DS.isHost()); // the host sees the bot buttons
 const seatCap = () => Math.min(MAX_LORDS, (LIVE.config && LIVE.config.maxPlayers) || 8); // seats in this war
 function lobbyLords() { return Object.entries(LIVE.players).filter(([, p]) => !p.left && !p.pending).sort((a, b) => (!!a[1].bot - !!b[1].bot) || ((a[1].joinedAt || 0) - (b[1].joinedAt || 0)) || (a[0] < b[0] ? -1 : 1)).slice(0, seatCap()); } // bots sit after people, so a person registering takes a bot's seat
 const peopleSeated = () => lobbyLords().filter(([, p]) => !p.bot).length; // seats held by people: what decides whether another person can register
@@ -82,14 +85,14 @@ function renderLobby() {
   const own = LIVE.isOwner;
   if (own && !cfg.host && LIVE.db) { cfg.host = LIVE.uid; LIVE.db.doc("game/config").update({ host: LIVE.uid }).catch(() => {}); } // older games: record the host
   el.innerHTML = `<div class="lwrap"><h2>The Muster Hall</h2><p class="lsub">${closes} · hosted by ${esc(hostLabel() === "you" ? "you" : hostLabel())}</p>
-    <div class="lbox"><h3>${reg.length} of ${seatCap()} lords registered · ${open} seat${open === 1 ? "" : "s"} open</h3>${lordCards(true)}
+    <div class="lbox"><h3>${reg.length} of ${seatCap()} lords registered · ${open} seat${open === 1 ? "" : "s"} open</h3>${lordCards(true, isHostLobby())}
+      ${isHostLobby() && open ? `<div class="row"><button class="btn wood" data-act="dsbots" data-v="fill"${DS_BUSY() ? " disabled" : ""}>Fill all empty seats with bots</button></div>` : ""}${isHostLobby() ? `<p class="muted">Bots take a seat each and play themselves every day with their own orders. A friend who registers when the war is full takes a bot's seat.</p>` : ""}
       <p class="muted">When registration closes the map is built, every castle is placed, and Day 1 planning begins. Battles are fought daily at ${lockLabel(cfg)} (${esc(cfg.tz)}).</p></div>
     <div class="lbox"><h3>You're registered</h3><div class="lrow"><span class="coat"><img alt="" src="${bannerURL(S.banner || defaultBanner(), MY_COLOR, 40, 54)}"><span><b>${esc(myLabel || MY_NAME)}</b><br><small class="muted">${TEAM_COLOR_NAMES[MY_COLOR] || ""} army · ${CLASSES[S.cls].name}</small></span></span><button class="btn small wood" data-act="lobbyedit">Change</button></div></div>
     ${own ? `<div class="lbox"><h3>Host controls</h3>
       <label class="inline">Registration closes<select id="lobbyclose"><option value="">Keep as is</option><option value="0">When I lock it in</option>${[1, 3, 6, 12, 24, 48].map(h => `<option value="${h}">In ${h < 24 ? h + " hour" + (h > 1 ? "s" : "") : h / 24 + " day" + (h > 24 ? "s" : "")}</option>`).join("")}</select></label>
       ${window.DS ? `<label class="inline">Seats<select id="lobbyseats">${Array.from({ length: MAX_LORDS - 1 }, (_, i) => i + 2).filter(k => k >= Math.max(2, reg.length)).map(k => `<option value="${k}"${k === seatCap() ? " selected" : ""}>${k} lords</option>`).join("")}</select></label>` : ""}
       <label class="inline">Battle time<select id="lobbyhour">${[12, 13, 17, 18, 19, 20, 21, 22].map(h => `<option value="${h}"${h === cfg.lockHour ? " selected" : ""}>${hourLabel(h)}</option>`).join("")}</select></label>
-      ${botControls(reg)}
       <div class="row"><button class="btn small" data-act="lobbysave">Save</button><button class="btn ${LIVE.beginConfirm ? "wax" : "wood"}" data-act="lobbybegin" ${reg.length < 2 ? "disabled" : ""}>${LIVE.beginConfirm ? "Tap again: lock in and begin" : "Lock in and begin the war"}</button></div>
       ${reg.length < 2 ? `<p class="muted">You need at least two lords to begin.</p>` : ""}</div>` : ""}
     ${open ? invitePanel(open) : `<div class="lbox"><h3>Every seat is taken</h3><p class="muted">All ${seatCap()} lords are registered.</p></div>`}${hostTools()}${pushLine()}
@@ -227,14 +230,6 @@ function installSheet() { // how to put the game on the home screen
     <div class="row"><button class="btn" data-act="open" data-v="title">← Back</button></div></div>`;
 }
 function accountLine() { return window.DS && DS.user ? `<p class="muted">Signed in as ${esc(DS.accountLabel())} · <button class="btn small" data-act="dssignout">Sign out</button></p>` : ""; }
-function botControls(reg) { // the host fills empty seats with bot lords, or takes them out again, while registration is open
-  if (!window.DS || !DS.isHost || !DS.isHost()) return "";
-  const bots = reg.filter(([, p]) => p.bot).length, people = reg.length - bots, free = Math.max(0, seatCap() - people), off = DS.busy ? " disabled" : "";
-  return `<div class="sec tight"><h3>Bot lords</h3><p class="muted">A bot takes a seat and plays itself every day with its own orders, so you can run a full war on your own or with a few friends. If a friend registers when the war is full, they take a bot's seat.</p>
-    <div class="spread"><span><b>${bots}</b> bot${bots === 1 ? "" : "s"} · ${people} ${people === 1 ? "person" : "people"} · ${Math.max(0, free - bots)} seat${free - bots === 1 ? "" : "s"} empty</span>
-      <span><button class="btn small" data-act="dsbots" data-v="-1"${off}${bots ? "" : " disabled"}>− Bot</button> <button class="btn small wood" data-act="dsbots" data-v="+1"${off}${bots < free ? "" : " disabled"}>+ Bot</button></span></div>
-    <div class="row"><button class="btn small wood" data-act="dsbots" data-v="fill"${off}${bots < free ? "" : " disabled"}>Fill every empty seat</button><button class="btn small" data-act="dsbots" data-v="0"${off}${bots ? "" : " disabled"}>Remove all bots</button></div></div>`;
-}
 function hostTools() { // remove a lord, or replace the invite link
   if (!window.DS || !DS.isHost()) return "";
   const others = Object.entries(LIVE.players).filter(([uid, p]) => uid !== LIVE.uid && !p.left && !p.bot), inWar = lobbyOpen(LIVE.config) ? [] : rosterFor(liveClock().week).map(r => r.uid), seated = others.filter(([uid]) => inWar.includes(uid)), fresh = others.filter(([uid]) => !inWar.includes(uid));
