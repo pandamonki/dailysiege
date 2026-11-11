@@ -1,8 +1,7 @@
 // Background music. render() calls MUSIC.sync() after every change of screen.
 //
-// Plays through the Web Audio API rather than an <audio> element: the track is decoded straight from
-// tracks.js, so it doesn't depend on the page being allowed to load data: media, and one AudioContext
-// unlocked by the first tap keeps working for the rest of the session.
+// Plays through the Web Audio API rather than an <audio> element: one AudioContext unlocked by the
+// first tap keeps working for the rest of the session. Tracks are files listed in tracks.js.
 //
 // Only the title theme (Banner Rising) survived in the original page, so it plays on the title screen
 // and while planning, and fades out during battle replays. Add "planning" and "battle" tracks to
@@ -28,13 +27,15 @@ const MUSIC = (() => {
 
   function decode(key) {
     if (buffers[key] || decoding[key]) return decoding[key] || Promise.resolve(buffers[key]);
-    const b64 = TRACKS[key].slice(TRACKS[key].indexOf(",") + 1), bin = atob(b64), bytes = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const src = TRACKS[key];
+    const bytes = src.startsWith("data:")
+      ? Promise.resolve().then(() => { const bin = atob(src.slice(src.indexOf(",") + 1)), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u.buffer; })
+      : fetch(src).then(r => { if (!r.ok) throw new Error("music " + r.status); return r.arrayBuffer(); }); // a real file: downloaded once, then kept by the browser
     // callback form as well as the promise, for older Safari
-    return decoding[key] = new Promise((res, rej) => {
-      const p = ac.decodeAudioData(bytes.buffer, b => { buffers[key] = b; res(b); }, rej);
+    return decoding[key] = bytes.then(buf => new Promise((res, rej) => {
+      const p = ac.decodeAudioData(buf, b => { buffers[key] = b; res(b); }, rej);
       if (p && p.catch) p.catch(rej);
-    });
+    })).catch(e => { delete decoding[key]; throw e; }); // a failed download can be tried again later
   }
 
   function stop(fade = true) {

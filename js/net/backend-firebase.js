@@ -24,8 +24,8 @@
   const SDK = ["app", "auth", "firestore"].map(n => `js/vendor/firebase/firebase-${n}-compat.js`);
   const FUNCTIONS_REGION = "australia-southeast1"; // must match REGION in functions/region.js
   const DEMO = { apiKey: "demo-key", authDomain: "demo-dailysiege.firebaseapp.com", projectId: "demo-dailysiege", appId: "demo" };
-  const SERVER_KEYS = ["planDay", "nextPlanDay", "nextLockAt", "lockAfter", "clockWar", "startDate", "resolvedAt"]; // only the server writes these
-  const HIDDEN_KEYS = ["nextLockAt", "lockAfter", "resolvedAt"];                                       // timestamps the game has no use for
+  const SERVER_KEYS = ["planDay", "nextPlanDay", "nextLockAt", "lockAfter", "clockWar", "startDate", "resolvedAt", "remindedFor"]; // only the server writes these
+  const HIDDEN_KEYS = ["nextLockAt", "lockAfter", "resolvedAt", "remindedFor"];                                       // timestamps the game has no use for
   const CONFIG_KEYS = ["tz", "lockHour", "lobby", "lobbyEnds", "createdAt", "maxPlayers", "capFrom", "capPrev"]; // what the host's settings screen may change
   const copy = v => (v === undefined ? undefined : JSON.parse(JSON.stringify(v)));
   const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -152,7 +152,7 @@
   }
   async function startGame() { // called once per connection, after sign-in
     const my = ++epoch, g = G;
-    await measureClock();
+    await measureClock(); refreshPush();
     const found = await findGame(); if (my !== epoch) return;
     const gid = found && found.gid; g.seat = found ? found.seat : DS.user.uid; DS.seat = g.seat;
     if (!gid) { try { g.owner = await mayHost(); LIVE.isOwner = g.owner; } catch (e) {} if (my !== epoch) return; g.game = null; g.pubs = {}; g.state = null; g.orders = {}; g.battles = {}; emit(g, true); return; }
@@ -318,6 +318,7 @@
     dskick: uid => { if (LIVE.kick !== uid) { LIVE.kick = uid; } else { LIVE.kick = null; DS.removeLord(uid); } if (typeof renderLobby === "function") renderLobby(); },
     dsnewinvite: () => { DS.newInvite(); },
     dsresolve: () => { DS.resolveNow(); },
+    dspush: () => { DS.enablePush(); },
     dsreassign: () => { const from = (document.getElementById("dsfrom") || {}).value, to = (document.getElementById("dsto") || {}).value; if (!from || !to) return; if (!LIVE.moveSeat) { LIVE.moveSeat = true; return; } LIVE.moveSeat = false; DS.reassignSeat(from, to); },
   });
 
@@ -343,6 +344,31 @@
     DS.mismatches.push({ day, got, want });
     try { gameRef().collection("reports").doc(day + "_" + DS.user.uid).set({ uid: DS.user.uid, day, got, want, device: navigator.userAgent.slice(0, 300), at: Date.now() }).catch(() => {}); } catch (e) {}
   };
+
+  // ---------- notifications ----------
+  // "on": this device is subscribed · "ask": can be switched on · "install": iPhone needs the game on the Home Screen first
+  // "blocked": refused in the browser's settings · "off": not available here
+  const pushKey = () => (typeof DS_VAPID_KEY === "string" ? DS_VAPID_KEY : "");
+  DS.pushState = () => {
+    if (!DS.user || DS.emulator || !pushKey() || typeof PWA === "undefined") return "off";
+    if (PWA.isIOS() && !PWA.standalone()) return "install";
+    if (!("Notification" in window) || !("PushManager" in window) || !("serviceWorker" in navigator)) return "off";
+    return Notification.permission === "denied" ? "blocked" : Notification.permission === "granted" && LS.get("ds.push") ? "on" : "ask";
+  };
+  async function savePushToken() { // (re)register this device with the server; tokens can change, so this runs at each start too
+    await loadScript("js/vendor/firebase/firebase-messaging-compat.js").catch(() => {});
+    const reg = await PWA.ready(), token = await fb.messaging().getToken({ vapidKey: pushKey(), serviceWorkerRegistration: reg });
+    if (!token) return false;
+    await fs.collection("users").doc(DS.user.uid).set({ fcmTokens: fb.firestore.FieldValue.arrayUnion(token) }, { merge: true });
+    LS.set("ds.push", token); return true;
+  }
+  DS.enablePush = async () => {
+    try { const perm = await Notification.requestPermission(); if (perm !== "granted") { say(perm === "denied" ? "Notifications are blocked for this site." : "No problem. You can turn alerts on later."); redraw(); return; }
+      say((await savePushToken()) ? "Battle alerts are on for this device." : "Couldn't turn alerts on. Try again later."); }
+    catch (e) { console.warn("push", e); say("Couldn't turn alerts on (" + ((e && (e.code || e.message)) || "error") + ")."); }
+    redraw();
+  };
+  const refreshPush = () => { try { if (DS.pushState() !== "off" && DS.pushState() !== "install" && "Notification" in window && Notification.permission === "granted") savePushToken().catch(() => {}); } catch (e) {} };
 
   DS.leaveGame = async () => { stopGame(); try { await fs.collection("users").doc(DS.user.uid).set({ gameId: fb.firestore.FieldValue.delete() }, { merge: true }); } catch (e) {} onAuthChange(); };
 })();

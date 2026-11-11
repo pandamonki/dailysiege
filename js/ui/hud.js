@@ -19,7 +19,7 @@ function ultChip() {
   if (ultCooling()) return ["⚡", "1d", "off", "Ultimate recharging, ready tomorrow"];
   return S.ultArm ? ["⚡", "Set", "ok", "Ultimate planned for tonight"] : ["⚡", "Rdy", "ok", "Ultimate ready. Plan it in Orders"];
 }
-const UIIMG = (n, alt = "") => `<img class="ui" alt="${alt}" src="icons/ui/${n}.png">`;
+const UIIMG = (n, alt = "") => `<img class="ui" alt="${alt}" src="icons/ui/${n}.webp">`;
 function renderTop() {
   const un = typeof unplaced === "function" ? unplaced().length : 0, u = ultChip(), pts = freePts();
   const chip = (act, v, ico, val, title, cls = "") => `<button class="chip2 ${cls}" data-act="${act}" ${v != null ? `data-v="${v}"` : ""} aria-label="${title}" title="${title}"><span class="ci">${ico}</span><b>${val}</b></button>`;

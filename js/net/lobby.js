@@ -90,7 +90,7 @@ function renderLobby() {
       <label class="inline">Battle time<select id="lobbyhour">${[12, 13, 17, 18, 19, 20, 21, 22].map(h => `<option value="${h}"${h === cfg.lockHour ? " selected" : ""}>${hourLabel(h)}</option>`).join("")}</select></label>
       <div class="row"><button class="btn small" data-act="lobbysave">Save</button><button class="btn ${LIVE.beginConfirm ? "wax" : "wood"}" data-act="lobbybegin" ${reg.length < 2 ? "disabled" : ""}>${LIVE.beginConfirm ? "Tap again: lock in and begin" : "Lock in and begin the war"}</button></div>
       ${reg.length < 2 ? `<p class="muted">You need at least two lords to begin.</p>` : ""}</div>` : ""}
-    ${open ? invitePanel(open) : `<div class="lbox"><h3>Every seat is taken</h3><p class="muted">All ${seatCap()} lords are registered.</p></div>`}${hostTools()}
+    ${open ? invitePanel(open) : `<div class="lbox"><h3>Every seat is taken</h3><p class="muted">All ${seatCap()} lords are registered.</p></div>`}${hostTools()}${pushLine()}
     <div class="row"><button class="btn small" data-act="open" data-v="title">← Menu</button></div></div>`;
 }
 async function registerMe() {
@@ -191,7 +191,7 @@ function gameSheet() {
     <div class="row">${inNow ? `<button class="btn ${gameMode === "friends" ? "on" : "wood"}" data-act="mode" data-v="friends">${gameMode === "friends" ? "Playing friends game" : "Play friends game"}</button>` : ""}
       <button class="btn" data-act="open" data-v="title">← Menu</button></div>
     ${roster.length < 2 ? `<p class="muted">Battles start once at least two players are in.</p>` : ""}
-    ${invitePanel()}${hostTools()}${accountLine()}</div>`;
+    ${invitePanel()}${hostTools()}${pushLine()}${accountLine()}</div>`;
 }
 // ----- the hosted game: signing in, the account line and host tools (window.DS is js/net/backend-firebase.js) -----
 function signInSheet() {
@@ -204,8 +204,23 @@ function signInSheet() {
     <div class="sec"><h3>Or get a sign-in link by email</h3>
       <label class="inline">Email<input id="dsemail" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" value="${esc(d.emailDraft || "")}"></label>
       <div class="row"><button class="btn wood" data-act="dsemail" ${d.busy ? "disabled" : ""}>${d.busy === "email" ? "Sending…" : "Email me a link"}</button></div>
-      <p class="muted">No password. Open the link on this same device.</p></div>
+      <p class="muted">No password. Open the link on this same device.${typeof PWA !== "undefined" && PWA.isIOS() && PWA.standalone() ? " In this Home Screen app, Google is the simplest: an emailed link opens in Safari instead." : ""}</p></div>
     ${d.note ? `<p class="tip">${esc(d.note)}</p>` : ""}${d.error ? `<p class="tip">${esc(d.error)}</p>` : ""}
+    <div class="row"><button class="btn" data-act="open" data-v="title">← Back</button></div></div>`;
+}
+function pushLine() { // battle alerts on this device
+  const st = window.DS && DS.pushState ? DS.pushState() : "off";
+  return st === "on" ? `<p class="muted">🔔 Battle alerts are on for this device.</p>`
+    : st === "ask" ? `<div class="sec tight"><div class="row"><button class="btn small wood" data-act="dspush">🔔 Turn on battle alerts</button></div><p class="muted">A nudge an hour before orders lock (only if yours aren't sealed), and when the battle's results are in.</p></div>`
+    : st === "install" ? `<p class="muted">🔔 To get battle alerts on an iPhone, add the game to your Home Screen first, then open it from there.${typeof PWA !== "undefined" && PWA.canOffer() ? ` <button class="btn small" data-act="pwainstall">Show me how</button>` : ""}</p>`
+    : st === "blocked" ? `<p class="muted">🔔 Battle alerts are blocked for this site in your browser's settings.</p>` : "";
+}
+function installSheet() { // how to put the game on the home screen
+  const ios = typeof PWA !== "undefined" && PWA.isIOS();
+  return head(null, "Install Daily Siege", "Play it like an app") + `<div class="body">
+    <p>Added to your Home Screen, the game opens full-screen, starts instantly and can send battle alerts.</p>
+    ${ios ? `<ol><li>Open this page in <b>Safari</b> (not inside another app).</li><li>Tap the <b>Share</b> button (the square with an arrow).</li><li>Choose <b>Add to Home Screen</b>, then <b>Add</b>.</li><li>Open <b>Daily Siege</b> from your Home Screen and sign in there.</li></ol><p class="muted">On iPhone the Home Screen app keeps its own sign-in. Signing in with Google is the simplest there; an emailed link opens in Safari instead.</p>`
+      : `<ol><li>Open your browser's menu (⋮).</li><li>Choose <b>Install app</b> or <b>Add to Home screen</b>.</li></ol>`}
     <div class="row"><button class="btn" data-act="open" data-v="title">← Back</button></div></div>`;
 }
 function accountLine() { return window.DS && DS.user ? `<p class="muted">Signed in as ${esc(DS.accountLabel())} · <button class="btn small" data-act="dssignout">Sign out</button></p>` : ""; }

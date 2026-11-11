@@ -5,6 +5,7 @@
 const { Timestamp, FieldPath } = require("firebase-admin/firestore");
 const { loadGame, SIM_FILES, WORLD_FILES } = require("./game");
 const { startDate } = require("./clock");
+const { notifyBattle, remindUnsealed } = require("./notify");
 
 let game;
 const g = () => game || (game = loadGame([...SIM_FILES, ...WORLD_FILES]));
@@ -34,7 +35,7 @@ async function loadWorld(gameRef, cfg, day) {
  * so a battle is fought and saved exactly once.
  * @returns {Promise<{ day: string, fought: boolean, lords: number }[]>} the days moved past
  */
-async function resolveDue(db, gameId, { now = Date.now(), maxDays = 8 } = {}) {
+async function resolveDue(db, gameId, { now = Date.now(), maxDays = 8, send = null } = {}) {
   const gameRef = db.collection("games").doc(gameId), done = [];
   const { addDays, lockInstant, wRoster, wWeekOf, fightDay } = { addDays: g().get("addDays"), lockInstant: g().get("lockInstant"), wRoster: g().get("wRoster"), wWeekOf: g().get("wWeekOf"), fightDay: g().get("fightDay") };
   for (let i = 0; i < maxDays; i++) {
@@ -55,14 +56,16 @@ async function resolveDue(db, gameId, { now = Date.now(), maxDays = 8 } = {}) {
     });
     if (!claimed) break;
     done.push({ day, fought: !!doc, lords });
+    // tell the lords (only the newest battle when catching up on several days); a failed notification never fails the battle
+    if (doc && send && now < lockInstant(next, cfg.tz, cfg.lockHour)) await notifyBattle(db, gameRef, day, doc, send).catch(e => console.error("Daily Siege: notifications failed", gameId, e));
   }
   return done;
 }
 
 // Every game whose lock time has passed.
-async function resolveAllDue(db, { now = Date.now() } = {}) {
+async function resolveAllDue(db, { now = Date.now(), send = null } = {}) {
   const due = await db.collection("games").where("nextLockAt", "<=", Timestamp.fromMillis(now)).get(), out = {};
-  for (const d of due.docs) { try { out[d.id] = await resolveDue(db, d.id, { now }); } catch (e) { console.error("Daily Siege: battle failed for game", d.id, e); out[d.id] = { error: String((e && e.message) || e) }; } }
+  for (const d of due.docs) { try { out[d.id] = await resolveDue(db, d.id, { now, send }); } catch (e) { console.error("Daily Siege: battle failed for game", d.id, e); out[d.id] = { error: String((e && e.message) || e) }; } }
   return out;
 }
 
@@ -88,4 +91,10 @@ async function reassignSeat(db, gameId, seatId, toUid) {
   await batch.commit();
 }
 
-module.exports = { resolveDue, resolveAllDue, reassignSeat, loadWorld };
+// "Orders lock in an hour" for every game that is due one, counting only lords who are in this week's war.
+function remindAll(db, send, { now = Date.now() } = {}) {
+  const wRoster = g().get("wRoster"), wWeekOf = g().get("wWeekOf");
+  return remindUnsealed(db, send, { now, wRoster: (pubs, cfg) => { const W = { config: Object.assign({}, cfg, { startDate: startDate(cfg) }), players: pubs, battles: {} }; return wRoster(W, wWeekOf(W, cfg.planDay)).map(p => p.uid); } });
+}
+
+module.exports = { resolveDue, resolveAllDue, reassignSeat, loadWorld, remindAll };

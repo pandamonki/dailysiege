@@ -81,12 +81,12 @@ function lordSheet(d, pid, nm) {
   const pl = d.plans.find(p => p.pid === pid), me = isLive() ? LIVE.uid : "you", C = CLASSES[pl.cls] || CLASSES.warrior, rk = pl.ranks || {}, gear = pl.gear || {}, def = pl.defences || {};
   const pips = (n, m) => `<span class="pips sm">${Array.from({ length: m }, (_, i) => `<i class="pip${i < n ? " on" : ""}"></i>`).join("")}</span>`;
   const abil = [...C.abilities.map(a => [a.key, a.name, a.desc, 4]), ["ult", C.ult.name, C.ult.desc, 3]];
-  const art = k => { const f = typeof ART_FILES !== "undefined" && ART_FILES[pl.cls + "_" + k]; return f ? `icons/${f}.png` : ""; };
+  const art = k => { const f = typeof ART_FILES !== "undefined" && ART_FILES[pl.cls + "_" + k]; return f ? `icons/${f}.webp` : ""; };
   const units = (pl.pieces || []).filter(pc => pc.kind === "unit"), walls = (pl.pieces || []).filter(pc => pc.kind === "wall").length, traps = (pl.pieces || []).filter(pc => pc.kind === "trap").length;
   const grp = {}; units.forEach(u => { const k = u.type + "|" + u.lvl; grp[k] = (grp[k] || 0) + 1; });
   const gearRows = [["weapon", "Weapon"], ["armour", "Armour"], ["charm", "Charm"]].map(([k, l]) => `<div class="irow"><span>${l}</span><b>${gear[k] ? esc(GEAR[k][gear[k] - 1].name) : "None"}</b>${pips(gear[k] || 0, 3)}</div>`).join("")
     + [["walls", "Bastion"], ["tower", "Tower"]].map(([k, l]) => `<div class="irow"><span>${l}</span><b>${def[k] ? esc(DEFENCES[k][def[k] - 1].name) : "None"}</b>${pips(def[k] || 0, 2)}</div>`).join("");
-  return head(`icons/ui/hero_${pl.cls}.png`, nm(pid), `${C.name} · level ${pl.level} · ${tierName(pl.castleTier || 1)}`) + `<div class="body insp">
+  return head(`icons/ui/hero_${pl.cls}.webp`, nm(pid), `${C.name} · level ${pl.level} · ${tierName(pl.castleTier || 1)}`) + `<div class="body insp">
     <button class="btn small" data-act="rinspx">← Scoreboard</button>
     <div class="sec"><h3>Hero abilities</h3>${abil.map(([k, n, ds, m]) => `<div class="irow ab">${art(k) ? `<img alt="" src="${art(k)}">` : ""}<span><b>${esc(n)}</b><small class="muted">${esc(ds)}</small></span>${pips(rk[k] || 0, m)}</div>`).join("")}<div class="irow ab"><span><b>Vigour</b><small class="muted">+2% health and damage per rank</small></span>${pips(rk.a4 || 0, 6)}</div></div>
     <div class="sec"><h3>Items</h3>${(pl.items || []).length ? `<div class="islots tiny">${pl.items.map(k => ITEMS[k] ? `<div class="islot" title="${esc(ITEMS[k].name)}"><img alt="" src="${itemURL(k)}"><small>${esc(ITEMS[k].name)}</small></div>` : "").join("")}</div>` : `<p class="muted">No items.</p>`}</div>
@@ -120,7 +120,7 @@ function titleSheet() {
     <div class="menu3">
       <button class="btn wax big" data-act="playgo">⚔ Play with friends<small>${lobbyOpen(LIVE.config) ? (inGame ? (LIVE.players[LIVE.uid].pending ? "Finish registering for the war" : "Muster hall · registration open") : "Registration is open. Join the war") : inGame ? "Friends game · day " + (live ? DAY : liveClock().dayNo) + " of 7" : LIVE.config ? "Join your friends' next war" : can ? "Host a war and invite friends" : "Daily siege with friends"}</small></button>
       <button class="btn wood big" data-act="testmenu">🧪 Test<small>Practice against bots</small></button>
-      ${inGame ? `<button class="btn small" data-act="open" data-v="game">⚙ Game settings</button>` : ""}<button class="btn small" data-act="open" data-v="patch">📜 Patch notes</button><button class="btn small" data-act="wizard">🧙 How to play (tour)</button><button class="btn small" data-act="open" data-v="guide">📖 Full rules</button>
+      ${inGame ? `<button class="btn small" data-act="open" data-v="game">⚙ Game settings</button>` : ""}${typeof PWA !== "undefined" && PWA.canOffer() ? `<button class="btn small" data-act="pwainstall">📲 Install app</button>` : ""}<button class="btn small" data-act="open" data-v="patch">📜 Patch notes</button><button class="btn small" data-act="wizard">🧙 How to play (tour)</button><button class="btn small" data-act="open" data-v="guide">📖 Full rules</button>
     </div></div>`;
 }
 function guideSheet() {

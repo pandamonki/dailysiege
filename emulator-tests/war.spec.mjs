@@ -11,7 +11,7 @@ const fnRequire = createRequire(new URL("../functions/package.json", import.meta
 const { initializeApp, deleteApp } = fnRequire("firebase-admin/app");
 const { getFirestore, Timestamp } = fnRequire("firebase-admin/firestore");
 const { getAuth } = fnRequire("firebase-admin/auth");
-const { resolveDue, resolveAllDue } = createRequire(import.meta.url)("../functions/lib/resolve.js");
+const { resolveDue, resolveAllDue, remindAll } = createRequire(import.meta.url)("../functions/lib/resolve.js");
 const { clockFor } = createRequire(import.meta.url)("../functions/lib/clock.js");
 let pw; try { pw = createRequire(import.meta.url)("playwright"); } catch { pw = createRequire("/")("playwright"); }
 
@@ -22,6 +22,9 @@ const today = new Date().toISOString().slice(0, 10), D1 = addDays(today, -6), da
 let app, db, browser;
 const cfg = { tz: "UTC", lockHour: 0, lobby: true, lobbyEnds: Date.parse(addDays(D1, -1) + "T12:00:00Z"), startDate: D1, createdAt: 1, host: uids[0], war: 1, inviteCode: "war-invite-code", maxPlayers: SEATS };
 const gameRef = () => db.collection("games").doc(GAME);
+// Notifications: lord 1 has two devices, lord 2 one, lord 3 a device that no longer exists. Sending is recorded, not real.
+const TOKENS = { bot01: ["phone-1a", "phone-1b"], bot02: ["phone-2"], bot03: ["dead-phone"] }, pushes = [];
+const send = async (token, msg) => { if (token === "dead-phone") throw Object.assign(new Error("gone"), { code: "messaging/registration-token-not-registered" }); pushes.push({ token, ...msg }); };
 
 // One lord's orders for a day: taken from a golden battle with the same number of lords (ten), so they are varied and legal.
 function ordersFor(dayIndex, seat) {
@@ -49,7 +52,7 @@ before(async () => {
     batch.set(gameRef().collection("members").doc(u), { invite: cfg.inviteCode, at: 1 });
     batch.set(p, { fromWeek: "0000-00-00", joinedAt: 1000 + i, nick: "Lord " + (i + 1), real: "Bot " + (i + 1), pending: false, banner, hasRapier: false, sealedFor: null, week: D1, war: 1 });
     batch.set(p.collection("private").doc("state"), { week: D1, day: D1, cls: ["warrior", "mage", "archer", "shaman", "rogue"][i % 5], banner, gold: 300, owned: [], items: [] });
-    batch.set(db.collection("users").doc(u), { gameId: GAME });
+    batch.set(db.collection("users").doc(u), { gameId: GAME, ...(TOKENS[u] ? { fcmTokens: TOKENS[u] } : {}) });
   });
   await batch.commit();
   await Promise.all(uids.slice(0, 2).map(u => getAuth(app).createUser({ uid: u, email: u + "@example.com" }).catch(() => {})));
@@ -79,7 +82,7 @@ test("the server fights all seven days, each once its lock has passed", async ()
   for (let d = 1; d < 7; d++) {
     await seedOrders(d);
     const now = lockInstant(days[d], "UTC", 0) + 60000;
-    assert.deepEqual(await resolveDue(db, GAME, { now }), [{ day: days[d], fought: true, lords: SEATS }], "day " + (d + 1));
+    assert.deepEqual(await resolveDue(db, GAME, { now, send }), [{ day: days[d], fought: true, lords: SEATS }], "day " + (d + 1));
     assert.deepEqual(await resolveDue(db, GAME, { now }), [], "asking again does nothing");
   }
   const g = (await gameRef().get()).data();
@@ -150,6 +153,27 @@ test("a browser signed in as one of the lords replays all seven battles to the s
   await p.waitForFunction(() => replay && replay.res, null, { timeout: 30000 });
   assert.equal(await p.evaluate(() => (window.DS.mismatches || []).length), 0);
   assert.deepEqual(errors, []);
+});
+
+test("after each battle every lord's devices are told the result, and dead devices are forgotten", async () => {
+  const day2 = pushes.filter(p => p.title === "Daily Siege: day 2 results");
+  assert.deepEqual(day2.map(p => p.token).sort(), ["phone-1a", "phone-1b", "phone-2"]);
+  assert.match(day2.find(p => p.token === "phone-2").body, /won the day|You won the day/);
+  assert.equal(pushes.filter(p => p.tag === "battle").length, 6 * 3, "days 2 to 7, three live devices");
+  assert.ok(pushes.some(p => /invited you to an alliance/.test(p.body)), "an alliance invitation is mentioned to its recipient");
+  assert.ok(!pushes.find(p => p.title.includes("day 7")).body.includes("Tomorrow"), "the final day does not promise a tomorrow");
+  assert.deepEqual((await db.collection("users").doc("bot03").get()).get("fcmTokens"), []);
+});
+
+test("an hour before the lock, only lords who have not sealed are reminded, once", async () => {
+  const D8 = addDays(D1, 7), lock = lockInstant(D8, "UTC", 0); pushes.length = 0;
+  assert.deepEqual(await remindAll(db, send, { now: lock - 3 * 3600e3 }), {}, "too early");
+  await gameRef().collection("players").doc("bot02").update({ sealedFor: D8 }); // lord 2 has sealed
+  const out = await remindAll(db, send, { now: lock - 30 * 60e3 });
+  assert.equal(out[GAME].sent, 2); assert.ok(!out[GAME].reminded.includes("bot02")); assert.equal(out[GAME].reminded.length, SEATS - 1);
+  assert.deepEqual(pushes.map(p => p.token).sort(), ["phone-1a", "phone-1b"]);
+  assert.match(pushes[0].body, /not sealed yet.*30 minutes/);
+  assert.deepEqual(await remindAll(db, send, { now: lock - 20 * 60e3 }), {}, "never twice for the same day");
 });
 
 test("the scheduler's sweep finds only games that are due", async () => {

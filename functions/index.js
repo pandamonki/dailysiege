@@ -11,13 +11,15 @@ const { setGlobalOptions } = require("firebase-functions/v2");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, Timestamp, FieldValue } = require("firebase-admin/firestore");
 const { clockFor } = require("./lib/clock");
-const { resolveDue, resolveAllDue, reassignSeat } = require("./lib/resolve");
+const { getMessaging } = require("firebase-admin/messaging");
+const { resolveDue, resolveAllDue, reassignSeat, remindAll } = require("./lib/resolve");
 const { REGION, TRIGGER_REGION } = require("./region");
 
 initializeApp();
 // maxInstances keeps a runaway bug from scaling up costs; this game needs one instance at a time.
 setGlobalOptions({ region: REGION, maxInstances: 2, memory: "512MiB", timeoutSeconds: 120 });
 
+// (remindedFor, set when the day's reminder goes out, is also server-owned but is not part of the clock)
 const CLOCK_KEYS = ["planDay", "nextPlanDay", "nextLockAt", "lockAfter", "clockWar", "startDate"];
 
 // Keeps a game's clock fields right whenever its settings change (war begins, battle time moved,
@@ -36,10 +38,16 @@ exports.keepGameClock = onDocumentWritten({ document: "games/{gameId}", region: 
   if (Object.keys(patch).length) await getFirestore().doc(event.data.after.ref.path).update(patch); // the follow-up run finds nothing to change
 });
 
-// The one scheduled job: a battle is fought within five minutes of its lock time.
+// One push notification to one device. The message is data only; the game's service worker turns it into a notification.
+const send = (token, msg) => getMessaging().send({ token, data: { title: msg.title, body: msg.body, tag: msg.tag, link: msg.link }, webpush: { headers: { Urgency: "high", TTL: "43200" } } });
+
+// The one scheduled job: a battle is fought within five minutes of its lock time, and an hour before a lock
+// the lords who have not sealed get a reminder.
 exports.resolveDueBattles = onSchedule({ schedule: "every 5 minutes", retryCount: 0 }, async () => {
-  const out = await resolveAllDue(getFirestore());
+  const out = await resolveAllDue(getFirestore(), { send });
   if (Object.keys(out).length) console.log("Daily Siege battles", JSON.stringify(out));
+  const rem = await remindAll(getFirestore(), send).catch(e => { console.error("Daily Siege reminders failed", e); return {}; });
+  if (Object.keys(rem).length) console.log("Daily Siege reminders", JSON.stringify(rem));
 });
 
 async function hostOnly(request) {
@@ -53,7 +61,7 @@ async function hostOnly(request) {
 
 exports.resolveNow = onCall(async request => {
   const gameId = await hostOnly(request);
-  try { return { days: await resolveDue(getFirestore(), gameId) }; }
+  try { return { days: await resolveDue(getFirestore(), gameId, { send }) }; }
   catch (e) { console.error("resolveNow", gameId, e); throw new HttpsError("internal", "The battle could not be fought: " + ((e && e.message) || "error")); }
 });
 

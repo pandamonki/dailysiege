@@ -20,6 +20,7 @@ const A = {
   lobbybegin: () => { if (!LIVE.beginConfirm) { LIVE.beginConfirm = true; renderLobby(); return; } LIVE.beginConfirm = false; saveConfig({ lobbyEnds: Date.now() }, "Registration is locked in."); },
   restartgame: () => { if (!sheet.rconfirm) { sheet.rconfirm = true; return; } restartGame(); },
   joingame: () => { joinGame(); },
+  pwainstall: () => { if (PWA.hasPrompt()) { PWA.install(); return; } open("install"); },
   savename: () => { saveName(); return false; },
   register: () => { registerMe(); },
   lobbyedit: () => { LIVE.lobbyEdit = true; renderLobby(); document.getElementById("lobby")?.scrollTo({ top: 0 }); },

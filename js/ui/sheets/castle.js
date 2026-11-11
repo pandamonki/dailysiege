@@ -22,7 +22,7 @@ const cmpBox = (now, next, nextLabel) => `<div class="cmp"><div><span class="ila
 const abar = html => `<div class="abar">${html}</div>`;
 const ISH_PAGE = 6;
 const TRAP_ICON = k => ({ spike: "trap_spike", snare: "trap_snare", bell: "trap_bell" }[k]);
-const trapImg = k => TRAP_ICON(k) ? `icons/ui/${TRAP_ICON(k)}.png` : trapURL(k);
+const trapImg = k => TRAP_ICON(k) ? `icons/ui/${TRAP_ICON(k)}.webp` : trapURL(k);
 const canBanner = () => !isLive() || DAY === 1;
 const ctNow = () => S.castle || 1;
 const rapierTaken = k => isLive() && Object.entries(LIVE.players || {}).some(([uid, p]) => uid !== LIVE.uid && p && p.state && (p.state.items || []).includes(k));
@@ -71,7 +71,7 @@ function castleSheet() {
       bar = nx ? `<button class="btn wax" data-act="castleup" ${dis(avail() < nx.cost)}>Upgrade to ${nx.name} · ${nx.cost}g</button>` : `<button class="btn wax" disabled>Fully upgraded</button>`; }
     else { det = udet(`Supply · ${S.slots}/${SLOT_MAX}`, bedsFull ? null : slotCost(S.slots), `<div class="lvrow">${pipRow(S.slots, SLOT_MAX)}<span class="muted">Each point of supply lets you field one more soldier</span></div>${cmpBox([["Supply", S.slots]], bedsFull ? null : [["Supply", S.slots + 1]])}`);
       bar = `<button class="btn wax" data-act="slot" ${dis(bedsFull || avail() < slotCost(S.slots))}>${bedsFull ? `Supply maxed (${SLOT_MAX})` : `Raise supply to ${S.slots + 1} · ${slotCost(S.slots)}g`}</button>`; }
-    body = `<div class="ugrid two shopg">${tile("csel", "castle", ck === "castle", `icons/ui/castle${ct}.png`, cur.name, { price: nx ? nx.cost : null, pips: [ct, 3] })}${tile("csel", "supply", ck === "supply", "icons/ui/supply.png", "Supply", { price: bedsFull ? null : slotCost(S.slots), pips: [S.slots, SLOT_MAX] })}</div>${det}${abar(bar)}`;
+    body = `<div class="ugrid two shopg">${tile("csel", "castle", ck === "castle", `icons/ui/castle${ct}.webp`, cur.name, { price: nx ? nx.cost : null, pips: [ct, 3] })}${tile("csel", "supply", ck === "supply", "icons/ui/supply.webp", "Supply", { price: bedsFull ? null : slotCost(S.slots), pips: [S.slots, SLOT_MAX] })}</div>${det}${abar(bar)}`;
   }
   if (tab === "shop") {
     const keys = Object.keys(ITEMS), pages = Math.ceil(keys.length / ISH_PAGE), ik = ITEMS[sheet.ish] ? sheet.ish : keys[0], it = ITEMS[ik];
@@ -101,11 +101,11 @@ function castleSheet() {
       bar = `<button class="btn wax" data-act="open" data-v="wall" data-k="${wm.id}">Manage</button>`; }
     else { const t = TRAPS[dk]; det = udet(t.name, t.cost, `<p>${t.note}</p><p class="muted">Single use. Only lasts tonight's battle.</p>`);
       bar = `<button class="btn wax" data-act="trap" data-v="${dk}" ${dis(avail() < t.cost)}>Buy · ${t.cost}g</button>`; }
-    body = `<div class="ugrid shopg">${Object.entries(TRAPS).map(([k, t]) => tile("dsel", k, dk === k, trapImg(k), t.name, { price: t.cost })).join("")}${tile("dsel", "wall+", isW, `icons/ui/wall${ct}.png`, "Wall", { price: WALL_COST })}${S.walls.map((w, i) => tile("dsel", w.id, dk === w.id, `icons/ui/wall${ct}.png`, `Wall ${i + 1}`, { own: 1 })).join("")}</div>${det}${abar(bar)}`;
+    body = `<div class="ugrid shopg">${Object.entries(TRAPS).map(([k, t]) => tile("dsel", k, dk === k, trapImg(k), t.name, { price: t.cost })).join("")}${tile("dsel", "wall+", isW, `icons/ui/wall${ct}.webp`, "Wall", { price: WALL_COST })}${S.walls.map((w, i) => tile("dsel", w.id, dk === w.id, `icons/ui/wall${ct}.webp`, `Wall ${i + 1}`, { own: 1 })).join("")}</div>${det}${abar(bar)}`;
   }
   if (sheet.lobby) return head(null, "Coat of arms", "Shown on your castle and banner all war") + `<div class="body">${body}<div class="row"><button class="btn wax" data-act="lobbydone">Done</button></div></div>`;
   return head(null, sheet.grp === "army" ? "Army" : "Base", `Tier ${ct} ${tierName(ct)} · ${S.gold} gold in the treasury`) + `<div class="body">
-    <div class="tabs scrolltabs">${[["recruit", "Recruit"], ["upgrade", "Roster"], ["keep", "Castle"], ["traps", "Defences"], ["armoury", "Armoury"], ["shop", "Shop"]].filter(([k]) => (sheet.grp === "army" ? ["recruit", "upgrade"] : ["keep", "traps", "armoury", "shop"]).includes(k) || !sheet.grp).map(([k, l]) => `<button class="${tab === k ? "on" : ""}" data-act="ctab" data-v="${k}"><img class="tabi" alt="" src="icons/ui/${{ recruit: "recruit", upgrade: "roster", keep: "castle" + ct, traps: "defences", armoury: "armoury", shop: "shop" }[k]}.png">${l}</button>`).join("")}</div>${body}</div>`;
+    <div class="tabs scrolltabs">${[["recruit", "Recruit"], ["upgrade", "Roster"], ["keep", "Castle"], ["traps", "Defences"], ["armoury", "Armoury"], ["shop", "Shop"]].filter(([k]) => (sheet.grp === "army" ? ["recruit", "upgrade"] : ["keep", "traps", "armoury", "shop"]).includes(k) || !sheet.grp).map(([k, l]) => `<button class="${tab === k ? "on" : ""}" data-act="ctab" data-v="${k}"><img class="tabi" alt="" src="icons/ui/${{ recruit: "recruit", upgrade: "roster", keep: "castle" + ct, traps: "defences", armoury: "armoury", shop: "shop" }[k]}.webp">${l}</button>`).join("")}</div>${body}</div>`;
 }
 function wallSheet(id) {
   const w = findWall(id); if (!w) return head(null, "Wall", "") + `<div class="body"><p class="muted">That wall is gone.</p></div>`;

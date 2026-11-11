@@ -216,6 +216,19 @@ test("the host can replace the invite link; the old one stops working", async ()
   assert.equal(await write(P.mallory, `games/${gameId}/members/${await uidOf(P.mallory)}`, { invite: old, at: 3 }), "permission-denied");
 });
 
+test("the game is installable and opens with no connection", async () => {
+  const p = P.alice;
+  assert.equal(await p.evaluate(async () => (await (await fetch("manifest.webmanifest")).json()).display), "standalone");
+  await p.evaluate(() => navigator.serviceWorker.ready);
+  await p.reload(); await p.waitForFunction(() => navigator.serviceWorker.controller && typeof runBattle === "function", null, WAIT); // now served by the service worker
+  await p.context().setOffline(true);
+  await p.reload();
+  await p.waitForFunction(() => typeof runBattle === "function" && !document.getElementById("sheet").hidden, null, WAIT);
+  assert.match(await p.evaluate(() => document.getElementById("paper").innerText), /Play with friends/);
+  assert.ok(await p.evaluate(() => { A.testgo(); return !!S && typeof S.gold === "number"; }), "practice against bots works offline");
+  await p.context().setOffline(false);
+});
+
 test("no page hit a script error", () => {
   for (const [name, p] of Object.entries(P)) assert.deepEqual(p.errors, [], name);
 });
