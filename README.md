@@ -1,25 +1,55 @@
-# Daily Siege: code layout
+# Daily Siege
 
-Plain HTML, CSS and JavaScript. `index.html` holds only the markup and loads the stylesheets and
-scripts in order. The game itself still needs no build step; npm is only used for the dev server,
-the tests and the hosting build.
+A daily asynchronous siege game for a group of friends (2 to 12 lords). Everyone secretly sets
+orders for their hero and army; once a day the server fights one deterministic battle and every
+phone replays it. Plain HTML, CSS and JavaScript on Firebase, installable as a phone app.
 
-## Working on it
+- Play: https://daily-siege.firebaseapp.com
+- Hosting a war, recovery, rollback, costs: [`OPERATIONS.md`](OPERATIONS.md)
+- How it fits together: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+- Making a change: [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md), tests: [`docs/TESTING.md`](docs/TESTING.md)
+- Notes for AI coding sessions: [`CLAUDE.md`](CLAUDE.md)
+
+## Features
+
+- Practice mode against seven bots, playable offline with no account
+- Friends game: invite link, Google or email-link sign-in, secret orders, alliances and betrayals
+- Battles fought by the server at a set hour, replayed identically on every device
+- Installable app with offline start and push notifications (results, "orders lock soon")
+- Host tools: seats (2 to 12), battle time, remove a lord, move a castle to a new account
+
+## Quick start
+
+Needs Node 20 or newer. From a clean clone:
 
 ```bash
-npm install        # once
-npm run dev        # serve the game at http://localhost:5173 (reloads when a file changes)
-npm test           # headless battle sim + golden determinism tests
-npm run lint       # lints tooling and tests only (the game's classic scripts are exempt for now)
+npm ci             # also copies the Firebase browser SDK into js/vendor/
+npm run dev        # http://localhost:5173 - practice mode against bots; reloads when a file changes
+npm test           # headless battle sim + golden determinism tests (about 30 seconds)
+npm run lint       # lints tooling, tests and functions/ (the game's classic scripts are exempt for now)
 npm run build      # copy the game into dist/ ready for hosting
 ```
 
+The friends game (accounts, orders, server battles) runs locally against the Firebase emulators,
+which also need Java:
+
+```bash
+npm ci --prefix functions
+npm run test:rules     # security rules
+npm run emulators      # then open http://127.0.0.1:5000/?emulator=1
+```
+
+`index.html` holds only the markup and loads the stylesheets and scripts in order. The game itself
+needs no build step; npm is only used for the dev server, the tests and the hosting build.
+
+## Working on it
+
 - `tools/load-sim.mjs` runs the battle sim in Node by loading the same script files, in the same
-  order as `index.html`, into one shared scope. The server-side battle resolver will reuse it.
-- `test/golden/hashes.json` holds the result hashes of 50 fixed battles (`js/dev/goldenCases.js`).
+  order as `index.html`, into one shared scope. The server-side battle resolver uses the same loader (`functions/lib/game.js`).
+- `test/golden/hashes.json` holds the result hashes of 62 fixed battles (`js/dev/goldenCases.js`).
   `npm test` fails if any battle plays out differently. If a change is *meant* to alter battles
   (a balance tweak, a sim fix), run `npm run golden:update` and commit the new hashes with it.
-- `selftest.html` fights the same 50 battles in a browser and shows Pass/Fail plus a short code.
+- `selftest.html` fights the same 62 battles in a browser and shows Pass/Fail plus a short code.
   Open it on any phone: the same code on two devices means they fight identical battles.
   `node tools/selftest-browsers.mjs chromium firefox webkit` runs it in real browser engines (CI does this).
 - **Deterministic maths:** anything a battle or the map layout depends on must use `dsin`, `dcos`,
