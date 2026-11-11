@@ -72,6 +72,8 @@
         if (DS.emulator) { auth.useEmulator("http://" + location.hostname + ":9099", { disableWarnings: true }); fs.useEmulator(location.hostname, 8080); }
         await finishEmailLink();
         try { await auth.getRedirectResult(); } catch (e) { DS.error = signInError(e); }
+        // back from Google's sign-in page: carry on to the friends game, or show what went wrong
+        if (LS.get("ds.redirect")) { LS.set("ds.redirect", null); setTimeout(() => { try { if (auth.currentUser) A.playgo(); else open("game"); render(); } catch (e) {} }, 50); }
         await new Promise(ok => { let first = true; auth.onAuthStateChanged(u => { DS.user = u; if (first) { first = false; ok(); } else onAuthChange(); }); });
         DS.available = true; return true;
       } catch (e) { console.warn("Daily Siege: Firebase did not start", e); DS.available = false; DS.error = "The friends game could not be reached. Check your connection and reload."; return false; }
@@ -99,11 +101,20 @@
     catch (e) { DS.error = signInError(e); }
     try { history.replaceState(null, "", location.pathname + (DS.emulator ? "?emulator=1" : "")); } catch (e) {}
   }
+  // Some apps (Facebook, Instagram, Messenger...) open links in their own cut-down browser, where Google refuses to sign anyone in.
+  DS.inAppBrowser = () => /FBAN|FBAV|FB_IAB|Instagram|Line\/|MicroMessenger|; wv\)/i.test(navigator.userAgent);
+  const onPhone = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (typeof PWA !== "undefined" && (PWA.isIOS() || PWA.standalone()));
   DS.signInGoogle = async () => {
     DS.error = null; DS.busy = "google"; redraw();
     const p = new fb.auth.GoogleAuthProvider(); p.setCustomParameters({ prompt: "select_account" });
-    try { await auth.signInWithPopup(p); }
-    catch (e) { if (/popup-blocked|operation-not-supported|web-storage-unsupported/.test((e && e.code) || "")) { try { await auth.signInWithRedirect(p); return; } catch (e2) { DS.error = signInError(e2); } } else DS.error = signInError(e); }
+    // Phones block or lose pop-up windows, often without saying so, which left this button waiting forever.
+    // So on a phone go to Google's page and come back; on a computer use the pop-up, falling back to the same.
+    const away = async () => { LS.set("ds.redirect", "1"); await auth.signInWithRedirect(p); };
+    try {
+      if (onPhone()) { await away(); return; }
+      const giveUp = setTimeout(() => { if (DS.busy === "google") { DS.busy = null; DS.error = "The Google window didn't open. Tap the button again, or use an emailed link."; redraw(); } }, 60000);
+      try { await auth.signInWithPopup(p); } finally { clearTimeout(giveUp); }
+    } catch (e) { if (/popup-blocked|operation-not-supported|web-storage-unsupported/.test((e && e.code) || "")) { try { await away(); return; } catch (e2) { DS.error = signInError(e2); } } else DS.error = signInError(e); }
     DS.busy = null; redraw();
   };
   DS.signInEmail = async email => {
