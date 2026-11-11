@@ -51,6 +51,10 @@ npm run build      # copy the game into dist/ ready for hosting
   are off until the project's public Web Push key is put in `js/config/site.js`.
 - **Assets.** Images are lossless WebP. Music is a real file in `audio/`, listed in `js/audio/tracks.js` and fetched
   the first time it plays.
+- **Deploys.** Merging to `main` deploys the game, the security rules and the server functions
+  (`.github/workflows/deploy.yml`), after the tests pass. Each pull request gets a temporary preview address
+  (`preview.yml`); the friends game is switched off on previews so they can never touch the real war.
+  `OPERATIONS.md` is the host's guide: starting a war, recovering a player, rolling back, checking costs.
 - CI (`.github/workflows/ci.yml`) runs lint, the tests and the build on every pull request.
 - The hosting plan and its phases are in `daily-siege-hosting-plan.md`.
 

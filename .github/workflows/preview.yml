@@ -1,0 +1,49 @@
+name: Preview
+
+# Every pull request gets its own temporary web address showing the change, posted as a comment.
+# A preview is for looking at the game and playing against bots: the friends game is switched off
+# there, so trying something out can never touch the real war.
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+env:
+  SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DAILY_SIEGE || secrets.FIREBASE_SERVICE_ACCOUNT || secrets.GCP_SA_KEY }}
+
+jobs:
+  preview:
+    # pull requests from forks cannot read the deploy key, so they get no preview
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check the deploy key is present
+        id: key
+        run: |
+          if [ -z "$SERVICE_ACCOUNT" ]; then
+            echo "::warning::No Firebase service-account secret found, so no preview was made. Add it as FIREBASE_SERVICE_ACCOUNT_DAILY_SIEGE."
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.key.outputs.present == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.key.outputs.present == 'true'
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+        if: steps.key.outputs.present == 'true'
+      - run: npm run build
+        if: steps.key.outputs.present == 'true'
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        if: steps.key.outputs.present == 'true'
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ env.SERVICE_ACCOUNT }}
+          projectId: daily-siege
+          expires: 7d

@@ -45,6 +45,9 @@
     if (local && /[?&]emulator=1/.test(location.search)) LS.set("ds.emulator", "1");
     if (local && /[?&]emulator=0/.test(location.search)) LS.set("ds.emulator", null);
     if (local && LS.get("ds.emulator") === "1") { DS.emulator = true; return DEMO; } // local testing against the Firebase emulators
+    // A preview copy (a temporary address made for a pull request) is for looking and practising only:
+    // it must never reach the real game's data.
+    if (/--[a-z0-9-]+\.web\.app$/.test(location.hostname)) { DS.error = "This is a preview copy of the game. The friends game is switched off here; play against bots to try things out."; return null; }
     if (window.DS_FIREBASE_CONFIG) return window.DS_FIREBASE_CONFIG;
     try { const r = await fetch("/__/firebase/init.json", { cache: "no-store" }); if (r.ok) { const c = await r.json(); if (c && c.projectId && c.apiKey) return c; } } catch (e) {} // provided by Firebase Hosting
     return null;
