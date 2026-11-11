@@ -9,7 +9,7 @@
 // Not modelled: alliances, mercenary bids, scripted if-then rules. Lords are simple, so read the trend, not the decimals.
 import { loadSim } from "./load-sim.mjs";
 
-const sim = loadSim(), V2 = !process.env.BAL_OLD, DOCTRINE = process.env.DOCTRINE || "none"; // none | raider | mixed: how armies pick targets by group
+const sim = loadSim(), V2 = !process.env.BAL_OLD, DOCTRINE = process.env.DOCTRINE || "none"; // none | raider | march | marchhero | mixed: how armies pick targets by group
 const wars = +process.argv[2] || 12, nLords = +process.argv[3] || 10;
 const STYLES = ["soldiers", "siege", "hero", "balanced"];
 // what each style buys, in order; every step is bought when affordable and the list restarts each day
@@ -54,7 +54,7 @@ sim.run(`globalThis.__lab = (function () {
           const rot = l.seedR % PRIORITIES.length, others = lords.filter(o => o !== l).map(o => o.pid), targets = others.filter(() => rnd() < .5);
           return { pid: l.pid, me: i === 0, name: "Lord " + (i + 1), color: SEAT_COLORS[i % SEAT_COLORS.length], cls: l.cls, level, xp0: 0, castle: l.castle, castleTier: l.tier, ranks: autoRanks(level, l.seedR), picks,
             triggers: { a1: pick(TRIGGERS.slice(0, 2)), a2: pick(TRIGGERS.slice(0, 3)), a3: pick(TRIGGERS.slice(0, 3)), ult: pick(TRIGGERS.slice(0, 2)) }, ultArm: true, blessing: null, gear: { ...l.gear }, defences: { ...l.defences }, items: l.items.slice(),
-            formation: true, stance: l.stance, prio: PRIORITY_OPTS.slice(rot).concat(PRIORITY_OPTS.slice(0, rot)).slice(0, 5), rules: [], pieces, targets, tmode: l.tmode, heading: l.heading, rank: 1, leader: false, offers: {}, replies: {}, terms: {}, bids: {}, gprio: doctrine === "raider" ? DOC.raider : doctrine === "mixed" ? DOC[l.doc] : null, breaks: [], pbetray: {}, pacts: [], hostile: [], betray: {} };
+            formation: true, stance: l.stance, prio: PRIORITY_OPTS.slice(rot).concat(PRIORITY_OPTS.slice(0, rot)).slice(0, 5), rules: [], pieces, targets, tmode: l.tmode, heading: l.heading, rank: 1, leader: false, offers: {}, replies: {}, terms: {}, bids: {}, gprio: doctrine === "raider" ? DOC.raider : doctrine === "march" ? { hero: ["castle"], melee: ["castle"], ranged: ["castle"] } : doctrine === "marchhero" ? { hero: ["hero", "castle"], melee: ["castle"], ranged: ["castle"] } : doctrine === "mixed" ? DOC[l.doc] : null, breaks: [], pbetray: {}, pacts: [], hostile: [], betray: {} };
         });
         const order = lords.slice().sort((a, b) => b.pts - a.pts), ranks = {}; order.forEach((l, i) => { ranks[l.pid] = i + 1; });
         const res = runBattle(plans, 7919 * day + seed, { fast: true, N: L.N, finalDay: day === 7, ultV2: true, balV2: V2, dayNo: day, ranks: day > 1 ? ranks : undefined });

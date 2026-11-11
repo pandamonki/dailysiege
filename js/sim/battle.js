@@ -23,7 +23,7 @@ function runBattle(plans, seed, opts = {}) {
   const P = {}, order = plans.map(p => p.pid), idx = Object.fromEntries(order.map((p, i) => [p, i]));
   const d = (a, b) => hyp(a.x - b.x, a.y - b.y);
   const fxv = (e, k) => (e.fx[k] && e.fx[k].until > t ? e.fx[k].val : 0);
-  const setFx = (e, k, dur, val = 1) => { if ((e.cart || e.ram) && (k === "slow" || k === "frozen")) return; /* siege engines can't be slowed */ if (P[e.pid] && P[e.pid].frenzy && e.kind !== "castle" && (k === "stun" || k === "root" || k === "slow" || k === "frozen" || k === "silence" || k === "fear")) return; if (e.will && (k === "stun" || k === "root")) dur *= .4; if (!e.fx[k] || e.fx[k].until < t + dur || e.fx[k].val < val) e.fx[k] = { until: t + dur, val }; };
+  const setFx = (e, k, dur, val = 1) => { if ((e.cart || e.ram) && (k === "slow" || k === "frozen" || (BV && (k === "stun" || k === "root")))) return; /* siege engines can't be slowed, and from 12 Nov 2026 can't be stunned or rooted either */ if (P[e.pid] && P[e.pid].frenzy && e.kind !== "castle" && (k === "stun" || k === "root" || k === "slow" || k === "frozen" || k === "silence" || k === "fear")) return; if (e.will && (k === "stun" || k === "root")) dur *= .4; if (!e.fx[k] || e.fx[k].until < t + dur || e.fx[k].val < val) e.fx[k] = { until: t + dur, val }; };
   const allied = (a, b) => a === b || P[a].pacts.has(b);
   const hostile = (a, b) => !allied(a, b);
   const ev = o => { if (fast) return; o.t = t; events.push(o); };
@@ -385,6 +385,9 @@ function runBattle(plans, seed, opts = {}) {
     if (e.hunter) { const hs = ents.filter(x => !x.dead && x.kind === "champ" && hostile(e.pid, x.pid) && !fxv(x, "vanish")); if (hs.length) return minBy(hs, x => d(x, e)); }
     const p = P[e.pid], guard = e.order === "guard", escort = e.order === "escort" && live(p.champ);
     if (!e.cart && !e.ram && ((UNIT_TYPES[e.key] || [])[0] !== "siege" || e.order === "guard")) { const carts = ents.filter(o => o.cart && !o.dead && hostile(e.pid, o.pid) && ents.some(c => c.kind === "castle" && !c.dead && !hostile(e.pid, c.pid) && d(c, o) <= 4) && d(o, e) <= 9); if (carts.length) return minBy(carts, o => d(o, e)); } // a powder cart within 4 tiles of a friendly castle: stop it
+    // raiders (from 12 Nov 2026) make for a castle: struck by a melee fighter they turn and fight it, struck from range they keep going
+    if (BV && e.key === "raider" && !guard && !escort) { const ag = e.aggro; if (ag && ag.until > t && live(ag.src) && hostile(e.pid, ag.src.pid) && !fxv(ag.src, "vanish") && (ag.src.range || 1.1) <= 1.5 && d(ag.src, e) <= 6) return ag.src;
+      const g = goalPid(e), c = g && ents.find(o => !o.dead && o.kind === "castle" && o.pid === g); if (c) return c; }
     // aggression: answer whoever just struck you or a friend nearby
     if (e.aggro && e.aggro.until > t && live(e.aggro.src) && hostile(e.pid, e.aggro.src.pid) && !fxv(e.aggro.src, "vanish") && d(e.aggro.src, e) <= 6 && (!guard || d(e.aggro.src, p.castle) <= 8)) return e.aggro.src;
     // pursuit: stay on a target that is fleeing or badly hurt, unless it has escaped far away
