@@ -110,7 +110,7 @@ test("pacts last until a betrayal or a break ends them, even when a castle fell"
 });
 
 test("a pact group holds at most three lords", () => {
-  const W = world(ids), p = id => W.players[id].plans[D1], day = addDays(D1, -1), inv = (x, y) => ({ gold: 0, day });
+  const W = world(ids), p = id => W.players[id].plans[D1], day = addDays(D1, -1), inv = () => ({ gold: 0, day });
   p("a").offers = { b: inv(), c: inv(), d: inv() }; p("b").offers = { a: inv(), c: inv(), d: inv() }; p("c").offers = { a: inv(), b: inv(), d: inv() }; p("d").offers = { a: inv(), b: inv(), c: inv() };
   const { pairs } = buildBattleInputs(W, D1);
   const grp = new Set(); pairs.forEach(([x, y]) => { grp.add(x); grp.add(y); });
