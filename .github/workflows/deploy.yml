@@ -2,9 +2,11 @@ name: Deploy
 
 # Every push to main goes live: the game (Hosting), the security rules and the server functions.
 # It runs the same tests as CI first and deploys only if they pass.
+# A push that changes only Markdown files (notes and docs, none of which are served) does not deploy.
 on:
   push:
     branches: [main]
+    paths-ignore: ["**.md"]
   workflow_dispatch: # also runnable by hand from the Actions tab
 
 permissions:
