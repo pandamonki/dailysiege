@@ -24,3 +24,21 @@
 .summon { display: grid; gap: 6px; padding: 12px 14px; border-radius: 10px; border: 2px solid var(--gold); background: rgba(201,150,47,.12); } .summon p { margin: 0; } .summon .when { font-size: 14px; color: var(--ink-soft); }
 .lcard.emptyseat { grid-template-columns: 1fr; border-style: dashed; background: transparent; opacity: .7; min-height: 52px; }
 .lbox.need { box-shadow: 0 0 0 3px var(--gold), 0 6px 18px rgba(0,0,0,.4); }
+
+/* combat groups: one collapsed row each, tap to open its priority slots */
+.grp { display: grid; border: 2px solid var(--wood-dark); border-radius: 8px; background: rgba(255,250,230,.35); }
+.grp .gsum { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 24px minmax(0, 1fr) auto 16px; align-items: center; gap: 10px; padding: 10px 12px; cursor: pointer; }
+.grp .gsum:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.grp .ico { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--wood-dark); color: var(--parchment); font-size: 13px; }
+.grp .gn { display: grid; line-height: 1.15; }
+.grp .gn b { font-family: var(--f-display); font-weight: 400; font-size: 18px; color: var(--ink); }
+.grp .gn small { font-size: 12px; color: var(--ink-soft); font-style: italic; }
+.grp .cur { font-size: 13px; color: var(--wax); text-align: right; max-width: 150px; line-height: 1.2; }
+.grp .chev { color: var(--ink-soft); transition: transform .15s; }
+.grp.open .chev { transform: rotate(180deg); }
+.grp .gbody { padding: 0 12px 10px; border-top: 1px solid rgba(62,39,20,.25); }
+.grp.fixed { padding: 10px 12px; background: rgba(60,40,20,.12); border-style: dashed; }
+.grp.fixed .fx { display: flex; align-items: center; gap: 10px; }
+.grp.fixed p { margin: 4px 0 0; }
+.reach { display: flex; align-items: center; gap: 10px; }
+.reach .stepper { display: inline-flex; align-items: center; gap: 8px; flex: none; }

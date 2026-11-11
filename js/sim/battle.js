@@ -368,18 +368,30 @@ function runBattle(plans, seed, opts = {}) {
     // nobody left on the hostile list: the army still has to fight, so it marches on the nearest non-allied castle
     return minBy(order.filter(ok), q => d(P[q].castle, p.castle));
   }
-  // Targeting priorities by kind of fighter (from 12 Nov 2026, set per plan in gprio = { hero, melee, ranged }; siege weapons always go for castles).
-  // A list is walked in order: "melee", "ranged", "siege" and "hero" pick the nearest such enemy within reach; "castle" marches on the castle of the lord the army is headed for.
-  const grpOf = e => e.kind === "champ" ? "hero" : (e.cart || e.ram) ? "siege" : (e.range || 1.1) > 1.5 ? "ranged" : "melee";
-  const catOf = o => o.kind === "champ" ? "hero" : o.kind !== "unit" ? null : (o.cart || o.ram) ? "siege" : (o.range || 1.1) > 1.5 ? "ranged" : "melee";
+  // Targeting priorities by kind of fighter (from 12 Nov 2026; the plan's gprio = { hero, melee, ranged, heal }, and engage = reach in tiles).
+  // Each list is walked in order and picks the first kind with an enemy within reach: "hero", "melee", "ranged", "healer", "siege" (nearest of that kind),
+  // "any" (nearest soldier), "lowhp" (the weakest soldier or hero in reach). "castle" marches on the castle of the lord the army is headed for (used by tests).
+  const soldier = o => o.kind === "unit" || o.kind === "summon";
+  const catOf = o => o.kind === "champ" ? "hero" : !soldier(o) ? null : o.healer ? "healer" : (o.cart || o.ram) ? "siege" : (o.range || 1.1) > 1.5 ? "ranged" : "melee";
+  const grpOf = e => e.kind === "champ" ? "hero" : (e.range || 1.1) > 1.5 ? "ranged" : "melee"; // a cleric's own attacks follow the ranged list
   function groupPick(e) {
     const list = P[e.pid].gprio[grpOf(e)]; if (!list) return null;
     for (const cat of list) {
       if (cat === "castle") { const g = goalPid(e), c = g && ents.find(o => !o.dead && o.kind === "castle" && o.pid === g); if (c) return c; continue; }
-      const pool = ents.filter(o => !o.dead && hostile(e.pid, o.pid) && fighting(o.pid) && !fxv(o, "vanish") && catOf(o) === cat && d(o, e) <= (P[e.pid].engage || ENGAGE));
-      if (pool.length) return minBy(pool, o => d(o, e));
+      const reach = P[e.pid].engage || ENGAGE, pool = ents.filter(o => !o.dead && hostile(e.pid, o.pid) && fighting(o.pid) && !fxv(o, "vanish") && d(o, e) <= reach && (cat === "any" ? soldier(o) : cat === "lowhp" ? (soldier(o) || o.kind === "champ") : catOf(o) === cat));
+      if (pool.length) return minBy(pool, cat === "lowhp" ? (o => o.hp / o.maxhp + d(o, e) * .03) : (o => d(o, e)));
     }
     return null;
+  }
+  // who a cleric heals: the lord's heal list, then whoever is most wounded
+  function healPick(e, hurt) {
+    const gl = BV && P[e.pid].gprio && P[e.pid].gprio.heal, kind = o => { const c = catOf(o); return c === "healer" ? "ranged" : c; };
+    for (const cat of gl || []) {
+      const pool = cat === "any" || cat === "lowhp" || cat === "wounded" ? hurt : hurt.filter(o => cat === "hero" ? o.kind === "champ" : kind(o) === cat);
+      if (!pool.length) continue;
+      return minBy(pool, cat === "lowhp" ? (o => o.hp) : cat === "any" ? (o => d(o, e)) : (o => o.hp / o.maxhp));
+    }
+    return minBy(hurt, o => o.hp / o.maxhp);
   }
   function pickTarget(e) {
     if (e.hunter) { const hs = ents.filter(x => !x.dead && x.kind === "champ" && hostile(e.pid, x.pid) && !fxv(x, "vanish")); if (hs.length) return minBy(hs, x => d(x, e)); }
@@ -656,7 +668,7 @@ function runBattle(plans, seed, opts = {}) {
     }
     // healer support
     if (e.healer) {
-      const hurt = minBy(friendsNear(e.pid, e.x, e.y, 5).filter(o => o !== e && o.hp / o.maxhp < .95 && o.kind !== "totem"), o => o.hp / o.maxhp);
+      const hurtList = friendsNear(e.pid, e.x, e.y, 5).filter(o => o !== e && o.hp / o.maxhp < .95 && o.kind !== "totem"), hurt = hurtList.length ? healPick(e, hurtList) : null;
       if (hurt) {
         if (d(e, hurt) > e.range) moveToward(e, hurt.x, hurt.y, e.range * .9);
         else { e.atkT -= DT * (1 + fxv(e, "asbuf")); if (e.atkT <= 0) { shot(e, hurt, e.shot, 1, "heal"); heal(hurt, e.healer, false, e); e.atkT = e.as; } }

@@ -121,6 +121,8 @@ const A = {
   stance: v => { S.stance = v; },
   formation: () => { S.formation = S.formation === false; },
   heading: v => { S.strategy.heading = v; },
+  gtoggle: (_, k) => { sheet.gopen = sheet.gopen === k ? null : k; },
+  engage: v => { if (!S.locked) S.engage = cleanEngage(S.engage + +v); },
   heropick: () => { showHeroPick(null); },
   invite: (_, k) => { ensureDip(); if (S.offers[k]) return; if (carriedPartners().includes(k)) { toast("You are already allied."); return; }
     if (Object.keys(S.offers).length >= MAX_INVITES) { toast("Only 2 invitations can be open at once."); return; }
@@ -182,6 +184,7 @@ document.addEventListener("change", e => {
   if (act === "tmode") S.terms[k].mode = s.value;
   if (act === "tmodeset") S.strategy.mode = s.value;
   if (act === "prioset") S.prio[+v] = s.value;
+  if (act === "gprioset" && !S.locked) { const l = S.gprio[k].slice(); l[+v] = s.value; S.gprio[k] = cleanGprio({ ...S.gprio, [k]: l.filter(Boolean) })[k]; }
   if (act === "pactset") { ensureDip(); S.pactAct[k] = s.value; if (s.value === "betray") S.pactWhen[k] = S.pactWhen[k] || BETRAY_WHEN[0]; }
   if (act === "tmin") S.terms[k].min = +s.value;
   render();
