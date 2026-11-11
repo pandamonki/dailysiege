@@ -33,7 +33,8 @@ self.addEventListener("fetch", e => {
 // ----- notifications -----
 // The server sends a small data message; this turns it into a notification. Tapping it opens (or returns to) the game.
 self.addEventListener("push", e => {
-  let d = {}; try { const j = e.data ? e.data.json() : {}; d = j.data || j.notification || j; } catch (err) {}
+  const read = () => { try { const j = e.data ? e.data.json() : {}; return j.data || j.notification || j; } catch { return {}; } }; // an unreadable message still shows a plain notification
+  const d = read();
   e.waitUntil(self.registration.showNotification(d.title || "Daily Siege", { body: d.body || "", icon: "/app/icon-192.png", badge: "/app/icon-192.png", tag: d.tag || "daily-siege", data: { link: d.link || "/" } }));
 });
 self.addEventListener("notificationclick", e => {

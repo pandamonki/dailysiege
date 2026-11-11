@@ -10,6 +10,8 @@ export default [
   { files: ["functions/**/*.js"], languageOptions: { sourceType: "commonjs", globals: globals.node } },
   // the end-to-end test passes small functions into the game's page, where the game's own globals exist
   { files: ["emulator-tests/e2e.spec.mjs", "emulator-tests/war.spec.mjs"], rules: { "no-undef": "off" } },
+  // the service worker runs in the browser; __FILES__ is filled in by the build
+  { files: ["sw.src.js"], languageOptions: { sourceType: "script", globals: { ...globals.serviceworker, __FILES__: "readonly" } } },
   // this one passes small functions into a browser page, where window and document exist
   { files: ["tools/selftest-browsers.mjs"], languageOptions: { globals: { ...globals.node, window: "readonly", document: "readonly", runBattle: "readonly" } } },
 ];
