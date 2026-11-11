@@ -2,8 +2,15 @@
 
 // Ultimate rebalance (smaller AoE at low rank, -25% damage): applies to battles fought on or after this day. Earlier saved battles replay with the old numbers.
 const ULT_V2_FROM = "2026-11-10", ultV2For = d => String(d) >= ULT_V2_FROM;
+// Fairer endings and longer alliances (battles fought on or after this day; earlier saved battles replay as fought):
+//   - castles that fall on the same tick are ranked by siege damage, then hero kills, never by seat order
+//   - pacts last until someone ends them, a pact group holds at most BLOC_MAX lords, and a betrayer who sets off the bomb is paid for it
+//   - the last days of the week score more (DAY_WEIGHT), and orders drafted but not sealed are fought at the lock
+const BAL_V2_FROM = "2026-11-12", balV2For = d => String(d) >= BAL_V2_FROM;
+const BLOC_MAX = 3, TREACHERY_PTS = 3, TREACHERY_LOOT = .25, DAY_WEIGHT = { 5: 1.5, 6: 1.5, 7: 2 };
+const dayWeight = (v2, dayNo) => (v2 && DAY_WEIGHT[dayNo]) || 1;
 function runBattle(plans, seed, opts = {}) {
-  const UV = !!opts.ultV2, UD = UV ? .75 : 1, UR = rk => UV ? [.7, .85, 1][Math.min(3, Math.max(1, rk || 1)) - 1] : 1;
+  const BV = !!opts.balV2, UV = !!opts.ultV2, UD = UV ? .75 : 1, UR = rk => UV ? [.7, .85, 1][Math.min(3, Math.max(1, rk || 1)) - 1] : 1;
   const rng = mulberry(seed), DT = .1, fast = !!opts.fast, leaderPid = (plans.find(p => p.leader) || {}).pid;
   let curAb = null;
   const mePid = (plans.find(p => p.me) || plans[0]).pid, NN = opts.N || N;
@@ -54,6 +61,7 @@ function runBattle(plans, seed, opts = {}) {
   });
   plans.forEach(pl => pl.pacts.forEach(o => { if (P[o]) { P[pl.pid].pacts.add(o); P[o].pacts.add(pl.pid); } }));
   (plans.feuds || []).forEach(k => { const [a, b] = k.split("|"); if (P[a] && P[b]) { P[a].feud.add(b); P[b].feud.add(a); P[a].hostileTo.add(b); P[b].hostileTo.add(a); P[a].pacts.delete(b); P[b].pacts.delete(a); } }); // betrayers and their victims stay rivals for the rest of the war
+  const pact0 = []; order.forEach(a => order.forEach(b => { if (a < b && P[a].pacts.has(b)) pact0.push(a + "|" + b); })); // the pacts the day starts with, after bad blood has dissolved any between feuding lords
   plans.forEach(pl => {
     const p = P[pl.pid], [cr, cc] = pl.castle, def = pl.defences || {};
     p.castle = add({ pid: pl.pid, kind: "castle", x: cc + .5, y: cr + .5, maxhp: BAL.castleHp * (1 + .25 * (def.walls || 0)) * CASTLE_TIERS[Math.max(0, Math.min(2, (pl.castleTier || 1) - 1))].hp, atk: 20 * [1, 1.5, 2][def.tower || 0], range: (def.tower || 0) >= 2 ? 3.6 : 3, as: 1.5, spd: 0, armor: .25, shot: "#e8e2d0" });
@@ -233,6 +241,7 @@ function runBattle(plans, seed, opts = {}) {
       const label = o.ab || curAb || (src.kind === "summon" ? "Spirit Wolves" : src.kind === "castle" ? "Tower" : "Auto attack");
       credit.tel.dealt += eff; abRec(credit, label).dmg += eff;
       if (!fast && tgt.kind !== "castle" && P[credit.pid]) { const B = P[credit.pid].burst || (P[credit.pid].burst = {}), k = Math.floor(t * 2); B[k] = B[k] || [0, tgt.x, tgt.y]; B[k][0] += eff; B[k][1] = tgt.x; B[k][2] = tgt.y; }
+      if (tgt.kind === "castle" && P[credit.pid] && credit.pid !== tgt.pid) P[credit.pid].castleDmg = (P[credit.pid].castleDmg || 0) + eff;
       if (tgt.kind === "champ") credit.tel.toChamp += eff; else if (tgt.kind === "castle") credit.tel.toCastle += eff; else credit.tel.toUnit += eff;
     } else if (o.trapPid) P[o.trapPid].trapDmg = (P[o.trapPid].trapDmg || 0) + eff;
     const tp = P[tgt.pid]; tp.hitT = t;
@@ -298,13 +307,14 @@ function runBattle(plans, seed, opts = {}) {
     aoe(p.castle.x, p.castle.y - .3, 1.6, "#ff9a3c", 1.2);
   }
   const feudsNew = new Set();
+  const treachery = []; // bombs that went off: [betrayer, victim]
   function betray(pid, target, quiet) {
     if (!P[pid].pacts.has(target)) return;
     { const kc = P[target].castle; if (!P[target].alive || !kc || kc.hp <= 0) return; } // keep already destroyed: nothing to betray
     P[pid].pacts.delete(target); P[target].pacts.delete(pid);
     P[target].revenge.add(pid); P[target].hostileTo.add(pid); P[pid].feud.add(target); P[target].feud.add(pid); P[pid].hostileTo.add(target); feudsNew.add([pid, target].sort().join("|"));
     { const c = P[target].castle; if (c && P[target].alive && c.hp > 0) { const FUSE = 1.8; ev({ ty: "fuse", pid: target, x: c.x, y: c.y, dur: FUSE }); log(`Betrayal! ${nm(pid)} planted a bomb in ${lposs(target)} keep. It's about to blow!`, "big");
-      pending.push({ at: +(t + FUSE).toFixed(2), ab: null, fn: () => { if (!P[target].alive || c.hp <= 0) return; c.lastBy = pid; aoe(c.x, c.y - .3, 2.6, "#ffb347", 1.4); deal(null, c, c.maxhp * .5, { aoe: 1, big: 1, atype: "pure" }); log(`The bomb goes off! ${nm(pid)} blew up ${lposs(target)} keep.`, "big"); } }); } }
+      pending.push({ at: +(t + FUSE).toFixed(2), ab: null, fn: () => { if (!P[target].alive || c.hp <= 0) return; c.lastBy = pid; aoe(c.x, c.y - .3, 2.6, "#ffb347", 1.4); deal(null, c, c.maxhp * .5, { aoe: 1, big: 1, atype: "pure" }); log(`The bomb goes off! ${nm(pid)} blew up ${lposs(target)} keep.`, "big"); if (BV) treachery.push([pid, target]); } }); } }
     if (!quiet) {  const c = champOf(pid), at = c && !c.dead ? c : P[target].castle; H({ kind: "betray", pid, other: target, x: P[target].castle.x, y: P[target].castle.y, score: 96 }); }
     log(`${poss(target)} army swears revenge on ${obj(pid)} and hunts their hero.`);
     ents.forEach(e => { if (!e.dead && (e.pid === pid || e.pid === target)) e.rt = 0; });
@@ -723,8 +733,8 @@ function runBattle(plans, seed, opts = {}) {
       const grp = ents.filter(x => !x.dead && x.pid === pid && x.kind === "unit" && !x.cart && !x.ram && !x.merc && !x.militia && (x.order || "army") === "army");
       if (!grp.length) { p.hold = false; return; }
       const foes = ents.filter(x => !x.dead && x.pid !== pid && hostile(pid, x.pid) && x.kind !== "totem");
-      if (t > 75 || grp.some(x => x.hp < x.maxhp * .999 || foes.some(f => hyp(f.x - x.x, f.y - x.y) <= (f.kind === "castle" ? 3.2 : 4.6)))) { p.released = true; p.hold = false; globalThis.__rel = (globalThis.__rel||[]).concat([[pid, t]]); return; }
-      p.hold = true; p.slow = Math.min(...grp.map(x => x.spd)); globalThis.__fd = (globalThis.__fd || 0) + 1;
+      if (t > 75 || grp.some(x => x.hp < x.maxhp * .999 || foes.some(f => hyp(f.x - x.x, f.y - x.y) <= (f.kind === "castle" ? 3.2 : 4.6)))) { p.released = true; p.hold = false; return; }
+      p.hold = true; p.slow = Math.min(...grp.map(x => x.spd));
     });
     ents.forEach(e => {
       if (e.dead) {
@@ -785,6 +795,11 @@ function runBattle(plans, seed, opts = {}) {
   const alive = alivePlayers().sort((a, b) => P[b].castle.hp / P[b].castle.maxhp - P[a].castle.hp / P[a].castle.maxhp);
   if (t >= TMAX && alive.length > 1) log("Night falls. The strongest castle claims the banner.", "big");
   alive.forEach((pid, i) => { P[pid].place = i + 1; });
+  if (BV) { // castles that fell on the same tick share the places they took between them: the one that dealt more siege damage, then killed more heroes, ranks higher; a seeded draw settles the rest (never seat order)
+    const fell = {}; order.filter(pid => !P[pid].alive).forEach(pid => { (fell[P[pid].elimT] = fell[P[pid].elimT] || []).push(pid); });
+    Object.values(fell).filter(g => g.length > 1).forEach(g => { const places = g.map(pid => P[pid].place).sort((a, b) => a - b);
+      g.slice().sort((a, b) => ((P[b].castleDmg || 0) - (P[a].castleDmg || 0)) || (P[b].kills - P[a].kills) || (hash(seed, botSeed(a)) - hash(seed, botSeed(b))) || (a < b ? -1 : 1)).forEach((pid, i) => { P[pid].place = places[i]; }); });
+  }
   // if the last castles fell on the same tick, the last one to fall takes first place
   const champion = alive[0] || order.find(pid => P[pid].place === 1) || order.slice().sort((x, y) => (P[y].elimT ?? 0) - (P[x].elimT ?? 0))[0];
   if (P[champion].place !== 1) P[champion].place = 1;
@@ -802,9 +817,11 @@ function runBattle(plans, seed, opts = {}) {
   }
   for (let i = 0; i < 10; i++) { t = +(t + FRAME_DT).toFixed(2); record(); }
   ents.filter(e => e.kind === "champ" && e.gains < MIN_GAIN && e.heroLvl < MAX_HERO_LVL).forEach(e => { while (e.gains < MIN_GAIN && e.heroLvl < MAX_HERO_LVL) levelUp(e); }); // every hero earns at least two levels a day
+  const treach = {}; treachery.forEach(([by, vic]) => { treach[by] = (treach[by] || 0) + 1; const take = Math.round(P[vic].gold * TREACHERY_LOOT); P[by].gold += take; P[vic].gold -= take; }); // the betrayer keeps a share of the victim's spoils for the day
+  const W8 = dayWeight(BV, opts.dayNo);
   const PTS = [10, 7, 5, 4, 3, 2, 1, 0]; // placement points; from 8th place down a lord scores only for kills and castles
   const results = order.map(pid => ({ pid, name: nm(pid), color: P[pid].color, cls: P[pid].cls, place: P[pid].place, kills: P[pid].kills, ukills: P[pid].ukills, castles: P[pid].castles,
-    points: (PTS[P[pid].place - 1] || 0) + P[pid].kills + 2 * P[pid].castles, fellAt: P[pid].elimT, gold: Math.round(P[pid].gold) })).sort((a, b) => a.place - b.place);
+    points: Math.round(((PTS[P[pid].place - 1] || 0) + P[pid].kills + 2 * P[pid].castles) * W8) + (treach[pid] || 0) * TREACHERY_PTS, ...(treach[pid] ? { treachery: treach[pid] } : {}), fellAt: P[pid].elimT, gold: Math.round(P[pid].gold) })).sort((a, b) => a.place - b.place);
   const invest = (type, lvl) => { const c = UNITS[type].cost; let g = c; for (let l = 1; l < lvl; l++) g += Math.round(c * .5 * l); return g; };
   const tel = { duration: Math.min(t, TMAX),
     players: order.map(pid => ({ pid, name: nm(pid), cls: P[pid].cls, level: P[pid].level || 1, place: P[pid].place, points: results.find(r => r.pid === pid).points, elimT: P[pid].elimT, trapDmg: Math.round(P[pid].trapDmg || 0) })),
@@ -815,7 +832,8 @@ function runBattle(plans, seed, opts = {}) {
     return { mvp: { pid: mv, pts: results.find(r => r.pid === mv).points }, kills: { pid: mk, n: per[mk].k }, kd: { pid: kd, v: +(per[kd].k / Math.max(1, per[kd].d)).toFixed(1) }, spoils: { pid: sp, g: Math.round(P[sp].gold) } }; })();
   // hero progress for the week: levels gained today (capped), and the experience carried into tomorrow
   const lvlOut = {}; ents.filter(e => e.kind === "champ").forEach(e => { lvlOut[e.pid] = { from: e.lvl0, gain: e.gains, xp: Math.max(0, Math.min(Math.round(e.xp), xpNeed(e.heroLvl) - 1)) }; });
-  const pairsEnd = []; order.forEach(a => order.forEach(b => { if (a < b && P[a].alive && P[b].alive && P[a].pacts.has(b)) pairsEnd.push(a + "|" + b); }));
+  const pairsEnd = BV ? (finalDay ? [] : pact0.filter(k => !feudsNew.has(k))) // pacts last until a betrayal or a break ends them, even if a castle fell
+    : []; if (!BV) order.forEach(a => order.forEach(b => { if (a < b && P[a].alive && P[b].alive && P[a].pacts.has(b)) pairsEnd.push(a + "|" + b); }));
   const trapsUsed = traps.filter(tr => tr.used).map(tr => tr.pid + "|" + Math.round(tr.y - .5) + "," + Math.round(tr.x - .5));
   return { me: mePid, feudsNew: [...feudsNew], trapsUsed, awards, ultCast: order.filter(pid => P[pid].ultCast), lvl: lvlOut, rapierEnd: rapierOwner ? rapierHolder : null, rapier: rapierOwner && rapierHolder && rapierHolder !== rapierOwner ? { from: rapierOwner, to: rapierHolder } : null, pairsEnd, team: teamWin, wallMeta: walls.map(w => ({ pid: w.pid, x: w.x0, y: w.y0, dir: w.dir, maxhp: w.maxhp, tier: w.tier })), tel, frames, events, logs, hl, ranks: RANKS, meta: meta(), results, order, colors: Object.fromEntries(order.map(p => [p, P[p].color])), traps, duration: t };
 }

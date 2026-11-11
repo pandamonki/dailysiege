@@ -31,7 +31,7 @@ function buildPlans() {
   { const rm = rankMap(PRACTICE_BOARD, plans.map(q => q.pid)); plans.forEach(q => { q.rank = rm[q.pid]; }); }
   if (DAY === 1) S.feuds = [];
   plans.feuds = (S.feuds || []).slice();
-  resolveAlliances(plans, { persist: S.pairs || [], final: DAY === 7, prevDay: DAY - 1, feuds: plans.feuds });
+  resolveAlliances(plans, { persist: S.pairs || [], final: DAY === 7, prevDay: DAY - 1, feuds: plans.feuds, blocMax: BLOC_MAX });
   if (DAY >= MERC_DAY) { const mer = resolveMercs(plans, { day: DAY, N, cool: id => mercWait(id) }); plans.notes = (plans.notes || []).concat(mer.notes); plans.mercs = mer.hires; }
   return plans;
 }

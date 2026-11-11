@@ -26,11 +26,19 @@ test("the same saved game always gives the same battle, and fighting does not al
   assert.equal(a.day, 1); assert.equal(a.week, D1); assert.equal(a.results.length, 4);
 });
 
-test("only sealed orders are fought; a lord with none gets marked stand-in orders with their chosen hero", () => {
-  const W = world(["a", "b"]); W.players.c.plans[D1] = { ...world(ids).players.c.plans[D1], sealed: false }; // c drafted but did not seal
-  const { plans } = buildBattleInputs(W, D1);
+test("until 12 Nov 2026 only sealed orders are fought; a lord with none gets marked stand-in orders with their chosen hero", () => {
+  const OLD = "2026-11-02", W = world(["a", "b"]); W.config.startDate = OLD; ids.forEach(id => { W.players[id].state.week = OLD; W.players[id].plans = Object.fromEntries(Object.entries(W.players[id].plans).map(([, v]) => [OLD, v])); });
+  W.players.c.plans[OLD] = { ...world(ids).players.c.plans[D1], sealed: false }; // c drafted but did not seal
+  const { plans } = buildBattleInputs(W, OLD);
   assert.deepEqual(J(plans.map(p => !!p.noOrders)), J([false, false, true, true]));
   assert.equal(plans[3].cls, "rogue"); assert.deepEqual(J(plans[3].pieces.map(p => p.kind)), J(["champ"]));
+});
+
+test("from 12 Nov 2026 the lock seals the latest orders: a lord who drafted but did not seal is fought on the draft", () => {
+  const W = world(["a", "b"]); W.players.c.plans[D1] = { ...world(ids).players.c.plans[D1], sealed: false };
+  const { plans } = buildBattleInputs(W, D1);
+  assert.deepEqual(J(plans.map(p => !!p.noOrders)), J([false, false, false, true])); // d never saved anything
+  assert.ok(plans[2].pieces.length > 1, "c's drafted army stands");
 });
 
 test("yesterday's sealed orders carry forward, and the standings going in are recorded for the bounty", () => {
@@ -83,4 +91,44 @@ test("people take seats before bots: when the war is full the last bots give way
   assert.deepEqual(J(ids6), J(["h0", "h1", "h2", "bot_1", "bot_2", "bot_3"]));
   W.players.h3 = { ...W.players.h0, joinedAt: 99 }; // a fourth person registers late
   assert.deepEqual(J(buildBattleInputs(W, D1).plans.map(p => p.pid)), J(["h0", "h1", "h2", "h3", "bot_1", "bot_2"]));
+});
+
+// ----- fairer endings, longer pacts, late-week stakes (battles from 12 Nov 2026) -----
+const lone = (W, day) => fightDay(W, day, 1); // lords with no orders: every castle is left to burn, so they fall on the same tick
+test("castles that fall together are ranked by something fair, not by who registered last", () => {
+  const W = world([]), winners = new Set(); // nobody sealed: four lone heroes, castles all falling on the burn
+  for (let k = 0; k < 6; k++) winners.add(lone(W, addDays(D1, k)).results[0].pid);
+  assert.ok(winners.size >= 2, "the winner is not always the same seat: " + [...winners]);
+  assert.ok(!(winners.size === 1 && winners.has("d")), "the last to register no longer takes every tie");
+});
+
+test("pacts last until a betrayal or a break ends them, even when a castle fell", () => {
+  const W = world(ids); const offer = { a: { b: { gold: 0, day: addDays(D1, -1) } }, b: { a: { gold: 0, day: addDays(D1, -1) } } }; // a and b invite each other: they ally for free
+  W.players.a.plans[D1].offers = offer.a; W.players.b.plans[D1].offers = offer.b;
+  const doc = fightDay(W, D1, 1); assert.deepEqual(J(doc.pairs), J(["a|b"]));
+  assert.ok(doc.pairsEnd.includes("a|b"), "the pact is carried on whatever happened to the castles");
+});
+
+test("a pact group holds at most three lords", () => {
+  const W = world(ids), p = id => W.players[id].plans[D1], day = addDays(D1, -1), inv = (x, y) => ({ gold: 0, day });
+  p("a").offers = { b: inv(), c: inv(), d: inv() }; p("b").offers = { a: inv(), c: inv(), d: inv() }; p("c").offers = { a: inv(), b: inv(), d: inv() }; p("d").offers = { a: inv(), b: inv(), c: inv() };
+  const { pairs } = buildBattleInputs(W, D1);
+  const grp = new Set(); pairs.forEach(([x, y]) => { grp.add(x); grp.add(y); });
+  assert.ok(grp.size <= 3, "no bloc of four: " + J(pairs));
+});
+
+test("the last days of the week score more", () => {
+  const W = world(ids), at = k => fightDay(W, addDays(D1, k), 1), pts = d => d.results.reduce((n, r) => n + r.points, 0);
+  const d1 = at(0), d7 = at(6);
+  assert.ok(pts(d7) > pts(d1) * 1.5, `day 7 (${pts(d7)}) is worth about twice day 1 (${pts(d1)})`);
+});
+
+test("a betrayer who sets off the bomb is paid: points and a share of the victim's spoils", () => {
+  const run = balV2 => { const b = buildBattleInputs(world(ids), D1), [a, c] = b.plans; a.pacts = [c.pid]; c.pacts = [a.pid]; a.betray = { [c.pid]: "At the 2-minute mark" };
+    return sim.get("runBattle")(b.plans, 154, { fast: true, N: b.N, balV2, dayNo: 1 }); }; // seed 154: a's hero reaches b's keep and the bomb goes off
+  const on = run(true), off = run(false), r = on.results.find(x => x.pid === "a"), r0 = off.results.find(x => x.pid === "a");
+  assert.equal(r.treachery, 1, "the bomb went off and was counted");
+  assert.ok(!off.results.some(x => x.treachery), "the old rules pay nothing");
+  assert.ok(on.feudsNew.includes("a|b") && r.points >= 3, "the feud remains the price, the prize is at least 3 points");
+  assert.ok(r.gold > r0.gold, `a keeps a share of b's spoils (${r.gold} against ${r0.gold})`);
 });

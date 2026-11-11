@@ -38,7 +38,8 @@ function wHeroState(W, uid, week, dayKey) {
 // Carry-forward: if a lord has not sealed orders for the day, their latest sealed orders of the week are fought again.
 function wLatestPlan(W, p, dayKey, inclusive) {
   const keys = Object.keys(p.plans || {}).filter(k => (inclusive ? k <= dayKey : k < dayKey) && k >= wWeekOf(W, dayKey)).sort();
-  const sealed = keys.filter(k => p.plans[k] && p.plans[k].sealed); // only sealed orders count: drafts and unsealed edits are never fought
+  // Before BAL_V2_FROM only sealed orders count: drafts and unsealed edits are never fought. After it, the latest orders saved are fought, sealed or not: the lock seals them.
+  const sealed = keys.filter(k => p.plans[k] && (p.plans[k].sealed || balV2For(dayKey)));
   return sealed.length ? p.plans[sealed[sealed.length - 1]] : null;
 }
 function wCarriedPairs(W, dayKey) {
@@ -92,7 +93,7 @@ function buildBattleInputs(W, dayKey, opts = {}) {
     formation: plan.formation !== false, stance: plan.stance || "aggressive", prio: plan.prio || PRIORITIES.slice(), rules: plan.rules || [], pieces,
     targets: (plan.targets || []).filter(q => raw.some(x => x.uid === q)), tmode: plan.tmode || "list", heading: plan.heading || "near", rank: rkm[uid], offers: plan.offers || {}, replies: plan.replies || {}, terms: plan.terms || {}, bids: plan.bids || {},
     ...(noOrders && !opts.test ? { noOrders: true } : {}) })); // noOrders: this lord sealed nothing all week, so these are the stand-in orders, not theirs
-  const feuds0 = wFeudsBefore(W, dayKey, week), { pairs, transfers } = resolveAlliances(plans, { persist: wCarriedPairs(W, dayKey), final, prevDay: addDays(dayKey, -1), feuds: feuds0 });
+  const feuds0 = wFeudsBefore(W, dayKey, week), { pairs, transfers } = resolveAlliances(plans, { persist: wCarriedPairs(W, dayKey), final, prevDay: addDays(dayKey, -1), feuds: feuds0, blocMax: balV2For(dayKey) ? BLOC_MAX : 0 });
   plans.feuds = feuds0;
   let mercs = {}; if (dayNo >= MERC_DAY) { const mer = resolveMercs(plans, { day: dayKey, N: L.N, cool: id => mercCool(id, null, k => { const b = W.battles[addDays(dayKey, -k)]; return b && b.week === week ? b : null; }) }); plans.notes = (plans.notes || []).concat(mer.notes); mercs = mer.hires; }
   plans.mercs = mercs;
@@ -104,8 +105,8 @@ const daySeed = dayKey => (+dayKey.replace(/-/g, "") % 1000003) * 7 + 13;
 function fightDay(W, dayKey, at, opts) {
   const { N: size, plans, pairs, transfers, final, mercs, feuds, week, dayNo, ranks } = buildBattleInputs(W, dayKey, opts);
   // ranks: the standings going into the day. They set the bounty on the top three, so the official fight and every replay must use the same ones.
-  const inputs = JSON.parse(JSON.stringify({ N: size, final: !!final, ultV2: ultV2For(dayKey), ranks, feuds: plans.feuds || [], plans: plans.map(p => Object.assign({}, p, { me: false })) })); // taken before the fight, which edits its plans as it goes
-  const res = runBattle(plans, daySeed(dayKey), { fast: true, N: size, finalDay: final, ultV2: ultV2For(dayKey), ranks });
+  const inputs = JSON.parse(JSON.stringify({ N: size, final: !!final, ultV2: ultV2For(dayKey), balV2: balV2For(dayKey), dayNo, ranks, feuds: plans.feuds || [], plans: plans.map(p => Object.assign({}, p, { me: false })) })); // taken before the fight, which edits its plans as it goes
+  const res = runBattle(plans, daySeed(dayKey), { fast: true, N: size, finalDay: final, ultV2: ultV2For(dayKey), balV2: balV2For(dayKey), dayNo, ranks });
   const units = {}; res.tel.ents.filter(e => e.kind === "unit" && e.ref).forEach(e => { (units[e.pid] = units[e.pid] || {})[e.ref] = e.survived ? 1 : 0; });
   const doc = { week, day: dayNo, at, results: res.results.map(r => ({ pid: r.pid, place: r.place, points: r.points, kills: r.kills, ukills: r.ukills || 0, castles: r.castles, fellAt: r.fellAt ?? null })), units, pairs: pairs.map(p => p.join("|")), pairsEnd: res.pairsEnd, transfers,
     awards: res.awards, ...(res.rapier ? { rapier: res.rapier } : {}), ...(res.ultCast && res.ultCast.length ? { ults: Object.fromEntries(res.ultCast.map(p => [p, 1])) } : {}), ...(res.rapierEnd ? { rapierEnd: res.rapierEnd } : {}), gain: Object.fromEntries(Object.entries(res.lvl).map(([k, v]) => [k, v.gain])), xp: Object.fromEntries(Object.entries(res.lvl).map(([k, v]) => [k, v.xp])), gold: Object.fromEntries(res.results.map(r => [r.pid, r.gold])), team: !!res.team };
