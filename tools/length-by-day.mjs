@@ -62,7 +62,8 @@ sim.run(`globalThis.__lab = (function () {
         const siege = lords.reduce((a, l) => a + l.units.filter(u => UNITS[u.type].castleOnly && !u.cool).length, 0), units = lords.reduce((a, l) => a + l.units.filter(u => !u.cool).length, 0);
         const spent = lords.reduce((a, l) => a + l.units.reduce((s, u) => s + UNITS[u.type].cost, 0), 0);
         const falls = res.results.filter(r => r.fellAt != null).map(r => r.fellAt).sort((a, b) => a - b);
-        days.push({ day, len: res.duration, first: falls[0] ?? null, standing: res.results.filter(r => r.fellAt == null).length, siege, units, tier3: lords.filter(l => l.tier === 3).length, ults: lords.filter(l => l.units.length >= 0).length && plans.filter(p => (p.ranks.ult || 0) > 0).length, goldHeld: lords.reduce((a, l) => a + l.gold, 0) / n });
+        days.push({ day, len: res.duration, first: falls[0] ?? null, standing: res.results.filter(r => r.fellAt == null).length, siege, units, tier3: lords.filter(l => l.tier === 3).length, ults: lords.filter(l => l.units.length >= 0).length && plans.filter(p => (p.ranks.ult || 0) > 0).length, goldHeld: lords.reduce((a, l) => a + l.gold, 0) / n,
+          noCastleDmg: lords.filter(l => !res.tel.ents.some(e => e.pid === l.pid && (e.toCastle || 0) > 0)).length, armyLeft: res.results.filter(r => r.fellAt == null).filter(r => res.tel.ents.some(e => e.pid === r.pid && e.kind === 'unit' && e.survived)).length, heroLeft: res.results.filter(r => r.fellAt == null).filter(r => res.tel.ents.some(e => e.pid === r.pid && e.kind === 'champ' && e.survived)).length });
         // the night: pay day
         const byPts = res.results.slice().sort((a, b) => b.points - a.points);
         lords.forEach(l => { const r = res.results.find(x => x.pid === l.pid); l.pts += r.points; });
@@ -74,12 +75,14 @@ sim.run(`globalThis.__lab = (function () {
     },
   };
 })()`);
-const TMAX = sim.get("TMAX"), rows = Array.from({ length: 7 }, (_, i) => ({ day: i + 1, len: [], first: [], standing: [], siege: [], units: [], tier3: [], timeUp: 0, n: 0 }));
+const TMAX = sim.get("TMAX"), rows = Array.from({ length: 7 }, (_, i) => ({ day: i + 1, len: [], first: [], standing: [], siege: [], units: [], tier3: [], timeUp: 0, n: 0, noDmg: [], armyLeft: [], heroLeft: [] }));
 for (let w = 0; w < wars; w++) {
   const days = sim.run(`__lab.play(${5000 + w * 131}, ${nLords}, ${V2}, "${DOCTRINE}", ${+process.env.ENGAGE || 0})`);
-  days.forEach((d, i) => { const r = rows[i]; r.n++; r.len.push(d.len); if (d.first != null) r.first.push(d.first); r.standing.push(d.standing); r.siege.push(d.siege); r.units.push(d.units); r.tier3.push(d.tier3); if (d.len >= TMAX) r.timeUp++; });
+  days.forEach((d, i) => { const r = rows[i]; r.n++; r.len.push(d.len); if (d.first != null) r.first.push(d.first); r.standing.push(d.standing); r.siege.push(d.siege); r.units.push(d.units); r.tier3.push(d.tier3); if (d.len >= TMAX) r.timeUp++; r.noDmg.push(d.noCastleDmg); r.armyLeft.push(d.armyLeft); r.heroLeft.push(d.heroLeft); });
 }
 const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : NaN, f = (v, d = 0) => (Number.isNaN(v) ? "-" : v.toFixed(d)).padStart(6);
 console.log(`${wars} wars x ${nLords} lords, ${V2 ? "new rules (no burn)" : "old rules (castle burn)"}; time limit ${TMAX}s`);
 console.log("  day | avg length | first fall | at time limit | castles left | soldiers/lord | siege units | tier-3 castles");
 rows.forEach(r => console.log(`   ${r.day}  |${f(avg(r.len))}s    |${f(avg(r.first))}s    |${f(100 * r.timeUp / r.n)}%         |${f(avg(r.standing), 1)}        |${f(avg(r.units) / nLords, 1)}        |${f(avg(r.siege), 1)}       |${f(avg(r.tier3), 1)}`));
+console.log("  day | lords whose army never hurt a castle | standing castles with soldiers still alive | with their hero alive");
+rows.forEach(r => console.log(`   ${r.day}  |${f(avg(r.noDmg), 1)} of ${nLords}                              |${f(avg(r.armyLeft), 1)}                                  |${f(avg(r.heroLeft), 1)}`));

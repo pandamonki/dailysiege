@@ -37,3 +37,14 @@ test("group priorities change who fights whom, and a plan with them still replay
   }
   assert.ok(differs, "different priorities give a different fight somewhere");
 });
+
+test("bot lords fight with the combat groups from 12 Nov 2026, in a mix of styles, and the same orders every time", () => {
+  const L = sim.run("seatLayout(8)"), zone = i => sim.run(`zoneFor(seatLayout(8).castles[${i}], seatLayout(8).N, seatLayout(8).castles)`);
+  const ids = [...Array(8)].map((_, i) => "bot" + i);
+  const plan = (i, v2) => J(sim.get("lordBotPlan")({ uid: ids[i], cls: "warrior", i, ids, L, zone: zone(i), dayNo: 4, lvl: 7, v2 }));
+  const on = ids.map((_, i) => plan(i, true)), off = ids.map((_, i) => plan(i, false));
+  assert.ok(on.every(p => p.gprio && p.gprio.heal && p.engage >= 1 && p.engage <= 3), "every bot has combat groups and a reach");
+  assert.ok(off.every(p => !p.gprio && p.heading === "near"), "before 12 Nov 2026 bots are unchanged");
+  assert.ok(new Set(on.map(p => JSON.stringify(p.gprio))).size >= 3, "the bots do not all fight alike");
+  assert.deepEqual(plan(2, true), on[2], "the same bot, the same day, the same orders");
+});
