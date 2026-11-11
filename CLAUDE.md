@@ -25,14 +25,11 @@ All verified on Node 22 from a clean clone unless noted. Node >= 20 required; CI
 | `npm run golden:update` | Re-record `test/golden/hashes.json` | Only when battles are *meant* to change |
 | `npm run balance -- 5 8` | Random battles per lord count; prints win rates | Args: battles per size, lord counts |
 | `node tools/selftest-browsers.mjs chromium` | Runs `selftest.html` + loads the game in a real browser | Needs `npm run build` first and Playwright (not a dependency) |
-| `npm ci --prefix functions` | Install server deps | Needed before any emulator command that loads functions |
 | `npm run test:rules` | 37 security-rules tests in the Firestore emulator | Needs Java |
-| `npm run test:e2e`, `npm run test:war` | Browser + emulator end-to-end tests | Need Java, Playwright, functions deps. **Not verified locally**: the functions emulator needs outbound network and failed in a sandboxed session. CI runs them |
-| `npm run emulators` | Build + all emulators; open `http://127.0.0.1:5000/?emulator=1` | Same requirements as above; not verified locally |
+| `npm run test:e2e`, `npm run test:war` | Browser + emulator end-to-end tests | Need Java, Playwright and `npm ci --prefix functions`. **Not verified locally** (the functions emulator needs outbound network); CI runs them. Same for `npm run emulators` (then open `http://127.0.0.1:5000/?emulator=1`) |
 
-No env vars or secrets are needed for local work. Deploys need the
-`FIREBASE_SERVICE_ACCOUNT_DAILY_SIEGE` GitHub secret (CI only). The Firebase web config is fetched at
-run time from Hosting (`/__/firebase/init.json`); nothing is checked in.
+No env vars or secrets are needed locally. Deploys need the `FIREBASE_SERVICE_ACCOUNT_DAILY_SIEGE`
+GitHub secret (CI only); the Firebase web config is fetched at run time from Hosting.
 
 ## Directory map (non-obvious parts)
 
@@ -42,11 +39,8 @@ run time from Hosting (`/__/firebase/init.json`); nothing is checked in.
 - `js/net/world.js`, `js/net/clock.js` — saved game data -> battle inputs, and all date rules. **Run on the server too.**
 - `js/net/backend-firebase.js` — fakes the legacy `window.claude.use("db"|"user")` storage API on top of Firebase.
 - `js/net/session.js`, `lobby.js`, `battles.js` — friends-game client state (`LIVE`), saving, muster hall.
-- `js/ui/`, `js/render/`, `js/replay/` — sheets (HTML strings), canvas drawing, battle playback.
-- `js/dev/` — golden battle cases, phone self-test, in-game balance lab.
-- `functions/` — Cloud Functions (CommonJS). `functions/lib/game.js` loads the game's own scripts into a `vm` context.
+- `functions/` — Cloud Functions (CommonJS). `functions/lib/game.js` runs the game's own scripts in a `vm` context; `tools/load-sim.mjs` does the same for tests.
 - `functions/game/`, `js/vendor/`, `dist/` — **generated, gitignored.** Never edit.
-- `tools/` — Node helpers: `load-sim.mjs` (headless sim), `sync-functions.mjs`, `vendor.mjs`, golden tools.
 - `test/` — fast unit tests. `emulator-tests/` — `*.spec.mjs`, deliberately not matched by `node --test`.
 - `sw.src.js` — service-worker template; `vite.config.js` fills `__VERSION__` and `__FILES__` into `dist/sw.js`.
 
@@ -62,20 +56,18 @@ run time from Hosting (`/__/firebase/init.json`); nothing is checked in.
   by `A.name` in `js/ui/actions.js`. No per-element listeners.
 - **World functions take `W` first** and are prefixed `w` (`wRoster`, `wWeekOf` in `js/net/world.js`),
   so the same code runs on phones (W = live game) and server (W = database read).
-- **Dense style:** terse names, several statements per line, lines up to ~600 chars, a `//` comment
-  explaining *why* above each block. Match it; don't reformat.
-- **Comments and user text are plain English** aimed at a non-programmer host ("lords", "seal orders",
-  "muster hall"). Dates are `YYYY-MM-DD` strings compared lexically (`dayKey`, `planDay`, `week`).
+- **Dense style:** terse names, long multi-statement lines, a `//` "why" comment per block. Match it.
+- **Comments and user text are plain English** for a non-programmer host ("lords", "seal orders").
+  Dates are `YYYY-MM-DD` strings compared lexically (`dayKey`, `planDay`, `week`).
 - **Error handling:** browser-capability calls are wrapped in `try { } catch (e) {}` (localStorage,
   clipboard, audio); network failures surface as `toast("...")`; Firebase error codes are translated to
   underscore form by `legacyErr` (`js/net/backend-firebase.js`). Functions throw `HttpsError` with a
   human sentence (`functions/index.js`).
-- **Server code takes its dependencies as arguments** (`db`, `send`, `now`) so it can be tested without
-  Firebase: see `resolveDue` in `functions/lib/resolve.js`, `remindUnsealed` in `functions/lib/notify.js`.
+- **Server code takes `db`, `send`, `now` as arguments** so it is testable without Firebase
+  (`resolveDue` in `functions/lib/resolve.js`).
 - **Styling:** hand-written CSS in `css/`, loaded in cascade order. No preprocessor, no CSS-in-JS.
-- **Tests:** `node:test` + `node:assert/strict`, test names are full sentences describing behaviour
-  (`test/clock.test.mjs`). Game code is loaded through `loadSim()` and reached with `sim.get("name")` /
-  `sim.run("code")`.
+- **Tests:** `node:test` + `node:assert/strict`; names are behaviour sentences (`test/clock.test.mjs`);
+  game code is reached through `loadSim()` with `sim.get("name")` / `sim.run("code")`.
 
 ## Gotchas
 
@@ -97,18 +89,15 @@ run time from Hosting (`/__/firebase/init.json`); nothing is checked in.
 - **Server-owned fields are listed three times:** `serverFields()` in `firestore.rules`, `SERVER_KEYS`
   in `js/net/backend-firebase.js`, `CLOCK_KEYS` in `functions/index.js`. Same for the function region
   (`functions/region.js` vs `FUNCTIONS_REGION` in the backend; a unit test checks this one).
-- **Adding a field to a player's public profile** requires adding it to `validProfile()` in
-  `firestore.rules`, or every profile write is rejected.
-- **`index.html` line 1 closes `<head>` early** (leftover artifact boilerplate). Tags that must be in
-  the head (manifest, icons) go in the block right after `<title>`, before `</head>` on line 11.
+- **A new public-profile field** must be added to `validProfile()` in `firestore.rules`, or writes fail.
+- **`index.html` line 1 closes `<head>` early** (artifact leftover). Head-only tags (manifest, icons)
+  go in the block after `<title>`, before `</head>` on line 11.
 - **The manifest link is `vite-ignore`d and uses absolute icon paths** so Vite doesn't rename it
   (commit `7f6099f`). New run-time assets must be added to `STATIC` in `vite.config.js` or they won't ship.
-- **Merging to `main` deploys to production** (hosting, rules, functions) after lint, unit and rules
-  tests only. E2E and browser tests run in a separate workflow and do not gate the deploy.
-- **PR preview URLs** (`*--*.web.app`) have the friends game switched off on purpose (`findConfig()`).
-- **Emulator mode** only activates on `localhost`/`127.0.0.1` with `?emulator=1` (sticky via localStorage `ds.emulator`).
-- Storage keys still use the old name (`lastbanner.v4`, `lastbanner.mode`). Renaming needs a migration.
-- `selftest.html` still says "50 fixed battles"; the real count is 62 (`GOLDEN_COUNT`).
+- **Merging to `main` deploys to production**; e2e and browser tests do not gate it.
+- **PR previews** have the friends game off on purpose; emulator mode needs localhost + `?emulator=1`.
+- Storage keys keep the old name (`lastbanner.*`; renaming needs a migration). `selftest.html` says
+  "50 fixed battles"; the real count is 62.
 
 ## Don't
 
@@ -116,21 +105,17 @@ run time from Hosting (`/__/firebase/init.json`); nothing is checked in.
   `selftest.html` and the build all assume classic scripts.
 - **Don't run `golden:update` to make a red test green** unless the outcome change is the point of
   the commit. It is the only guard against phones and server disagreeing.
-- **Don't put secrets, orders, gold or army into `games/{g}/players/{uid}`.** That document is readable
-  by every member; private data goes in `private/state` and `orders/{day}`.
-- **Don't write clock fields (`planDay`, `nextLockAt`, ...) from the client.** Rules reject it; only
-  `keepGameClock` and `resolveDue` own them.
-- **Don't edit `functions/game/`, `js/vendor/`, `dist/` or `test/golden/hashes.json` by hand.**
-- **Don't reformat or lint-fix `js/**`.** It produces unreviewable diffs in 500-character lines.
-- **Don't add an npm runtime dependency to the game.** The browser loads only files copied by
-  `tools/vendor.mjs` or listed in `STATIC`; there is no bundler for scripts.
+- **Don't put orders, gold or army into `games/{g}/players/{uid}`** (every member can read it); they
+  belong in `private/state` and `orders/{day}`.
+- **Don't hand-edit `test/golden/hashes.json`** or write clock fields (`planDay`, ...) from the client.
+- **Don't reformat or lint-fix `js/**`** (unreviewable diffs), or add an npm runtime dependency to
+  the game: the browser loads only files copied by `tools/vendor.mjs` or listed in `STATIC`.
 
 ## How to work here (AI sessions)
 
 **Start.** This file is enough for most tasks; don't re-explore the repo. Open another doc only when
 the task touches it: gameplay -> `docs/GAME_DESIGN.md`; crossing client/rules/server ->
-`docs/ARCHITECTURE.md`; adding tests -> `docs/TESTING.md`. Run `npm ci` once (tests and the game need
-it); `npm ci --prefix functions` only for emulator work.
+`docs/ARCHITECTURE.md`; adding tests -> `docs/TESTING.md`. Run `npm ci` once before anything else.
 
 **Classify the change first; it decides the checks and the risk.**
 
@@ -149,18 +134,16 @@ it); `npm ci --prefix functions` only for emulator work.
 `js/vendor/`, `functions/game/`, `dist/`, `package-lock.json`, image folders, `index.html` line 1 and
 `daily-siege-hosting-plan.md`. The repo is small: search it yourself rather than spawning subagents.
 
-**Decide or ask.** Proceed without asking on implementation choices. Ask the owner only when the
-choice is theirs: a change that conflicts with a design pillar, next battle versus next war for a
-large feature, anything that costs money, or a step they must do by hand (Firebase console, GitHub
-settings). Ask once, with a recommendation, and keep working on what doesn't depend on the answer.
+**Decide or ask.** Decide implementation choices yourself. Ask the owner only when the choice is
+theirs: conflict with a design pillar, next battle versus next war, cost, or a step they must do by
+hand (Firebase console, GitHub settings). Ask once, with a recommendation, and keep working.
 
 **Finish.** Run the "before pushing" checks once, at the end, not after every edit. A sim or rules
 change is not done until a test sentence describes the new behaviour. `test:e2e` and `test:war`
 cannot run in a sandboxed session: say so and rely on CI, don't claim them. Work on a branch, never
 `main` (it deploys); open a pull request only when asked. If you changed a command, a gotcha or a
-design principle, update the matching doc in the same commit; edit this file by replacing lines, and
-keep it under 150.
+design principle, update the matching doc in the same commit; keep this file under 150 lines.
 
 **Report for the owner, who hosts the game and is not a programmer.** Lead with what changes for
-players, then what was tested and what was not, then anything they must do by hand. Plain English,
-no unexplained jargon, same voice as `OPERATIONS.md`. Commit messages follow `docs/CONTRIBUTING.md`.
+players, then what was and wasn't tested, then anything they must do by hand. Plain English, no
+unexplained jargon, the voice of `OPERATIONS.md`. Commit messages follow `docs/CONTRIBUTING.md`.
