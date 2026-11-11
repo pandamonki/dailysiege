@@ -20,7 +20,6 @@ All verified on Node 22 from a clean clone unless noted. Node >= 20 required; CI
 | `npm ci` | Install. `postinstall` copies the Firebase browser SDK into `js/vendor/` | `js/vendor/` is gitignored; the game 404s on it without an install |
 | `npm run dev` | Vite dev server on `http://localhost:5173`, full reload on change | Practice (bots) mode only; the friends game needs the emulators |
 | `npm test` | `node --test`: 30 unit tests in `test/` (~30 s, golden battles dominate) | |
-| `node --test test/world.test.mjs` | One test file (<1 s) | Use this while iterating |
 | `npm run lint` | ESLint on tooling, tests, `functions/`, `sw.src.js` | `js/**` is **not linted** (see `eslint.config.js`) |
 | `npm run build` | Vite build to `dist/` plus generated `dist/sw.js` | Prints "can't be bundled without type=module" for 3 scripts: expected |
 | `npm run golden:update` | Re-record `test/golden/hashes.json` | Only when battles are *meant* to change |
@@ -73,8 +72,7 @@ run time from Hosting (`/__/firebase/init.json`); nothing is checked in.
   human sentence (`functions/index.js`).
 - **Server code takes its dependencies as arguments** (`db`, `send`, `now`) so it can be tested without
   Firebase: see `resolveDue` in `functions/lib/resolve.js`, `remindUnsealed` in `functions/lib/notify.js`.
-- **Styling:** hand-written CSS in `css/`, loaded in cascade order (base, layout, sheets, components,
-  screens, council). No preprocessor, no CSS-in-JS.
+- **Styling:** hand-written CSS in `css/`, loaded in cascade order. No preprocessor, no CSS-in-JS.
 - **Tests:** `node:test` + `node:assert/strict`, test names are full sentences describing behaviour
   (`test/clock.test.mjs`). Game code is loaded through `loadSim()` and reached with `sim.get("name")` /
   `sim.run("code")`.
@@ -82,7 +80,7 @@ run time from Hosting (`/__/firebase/init.json`); nothing is checked in.
 ## Gotchas
 
 - **Determinism is load-bearing.** Anything a battle or map layout reads must use `dsin`, `dcos`,
-  `datan2`, `dhypot`/`hyp` (`js/core/detmath.js`), never `Math.sin/cos/atan2/hypot/pow/exp/log`, `**`,
+  `datan2`, `dhypot`/`hyp` (`js/core/detmath.js`) and the seeded `mulberry(seed)`/`hash()`, never `Math.sin/cos/atan2/hypot/pow/exp/log`, `**`,
   `Intl`, `localeCompare`, `Math.random`, `Date`. `test/sim.test.mjs` greps the source for these.
 - **Any change to `js/sim/`, `js/config/`, `js/core/layout.js`, `js/core/player.js` or `js/net/world.js`
   can change battle hashes.** `npm test` then fails. If intended, `npm run golden:update` and commit
@@ -118,8 +116,6 @@ run time from Hosting (`/__/firebase/init.json`); nothing is checked in.
   `selftest.html` and the build all assume classic scripts.
 - **Don't run `golden:update` to make a red test green** unless the outcome change is the point of
   the commit. It is the only guard against phones and server disagreeing.
-- **Don't use `Math.random()`, `Date`, timers or DOM in `js/sim/` or `js/config/`.** Use the seeded
-  `mulberry(seed)` / `hash()` from `js/core/util.js`.
 - **Don't put secrets, orders, gold or army into `games/{g}/players/{uid}`.** That document is readable
   by every member; private data goes in `private/state` and `orders/{day}`.
 - **Don't write clock fields (`planDay`, `nextLockAt`, ...) from the client.** Rules reject it; only
@@ -128,22 +124,43 @@ run time from Hosting (`/__/firebase/init.json`); nothing is checked in.
 - **Don't reformat or lint-fix `js/**`.** It produces unreviewable diffs in 500-character lines.
 - **Don't add an npm runtime dependency to the game.** The browser loads only files copied by
   `tools/vendor.mjs` or listed in `STATIC`; there is no bundler for scripts.
-- **Don't push straight to `main`.** It is a production deploy.
 
-## Working efficiently (for AI sessions)
+## How to work here (AI sessions)
 
-- **Never `cat` whole game files.** Lines run to 600 chars; `js/sim/battle.js` is 76 KB and
-  `js/net/lobby.js` / `backend-firebase.js` are ~34 KB each. Grep for the function first
-  (`grep -n "^function \|^const [a-zA-Z]* = " file`), then read a line range, or pipe through `cut -c1-300`.
-- **Skip entirely:** `js/vendor/`, `functions/game/`, `dist/`, `package-lock.json`, `icons/`, `items/`,
-  line 1 of `index.html`, and `daily-siege-hosting-plan.md` (superseded by `docs/ARCHITECTURE.md`).
-- **Find a UI behaviour by its action name:** grep `data-act="x"` for the button, then `x:` in
-  `js/ui/actions.js`. Find a sheet via the type map in `renderSheet()`.
-- **Pick the cheapest check that covers the change:** UI/CSS only -> `npm run build` (and the browser
-  self-test if Playwright is present); `world.js`/`clock.js` -> `node --test test/world.test.mjs
-  test/clock.test.mjs` (<2 s); sim/config -> `npm test`; `firestore.rules` -> `npm run test:rules`.
-  Run the full set once before pushing, not after every edit.
-- **Read the header comment of a file before its body.** Every file starts with a one-line purpose,
-  and `backend-firebase.js`, `world.js`, `firestore.rules` open with the data layout.
-- Quality bar that still applies: a sim or rules change is not done until its test (golden, world,
-  rules) passes and, for behaviour changes, a new test sentence describes it.
+**Start.** This file is enough for most tasks; don't re-explore the repo. Open another doc only when
+the task touches it: gameplay -> `docs/GAME_DESIGN.md`; crossing client/rules/server ->
+`docs/ARCHITECTURE.md`; adding tests -> `docs/TESTING.md`. Run `npm ci` once (tests and the game need
+it); `npm ci --prefix functions` only for emulator work.
+
+**Classify the change first; it decides the checks and the risk.**
+
+| Change | Iterate with | Before pushing | Watch for |
+|---|---|---|---|
+| UI, CSS, replay drawing | `npm run build`, `npm run dev` | `node tools/selftest-browsers.mjs chromium` | Typos only show when the sheet is opened: open it |
+| `js/net/world.js`, `clock.js`, `functions/lib/` | `node --test test/world.test.mjs test/clock.test.mjs` (<2 s) | `npm test`, `npm run lint` | Runs on the server: no DOM, no `LIVE` |
+| `js/sim/`, `js/config/`, layout | `npm test` (~30 s) | + browser self-test | Outcome change -> date gate + `golden:update` |
+| `firestore.rules`, stored fields | `npm run test:rules` | same | The three duplicated key lists (Gotchas) |
+
+**Read cheaply.** Never `cat` game files: lines run to 600 chars; `js/sim/battle.js` is 76 KB,
+`js/net/lobby.js` and `backend-firebase.js` ~34 KB each. Grep for the function
+(`grep -n "^function \|^const [a-zA-Z]* = " file`), then read a line range or pipe through
+`cut -c1-300`. Read a file's header comment before its body. Find UI by action name: grep
+`data-act="x"`, then `x:` in `js/ui/actions.js`; sheets via the map in `renderSheet()`. Skip
+`js/vendor/`, `functions/game/`, `dist/`, `package-lock.json`, image folders, `index.html` line 1 and
+`daily-siege-hosting-plan.md`. The repo is small: search it yourself rather than spawning subagents.
+
+**Decide or ask.** Proceed without asking on implementation choices. Ask the owner only when the
+choice is theirs: a change that conflicts with a design pillar, next battle versus next war for a
+large feature, anything that costs money, or a step they must do by hand (Firebase console, GitHub
+settings). Ask once, with a recommendation, and keep working on what doesn't depend on the answer.
+
+**Finish.** Run the "before pushing" checks once, at the end, not after every edit. A sim or rules
+change is not done until a test sentence describes the new behaviour. `test:e2e` and `test:war`
+cannot run in a sandboxed session: say so and rely on CI, don't claim them. Work on a branch, never
+`main` (it deploys); open a pull request only when asked. If you changed a command, a gotcha or a
+design principle, update the matching doc in the same commit; edit this file by replacing lines, and
+keep it under 150.
+
+**Report for the owner, who hosts the game and is not a programmer.** Lead with what changes for
+players, then what was tested and what was not, then anything they must do by hand. Plain English,
+no unexplained jargon, same voice as `OPERATIONS.md`. Commit messages follow `docs/CONTRIBUTING.md`.
