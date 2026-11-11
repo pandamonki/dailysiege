@@ -214,7 +214,7 @@ function pushLine() { // battle alerts on this device
   return st === "on" ? `<p class="muted">🔔 Battle alerts are on for this device.</p>`
     : st === "ask" ? `<div class="sec tight"><div class="row"><button class="btn small wood" data-act="dspush">🔔 Turn on battle alerts</button></div><p class="muted">A nudge an hour before orders lock (only if yours aren't sealed), and when the battle's results are in.</p></div>`
     : st === "install" ? `<p class="muted">🔔 To get battle alerts on an iPhone, add the game to your Home Screen first, then open it from there.${typeof PWA !== "undefined" && PWA.canOffer() ? ` <button class="btn small" data-act="pwainstall">Show me how</button>` : ""}</p>`
-    : st === "blocked" ? `<p class="muted">🔔 Battle alerts are blocked for this site in your browser's settings.</p>` : "";
+    : st === "blocked" ? `<div class="sec tight"><p class="muted">🔔 Battle alerts are blocked for this site. To allow them: tap the icon at the left of the address bar (or ⋮ → ⓘ) → <b>Permissions</b> → <b>Notifications</b> → <b>Allow</b>. If your phone's settings had notifications off for the browser, turn them on there too. Then tap below.</p><div class="row"><button class="btn small wood" data-act="dspush">🔔 Try again</button></div></div>` : "";
 }
 function installSheet() { // how to put the game on the home screen
   const ios = typeof PWA !== "undefined" && PWA.isIOS();

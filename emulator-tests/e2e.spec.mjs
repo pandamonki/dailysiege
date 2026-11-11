@@ -218,7 +218,10 @@ test("the host can replace the invite link; the old one stops working", async ()
 
 test("the game is installable and opens with no connection", async () => {
   const p = P.alice;
-  assert.equal(await p.evaluate(async () => (await (await fetch("manifest.webmanifest")).json()).display), "standalone");
+  // the browser only treats the game as installable if the manifest is linked from the page's <head> and its icons load
+  const man = await p.evaluate(async () => { const link = document.head.querySelector("link[rel=manifest]"); if (!link) return null; const m = await (await fetch(link.href)).json();
+    const icons = await Promise.all(m.icons.map(async i => { const r = await fetch(new URL(i.src, link.href)); return r.ok && (r.headers.get("content-type") || "").startsWith("image/"); })); return { href: new URL(link.href).pathname, display: m.display, start: m.start_url, icons }; });
+  assert.deepEqual(man, { href: "/manifest.webmanifest", display: "standalone", start: "/", icons: [true, true] });
   await p.evaluate(() => navigator.serviceWorker.ready);
   await p.reload(); await p.waitForFunction(() => navigator.serviceWorker.controller && typeof runBattle === "function", null, WAIT); // now served by the service worker
   await p.context().setOffline(true);
