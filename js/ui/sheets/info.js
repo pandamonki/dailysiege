@@ -165,6 +165,7 @@ const PATCHES = [
     "An alliance can hold at most 3 lords.",
     "A betrayer whose bomb goes off earns 3 points and a quarter of the victim's spoils for the day. The feud stays as the price.",
     "Points count 1.5 times on days 5 and 6 and double on day 7.",
+    "A lord whose castle falls keeps their hero and soldiers in the fight. They can no longer fall back, heal at the castle, teleport home or respawn, and their alliances end. Placing is still decided by when the castle fell.",
   ], changes: [
     "After the day 7 battle, a war finale shows the podium and the war's prizes.",
   ] },

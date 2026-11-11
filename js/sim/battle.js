@@ -8,9 +8,11 @@ const ULT_V2_FROM = "2026-11-10", ultV2For = d => String(d) >= ULT_V2_FROM;
 //   - the last days of the week score more (DAY_WEIGHT), and orders drafted but not sealed are fought at the lock
 const BAL_V2_FROM = "2026-11-12", balV2For = d => String(d) >= BAL_V2_FROM;
 const BLOC_MAX = 3, TREACHERY_PTS = 3, TREACHERY_LOOT = .25, DAY_WEIGHT = { 5: 1.5, 6: 1.5, 7: 2 };
+// A lord whose castle falls keeps their hero and soldiers on the field: they fight on to the end of the battle, but can no longer fall back, heal at the castle, teleport home or respawn. Placing is still decided by when the castle fell.
+const ORPHAN_ARMIES = true;
 const dayWeight = (v2, dayNo) => (v2 && DAY_WEIGHT[dayNo]) || 1;
 function runBattle(plans, seed, opts = {}) {
-  const BV = !!opts.balV2, UV = !!opts.ultV2, UD = UV ? .75 : 1, UR = rk => UV ? [.7, .85, 1][Math.min(3, Math.max(1, rk || 1)) - 1] : 1;
+  const BV = !!opts.balV2, OA = !!opts.balV2 && ORPHAN_ARMIES, UV = !!opts.ultV2, UD = UV ? .75 : 1, UR = rk => UV ? [.7, .85, 1][Math.min(3, Math.max(1, rk || 1)) - 1] : 1;
   const rng = mulberry(seed), DT = .1, fast = !!opts.fast, leaderPid = (plans.find(p => p.leader) || {}).pid;
   let curAb = null;
   const mePid = (plans.find(p => p.me) || plans[0]).pid, NN = opts.N || N;
@@ -45,6 +47,7 @@ function runBattle(plans, seed, opts = {}) {
   const obj = pid => (pid === mePid ? "you" : P[pid].name);
   const lposs = pid => (pid === mePid ? "your" : P[pid].name + "'s");
   const alivePlayers = () => order.filter(p => P[p].alive);
+  const fighting = pid => P[pid].alive || !!P[pid].orphan; // still has an army in the fight, even if the castle is gone
   const live = e => e && !e.dead;
   const enemiesNear = (e, x, y, r) => ents.filter(o => !o.dead && o.kind !== "castle" && hostile(e.pid, o.pid) && !fxv(o, "vanish") && hyp(o.x - x, o.y - y) <= r);
   const friendsNear = (pid, x, y, r) => ents.filter(o => !o.dead && o.kind !== "castle" && allied(pid, o.pid) && hyp(o.x - x, o.y - y) <= r);
@@ -144,7 +147,7 @@ function runBattle(plans, seed, opts = {}) {
     const vl = v.kind === "champ" ? v.heroLvl : (v.lvl || 1);
     let base = v.kind === "champ" ? 70 + 22 * vl : v.militia ? 16 : v.kind === "summon" ? 12 : 30 + 8 * (vl - 1);
     if (inCentre(v.x, v.y)) base *= 1.5;
-    const heroes = ents.filter(h => h.kind === "champ" && !h.dead && P[h.pid].alive && hostile(h.pid, v.pid) && d(h, v) <= 8);
+    const heroes = ents.filter(h => h.kind === "champ" && !h.dead && fighting(h.pid) && hostile(h.pid, v.pid) && d(h, v) <= 8);
     heroes.forEach(h => { const board = top3(h.pid) ? .85 : under(h.pid) ? 1.2 : 1; giveXp(h, base / Math.max(1, heroes.length * .75) * board * (1 + Math.min(1, .15 * Math.max(0, topLvl() - h.heroLvl))) / (1 + .12 * (h.heroLvl - 1))); });
   }
   function awardGold(v, kc) {
@@ -157,7 +160,7 @@ function runBattle(plans, seed, opts = {}) {
     if (v.kind === "champ" || v.kind === "castle") txt(kc, `+${g}g`, "#f3d27a");
   }
   function centreTick() {
-    const near = ents.filter(e => !e.dead && (e.kind === "champ" || e.kind === "unit") && P[e.pid].alive && inCentre(e.x, e.y));
+    const near = ents.filter(e => !e.dead && (e.kind === "champ" || e.kind === "unit") && fighting(e.pid) && inCentre(e.x, e.y));
     const pids = [...new Set(near.map(e => e.pid))], hold = pids.length && pids.every(a => pids.every(b => allied(a, b))) ? pids : [];
     hold.forEach(pid => { P[pid].gold += 2; const h = champOf(pid); if (h && live(h) && inCentre(h.x, h.y)) giveXp(h, top3(pid) ? 2.5 : 3); });
     ctrHolder = hold.length ? hold[0] : null;
@@ -174,7 +177,7 @@ function runBattle(plans, seed, opts = {}) {
       if (c.k === "salve" && e.hp / e.maxhp < .5) { c.ready = t + ITEMS[c.k].cd; heal(e, e.maxhp * .35, false, e, "Healing Salve"); txt(e, "Salve", "#9cf09c"); }
       else if (c.k === "elixir" && live(e.tgt) && d(e, e.tgt) <= e.range + 1) { c.ready = t + ITEMS[c.k].cd; setFx(e, "asbuf", 8, .25); txt(e, "Fury!", "#ff8a7a"); }
       else if (c.k === "net") { const v = minBy(enemiesNear(e, e.x, e.y, 4).filter(x => x.kind === "champ"), x => d(x, e)); if (v) { c.ready = t + ITEMS[c.k].cd; setFx(v, "root", 2.5); shot(e, v, "#c9a46a", 2); txt(v, "Netted", "#e8cf9a"); } }
-      else if (c.k === "scroll" && e.hp / e.maxhp < .3 && enemiesNear(e, e.x, e.y, 3).length) { c.ready = t + ITEMS[c.k].cd; aoe(e.x, e.y, .8, "#b48cff", .5); e.x = p.castle.x; e.y = p.castle.y - 1; e.tgt = null; aoe(e.x, e.y, .8, "#b48cff", .5); heal(e, e.maxhp * .2, false, e, "Scroll of Retreat"); txt(e, "Retreat", "#d6c2ff"); }
+      else if (c.k === "scroll" && !e.orphan && e.hp / e.maxhp < .3 && enemiesNear(e, e.x, e.y, 3).length) { c.ready = t + ITEMS[c.k].cd; aoe(e.x, e.y, .8, "#b48cff", .5); e.x = p.castle.x; e.y = p.castle.y - 1; e.tgt = null; aoe(e.x, e.y, .8, "#b48cff", .5); heal(e, e.maxhp * .2, false, e, "Scroll of Retreat"); txt(e, "Retreat", "#d6c2ff"); }
     });
   }
   // fences: soldiers can't walk through an enemy wall. They slide round it, and hack through if they get stuck
@@ -295,7 +298,13 @@ function runBattle(plans, seed, opts = {}) {
   function eliminate(pid, by) {
     const p = P[pid]; if (!p.alive) return;
     p.alive = false; p.elimT = t; p.place = alivePlayers().length + 1;
-    ents.forEach(e => { if (e.pid === pid && !e.dead) { e.dead = true; e.hp = 0; e.respawnAt = null; ev({ ty: "die", id: e.id, x: e.x, y: e.y, fx: 0 }); } });
+    if (OA) { // the army fights on without a castle: no falling back, healing at the keep or respawning, and no allies (their pacts end with the castle)
+      p.orphan = true; p.retreat = false; p.fallbackUntil = 0; p.pacts.clear();
+      ents.forEach(e => { if (e.pid !== pid || e.dead || e.kind === "castle") return;
+        if (e.kind === "totem") { e.dead = true; e.hp = 0; ev({ ty: "die", id: e.id, x: e.x, y: e.y, fx: 0 }); return; } // a healing totem has nobody to heal for
+        e.orphan = true; e.noRetreat = true; e.retreating = false; e.respawns = 0; e.respawnAt = null; e.tgt = null; if (e.order === "guard" || e.order === "escort") e.order = "army"; });
+      log(`${poss(pid)} army fights on without a castle.`);
+    } else ents.forEach(e => { if (e.pid === pid && !e.dead) { e.dead = true; e.hp = 0; e.respawnAt = null; ev({ ty: "die", id: e.id, x: e.x, y: e.y, fx: 0 }); } });
     if (by && (by === pid || !P[by] || !P[by].alive)) by = null;
     if (by) P[by].castles++;
     order.forEach(o => { P[o].pacts.delete(pid); });
@@ -370,12 +379,12 @@ function runBattle(plans, seed, opts = {}) {
     const runners = ents.filter(o => !o.dead && o.retreating && o.kind !== "castle" && hostile(e.pid, o.pid) && !fxv(o, "vanish") && d(o, e) <= ENGAGE + 1.5);
     if (runners.length && !guard) return minBy(runners, o => o.hp / o.maxhp + d(o, e) * .1);
     const anchor = guard ? p.castle : escort ? p.champ : e, radius = guard ? (t - p.castleHitT < 6 ? 7 : 4) : ENGAGE;
-    const near = ents.filter(o => !o.dead && o.kind !== "castle" && hostile(e.pid, o.pid) && P[o.pid].alive && !fxv(o, "vanish") && d(o, anchor) <= radius);
+    const near = ents.filter(o => !o.dead && o.kind !== "castle" && hostile(e.pid, o.pid) && fighting(o.pid) && !fxv(o, "vanish") && d(o, anchor) <= radius);
     if (near.length) return byPrio(e, near);
     if (guard || escort) return null;
-    { const rv = [...p.revenge].filter(q => P[q] && P[q].alive && hostile(e.pid, q)).map(q => ents.find(o => !o.dead && o.kind === "champ" && o.pid === q && !fxv(o, "vanish"))).filter(Boolean); if (rv.length) return minBy(rv, o => d(o, e)); }
+    { const rv = [...p.revenge].filter(q => P[q] && fighting(q) && hostile(e.pid, q)).map(q => ents.find(o => !o.dead && o.kind === "champ" && o.pid === q && !fxv(o, "vanish"))).filter(Boolean); if (rv.length) return minBy(rv, o => d(o, e)); }
     if (p.heading === "centre" && t < HOLD_END) { // contest the battleground: only fight what stands on the hill
-      const onHill = ents.filter(o => !o.dead && o.kind !== "castle" && o.kind !== "totem" && hostile(e.pid, o.pid) && P[o.pid].alive && !fxv(o, "vanish") && inCentre(o.x, o.y));
+      const onHill = ents.filter(o => !o.dead && o.kind !== "castle" && o.kind !== "totem" && hostile(e.pid, o.pid) && fighting(o.pid) && !fxv(o, "vanish") && inCentre(o.x, o.y));
       return onHill.length ? minBy(onHill, o => d(o, e)) : null;
     }
     const g = goalPid(e); if (!g) return null;
@@ -384,7 +393,7 @@ function runBattle(plans, seed, opts = {}) {
     return theirs.length ? minBy(theirs, o => d(o, e) + (o.kind === "castle" ? 1.5 : 0)) : null;
   }
   function rogueTarget(e) {
-    const c = ents.filter(o => !o.dead && o.kind !== "castle" && o.kind !== "totem" && hostile(e.pid, o.pid) && P[o.pid].alive && !fxv(o, "vanish") && d(o, e) <= 7);
+    const c = ents.filter(o => !o.dead && o.kind !== "castle" && o.kind !== "totem" && hostile(e.pid, o.pid) && fighting(o.pid) && !fxv(o, "vanish") && d(o, e) <= 7);
     const prey = c.filter(o => o.hp / o.maxhp < FINISH_AT);
     if (prey.length) return minBy(prey, o => o.hp / o.maxhp + d(o, e) * .05);
     const squishy = c.filter(o => o.kind === "champ" && (o.cls === "mage" || o.cls === "archer"));
@@ -445,7 +454,7 @@ function runBattle(plans, seed, opts = {}) {
         hit.forEach(o => { deal(e, o, R(e, "a2", [40, 55, 70]), { aoe: 1, big: 1 }); setFx(o, "slow", 3, .4); setFx(o, "frozen", 3);
           if (e.picks.a2 === "Deep Freeze") setFx(o, "root", 1); if (e.picks.a2 === "Shatter") setFx(o, "vuln", 3, .25); }); return true; },
       a3: e => { const low = e.hp / e.maxhp < .35, p = P[e.pid];
-        if (low && enemiesNear(e, e.x, e.y, 2.5).length) { blink(e, p.castle.x, p.castle.y); return true; }
+        if (low && !e.orphan && enemiesNear(e, e.x, e.y, 2.5).length) { blink(e, p.castle.x, p.castle.y); return true; }
         if (!low && live(e.tgt) && d(e, e.tgt) > e.range + 1) { blink(e, e.tgt.x, e.tgt.y); if (e.picks.a3 === "Ambush") e.ambush = true; return true; }
         return false; },
       ult: e => { if (!inReach(e, 6)) return false; const x = e.tgt.x, y = e.tgt.y, R3 = 3.2 * UR(e.ranks.ult);
@@ -726,7 +735,7 @@ function runBattle(plans, seed, opts = {}) {
       }
       if (pid === mePid) log("Militia march out from your castle.", "you");
     });
-    if (rapierDrop) { const g = ents.find(h => h.kind === "champ" && !h.dead && P[h.pid].alive && hyp(h.x - rapierDrop.x, h.y - rapierDrop.y) < .8);
+    if (rapierDrop) { const g = ents.find(h => h.kind === "champ" && !h.dead && fighting(h.pid) && hyp(h.x - rapierDrop.x, h.y - rapierDrop.y) < .8);
       if (g) { g.rapier = true; rapierHolder = g.pid; if (rapierDrop.ev) rapierDrop.ev.until = t; H({ kind: "rapierget", pid: g.pid, x: g.x, y: g.y, score: 56 }); txt(g, "Divine Rapier!", "#ffd34d"); aoe(g.x, g.y, 1, "#ffd34d", .8); log(`${poss(g.pid)} hero seizes the Divine Rapier.`, "big"); rapierDrop = null; } }
     order.forEach(pid => { // formation: the line marches at its slowest soldier's pace until the first contact, then everyone fights freely
       const p = P[pid]; if (!p.alive || p.formation === false || p.released || t - (p.fchk || -9) < .25) return; p.fchk = t;
