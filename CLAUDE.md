@@ -14,6 +14,21 @@ with text-to-speech reading Claude's responses aloud. So keep responses short an
 - Refer to files and code sparingly. When needed, say what it does rather than reading out paths
   or symbols.
 
+## Pull requests and merging: default to autonomy
+
+The goal is to reduce the user's workload. Handle pull requests end to end without asking.
+
+- **Merge straight to main, no confirmation needed:** balance changes, minor features, bug fixes,
+  and documentation. Open the pull request, merge it, and follow the deploy steps below.
+- **Confirm with the user before merging:** major features, and anything that is a prototype or a
+  parallel branch testing a whole new concept. For those, open the pull request, summarize it, and
+  ask. Never merge prototype or experimental branches on your own.
+- If unsure which category a change falls into, treat it as major and ask.
+- **Merge conflicts, rebases, and failing checks:** resolve them yourself. Don't report each one.
+  Just tell the user the outcome once it is done.
+- **If you can't resolve something**, say so plainly, explain what is blocking it in a sentence or
+  two, and ask for the user's help troubleshooting.
+
 ## Merging into main
 
 Every push to `main` deploys the game to Firebase (`.github/workflows/deploy.yml`). Whenever you
