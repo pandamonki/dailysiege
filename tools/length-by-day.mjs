@@ -9,7 +9,7 @@
 // Not modelled: alliances, mercenary bids, scripted if-then rules. Lords are simple, so read the trend, not the decimals.
 import { loadSim } from "./load-sim.mjs";
 
-const sim = loadSim(), V2 = !process.env.BAL_OLD;
+const sim = loadSim(), V2 = !process.env.BAL_OLD, DOCTRINE = process.env.DOCTRINE || "none"; // none | raider | mixed: how armies pick targets by group
 const wars = +process.argv[2] || 12, nLords = +process.argv[3] || 10;
 const STYLES = ["soldiers", "siege", "hero", "balanced"];
 // what each style buys, in order; every step is bought when affordable and the list restarts each day
@@ -17,10 +17,12 @@ sim.run(`globalThis.__lab = (function () {
   const mk = (seed, pids, wars) => {};
   return {
     unitCost: t => UNITS[t].cost, upCost: (t, l) => Math.round(UNITS[t].cost * .5 * l),
-    play(seed, n, V2) {
+    play(seed, n, V2, doctrine) {
+      const DOC = { hunter: { hero: ["hero", "ranged", "melee", "castle"], melee: ["ranged", "hero", "melee", "castle"], ranged: ["hero", "melee", "castle"] }, raider: { hero: ["castle", "hero"], melee: ["castle"], ranged: ["castle"] },
+        brawler: { hero: ["melee", "hero", "castle"], melee: ["melee", "ranged", "hero", "castle"], ranged: ["ranged", "melee", "castle"] }, sniper: { hero: ["ranged", "hero", "castle"], melee: ["ranged", "castle"], ranged: ["hero", "ranged", "castle"] }, balanced: { hero: ["hero", "castle"], melee: ["melee", "castle"], ranged: ["hero", "ranged", "castle"] } };
       const rnd = mulberry(seed), pick = a => a[Math.floor(rnd() * a.length)], L = seatLayout(n), clsKeys = Object.keys(CLASSES);
       const lords = L.castles.map((castle, i) => ({ pid: "s" + i, castle, cls: pick(clsKeys), style: pick(["soldiers", "siege", "hero", "balanced"]), gold: 300, tier: 1, beds: SLOT_START, units: [], gear: { weapon: 0, armour: 0, charm: 0 }, defences: { walls: 0, tower: 0 }, items: [], pts: 0,
-        tmode: pick(["closest", "weakcastle", "list", "list", "toplevel", "lowest"]), heading: pick(["near", "castle", "castle", "hero"]), stance: pick(["aggressive", "skirmish", "cautious"]), seedR: Math.floor(rnd() * 1e4), uid: 0 }));
+        tmode: pick(["closest", "weakcastle", "list", "list", "toplevel", "lowest"]), heading: pick(["near", "castle", "castle", "hero"]), stance: pick(["aggressive", "skirmish", "cautious"]), seedR: Math.floor(rnd() * 1e4), uid: 0, doc: pick(["hunter", "raider", "brawler", "sniper", "balanced"]) }));
       const days = [];
       for (let day = 1; day <= 7; day++) {
         const level = Math.min(MAX_HERO_LVL, 2 * day - 1), minTier = day >= 3 ? 3 : day >= 2 ? 2 : 1;
@@ -52,7 +54,7 @@ sim.run(`globalThis.__lab = (function () {
           const rot = l.seedR % PRIORITIES.length, others = lords.filter(o => o !== l).map(o => o.pid), targets = others.filter(() => rnd() < .5);
           return { pid: l.pid, me: i === 0, name: "Lord " + (i + 1), color: SEAT_COLORS[i % SEAT_COLORS.length], cls: l.cls, level, xp0: 0, castle: l.castle, castleTier: l.tier, ranks: autoRanks(level, l.seedR), picks,
             triggers: { a1: pick(TRIGGERS.slice(0, 2)), a2: pick(TRIGGERS.slice(0, 3)), a3: pick(TRIGGERS.slice(0, 3)), ult: pick(TRIGGERS.slice(0, 2)) }, ultArm: true, blessing: null, gear: { ...l.gear }, defences: { ...l.defences }, items: l.items.slice(),
-            formation: true, stance: l.stance, prio: PRIORITY_OPTS.slice(rot).concat(PRIORITY_OPTS.slice(0, rot)).slice(0, 5), rules: [], pieces, targets, tmode: l.tmode, heading: l.heading, rank: 1, leader: false, offers: {}, replies: {}, terms: {}, bids: {}, breaks: [], pbetray: {}, pacts: [], hostile: [], betray: {} };
+            formation: true, stance: l.stance, prio: PRIORITY_OPTS.slice(rot).concat(PRIORITY_OPTS.slice(0, rot)).slice(0, 5), rules: [], pieces, targets, tmode: l.tmode, heading: l.heading, rank: 1, leader: false, offers: {}, replies: {}, terms: {}, bids: {}, gprio: doctrine === "raider" ? DOC.raider : doctrine === "mixed" ? DOC[l.doc] : null, breaks: [], pbetray: {}, pacts: [], hostile: [], betray: {} };
         });
         const order = lords.slice().sort((a, b) => b.pts - a.pts), ranks = {}; order.forEach((l, i) => { ranks[l.pid] = i + 1; });
         const res = runBattle(plans, 7919 * day + seed, { fast: true, N: L.N, finalDay: day === 7, ultV2: true, balV2: V2, dayNo: day, ranks: day > 1 ? ranks : undefined });
@@ -73,7 +75,7 @@ sim.run(`globalThis.__lab = (function () {
 })()`);
 const TMAX = sim.get("TMAX"), rows = Array.from({ length: 7 }, (_, i) => ({ day: i + 1, len: [], first: [], standing: [], siege: [], units: [], tier3: [], timeUp: 0, n: 0 }));
 for (let w = 0; w < wars; w++) {
-  const days = sim.run(`__lab.play(${5000 + w * 131}, ${nLords}, ${V2})`);
+  const days = sim.run(`__lab.play(${5000 + w * 131}, ${nLords}, ${V2}, "${DOCTRINE}")`);
   days.forEach((d, i) => { const r = rows[i]; r.n++; r.len.push(d.len); if (d.first != null) r.first.push(d.first); r.standing.push(d.standing); r.siege.push(d.siege); r.units.push(d.units); r.tier3.push(d.tier3); if (d.len >= TMAX) r.timeUp++; });
 }
 const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : NaN, f = (v, d = 0) => (Number.isNaN(v) ? "-" : v.toFixed(d)).padStart(6);

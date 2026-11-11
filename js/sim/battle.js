@@ -368,6 +368,19 @@ function runBattle(plans, seed, opts = {}) {
     // nobody left on the hostile list: the army still has to fight, so it marches on the nearest non-allied castle
     return minBy(order.filter(ok), q => d(P[q].castle, p.castle));
   }
+  // Targeting priorities by kind of fighter (from 12 Nov 2026, set per plan in gprio = { hero, melee, ranged }; siege weapons always go for castles).
+  // A list is walked in order: "melee", "ranged", "siege" and "hero" pick the nearest such enemy within reach; "castle" marches on the castle of the lord the army is headed for.
+  const grpOf = e => e.kind === "champ" ? "hero" : (e.cart || e.ram) ? "siege" : (e.range || 1.1) > 1.5 ? "ranged" : "melee";
+  const catOf = o => o.kind === "champ" ? "hero" : o.kind !== "unit" ? null : (o.cart || o.ram) ? "siege" : (o.range || 1.1) > 1.5 ? "ranged" : "melee";
+  function groupPick(e) {
+    const list = P[e.pid].gprio[grpOf(e)]; if (!list) return null;
+    for (const cat of list) {
+      if (cat === "castle") { const g = goalPid(e), c = g && ents.find(o => !o.dead && o.kind === "castle" && o.pid === g); if (c) return c; continue; }
+      const pool = ents.filter(o => !o.dead && hostile(e.pid, o.pid) && fighting(o.pid) && !fxv(o, "vanish") && catOf(o) === cat && d(o, e) <= ENGAGE);
+      if (pool.length) return minBy(pool, o => d(o, e));
+    }
+    return null;
+  }
   function pickTarget(e) {
     if (e.hunter) { const hs = ents.filter(x => !x.dead && x.kind === "champ" && hostile(e.pid, x.pid) && !fxv(x, "vanish")); if (hs.length) return minBy(hs, x => d(x, e)); }
     const p = P[e.pid], guard = e.order === "guard", escort = e.order === "escort" && live(p.champ);
@@ -379,6 +392,7 @@ function runBattle(plans, seed, opts = {}) {
     if (live(cur) && cur.kind !== "castle" && hostile(e.pid, cur.pid) && !fxv(cur, "vanish") && (cur.retreating || cur.hp / cur.maxhp < .35) && d(cur, e) <= (guard ? 4.5 : 7)) return cur;
     const runners = ents.filter(o => !o.dead && o.retreating && o.kind !== "castle" && hostile(e.pid, o.pid) && !fxv(o, "vanish") && d(o, e) <= ENGAGE + 1.5);
     if (runners.length && !guard) return minBy(runners, o => o.hp / o.maxhp + d(o, e) * .1);
+    if (BV && p.gprio && !guard && !escort) { const t2 = groupPick(e); if (t2) return t2; } // per-group priorities: the lord's order of what this kind of fighter goes for
     const anchor = guard ? p.castle : escort ? p.champ : e, radius = guard ? (t - p.castleHitT < 6 ? 7 : 4) : ENGAGE;
     const near = ents.filter(o => !o.dead && o.kind !== "castle" && hostile(e.pid, o.pid) && fighting(o.pid) && !fxv(o, "vanish") && d(o, anchor) <= radius);
     if (near.length) return byPrio(e, near);
