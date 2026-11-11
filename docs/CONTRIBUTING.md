@@ -1,14 +1,19 @@
 # Contributing
 
-Read `CLAUDE.md` first for commands, conventions and gotchas. This file covers the workflow.
+Read `CLAUDE.md` first for commands, conventions and gotchas, and `docs/GAME_DESIGN.md` before
+changing how the game plays. This file covers the workflow.
 
 ## Branching and merging
 
 - `main` is production. Every push to it deploys hosting, rules and functions
   (`.github/workflows/deploy.yml`). Never commit to it directly.
-- Work on a short-lived branch and open a pull request. History so far uses `claude/<name>` branches;
-  there is no enforced naming scheme.
-- PRs are merged with a merge commit (#2, #3, #4); the large initial port was squashed (#1).
+- Work on a short-lived branch and open a pull request. History so far uses auto-generated
+  `claude/<name>` branches. Recommended from here: name the branch after the change
+  (`seats-dropdown`, `fix-install-button`); keep auto-generated names for AI sessions. Not enforced.
+- Merging: so far merge commits (#2, #3, #4) and one squash (#1). Recommended: **squash** when the
+  branch has work-in-progress or fix-up commits, so each line on `main` is one deployable change
+  that the Revert button undoes cleanly (`OPERATIONS.md` relies on that); a merge commit is fine for
+  a branch of clean, separate commits.
 - Each PR from this repository gets a preview URL as a comment (`preview.yml`). The friends game is
   disabled there, so use it for screens and practice mode only.
 - Wait for all three CI jobs (`test`, `browsers`, `firebase`) to go green before merging. The deploy
@@ -29,6 +34,21 @@ Read `CLAUDE.md` first for commands, conventions and gotchas. This file covers t
   `test/golden/hashes.json` in the same commit.
 - One logical change per commit; docs and `package.json` script additions may ride in a final
   "part" commit (`f730e6f`).
+
+## Changing how battles play out
+
+A fought battle must always replay as it was fought. So a change to outcomes takes effect from a
+stated day, never retroactively:
+
+- **Default (while the game is being built quickly): from the next battle.** Put the new behaviour
+  behind a date gate set to the next battle's date, following `ULT_V2_FROM` / `ultV2For` in
+  `js/sim/battle.js`, and pass the day through `opts` as `ultV2` is passed today.
+- **Large features may wait for the next war** instead. This is the owner's call per change; say
+  which was chosen in the pull request.
+- No gate is needed when no fought battle could have reached the changed code (for example, the
+  9th-place points fix in `beb72c4` only affects wars with more than eight lords).
+- State in the pull request which principle of `docs/GAME_DESIGN.md` the change serves, and update
+  that file if a principle changes.
 
 ## Checks before pushing
 
@@ -91,6 +111,7 @@ and docs. Inspect it with `git show --stat 3d17abd beb72c4 f730e6f`.
 - [ ] New button? `data-act="name"` in the sheet's HTML string plus `A.name` in `js/ui/actions.js`.
 - [ ] New sheet? Add its type to the map in `renderSheet()` (`js/ui/render.js`).
 - [ ] New run-time asset? Add it to `STATIC` in `vite.config.js`.
+- [ ] Outcome change? Gated from the next battle (or held for the next war), per the section above.
 - [ ] `npm test` green. If hashes changed, you can explain every one; commit them with the cause.
 - [ ] Anything the host must do by hand (console setting, secret) is written into `OPERATIONS.md`.
 

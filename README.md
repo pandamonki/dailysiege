@@ -6,6 +6,7 @@ phone replays it. Plain HTML, CSS and JavaScript on Firebase, installable as a p
 
 - Play: https://daily-siege.firebaseapp.com
 - Hosting a war, recovery, rollback, costs: [`OPERATIONS.md`](OPERATIONS.md)
+- How the game should play, and why: [`docs/GAME_DESIGN.md`](docs/GAME_DESIGN.md)
 - How it fits together: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - Making a change: [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md), tests: [`docs/TESTING.md`](docs/TESTING.md)
 - Notes for AI coding sessions: [`CLAUDE.md`](CLAUDE.md)

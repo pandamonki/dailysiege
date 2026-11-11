@@ -93,7 +93,7 @@ flowchart TD
 | **Server runs the client's script files in a `vm`** instead of a port or shared module | One implementation, zero drift; in exchange the game must stay classic scripts with a fixed load order, and `functions/game/` must be synced before deploy | `functions/lib/game.js` header |
 | **Own deterministic trig (`detmath.js`)** | `Math.sin` etc. can differ in the last digit between engines; custom versions are slower and less precise but identical everywhere. Drawing code may still use `Math.*` | `README.md`, plan §3.2 |
 | **Golden hashes + phone self-test** | 62 recorded battles act as a tripwire for any outcome change; costs ~30 s per test run and a hash re-record on every balance tweak | `test/golden.test.mjs`, `selftest.html` |
-| **Adapter fakes the old storage API** rather than rewriting callers | The port touched little game code and the artifact build still runs; the cost is an indirection where client code thinks in `players/{uid}` documents that don't exist in Firestore | `js/net/backend-firebase.js` header |
+| **Adapter fakes the old storage API** rather than rewriting callers | The port touched little game code and the artifact build kept running (it is now retired, so this benefit has expired); the cost is an indirection where client code thinks in `players/{uid}` documents that don't exist in Firestore | `js/net/backend-firebase.js` header |
 | **Three-way data split** (public / private / orders-per-day) | Enables rule-level secrecy and per-day freezing; more reads per battle (N+1 per player) | `firestore.rules` header |
 | **Clock fields are server-owned and monotonic** | `planDay` only advances when a battle is fought, so changing the battle hour can't skip or repeat a day; requires a trigger function on every settings write | `functions/lib/clock.js` |
 | **Seat = id of the account that first registered**; `members/{uid}.seat` can point a new account at it | Lost-phone recovery without rewriting any battle history | `functions/lib/resolve.js` `reassignSeat` |
@@ -107,8 +107,10 @@ flowchart TD
 ## Weak spots and tech debt (highest risk first)
 
 1. **Sim changes silently rewrite history.** Past battles are replayed from saved inputs with
-   current code. The only mechanism is ad-hoc date gates (`ULT_V2_FROM` in `js/sim/battle.js`).
-   Forgetting one produces mismatch reports for every past replay in a running war.
+   current code. The agreed policy (`docs/GAME_DESIGN.md`, "Changing the rules mid-war") is that
+   changes apply from the next battle, which is exactly the case that needs a gate. The only
+   mechanism is ad-hoc date gates (`ULT_V2_FROM` in `js/sim/battle.js`), and nothing tests that a
+   gate was added. Forgetting one produces mismatch reports for every past replay in a running war.
 2. **Deploy is not gated on the tests that matter most.** `deploy.yml` runs lint, unit and rules
    tests; the e2e, seven-day war and three-browser determinism jobs live in `ci.yml` and run in
    parallel on the same push. A PR merged with red CI still deploys.
@@ -139,7 +141,9 @@ Ordered so that each step makes the next one safer. Items 1 and 5 restate `READM
 the rest are recommendations from this review.
 
 1. **Version the ruleset explicitly.** Store a `rules` version in each `battles/{day}` document and
-   have `runBattle` branch on it, replacing date gates. This makes weak spot 1 a checked invariant:
+   have `runBattle` branch on it, replacing date gates. "From the next battle" and "from the next
+   war" then become the same mechanism with a different starting point, which gives the owner the
+   per-change choice they asked for. Gates older than the oldest replayable war can be deleted. This makes weak spot 1 a checked invariant:
    a golden test per version.
 2. **Gate deploys on the full CI.** Make `deploy.yml` depend on the `browsers` and `firebase` jobs
    (or trigger it from a successful CI run), so `main` can't ship a determinism regression.
@@ -155,6 +159,26 @@ the rest are recommendations from this review.
 6. **Validate orders on the server.** Before `fightDay`, check each plan against `private/state`
    (owned units, gold spent). Full server-side economy is a larger step and only worth it if the
    audience grows beyond trusted friends.
-7. **Retire the artifact compatibility layer** once the Claude-hosted version is frozen (plan §7 says
-   it should be): call Firestore directly from `session.js`, drop the fake `players/{uid}` join, and
+7. **Retire the artifact compatibility layer.** The Claude-hosted version is confirmed retired, so
+   nothing depends on it any more: remove the `window.claude` early return, call Firestore directly from `session.js`, drop the fake `players/{uid}` join, and
    rename storage keys with a migration.
+8. **Keep the sim portable.** `docs/GAME_DESIGN.md` lists a 3D pass, "likely in Godot", as an open
+   direction. If that happens the JavaScript client is replaced but the rules are not. The assets
+   that survive are the pure sim (`js/config/`, `js/sim/`, `js/net/world.js`), the server that runs
+   it, and `test/golden/hashes.json` as an executable specification. That argues for doing steps 1
+   and 5 on the sim first and spending little on restructuring `js/ui/` and `js/render/`
+   **(inferred; depends on how firm the 3D direction is)**.
+
+## Design principles the code does not yet meet
+
+Checked against `docs/GAME_DESIGN.md`:
+
+- **"Secrets are real" holds; fair play is partial.** Orders are unreadable by rivals and the host,
+  and tested (`emulator-tests/rules.spec.mjs`). A player's own gold and army are still unchecked
+  (weak spot 3).
+- **"Easy to read" is at risk from feature growth.** Siege engines, mercenaries, blessings and the
+  Divine Rapier all arrived in one version (`js/ui/sheets/news.js`). Nothing in the repo measures
+  planning time against the "few minutes on a phone" pillar; that is a play-test question.
+- **Balance principles are only partly automated.** `npm run balance` reports hero and seat win
+  rates but passes no verdict, and nothing checks "one champion narrowly beats a squad of similar
+  value" outside the in-game lab (`js/dev/balanceLab.js`).

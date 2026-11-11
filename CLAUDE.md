@@ -4,10 +4,12 @@ A daily, asynchronous siege game for one group of friends (up to 12 "lords"). Ea
 secretly sets orders for their hero and army; at a fixed hour the server fights one deterministic
 battle and every phone replays it. It is a plain HTML/CSS/JS canvas game (no framework, no bundling
 of game scripts) hosted on Firebase (Hosting, Auth, Firestore, Functions, Cloud Messaging) as an
-installable PWA. It started life as a Claude artifact and still carries that compatibility layer.
+installable PWA. It started life as a Claude artifact ("Last Banner"); that version is retired, so
+its compatibility layer is now debt to remove, not behaviour to preserve.
 
-Deeper docs: `docs/ARCHITECTURE.md`, `docs/CONTRIBUTING.md`, `docs/TESTING.md`, `OPERATIONS.md`
-(host's runbook), `daily-siege-hosting-plan.md` (the original port plan; historical).
+Deeper docs: `docs/GAME_DESIGN.md` (**source of truth for how the game should play**; check a
+gameplay change against its pillars), `docs/ARCHITECTURE.md`, `docs/CONTRIBUTING.md`,
+`docs/TESTING.md`, `OPERATIONS.md` (host's runbook), `daily-siege-hosting-plan.md` (historical).
 
 ## Commands
 
@@ -85,9 +87,10 @@ run time from Hosting (`/__/firebase/init.json`); nothing is checked in.
 - **Any change to `js/sim/`, `js/config/`, `js/core/layout.js`, `js/core/player.js` or `js/net/world.js`
   can change battle hashes.** `npm test` then fails. If intended, `npm run golden:update` and commit
   `test/golden/hashes.json` in the same commit.
-- **Old battles are replayed from saved inputs with today's code.** A sim change mid-war makes past
-  replays disagree with saved results. The existing pattern is a date gate: `ULT_V2_FROM` in
-  `js/sim/battle.js`.
+- **Old battles are replayed from saved inputs with today's code.** An ungated sim change makes past
+  replays disagree with saved results. Policy: outcome changes apply **from the next battle**, behind
+  a date gate like `ULT_V2_FROM` in `js/sim/battle.js`. Ask the owner before holding a large feature
+  for the next war instead.
 - **Script order lives in three places:** `index.html`, `selftest.html`, and `SIM_FILES`/`WORLD_FILES`
   in `functions/lib/game.js`. A new sim file must be added to all three (a unit test checks
   `index.html` against `SIM_FILES` only).
@@ -106,7 +109,7 @@ run time from Hosting (`/__/firebase/init.json`); nothing is checked in.
   tests only. E2E and browser tests run in a separate workflow and do not gate the deploy.
 - **PR preview URLs** (`*--*.web.app`) have the friends game switched off on purpose (`findConfig()`).
 - **Emulator mode** only activates on `localhost`/`127.0.0.1` with `?emulator=1` (sticky via localStorage `ds.emulator`).
-- Storage keys still use the old name (`lastbanner.v4`, `lastbanner.mode`). Renaming them wipes saves.
+- Storage keys still use the old name (`lastbanner.v4`, `lastbanner.mode`). Renaming needs a migration.
 - `selftest.html` still says "50 fixed battles"; the real count is 62 (`GOLDEN_COUNT`).
 
 ## Don't
