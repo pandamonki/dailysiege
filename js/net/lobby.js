@@ -221,7 +221,7 @@ function installSheet() { // how to put the game on the home screen
   return head(null, "Install Daily Siege", "Play it like an app") + `<div class="body">
     <p>Added to your Home Screen, the game opens full-screen, starts instantly and can send battle alerts.</p>
     ${ios ? `<ol><li>Open this page in <b>Safari</b> (not inside another app).</li><li>Tap the <b>Share</b> button (the square with an arrow).</li><li>Choose <b>Add to Home Screen</b>, then <b>Add</b>.</li><li>Open <b>Daily Siege</b> from your Home Screen and sign in there.</li></ol><p class="muted">On iPhone the Home Screen app keeps its own sign-in. Signing in with Google is the simplest there; an emailed link opens in Safari instead.</p>`
-      : `<ol><li>Open your browser's menu (⋮).</li><li>Choose <b>Install app</b> or <b>Add to Home screen</b>.</li></ol>`}
+      : `<ol><li>If this page opened inside another app (a bar with an ✕ at the top), tap <b>⋮</b> and choose <b>Open in Chrome</b> first.</li><li>In Chrome, tap the menu <b>⋮</b> at the top right.</li><li>Choose <b>Add to Home screen</b>, then <b>Install</b>.</li><li>Open <b>Daily Siege</b> from your Home Screen. You stay signed in.</li></ol>`}
     <div class="row"><button class="btn" data-act="open" data-v="title">← Back</button></div></div>`;
 }
 function accountLine() { return window.DS && DS.user ? `<p class="muted">Signed in as ${esc(DS.accountLabel())} · <button class="btn small" data-act="dssignout">Sign out</button></p>` : ""; }
