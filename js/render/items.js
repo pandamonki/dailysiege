@@ -3,7 +3,7 @@
 // ----- shop item icons -----
 const ITEM_URL = {};
 const ITEM_ART = {};
-const loadItemArt = () => ["boots", "gauntlets", "ringprot", "salve", "elixir", "net", "frostdagger", "venomorb", "fang", "thornmail", "talisman", "scroll", "banner", "standard", "mender"].forEach(k => { const im = new Image(); im.onload = () => { Object.keys(ITEM_URL).forEach(x => delete ITEM_URL[x]); }; im.src = "items/" + k + ".webp"; ITEM_ART[k] = im; });
+const loadItemArt = () => ["boots", "gauntlets", "ringprot", "salve", "elixir", "net", "frostdagger", "venomorb", "fang", "thornmail", "talisman", "scroll", "banner", "standard", "mender", "fireorb", "corruptorb", "evasion", "hpring", "vanguard", "antimagic", "crystalys", "rapier", "pipe", "shiva", "daedalus"].forEach(k => { const im = new Image(); im.onload = () => { Object.keys(ITEM_URL).forEach(x => delete ITEM_URL[x]); }; im.src = "items/" + k + ".webp"; ITEM_ART[k] = im; });
 addEventListener("load", () => setTimeout(loadItemArt, 500));
 function itemURL(k, size = 56) {
   const id = k + size; if (ITEM_URL[id]) return ITEM_URL[id];
