@@ -54,10 +54,10 @@ const BOT_STYLES = [
   { name: "assassin", heading: "castle", gprio: { hero: ["healer", "hero", "lowhp"], melee: ["healer", "ranged", "lowhp"], ranged: ["healer", "hero", "lowhp"], heal: ["hero", "lowhp", "any"] } },
   { name: "balanced", heading: "castle", gprio: { hero: ["hero", "ranged", "melee"], melee: ["melee", "ranged", "hero"], ranged: ["hero", "ranged", "melee"], heal: ["hero", "wounded", "any"] } },
 ];
-const BOT_WAVES = { hunter: [["enemy_hero", 0], ["hero_dies", 0], ["timer", 90]], brawler: [["castle_hit", 0], ["timer", 60], ["army_dead", 0]], sniper: [["ult", 0], ["castle_low", 0], ["timer", 120]], assassin: [["enemy_hero", 0], ["timer", 45], ["hero_dies", 0]], balanced: [["castle_hit", 0], ["hero_dies", 0], ["timer", 150]] };
+const BOT_WAVES = { hunter: [["enemy_hero", 0, "hero"], ["hero_dies", 0, "default"], ["timer", 90, "hero"]], brawler: [["castle_hit", 0, "default"], ["timer", 60, "castle"], ["army_dead", 0, "castle"]], sniper: [["ult", 0, "default"], ["castle_low", 0, "nearest"], ["timer", 120, "default"]], assassin: [["enemy_hero", 0, "hero"], ["timer", 45, "castle"], ["hero_dies", 0, "default"]], balanced: [["castle_hit", 0, "default"], ["hero_dies", 0, "default"], ["timer", 150, "castle"]] };
 // a bot keeps some of its soldiers back in the garrison, more as the week goes on: up to 3 a wave, filled wave by wave
 const botWaves = (seed, kinds, dayNo) => { const st = BOT_STYLES[(seed >> 1) % BOT_STYLES.length].name, n = Math.min(GARRISON_SOLDIERS, Math.floor(dayNo * 1.5)), ulvl = 1 + Math.floor((dayNo - 1) / 2);
-  return BOT_WAVES[st].map(([when, at], i) => ({ when, at: at || 60, units: [...Array(Math.max(0, Math.min(WAVE_SLOTS, n - i * WAVE_SLOTS)))].map((_, k) => ({ type: kinds[Math.floor(hash(seed, i * 3 + k, 41 + dayNo) * kinds.length)], lvl: ulvl, id: null, hp: 1 })) })); };
+  return BOT_WAVES[st].map(([when, at, order], i) => ({ when, at: at || 60, order, units: [...Array(Math.max(0, Math.min(WAVE_SLOTS, n - i * WAVE_SLOTS)))].map((_, k) => ({ type: kinds[Math.floor(hash(seed, i * 3 + k, 41 + dayNo) * kinds.length)], lvl: ulvl, id: null, hp: 1 })) })); };
 const botCombat = seed => { const st = BOT_STYLES[(seed >> 1) % BOT_STYLES.length]; return { gprio: cleanGprio(st.gprio), engage: 1 + (seed >> 3) % 3, heading: st.heading }; };
 
 // One bot lord's orders for one day. uid: its seat id; cls: its hero; i: its place in the roster (its castle is L.castles[i]);

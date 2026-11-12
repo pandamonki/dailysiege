@@ -86,3 +86,14 @@ test("cleanWaves: three waves, three slots each, no mercenaries, unknown conditi
   assert.equal(w[1].when, "ult"); assert.equal(w[1].at, 75); assert.equal(w[1].units.length, 0);
   assert.equal(w[2].when, "timer");
 });
+
+test("waves: each wave has a purpose, kept by cleanWaves, and a different purpose gives a different battle", () => {
+  const w = J(sim.run(`cleanWaves([{ order: "castle" }, { order: "bogus" }, { order: "nearest" }])`));
+  assert.deepEqual(w.map(x => x.order), ["castle", "default", "nearest"]);
+  let differs = false;
+  for (let i = 0; i < 12 && !differs; i++) {
+    const c = sim.run(`goldenCase(${i})`), mk = order => waveFight(c, [{ when: "timer", at: 20, order, units: [{ type: "footman", lvl: 1, id: null, hp: 1 }, { type: "bowman", lvl: 1, id: null, hp: 1 }] }, { when: "timer", at: 150, units: [] }, { when: "timer", at: 150, units: [] }]);
+    if (sim.run("battleHash")(mk("default")) !== sim.run("battleHash")(mk("castle")) || sim.run("battleHash")(mk("default")) !== sim.run("battleHash")(mk("hero")) || sim.run("battleHash")(mk("default")) !== sim.run("battleHash")(mk("nearest"))) differs = true;
+  }
+  assert.ok(differs, "a wave's purpose changes where its soldiers go");
+});

@@ -26,15 +26,16 @@ function cleanGprio(g) { // a full, valid set of lists: unknown or repeated entr
   return out;
 }
 
-// Reinforcement waves (battles from 14 Nov 2026): a castle's garrison holds WAVE_COUNT waves. Each wave is one free footman plus WAVE_SLOTS bought soldiers.
+// Reinforcement waves (battles from 12 Nov 2026): a castle's garrison holds WAVE_COUNT waves. Each wave is one free footman plus WAVE_SLOTS bought soldiers.
 // A wave goes out when its condition is met. Two waves are never sent within WAVE_GAP seconds of each other, and at every minute mark a wave that has not
 // gone is forced out, so that by 1:00 one has gone, by 2:00 two, and by 3:00 all three.
 const WAVE_COUNT = 3, WAVE_SLOTS = 3, WAVE_GAP = 30, WAVE_FORCE_EVERY = 60, GARRISON_SOLDIERS = WAVE_COUNT * WAVE_SLOTS;
 const WAVE_WHEN = [["timer", "At a set time"], ["castle_hit", "When my castle is attacked"], ["castle_low", "When my castle drops below half"], ["hero_dies", "When my hero dies"], ["army_dead", "When all my soldiers die"], ["enemy_hero", "When an enemy hero dies"], ["ult", "When any ultimate is cast"]];
 const WAVE_TIMES = [20, 30, 45, 60, 75, 90, 120, 150];
+const WAVE_ORDERS = [["default", "Default orders", "Each soldier follows its group's combat orders"], ["castle", "March on castle", "Heads for the enemy castle; turns only on melee attackers"], ["hero", "Hunt heroes", "Goes after the nearest enemy hero"], ["nearest", "Nearest enemies", "Fights the closest enemy soldiers and heroes, wherever they are"]];
 const WAVE_DEFAULT = [{ when: "castle_hit", at: 45 }, { when: "hero_dies", at: 90 }, { when: "timer", at: 150 }];
 function cleanWaves(w) { // exactly WAVE_COUNT waves; unknown conditions fall back to the default; at most WAVE_SLOTS soldiers each (never a mercenary)
   return [...Array(WAVE_COUNT)].map((_, i) => { const x = Array.isArray(w) && w[i] || {}, d = WAVE_DEFAULT[i];
-    return { when: WAVE_WHEN.some(o => o[0] === x.when) ? x.when : d.when, at: WAVE_TIMES.includes(+x.at) ? +x.at : d.at,
+    return { when: WAVE_WHEN.some(o => o[0] === x.when) ? x.when : d.when, at: WAVE_TIMES.includes(+x.at) ? +x.at : d.at, order: WAVE_ORDERS.some(o => o[0] === x.order) ? x.order : "default",
       units: (Array.isArray(x.units) ? x.units : []).filter(u => u && UNITS[u.type] && !UNITS[u.type].merc).slice(0, WAVE_SLOTS).map(u => ({ type: u.type, lvl: Math.max(1, Math.min(3, Math.round(u.lvl) || 1)), id: u.id || null, hp: 1 })) }; });
 }

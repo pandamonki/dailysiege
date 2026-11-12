@@ -9,8 +9,8 @@ const ULT_V2_FROM = "2026-11-10", ultV2For = d => String(d) >= ULT_V2_FROM;
 //   - the last days of the week score more (DAY_WEIGHT), and orders drafted but not sealed are fought at the lock
 const BAL_V2_FROM = "2026-11-12", balV2For = d => String(d) >= BAL_V2_FROM;
 // Combat groups, siege rules, no castle burn and reinforcement waves (battles fought on or after this day; earlier saved battles replay as fought).
-// Keep it after the day this reaches the live game, or battles already fought under the V2 rules would change when replayed.
-const BAL_V3_FROM = "2026-11-14", balV3For = d => String(d) >= BAL_V3_FROM;
+// Set to the day it went live: any battle already fought under the V2 rules on or after this day would change when replayed.
+const BAL_V3_FROM = "2026-11-12", balV3For = d => String(d) >= BAL_V3_FROM;
 const BLOC_MAX = 3, TREACHERY_PTS = 3, TREACHERY_LOOT = .25, DAY_WEIGHT = { 5: 1.5, 6: 1.5, 7: 2 };
 // A lord whose castle falls keeps their hero and soldiers on the field: they fight on to the end of the battle, but can no longer fall back, heal at the castle, teleport home or respawn. Placing is still decided by when the castle fell.
 const ORPHAN_ARMIES = true;
@@ -79,7 +79,8 @@ function runBattle(plans, seed, opts = {}) {
     const w = p.waves[i], c = p.castle, dx = NN / 2 - c.x, dy = NN / 2 - c.y, L = hyp(dx, dy) || 1, px = -dy / L, py = dx / L, n = w.units.length;
     w.done = true; p.lastWave = t;
     w.units.forEach((u, j) => { const o = (j - (n - 1) / 2) * .45, e = makeUnit(p, { ...u, kind: "unit" }, c.x + dx / L * .9 + px * o, c.y + dy / L * .9 + py * o);
-      e.hx = e.x; e.hy = e.y; e.spd *= BAL.move; e.as *= BAL.swing; e.retreats = 1; e.wave = i + 1; if (p.noRetreat) e.noRetreat = true; });
+      e.hx = e.x; e.hy = e.y; e.spd *= BAL.move; e.as *= BAL.swing; e.retreats = 1; e.wave = i + 1; if (p.noRetreat) e.noRetreat = true;
+      if (w.order === "castle") e.purpose = "castle"; else if (w.order === "hero") e.hunter = true; else if (w.order === "nearest") e.purpose = "nearest"; }); // the wave's purpose: raider-style march on a castle, hunt heroes, or fight the nearest enemy
     ev({ ty: "wave", pid: p.pid, i, n: p.waves.filter(x => x.done).length });
     log(`${poss(p.pid)} reinforcements march out of the castle.`, p.pid === mePid ? "you" : undefined);
   }
@@ -434,8 +435,10 @@ function runBattle(plans, seed, opts = {}) {
     const p = P[e.pid], guard = e.order === "guard", escort = e.order === "escort" && live(p.champ);
     if (!e.cart && !e.ram && ((UNIT_TYPES[e.key] || [])[0] !== "siege" || e.order === "guard")) { const carts = ents.filter(o => o.cart && !o.dead && hostile(e.pid, o.pid) && ents.some(c => c.kind === "castle" && !c.dead && !hostile(e.pid, c.pid) && d(c, o) <= 4) && d(o, e) <= 9); if (carts.length) return minBy(carts, o => d(o, e)); } // a powder cart within 4 tiles of a friendly castle: stop it
     // raiders (from 12 Nov 2026) make for a castle: struck by a melee fighter they turn and fight it, struck from range they keep going
-    if (V3 && e.key === "raider" && !guard && !escort) { const ag = e.aggro; if (ag && ag.until > t && live(ag.src) && hostile(e.pid, ag.src.pid) && vis(ag.src, e) && (ag.src.range || 1.1) <= 1.5 && d(ag.src, e) <= 6) return ag.src;
+    if (V3 && (e.key === "raider" || e.purpose === "castle") && !guard && !escort) { const ag = e.aggro; if (ag && ag.until > t && live(ag.src) && hostile(e.pid, ag.src.pid) && vis(ag.src, e) && (ag.src.range || 1.1) <= 1.5 && d(ag.src, e) <= 6) return ag.src;
       const g = goalPid(e), c = g && ents.find(o => !o.dead && o.kind === "castle" && o.pid === g); if (c) return c; }
+    // a wave sent at the nearest enemies: whoever is closest, anywhere on the field; with nobody left it marches as usual
+    if (V3 && e.purpose === "nearest" && !guard && !escort) { const pool = ents.filter(o => !o.dead && o.kind !== "castle" && o.kind !== "totem" && hostile(e.pid, o.pid) && fighting(o.pid) && !fxv(o, "vanish")); if (pool.length) return minBy(pool, o => d(o, e)); }
     // aggression: answer whoever just struck you or a friend nearby
     if (e.aggro && e.aggro.until > t && live(e.aggro.src) && hostile(e.pid, e.aggro.src.pid) && vis(e.aggro.src, e) && d(e.aggro.src, e) <= 6 && (!guard || d(e.aggro.src, p.castle) <= 8)) return e.aggro.src;
     // pursuit: stay on a target that is fleeing or badly hurt, unless it has escaped far away
@@ -797,7 +800,7 @@ function runBattle(plans, seed, opts = {}) {
     if (HV3) kit.world();
     if (tick % 10 === 0) { order.forEach(pid => { const p = P[pid]; if (p.alive && !p.frenzy && p.castle.hp / p.castle.maxhp <= .2) { p.frenzy = true; aoe(p.castle.x, p.castle.y, 3, "#ff5a2a", 1.2); txt(p.castle, "Desperation Frenzy!", "#ff8a4a"); log(`${poss(pid)} defenders fight with Desperation Frenzy!`, "big"); H({ kind: "frenzy", pid, x: p.castle.x, y: p.castle.y, score: 50 }); } }); council(); }
     if (tick % 20 === 0 && !opts.duel) centreTick();
-    // reinforcement waves (from 14 Nov 2026): each castle sends the garrison out when its conditions are met, never sooner than WAVE_GAP after the last, and forced out at each minute mark
+    // reinforcement waves (from 12 Nov 2026): each castle sends the garrison out when its conditions are met, never sooner than WAVE_GAP after the last, and forced out at each minute mark
     if (V3 && !opts.duel && tick % 5 === 0) order.forEach(pid => {
       const p = P[pid]; if (!p.alive || !p.waves || t - p.lastWave < WAVE_GAP) return;
       const c = p.castle, soldiers = ents.some(x => !x.dead && x.pid === pid && x.kind === "unit" && !x.free && !x.militia && !x.merc);

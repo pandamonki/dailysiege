@@ -46,3 +46,49 @@
 .grp .ico.wv { background: none; width: 24px; height: 24px; display: inline-flex; align-items: center; gap: 2px; }
 .grp .ico.wv i { display: block; width: 100%; height: 8px; border: 1.5px solid var(--leather); background: #e8b923; border-radius: 2px; }
 .prow.wide { grid-template-columns: 64px minmax(0, 1fr); }
+
+/* Garrison screen: soldiers pool and three wave rows */
+.gr-sum { display: flex; gap: 6px; }
+.gr-sum span { flex: 1; text-align: center; padding: 5px 2px; border: 2px solid var(--wood-dark); border-radius: 8px; background: rgba(255,250,230,.5); font-size: 12px; color: var(--ink-soft); }
+.gr-sum b { font-family: var(--f-display); font-weight: 400; font-size: 17px; color: var(--ink); margin-right: 4px; }
+.gr-sum .y b::before { content: ''; display: inline-block; width: 10px; height: 6px; margin-right: 5px; background: #e8b923; border: 1.5px solid var(--leather); border-radius: 2px; vertical-align: middle; }
+.gr-sec h4 { margin: 0 0 4px; font-family: var(--f-display); font-weight: 400; font-size: 17px; color: var(--wax); display: flex; justify-content: space-between; align-items: baseline; }
+.gr-sec h4 small { font-family: inherit; font-size: 12px; color: var(--ink-soft); font-style: italic; }
+.gr-pool { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; padding: 8px; border: 2px solid var(--wood-dark); border-radius: 10px; background: rgba(60,40,20,.10); }
+.gr-t { all: unset; box-sizing: border-box; position: relative; display: grid; justify-items: center; gap: 1px; padding: 4px 0 5px; border: 2px solid var(--wood-dark); border-bottom-width: 5px; border-radius: 8px; background: var(--parchment-2); font-size: 11px; color: var(--ink); line-height: 1.1; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+.gr-t img, .gr-s img { image-rendering: pixelated; object-fit: contain; pointer-events: none; }
+.gr-t img { width: 30px; height: 38px; }
+.gr-t b { font-weight: 600; }
+.gr-t.sel { background: var(--wood); color: var(--parchment); outline: 3px solid #ffc933; }
+.gr-t.dep { border-bottom-color: #5ba85e; } .gr-t.wv { border-bottom-color: #e8b923; } .gr-t.res { border-bottom-color: #9d978a; }
+.gr-pp { display: flex; gap: 2px; } .gr-pp i { width: 6px; height: 6px; border-radius: 50%; border: 1.5px solid currentColor; } .gr-pp i.on { background: #e2b33c; border-color: #e2b33c; }
+.gr-legend { display: flex; gap: 12px; font-size: 11px; color: var(--ink-soft); margin-top: 4px; }
+.gr-legend i { display: inline-block; width: 14px; height: 4px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
+.gr-legend i.dep { background: #5ba85e; } .gr-legend i.wv { background: #e8b923; } .gr-legend i.res { background: #9d978a; }
+.gr-act { display: grid; gap: 6px; margin-top: 8px; padding: 8px; border: 2px solid var(--wood-dark); border-radius: 10px; background: rgba(255,250,230,.5); }
+.gr-act b { display: block; font-family: var(--f-display); font-weight: 400; font-size: 17px; color: var(--wax); } .gr-act small { color: var(--ink-soft); font-size: 12px; }
+.gr-btns { display: flex; flex-wrap: wrap; gap: 6px; }
+.gr-waves { display: grid; gap: 8px; }
+.gr-wrow { position: relative; display: grid; gap: 6px; padding: 7px 8px 8px; border: 2px solid var(--wood-dark); border-radius: 10px; background: rgba(255,250,230,.4); }
+.gr-wh { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.gr-wh b { font-family: var(--f-display); font-weight: 400; font-size: 17px; margin-right: 2px; }
+.gr-wn { display: grid; gap: 2px; width: 22px; } .gr-wn i { display: block; height: 5px; border: 1.5px solid var(--leather); background: #e8b923; border-radius: 2px; }
+.gr-chip { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border: 1.5px solid var(--wood-dark); border-radius: 999px; background: var(--parchment-2); font-size: 12px; color: var(--ink); white-space: nowrap; cursor: pointer; }
+.gr-chip::after { content: '▾'; font-size: 10px; color: var(--ink-soft); }
+.gr-chip.w { background: var(--wood); color: var(--parchment); } .gr-chip.w::after { color: var(--parchment); }
+.gr-chip:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.gr-r4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.gr-s { all: unset; box-sizing: border-box; position: relative; min-height: 58px; border: 2px dashed rgba(62,39,20,.55); border-radius: 8px; display: grid; place-items: center; align-content: center; font-size: 10px; color: var(--ink-soft); background: rgba(255,250,230,.25); text-align: center; line-height: 1.05; cursor: pointer; }
+.gr-s img { width: 28px; height: 35px; }
+.gr-s b { font-size: 11px; color: var(--ink); font-weight: 600; } .gr-s small { font-size: 11px; color: var(--ink-soft); }
+.gr-s.free { border-style: solid; border-color: var(--wood-dark); background: rgba(60,40,20,.14); cursor: default; }
+.gr-s.fill { border-style: solid; border-color: var(--wood-dark); background: var(--parchment-2); touch-action: none; user-select: none; -webkit-user-select: none; }
+.gr-x { position: absolute; top: -7px; right: -7px; width: 22px; height: 22px; border-radius: 50%; background: var(--wax); color: #fff; font-size: 11px; display: grid; place-items: center; border: 2px solid var(--parchment); cursor: pointer; }
+.gr-hot { border-color: #e8b923 !important; background: rgba(232,185,35,.28) !important; box-shadow: 0 0 0 3px rgba(232,185,35,.35); }
+.gr-dragging { opacity: .35; }
+.gr-ghost { position: fixed !important; z-index: 99; width: 68px; pointer-events: none; transform: rotate(-5deg) scale(1.1); box-shadow: 0 8px 18px rgba(0,0,0,.45); opacity: 1 !important; }
+.gr-pop { position: absolute; z-index: 9; left: 8px; right: 8px; top: 36px; border: 2px solid var(--wood-dark); border-radius: 10px; background: var(--parchment); box-shadow: 0 10px 22px rgba(0,0,0,.45); padding: 4px; }
+.gr-pop div { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 10px; font-size: 14px; color: var(--ink); border-radius: 6px; cursor: pointer; }
+.gr-pop div.on { background: var(--wood); color: var(--parchment); }
+.gr-pop small { display: block; font-size: 11px; opacity: .7; }
+.gr-tip { margin: 0; font-size: 12px; }
