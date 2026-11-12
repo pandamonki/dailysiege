@@ -15,6 +15,12 @@ const ITEM_SLOTS = 6;
 const ITEM_MULT = [1, 1.4, 1.8]; // shop price by item tier: everything is always on sale, higher tiers just cost more
 const itemCost = k => { const it = ITEMS[k]; return it.fixed ? it.cost : Math.round(it.cost * ITEM_MULT[it.tier - 1] / 5) * 5; };
 const ITEMS = {
+  // cheap starter items: small bonuses at small prices, so a hero can carry three by day 2
+  whetstone:   { name: "Whetstone",          g: "▲", col: "#b8b8c0", cost: 35,  tier: 1, kind: "passive", desc: "+7% attack damage." },
+  jerkin:      { name: "Leather Jerkin",     g: "▣", col: "#a8783c", cost: 35,  tier: 1, kind: "passive", desc: "+6% health." },
+  sandals:     { name: "Swift Sandals",      g: "›", col: "#7ac0a0", cost: 30,  tier: 1, kind: "passive", desc: "+6% move speed." },
+  buckler:     { name: "Iron Buckler",       g: "◍", col: "#9aa8b8", cost: 40,  tier: 1, kind: "passive", desc: "Take 4% less damage from everything." },
+  herbs:       { name: "Mending Herbs",      g: "❦", col: "#6ac86a", cost: 40,  tier: 1, kind: "passive", desc: "Regenerate 0.6% of your health every second." },
   boots:       { name: "Boots of Speed",     g: "»", col: "#5aa0d8", cost: 80,  tier: 1, kind: "passive", desc: "+10% move speed. Catch the fleeing, or run from the strong." },
   gauntlets:   { name: "Gauntlets of Power", g: "✊", col: "#c9962f", cost: 100, tier: 1, kind: "passive", desc: "+15% attack damage." },
   ringprot:    { name: "Ring of Protection", g: "◎", col: "#8aa0b8", cost: 90,  tier: 1, kind: "passive", desc: "Take 8% less damage from everything." },
