@@ -61,10 +61,10 @@ npm run build      # copy the game into dist/ ready for hosting
 | Folder | What lives there |
 |---|---|
 | `css/` | Styles in cascade order: base, layout, sheets, components, screens, council |
-| `js/config/` | Pure game data: classes, units, items, spells, order options, balance numbers. **Balance tweaks go here.** |
+| `js/config/` | Pure game data: classes, units, items, spells, hero skill trees (`trees.js`), order options, balance numbers. **Balance tweaks go here.** |
 | `js/core/` | Utilities (seeded hash/RNG), deterministic maths, map layout, practice lobby, saved state, hero levels and pieces |
 | `js/render/` | Canvas drawing: sprites, banners, walls, item and spell icons, map, camera, frame loop |
-| `js/sim/` | Battle simulation: `runBattle(plans, seed)` is deterministic, plus bots, alliances, plan building, result hashing |
+| `js/sim/` | Battle simulation: `runBattle(plans, seed)` is deterministic, plus hero skill trees (`heroTrees.js`), bots, alliances, plan building, result hashing |
 | `js/replay/` | Watching a battle: muster/hero pick, replay drawing, inspector, controls, highlights, video export |
 | `js/net/` | Friends game: players, clock, roster, daily battles, session, lobby, test sandbox, and the Firebase backend |
 | `js/ui/` | HUD, sheets (castle, info, army, council, results), `render()`, button actions, map input |

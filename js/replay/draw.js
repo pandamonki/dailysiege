@@ -42,9 +42,9 @@ function drawReplay(t) {
   const friendly = pid => pid === R.me || !!((f0.al >> R.order.indexOf(pid)) & 1);
   { const hc = f0.c != null && f0.c >= 0 ? R.colors[R.order[f0.c]] : null; drawCentreRing(t, hc); }
   // your traps until sprung
-  R.traps.forEach(tr => { if (tr.pid === R.me && !(tr.usedT && time >= tr.usedT)) drawTrap(ctx, tr.type, tr.x * ts, (tr.y + .05) * ts, ts * .9); });
+  R.traps.forEach(tr => { if (tr.pid === R.me && !(tr.t0 != null && time < tr.t0) && !(tr.usedT && time >= tr.usedT)) drawTrap(ctx, tr.type, tr.x * ts, (tr.y + .05) * ts, ts * .9); });
   const items = [];
-  (R.wallMeta || []).forEach((w, wi) => { const hp = f0.w ? f0.w[wi] : w.maxhp; if (hp == null) return; items.push([w.y + .2, () => drawWallTile(ctx, w.y, w.x, w.tier, Math.max(0, hp) / w.maxhp, R.colors[w.pid], t, w.dir)]); });
+  (R.wallMeta || []).forEach((w, wi) => { const hp = f0.w ? f0.w[wi] : w.maxhp; if (hp == null || (w.born != null && time < w.born)) return; items.push([w.y + .2, () => drawWallTile(ctx, w.y, w.x, w.tier, Math.max(0, hp) / w.maxhp, R.colors[w.pid], t, w.dir)]); });
   const wv = R.waves ? { total: WAVE_COUNT, t: replay.waveT || (replay.waveT = (R.events || []).reduce((o, e) => { if (e.ty === "wave") (o[e.pid] = o[e.pid] || []).push(e.t); return o; }, {})) } : null;
   R.meta.forEach((m, k) => {
     const b = k * 4; if (b >= f0.d.length) return;
@@ -72,6 +72,7 @@ function drawReplay(t) {
         top = drawSprite(m.key, color, cx, by, m.champ ? 1.15 : .95, m.champ ? Object.assign({}, pose, { aura: color }) : m.merc ? Object.assign({}, pose, { aura: "#ffd24a" }) : pose);
       }
       if (fl & 16) { ctx.fillStyle = "rgba(140,200,255,.35)"; ctx.beginPath(); ctx.ellipse(cx, by - ts * .4, ts * .3, ts * .45, 0, 0, 7); ctx.fill(); }
+      if (fl & 64) { ctx.strokeStyle = "rgba(190,225,255,.95)"; ctx.fillStyle = "rgba(150,200,255,.22)"; ctx.lineWidth = ts * .05; ctx.beginPath(); ctx.ellipse(cx, by - ts * .42, ts * .4, ts * .52, 0, 0, 7); ctx.fill(); ctx.stroke(); } // a shield from a skill
       if (fl & 32) { ctx.strokeStyle = "rgba(127,178,255,.9)"; ctx.lineWidth = ts * .05; ctx.beginPath(); ctx.arc(cx, by - ts * .45, ts * .42, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke(); }
       const yb = hpBar(cx, top, Math.max(0, Math.min(1, frac)), fr);
       if (m.champ) nameTag(cx, yb - ts * .02, R.names[m.pid], color, (m.lvl || 1) + ((atkIndex(), replay.lvlEv.get(k)) || []).filter(e => e.t <= time).length);
@@ -160,8 +161,10 @@ function poseOf(k, time, x, y, f0, f1) {
   return o;
 }
 function drawLongFx(time) { // effects that outlast the 2-second window: respawn countdowns and a dropped Rapier
-  const E = replay.res.events; if (!replay.longFx) replay.longFx = E.filter(e => e.ty === "respawn" || e.ty === "rapier");
+  const E = replay.res.events; if (!replay.longFx) replay.longFx = E.filter(e => e.ty === "respawn" || e.ty === "rapier" || e.ty === "zone" || e.ty === "taunt");
   replay.longFx.forEach(e => {
+    if (e.ty === "zone") { drawZoneFx(e, time); return; }
+    if (e.ty === "taunt") { drawTauntFx(e, time); return; }
     if (e.ty === "respawn") {
       if (time < e.t0 || time >= e.t1) return; const left = Math.ceil(e.t1 - time), px = e.x * ts, py = (e.y - 1.25) * ts, col = (replay.res.colors || {})[e.pid] || "#fff";
       ctx.font = `700 ${Math.round(ts * .3)}px Alegreya, Georgia, serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
@@ -173,6 +176,26 @@ function drawLongFx(time) { // effects that outlast the 2-second window: respawn
       ctx.font = `700 ${Math.round(ts * .5)}px serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = "#ffd34d"; ctx.strokeStyle = "#1e140c"; ctx.lineWidth = 3; ctx.strokeText("⚔", px, py - ts * .1 - pulse * 3); ctx.fillText("⚔", px, py - ts * .1 - pulse * 3); ctx.textAlign = "start";
     }
   });
+}
+// ground zones from skills (caltrops, blizzard, banners, domes, poison clouds...): a circle that lasts as long as the zone does
+function drawZoneFx(e, time) {
+  const age = time - e.t; if (age < 0 || age > e.dur) return; const x = e.x * ts, y = e.y * ts, R = e.r * ts, k = e.k, fade = Math.min(1, age / .3, (e.dur - age) / .5), c = e.c || "#ffffff", ph = time * 2;
+  ctx.save(); ctx.globalAlpha = fade;
+  if (k === "dome") { const g = ctx.createRadialGradient(x, y, R * .2, x, y, R); g.addColorStop(0, hexA(c, .08)); g.addColorStop(1, hexA(c, .38)); ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(x, y, R, R * .75, 0, 0, 7); ctx.fill(); ctx.strokeStyle = hexA(c, .9); ctx.lineWidth = ts * .07; ctx.stroke(); }
+  else {
+    ctx.fillStyle = hexA(c, k === "fire" ? .3 : .2); ctx.beginPath(); ctx.ellipse(x, y, R, R * .75, 0, 0, 7); ctx.fill(); ctx.setLineDash([ts * .18, ts * .12]); ctx.lineDashOffset = -time * ts * .4; ctx.strokeStyle = hexA(c, .85); ctx.lineWidth = ts * .05; ctx.stroke(); ctx.setLineDash([]);
+    const n = k === "blizzard" || k === "storm" || k === "poison" || k === "fire" ? 9 : 4;
+    for (let i = 0; i < n; i++) { const a = i * 2.399 + ph * (k === "storm" || k === "warp" ? 1.4 : .4), rr = R * (.25 + .7 * ((i * .37 + (k === "fire" ? ph * .3 : 0)) % 1)); ctx.fillStyle = hexA(k === "poison" ? "#b9f07a" : "#ffffff", .55); ctx.fillRect(x + Math.cos(a) * rr - 2, y + Math.sin(a) * rr * .75 - 2 - (k === "blizzard" || k === "fire" ? ((ph * 20 + i * 9) % 18) : 0), 4, 4); }
+    if (k === "banner") { ctx.strokeStyle = "#5a3a1f"; ctx.lineWidth = ts * .06; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y - ts * .9); ctx.stroke(); ctx.fillStyle = c; ctx.beginPath(); ctx.moveTo(x, y - ts * .9); ctx.lineTo(x + ts * .5 + Math.sin(time * 5) * ts * .06, y - ts * .75); ctx.lineTo(x, y - ts * .55); ctx.closePath(); ctx.fill(); }
+  }
+  ctx.restore();
+}
+// a taunt: a pulsing line from each taunted enemy back to the taunter
+function drawTauntFx(e, time) {
+  const age = time - e.t; if (age < 0 || age > e.dur) return; const fr = replayFrameAt(time), a = e.id * 4, b = e.to * 4; if (!fr || fr.d.length <= Math.max(a, b) + 1) return;
+  const x1 = fr.d[a] * ts, y1 = (fr.d[a + 1] - .35) * ts, x2 = fr.d[b] * ts, y2 = (fr.d[b + 1] - .35) * ts;
+  ctx.save(); ctx.globalAlpha = .55 * Math.min(1, (e.dur - age) / .5); ctx.setLineDash([ts * .14, ts * .1]); ctx.lineDashOffset = -time * ts; ctx.strokeStyle = "#ff6a4a"; ctx.lineWidth = ts * .05; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.setLineDash([]);
+  ctx.globalAlpha = 1; ctx.font = `700 ${Math.round(ts * .34)}px Alegreya, Georgia, serif`; ctx.textAlign = "center"; ctx.fillStyle = "#ff6a4a"; ctx.strokeStyle = "#1e140c"; ctx.lineWidth = 3; ctx.strokeText("!", x1, y1 - ts * .7 - Math.sin(time * 8) * 2); ctx.fillText("!", x1, y1 - ts * .7 - Math.sin(time * 8) * 2); ctx.restore();
 }
 const SHOT_DUR = { arrow: .28, bullet: .1, orb: .32, spirit: .36, heal: .42, bone: .32 };
 // ranged auto-attacks: an arrow in flight, a rifle tracer, an arcane orb, a spirit wisp, healing orbs and a spinning bone shard, each with its own impact

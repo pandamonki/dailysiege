@@ -33,7 +33,7 @@ function rankMap(pts, pids) {
 function wHeroState(W, uid, week, dayKey) {
   let lvl = 1, xp = 0;
   Object.keys(W.battles).filter(k => W.battles[k].week === week && k < dayKey).sort().forEach(k => { const b = W.battles[k]; lvl += b.gain ? Math.min(XP_CAP, b.gain[uid] || 0) : 1; xp = (b.xp && b.xp[uid]) || 0; });
-  return { lvl: Math.min(MAX_HERO_LVL, lvl), xp };
+  return { lvl: Math.min(heroMaxLvl(heroV3For(dayKey)), lvl), xp };
 }
 // Carry-forward: if a lord has not sealed orders for the day, their latest sealed orders of the week are fought again.
 function wLatestPlan(W, p, dayKey, inclusive) {
@@ -76,14 +76,14 @@ function buildBattleInputs(W, dayKey, opts = {}) {
   const raw = roster.map((p, i) => {
     let plan;
     const hs = wHeroState(W, p.uid, week, dayKey), lvl = hs.lvl, z = zoneFor(L.castles[i], L.N, L.castles), sp = armySpots(L.castles[i], L.N);
-    const botDay = n => lordBotPlan({ uid: p.uid, cls: (p.state && p.state.cls) || "warrior", i, ids: roster.map(q => q.uid), L, zone: z, dayNo: n, lvl: wHeroState(W, p.uid, week, addDays(week, n - 1)).lvl, v2: balV3For(dayKey) });
+    const botDay = n => lordBotPlan({ uid: p.uid, cls: (p.state && p.state.cls) || "warrior", i, ids: roster.map(q => q.uid), L, zone: z, dayNo: n, lvl: wHeroState(W, p.uid, week, addDays(week, n - 1)).lvl, v2: balV3For(dayKey), v3: heroV3For(dayKey) });
     if (opts.test && p.uid === opts.uid) plan = opts.test.mine;
     else if (p.bot) plan = opts.test ? (dayNo > 1 ? botDay(dayNo - 1) : null) : botDay(dayNo); // bots have no saved orders: theirs are worked out. In a test only yesterday's are known
     else if (opts.test) plan = lvl > 1 ? wLatestPlan(W, p, dayKey, false) : null; // fog: only yesterday's orders are known
     else plan = wLatestPlan(W, p, dayKey, true);
     const noOrders = !plan;
     if (plan) plan = JSON.parse(JSON.stringify(plan)); // the battle must never change the saved orders it reads, or replaying it later gives a different fight
-    plan = plan || { cls: (p.state && p.state.week === week && p.state.cls) || "warrior", ranks: autoRanks(lvl, i + 1), picks: {}, triggers: { a1: TRIGGERS[1], a2: TRIGGERS[2], a3: TRIGGERS[0], ult: TRIGGERS[1] },
+    plan = plan || { cls: (p.state && p.state.week === week && p.state.cls) || "warrior", ranks: autoRanks(lvl, i + 1), ...(heroV3For(dayKey) ? { tree: autoTree(lvl, i + 1, (p.state && p.state.week === week && p.state.cls) || "warrior") } : {}), picks: {}, triggers: { a1: TRIGGERS[1], a2: TRIGGERS[2], a3: TRIGGERS[0], ult: TRIGGERS[1] },
       gear: {}, defences: {}, stance: "aggressive", prio: PRIORITIES.slice(), rules: [], pieces: [], pacts: [], hostile: [], betray: {} };
     let champSeen = false; const unitSeen = new Set();
     let pieces = (plan.pieces || []).slice().reverse().filter(pc => { if (pc.kind === "champ") { if (champSeen) return false; champSeen = true; } else if (pc.id) { if (unitSeen.has(pc.id)) return false; unitSeen.add(pc.id); } return true; }).reverse().filter(pc => pc.kind === "wall" ? wallTiles(pc.r, pc.c, pc.dir).every(([a, b]) => z.has(`${a},${b}`)) : z.has(`${pc.r},${pc.c}`));
@@ -93,7 +93,7 @@ function buildBattleInputs(W, dayKey, opts = {}) {
   const rkm = rankMap(dayNo > 1 ? wStandings(W, week, addDays(dayKey, -1)) : {}, roster.map(q => q.uid));
   const plans = raw.map(({ uid, i, plan, pieces, hs, noOrders }) => ({
     pid: uid, me: uid === opts.uid, name: nameOf(uid), color: TC[uid] || SEAT_COLORS[i], cls: plan.cls, level: hs.lvl, xp0: hs.xp, ultArm: plan.ultArm, blessing: plan.blessing || null, items: wRapierItems(W, plan.items || [], uid, week, dayKey), castleTier: plan.castleTier || 1, banner: plan.banner || null, breaks: plan.breaks || [], pbetray: plan.pbetray || {}, castle: L.castles[i], leader: !!(lead && lead[1] > 0 && lead[0] === uid),
-    ranks: plan.ranks || { a1: 0, a2: 0, a3: 0, ult: 0 }, picks: plan.picks || {}, triggers: plan.triggers || {}, gear: plan.gear || {}, defences: plan.defences || {},
+    ranks: heroV3For(dayKey) ? { a1: 0, a2: 0, a3: 0, ult: 0 } : plan.ranks || { a1: 0, a2: 0, a3: 0, ult: 0 }, ...(heroV3For(dayKey) ? { tree: cleanTree(plan.tree) } : {}), picks: plan.picks || {}, triggers: plan.triggers || {}, gear: plan.gear || {}, defences: plan.defences || {},
     formation: plan.formation !== false, stance: plan.stance || "aggressive", gprio: plan.gprio || null, engage: plan.engage || 0, waves: plan.waves || null, prio: plan.prio || PRIORITIES.slice(), rules: plan.rules || [], pieces,
     targets: (plan.targets || []).filter(q => raw.some(x => x.uid === q)), tmode: plan.tmode || "list", heading: plan.heading || "near", rank: rkm[uid], offers: plan.offers || {}, replies: plan.replies || {}, terms: plan.terms || {}, bids: plan.bids || {},
     ...(noOrders && !opts.test ? { noOrders: true } : {}) })); // noOrders: this lord sealed nothing all week, so these are the stand-in orders, not theirs
@@ -109,8 +109,8 @@ const daySeed = dayKey => (+dayKey.replace(/-/g, "") % 1000003) * 7 + 13;
 function fightDay(W, dayKey, at, opts) {
   const { N: size, plans, pairs, transfers, final, mercs, feuds, week, dayNo, ranks } = buildBattleInputs(W, dayKey, opts);
   // ranks: the standings going into the day. They set the bounty on the top three, so the official fight and every replay must use the same ones.
-  const inputs = JSON.parse(JSON.stringify({ N: size, final: !!final, ultV2: ultV2For(dayKey), balV2: balV2For(dayKey), balV3: balV3For(dayKey), dayNo, ranks, feuds: plans.feuds || [], plans: plans.map(p => Object.assign({}, p, { me: false })) })); // taken before the fight, which edits its plans as it goes
-  const res = runBattle(plans, daySeed(dayKey), { fast: true, N: size, finalDay: final, ultV2: ultV2For(dayKey), balV2: balV2For(dayKey), balV3: balV3For(dayKey), dayNo, ranks });
+  const inputs = JSON.parse(JSON.stringify({ N: size, final: !!final, ultV2: ultV2For(dayKey), balV2: balV2For(dayKey), balV3: balV3For(dayKey), heroV3: heroV3For(dayKey), dayNo, ranks, feuds: plans.feuds || [], plans: plans.map(p => Object.assign({}, p, { me: false })) })); // taken before the fight, which edits its plans as it goes
+  const res = runBattle(plans, daySeed(dayKey), { fast: true, N: size, finalDay: final, ultV2: ultV2For(dayKey), balV2: balV2For(dayKey), balV3: balV3For(dayKey), heroV3: heroV3For(dayKey), dayNo, ranks });
   const units = {}; res.tel.ents.filter(e => e.kind === "unit" && e.ref).forEach(e => { (units[e.pid] = units[e.pid] || {})[e.ref] = e.survived ? 1 : 0; });
   const doc = { week, day: dayNo, at, results: res.results.map(r => ({ pid: r.pid, place: r.place, points: r.points, kills: r.kills, ukills: r.ukills || 0, castles: r.castles, fellAt: r.fellAt ?? null })), units, pairs: pairs.map(p => p.join("|")), pairsEnd: res.pairsEnd, transfers,
     awards: res.awards, ...(res.rapier ? { rapier: res.rapier } : {}), ...(res.ultCast && res.ultCast.length ? { ults: Object.fromEntries(res.ultCast.map(p => [p, 1])) } : {}), ...(res.rapierEnd ? { rapierEnd: res.rapierEnd } : {}), gain: Object.fromEntries(Object.entries(res.lvl).map(([k, v]) => [k, v.gain])), xp: Object.fromEntries(Object.entries(res.lvl).map(([k, v]) => [k, v.xp])), gold: Object.fromEntries(res.results.map(r => [r.pid, r.gold])), team: !!res.team };

@@ -1,6 +1,9 @@
 // The practice lobby: bot rivals and their armies
 
 const YOU_COLOR = "#2f5fa8";
+// Skill-tree heroes in practice: open the game with ?herov3 (or set localStorage dsHeroV3 = 1). Live games follow HERO_V3_FROM instead.
+const heroV3Flag = () => { try { return /[?&]herov3\b/.test(location.search) || localStorage.getItem("dsHeroV3") === "1"; } catch (e) { return false; } };
+const heroV3Now = () => (typeof isLive === "function" && isLive() ? heroV3For(liveClock().planDay) : heroV3Flag());
 let MY_COLOR = YOU_COLOR;
 // Example lobby for practice battles (castles are placed by the seat layout)
 const BOTS = [

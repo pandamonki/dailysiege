@@ -7,9 +7,10 @@ function ext(arr, r) { const i = Math.max(0, (r || 1) - 1), n = arr.length; retu
 function vigMul(r) { return 1 + VIG_PER * (r || 0); }
 const isPassive = k => k === "a4" || PASSIVE[S.cls] === k;
 const cls = () => CLASSES[S.cls];
-const level = () => Math.min(MAX_HERO_LVL, S && S.lvl != null ? S.lvl : DAY);
-const spent = () => S.ranks.a1 + S.ranks.a2 + S.ranks.a3 + S.ranks.ult + (S.ranks.a4 || 0);
-const freePts = () => Math.max(0, level() - spent());
+const level = () => Math.min(heroMaxLvl(heroV3Now()), S && S.lvl != null ? S.lvl : heroV3Now() ? 2 * DAY - 1 : DAY);
+const spent = () => (heroV3Now() ? treeSpentAll(S.tree) : S.ranks.a1 + S.ranks.a2 + S.ranks.a3 + S.ranks.ult + (S.ranks.a4 || 0));
+const freePts = () => (heroV3Now() ? treeFree(S.tree, level()) : Math.max(0, level() - spent()));
+const ultLearned = () => (heroV3Now() ? treeHasUlt(S.tree) : (S.ranks.ult || 0) > 0); // has the hero learned an ultimate (old abilities or skill tree)
 const opUsed = () => S.rules.length;
 const inZone = (r, c) => zoneSet.has(`${r},${c}`);
 const placedAt = ref => Object.keys(S.place).find(k => S.place[k] === ref);

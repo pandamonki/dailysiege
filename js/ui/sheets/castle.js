@@ -119,6 +119,7 @@ function wallSheet(id) {
 }
 const abilCD = (k, r) => r ? COOLDOWN[S.cls][k] * BAL.cd * (1 - .1 * (r - 1)) * (S.gear.charm >= 2 ? .8 : 1) : null;
 function champSheet() {
+  if (heroV3Now()) return champSheetV3();
   const c = cls(), abil = [...c.abilities.map(a => ({ ...a })), { key: "ult", name: c.ult.name, desc: c.ult.desc, ult: true }, { key: "a4", name: "Vigour", desc: "Toughens your hero. More health and damage with every rank.", vig: true }];
   const selK = sheet.ab || "a1", A0 = abil.find(a => a.key === selK), r = S.ranks[selK] || 0, max = rankMax(selK), now = champNow();
   const need = r >= max ? "Fully learned" : A0.ult ? (level() < ULT_AT[r] ? `Rank ${r + 1} opens at level ${ULT_AT[r]}` : "") : A0.vig ? "" : (level() < r * 2 + 1 ? `Rank ${r + 1} opens at level ${r * 2 + 1}` : "");

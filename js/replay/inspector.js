@@ -26,6 +26,7 @@ function portraitFor(m, color) {
   return (portraitURL[id] = cv.toDataURL());
 }
 function abilRow(m, ranks) {
+  if (m.tree) return m.tree.map((row, bi) => row.map((r, i) => { if (!r) return ""; const n = TREES[m.cls][bi].nodes[i]; return `<span><img class="sico" alt="" src="${spellURL(n.ic, 32)}">${esc(n.name)} ${r}/${TREE_MAX[i]}</span>`; }).join("")).join("") || `<span class="off">No skills learned</span>`;
   const c = CLASSES[m.cls], ab = [...c.abilities.map(a => [a.key, a.name]), ["ult", c.ult.name], ["a4", "Vigour"]];
   return ab.map(([key, name]) => { const r = ranks[key] || 0, max = rankMax(key), sp = key === "a4" ? "hero_a4" : m.cls + "_" + key;
     return `<span class="${r ? "" : "off"}"><img class="sico" alt="" src="${spellURL(sp, 32)}">${esc(name)} ${"●".repeat(r)}${"○".repeat(max - r)}${r >= 3 && m.picks && m.picks[key] ? ` · ${esc(m.picks[key])}` : ""}${PASSIVE[m.cls] === key ? " · passive" : ""}</span>`; }).join("");
