@@ -42,7 +42,10 @@ async function resolveDue(db, gameId, { now = Date.now(), maxDays = 8, send = nu
   for (let i = 0; i < maxDays; i++) {
     const snap = await gameRef.get(); if (!snap.exists) break;
     const cfg = snap.data(), day = cfg.planDay;
-    if (!day || !cfg.nextLockAt || now < cfg.nextLockAt.toMillis()) break; // nothing due
+    if (!day) break;
+    // the lock is worked out from the game's own settings, so a stored lock time that is missing or has drifted cannot hold a battle back
+    const lockAt = cfg.tz && cfg.lockHour !== undefined ? lockInstant(day, cfg.tz, cfg.lockHour) : cfg.nextLockAt ? cfg.nextLockAt.toMillis() : null;
+    if (lockAt === null || now < lockAt) break; // nothing due
     const W = await loadWorld(gameRef, cfg, day), lords = wRoster(W, wWeekOf(W, day)).length;
     // a battle needs two lords; with fewer, the day simply passes
     const doc = lords >= 2 ? Object.assign(plain(fightDay(W, day, now)), { war: cfg.war || 1 }) : null;
@@ -98,4 +101,14 @@ function remindAll(db, send, { now = Date.now() } = {}) {
   return remindUnsealed(db, send, { now, wRoster: (pubs, cfg) => { const W = { config: Object.assign({}, cfg, { startDate: startDate(cfg) }), players: pubs, battles: {} }; return wRoster(W, wWeekOf(W, cfg.planDay)).map(p => p.uid); } });
 }
 
-module.exports = { resolveDue, resolveAllDue, reassignSeat, loadWorld, remindAll };
+// Why nothing is due, in plain words, for the host's button.
+async function explainNotDue(db, gameId, { now = Date.now() } = {}) {
+  const snap = await db.collection("games").doc(gameId).get(); if (!snap.exists) return "This game was not found.";
+  const cfg = snap.data(), day = cfg.planDay; if (!day) return "The war has not started yet, so there is no battle to fight.";
+  const lockInstant = g().get("lockInstant"), at = cfg.tz && cfg.lockHour !== undefined ? lockInstant(day, cfg.tz, cfg.lockHour) : cfg.nextLockAt ? cfg.nextLockAt.toMillis() : null;
+  if (at === null) return "The game has no battle time saved.";
+  const when = new Date(at).toLocaleString("en-AU", { timeZone: cfg.tz || "UTC", weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+  return now < at ? `The server's next battle is for ${day} at ${when}.` : `The server is already planning ${day}.`;
+}
+
+module.exports = { explainNotDue, resolveDue, resolveAllDue, reassignSeat, loadWorld, remindAll };

@@ -345,7 +345,7 @@
   }
   DS.resolveNow = async () => { // the host's recovery button: fight any battle that is due, now
     if (!DS.isHost() || DS.busy) return; DS.busy = "resolve"; say("Fighting the battle…");
-    try { const r = await callServer("resolveNow", { gameId: G.id }); say(r.days && r.days.length ? "Done. Results are in." : "Nothing is due yet."); }
+    try { const r = await callServer("resolveNow", { gameId: G.id }); say(r.days && r.days.length ? "Done. Results are in." : "Nothing is due yet. " + (r.note || "")); }
     catch (e) { say("Couldn't resolve: " + ((e && e.message) || "error")); }
     DS.busy = null; redraw();
   };
