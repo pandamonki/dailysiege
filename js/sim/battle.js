@@ -72,8 +72,9 @@ function runBattle(plans, seed, opts = {}) {
   function deployWave(p, i) {
     const w = p.waves[i], c = p.castle, dx = NN / 2 - c.x, dy = NN / 2 - c.y, L = hyp(dx, dy) || 1, px = -dy / L, py = dx / L, n = w.units.length;
     w.done = true; p.lastWave = t;
-    w.units.forEach((u, j) => { const o = (j - (n - 1) / 2) * .45, e = makeUnit(p, { ...u, kind: "unit" }, c.x + dx / L * .9 + px * o, c.y + dy / L * .9 + py * o);
-      e.hx = e.x; e.hy = e.y; e.spd *= BAL.move; e.as *= BAL.swing; e.retreats = 1; e.wave = i + 1; if (p.noRetreat) e.noRetreat = true; });
+    w.units.forEach((u, j) => { const o = (j - (n - 1) / 2) * .45, e = makeUnit(p, { ...u, kind: "unit", order: w.order === "guard" ? "guard" : "army" }, c.x + dx / L * .9 + px * o, c.y + dy / L * .9 + py * o);
+      e.hx = e.x; e.hy = e.y; e.spd *= BAL.move; e.as *= BAL.swing; e.retreats = 1; e.wave = i + 1; if (p.noRetreat) e.noRetreat = true;
+      if (w.order === "castle") e.purpose = "castle"; else if (w.order === "hero") e.hunter = true; }); // the wave's purpose: raider-style march on a castle, or hunt heroes
     ev({ ty: "wave", pid: p.pid, i, n: p.waves.filter(x => x.done).length });
     log(`${poss(p.pid)} reinforcements march out of the castle.`, p.pid === mePid ? "you" : undefined);
   }
@@ -417,7 +418,7 @@ function runBattle(plans, seed, opts = {}) {
     const p = P[e.pid], guard = e.order === "guard", escort = e.order === "escort" && live(p.champ);
     if (!e.cart && !e.ram && ((UNIT_TYPES[e.key] || [])[0] !== "siege" || e.order === "guard")) { const carts = ents.filter(o => o.cart && !o.dead && hostile(e.pid, o.pid) && ents.some(c => c.kind === "castle" && !c.dead && !hostile(e.pid, c.pid) && d(c, o) <= 4) && d(o, e) <= 9); if (carts.length) return minBy(carts, o => d(o, e)); } // a powder cart within 4 tiles of a friendly castle: stop it
     // raiders (from 12 Nov 2026) make for a castle: struck by a melee fighter they turn and fight it, struck from range they keep going
-    if (V3 && e.key === "raider" && !guard && !escort) { const ag = e.aggro; if (ag && ag.until > t && live(ag.src) && hostile(e.pid, ag.src.pid) && !fxv(ag.src, "vanish") && (ag.src.range || 1.1) <= 1.5 && d(ag.src, e) <= 6) return ag.src;
+    if (V3 && (e.key === "raider" || e.purpose === "castle") && !guard && !escort) { const ag = e.aggro; if (ag && ag.until > t && live(ag.src) && hostile(e.pid, ag.src.pid) && !fxv(ag.src, "vanish") && (ag.src.range || 1.1) <= 1.5 && d(ag.src, e) <= 6) return ag.src;
       const g = goalPid(e), c = g && ents.find(o => !o.dead && o.kind === "castle" && o.pid === g); if (c) return c; }
     // aggression: answer whoever just struck you or a friend nearby
     if (e.aggro && e.aggro.until > t && live(e.aggro.src) && hostile(e.pid, e.aggro.src.pid) && !fxv(e.aggro.src, "vanish") && d(e.aggro.src, e) <= 6 && (!guard || d(e.aggro.src, p.castle) <= 8)) return e.aggro.src;

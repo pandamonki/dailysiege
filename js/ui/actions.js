@@ -64,7 +64,7 @@ const A = {
   bless: v => { S.bless = v || null; },
   ctab: v => { sheet.tab = v; sheet.keep = false; },
   pick: v => { sel = sel === v ? null : v; },
-  move: v => { sel = v; sheet = null; toast("Tap a glowing tile."); },
+  move: v => { if (inGarrison(v)) { if (fieldCount() >= S.slots) { toast("Your field supply is full."); return; } unGarrison(v); } sel = v; sheet = null; toast("Tap a glowing tile."); },
   usell: id => { const u = findUnit(id); if (!u) return; S.sells = (S.sells || 0) + 1; const k = placedAt(id); if (k) delete S.place[k]; unGarrison(id); S.owned = S.owned.filter(x => x.id !== id); S.gold += unitSellPrice(u); if (!sheet || sheet.type !== "castle") sheet = null; toast(`${UNITS[u.type].name} sold for ${unitSellPrice(u)}g.`); },
   bench: v => { const k = placedAt(v); if (k) delete S.place[k]; if (!sheet || sheet.type !== "castle") sheet = null; },
   deploy: (v, k) => { { const cu = findUnit(v); if (cu && cu.cool > 0) { toast(`${UNITS[cu.type].name} is recharging for ${cu.cool} more day${cu.cool > 1 ? "s" : ""}.`); return; } }
@@ -123,7 +123,6 @@ const A = {
   formation: () => { S.formation = S.formation === false; },
   heading: v => { S.strategy.heading = v; },
   gtoggle: (_, k) => { sheet.gopen = sheet.gopen === k ? null : k; },
-  wtoggle: (_, k) => { sheet.wopen = sheet.wopen === k ? null : k; },
   engage: v => { if (!S.locked) S.engage = cleanEngage(S.engage + +v); },
   heropick: () => { showHeroPick(null); },
   invite: (_, k) => { ensureDip(); if (S.offers[k]) return; if (carriedPartners().includes(k)) { toast("You are already allied."); return; }
@@ -186,9 +185,6 @@ document.addEventListener("change", e => {
   if (act === "tmode") S.terms[k].mode = s.value;
   if (act === "tmodeset") S.strategy.mode = s.value;
   if (act === "prioset") S.prio[+v] = s.value;
-  if (act === "wwhen" && !S.locked) S.garrison[+k].when = s.value;
-  if (act === "wat" && !S.locked) S.garrison[+k].at = +s.value;
-  if (act === "wslot" && !S.locked) { const id = s.value || null; if (id) { unGarrison(id); const pk = placedAt(id); if (pk) delete S.place[pk]; } S.garrison[+k].slots[+v] = id; }
   if (act === "gprioset" && !S.locked) { const l = S.gprio[k].slice(); l[+v] = s.value; S.gprio[k] = cleanGprio({ ...S.gprio, [k]: l.filter(Boolean) })[k]; }
   if (act === "pactset") { ensureDip(); S.pactAct[k] = s.value; if (s.value === "betray") S.pactWhen[k] = S.pactWhen[k] || BETRAY_WHEN[0]; }
   if (act === "tmin") S.terms[k].min = +s.value;
