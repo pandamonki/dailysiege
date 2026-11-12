@@ -23,6 +23,7 @@
 .hidhero { width: 36px; height: 36px; display: grid; place-items: center; border: 2px dashed rgba(62,39,20,.4); border-radius: 6px; color: var(--ink-soft); font-family: var(--f-display); font-size: 20px; }
 .summon { display: grid; gap: 6px; padding: 12px 14px; border-radius: 10px; border: 2px solid var(--gold); background: rgba(201,150,47,.12); } .summon p { margin: 0; } .summon .when { font-size: 14px; color: var(--ink-soft); }
 .lcard.emptyseat { grid-template-columns: 1fr; border-style: dashed; background: transparent; opacity: .7; min-height: 52px; }
+.lcard.emptyseat.hasbtn { grid-template-columns: minmax(0, 1fr) auto; opacity: .9; }
 .lbox.need { box-shadow: 0 0 0 3px var(--gold), 0 6px 18px rgba(0,0,0,.4); }
 
 /* combat groups: one collapsed row each, tap to open its priority slots */
