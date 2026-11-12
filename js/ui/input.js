@@ -8,15 +8,15 @@ function tapAt(clientX, clientY) {
   const q = Math.floor(wx / ts), r = Math.floor(wy / ts);
   if (r < 0 || q < 0 || r >= N || q >= N) return;
   const key = `${r},${q}`, near = sel ? null : pieceNear(wx / ts, wy / ts);
-  if (!near && r === CASTLE[0] && q === CASTLE[1]) { sel = null; S.phase = "muster"; open("castle"); return; }
+  if (!near && r === CASTLE[0] && q === CASTLE[1]) { sel = null; if (!psel || psel.t !== "castle") { psel = { t: "castle" }; render(); return; } S.phase = "muster"; open("castle"); return; } // first tap shows it in the strip, the next opens it
   const rv = near ? null : RIVALS.find(x => x.pos[0] === r && x.pos[1] === q) || RIVALS.find(x => RARMY.some(u => u.rid === x.id && u.r === r && u.c === q));
-  if (rv) { sel = null; open("rival", rv.id); return; }
+  if (rv) { sel = null; const ru = RARMY.findIndex(u => u.rid === rv.id && u.r === r && u.c === q), same = psel && psel.t === "rival" && psel.id === rv.id && psel.u === (ru >= 0 ? ru : null); if (!same) { psel = { t: "rival", id: rv.id, u: ru >= 0 ? ru : null }; render(); return; } open("rival", rv.id); return; }
   if (isCentre(r, q) && !sel && !near) { toast("The centre hill. Hold it for bonus points."); return; }
   const pn = sel ? null : pieceNear(wx / ts, wy / ts);
   if (!inZone(r, q) && !wallRefAt(r, q) && !pn) { if (sel) toast("You can only deploy inside your fenced field."); return; }
   const wref = wallRefAt(r, q), here = pn || S.place[key] || wref;
   if (sel) {
-    if (S.locked) return;
+    psel = null; if (S.locked) return;
     const wl = findWall(sel);
     if (wl) { if (!wallFree(r, q, wl.dir, sel)) { toast("That tile isn't free."); return; } }
     else { if (wref) { toast("A wall stands there."); return; } if (here && here !== sel) { toast("Someone already holds that ground."); return; } }
@@ -26,7 +26,7 @@ function tapAt(clientX, clientY) {
   }
   if (here && S.phase === "orders") { if (here === "champ" || findUnit(here)) open("uorder", here); return; }
   if (S.phase === "orders") return;
-  if (here) { open(here === "champ" ? "champ" : findUnit(here) ? "unit" : findWall(here) ? "wall" : "trap", here); return; }
+  if (here) { const ty = here === "champ" ? "champ" : findUnit(here) ? "unit" : findWall(here) ? "wall" : "trap"; if (psel && psel.t === ty && psel.id === here) { open(ty, here); return; } psel = { t: ty, id: here }; render(); return; }
   if (S.locked) return;
   if (unplaced().length) open("deploy", key); else toast("The barracks are empty. Recruit more at your castle.");
 }

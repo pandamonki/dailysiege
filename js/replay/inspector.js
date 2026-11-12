@@ -76,19 +76,21 @@ function dockStats(m) {
     + S("rng", "➶", m.range > 1.5 ? m.range.toFixed(1) : "Melee") + (m.kind === "castle" ? "" : S("spd", "👢", m.spd.toFixed(2)))
     + (m.evade ? S("evd", "≋", Math.round(m.evade * 100) + "%") : m.heal && m.kind === "unit" ? S("heal", "✚", Math.round(m.heal)) : m.lvl && m.kind === "champ" ? `<button class="ud-stat" id="udlvl" data-act="dtip" data-v="s:lvl"><em>★</em><b>Level ${m.lvl}</b></button>` : "");
 }
-function dockHTML(k) {
-  const { R, m, color, who, title, role } = dockModel(k), img = portraitFor(m, color);
+function replaySrc(k) { const d = dockModel(k); return { m: d.m, color: d.color, who: d.who, title: d.title, role: d.role, ranks: ranksNow(k, d.m), cd: key => cdState(k, key, replay.time), xp: true }; }
+// src = what the panel shows: { m (a replay-meta-shaped unit), color, who, title, role, ranks, cd(key) }. Replays and the planning screen both build one.
+function dockHTML(src, opts = {}) {
+  const { m, color, who, title, role } = src, img = portraitFor(m, color);
   const por = img ? `<img alt="" src="${img}">` : m.kind === "castle" ? `<img class="art" alt="" src="icons/ui/castle${m.ctier || 1}.webp">` : `<div class="gl">${m.kind === "totem" ? "✦" : "W"}</div>`;
   let bot = "";
   if (m.kind === "champ") {
-    const { act, pas } = heroSkills(m, ranksNow(k, m)), cap = Math.max(1, Math.floor((330 - act.length * 51) / 31)); // as many passives as fit on the line
-    const slot = a => `<button class="ud-sl${a.ult ? " ult" : ""}${a.off ? " off" : ""}" data-act="dtip" data-v="a:${a.key}" data-ab="${a.key}"><img alt="" src="${spellURL(a.ic, 96)}"><i class="ud-cd" hidden></i>${a.max > 1 ? `<span class="rk">${a.rank}/${a.max}</span>` : ""}</button>`;
+    const { act, pas } = heroSkills(m, src.ranks), cap = Math.max(1, Math.floor((330 - act.length * 51) / 31)); // as many passives as fit on the line
+    const slot = a => `<button class="ud-sl${a.ult ? " ult" : ""}${a.off ? " off" : ""}" data-act="dtip" data-v="a:${a.key}" data-ab="${a.key}"><img alt="" src="${spellURL(a.ic, 96)}"><i class="ud-cd" hidden></i>${a.max > 1 && !src.hideRanks ? `<span class="rk">${a.rank}/${a.max}</span>` : ""}</button>`;
     const mini = a => `<button class="ud-mini" data-act="dtip" data-v="a:${a.key}" title="${esc(a.name)}"><img alt="" src="${spellURL(a.ic, 48)}"></button>`;
     const items = (m.items || []).filter(ik => ITEMS[ik]), cells = [];
     for (let i = 0; i < ITEM_SLOTS; i++) { const ik = items[i]; cells.push(ik ? `<button class="ud-sl it" data-act="dtip" data-v="i:${ik}" data-it="${ik}"><img alt="" src="${itemURL(ik, 64)}"><i class="ud-cd" hidden></i></button>` : `<span class="ud-sl it empty"></span>`); }
     const g = m.gear || {}, gear = GEAR_SLOTS.map(([gk], i) => { const x = g[gk] ? GEAR[gk][g[gk] - 1] : null; return `<button class="ud-sl it gear${x ? "" : " empty"}" data-act="dtip" data-v="g:${gk}" title="${x ? esc(x.name) : ""}"><span>${["⚔", "🛡", "✦"][i]}</span>${x ? `<b>${g[gk]}</b>` : ""}</button>`; });
     bot = `<div class="ud-row"><div class="ud-lab">Skills</div><div class="ud-ab">${act.map(slot).join("") || `<span class="ud-none">No skills learned</span>`}${pas.length ? `<span class="ud-sep"></span>${pas.slice(0, cap).map(mini).join("")}${pas.length > cap ? `<button class="ud-mini more" data-act="dtip" data-v="p:all">+${pas.length - cap}</button>` : ""}` : ""}</div></div>
-      <div class="ud-row"><div class="ud-lab">Items &amp; gear</div><div class="ud-it">${cells.join("")}<span class="ud-sep"></span>${gear.join("")}</div></div>`;
+      <div class="ud-row"><div class="ud-lab">Items &amp; gear${src.rival ? " · not scouted" : ""}</div><div class="ud-it">${cells.join("")}<span class="ud-sep"></span>${gear.join("")}</div></div>`;
   } else if (m.kind === "castle") {
     const d = m.defences || {}, list = [d.walls ? DEFENCES.walls[d.walls - 1].name : null, d.tower ? DEFENCES.tower[d.tower - 1].name : null].filter(Boolean);
     bot = `<div class="ud-row ban"><div><div class="ud-lab">Banner</div><img class="bico" alt="" src="${bannerURL(m.banner, color, 36, 48)}"></div><div><div class="ud-lab">Defences</div><div class="ud-def">${list.length ? list.map(n => `<span>${esc(n)}</span>`).join("") : `<span class="off">None built</span>`}</div></div></div>`;
@@ -98,19 +100,19 @@ function dockHTML(k) {
   }
   return `<div class="ud-top"><div class="ud-por" style="--c:${color}">${por}${m.lvl ? `<div class="ud-lv" id="udlv">${m.lvl}</div>` : ""}</div>
     <div class="ud-id"><div class="ud-nm"><b>${esc(title)}</b><small>${role}</small></div><div class="ud-sub"><i style="background:${color}"></i>${esc(who)}<span class="ud-st" id="udst"></span></div>
-    <div class="ud-bar" id="udbar"><i></i><span></span></div>${m.kind === "champ" ? `<div class="ud-xp" id="udxp" data-act="dtip" data-v="s:xp"><i></i><span></span></div>` : ""}</div></div>
+    <div class="ud-bar" id="udbar"><i></i><span></span></div>${opts.actions || (src.xp && m.kind === "champ" ? `<div class="ud-xp" id="udxp" data-act="dtip" data-v="s:xp"><i></i><span></span></div>` : "")}</div></div>
     <div class="ud-stats">${dockStats(m)}</div>${bot}`;
 }
 // the card that opens when a stat, skill or item is tapped
-function dockTip(k, key, time) {
-  const { m } = dockModel(k), [kind, id] = [key.slice(0, 1), key.slice(2)];
+function dockTip(src, key) {
+  const { m } = src, [kind, id] = [key.slice(0, 1), key.slice(2)];
   if (kind === "s") { const s = UD_STATS[id]; return s ? { title: s[0], body: s[1], meta: "" } : null; }
-  if (kind === "i") { const it = ITEMS[id]; if (!it) return null; const c = it.kind === "use" ? cdState(replay.dockK, "i:" + id, time) : null;
+  if (kind === "i") { const it = ITEMS[id]; if (!it) return null; const c = it.kind === "use" ? src.cd("i:" + id) : null;
     return { img: itemURL(id, 96), title: it.name, sub: `Tier ${it.tier}`, body: it.desc, meta: it.kind === "use" ? `<span>Cooldown <b>${it.cd}s</b></span><span>${c.used ? "Used" : c.left ? `Ready in <b>${Math.ceil(c.left)}s</b>` : "<b>Ready</b>"}</span>` : `<span>Always active</span>` }; }
   if (kind === "g") { const lv = (m.gear || {})[id], x = lv ? GEAR[id][lv - 1] : null; return { title: x ? x.name : "No " + id, sub: GEAR_SLOTS.find(g => g[0] === id)[1], body: x ? x.desc : "Nothing equipped.", meta: "" }; }
-  if (kind === "p") { const sk = heroSkills(m, ranksNow(k, m)); return { title: "Passive skills", body: sk.pas.map(a => `${a.name}${a.max > 1 ? " " + a.rank + "/" + a.max : ""}`).join(" · "), meta: "<span>Always active</span>" }; }
-  if (kind === "a") { const sk = heroSkills(m, ranksNow(k, m)), a = [...sk.act, ...sk.pas].find(x => x.key === id); if (!a) return null;
-    const act = sk.act.includes(a), c = act && !a.off ? cdState(replay.dockK, a.key, time) : null;
+  if (kind === "p") { const sk = heroSkills(m, src.ranks); return { title: "Passive skills", body: sk.pas.map(a => `${a.name}${a.max > 1 ? " " + a.rank + "/" + a.max : ""}`).join(" · "), meta: "<span>Always active</span>" }; }
+  if (kind === "a") { const sk = heroSkills(m, src.ranks), a = [...sk.act, ...sk.pas].find(x => x.key === id); if (!a) return null;
+    const act = sk.act.includes(a), c = act && !a.off ? src.cd(a.key) : null;
     return { img: spellURL(a.ic, 96), title: a.name, sub: a.max > 1 ? `Rank ${a.rank} of ${a.max}` : a.ult ? "Ultimate" : "", body: a.desc,
       meta: act ? (a.off ? "<span>Not learned</span>" : `${a.cd ? `<span>Cooldown <b>${Math.round(a.cd)}s</b></span>` : ""}<span>${a.ult ? "Once per fight · " : ""}${c.used ? "<b>Used</b>" : c.left ? `Ready in <b>${Math.ceil(c.left)}s</b>` : "<b>Ready</b>"}</span>`) : "<span>Passive</span>" }; }
   return null;
@@ -119,7 +121,7 @@ function updateInspector() {
   const box = document.getElementById("ud"), tipEl = document.getElementById("udtip"); if (!box) return;
   if (!replay || replay.reel) { box.hidden = tipEl.hidden = true; return; }
   const k = dockTarget(), R = replay.res, m = R.meta[k]; box.hidden = false;
-  if (replay.inspectKey !== k) { box.innerHTML = dockHTML(k); replay.inspectKey = k; replay.dockK = k; replay.tip = null; replay.inspectLvl = null; }
+  if (replay.inspectKey !== k) { box.innerHTML = dockHTML(replaySrc(k)); replay.inspectKey = k; replay.dockK = k; replay.tip = null; replay.inspectLvl = null; }
   const f = replayFrameAt(replay.time), b = k * 4, hp = b < f.d.length ? f.d[b + 2] : 0, fl = b < f.d.length ? f.d[b + 3] : 1, dead = fl & 1;
   const friendly = m.pid === R.me || !!((f.al >> R.order.indexOf(m.pid)) & 1);
   const bar = document.getElementById("udbar"); bar.firstChild.style.width = `${Math.max(0, Math.min(1, hp / m.maxhp)) * 100}%`; bar.className = "ud-bar" + (friendly ? "" : " bad");
@@ -134,7 +136,7 @@ function updateInspector() {
       o.hidden = !(c.left || c.used); el.classList.toggle("cool", !!(c.left || c.used)); if (c.used) { o.textContent = "USED"; o.className = "ud-cd used"; o.style.removeProperty("--p"); }
       else if (c.left) { o.textContent = Math.ceil(c.left); o.className = "ud-cd"; o.style.setProperty("--p", Math.round((1 - c.left / c.max) * 100) + "%"); } });
   }
-  const t = replay.tip ? dockTip(k, replay.tip, replay.time) : null;
+  const t = replay.tip ? dockTip(replaySrc(k), replay.tip) : null;
   if (!t) { tipEl.hidden = true; replay.tip = null; return; }
   const html = `${t.img ? `<img alt="" src="${t.img}">` : ""}<div><h4>${esc(t.title)}<small>${esc(t.sub || "")}</small></h4><p>${esc(t.body)}</p>${t.meta ? `<div class="meta">${t.meta}</div>` : ""}</div>`;
   if (tipEl.dataset.h !== html) { tipEl.innerHTML = html; tipEl.dataset.h = html; } tipEl.className = "ud-tip" + (t.img ? "" : " noimg"); tipEl.hidden = false;

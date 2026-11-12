@@ -354,3 +354,26 @@ body.inreplay .field { padding-block: 8px 2px; }
 .ud-tip img { width: 48px; height: 48px; border-radius: 6px; border: 2px solid var(--wood-dark); }
 .ud-tip h4 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: 19px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; } .ud-tip h4 small { font-family: var(--f-body); font-size: 12px; color: var(--ink-soft); }
 .ud-tip p { margin: 3px 0 0; font-size: 13.5px; line-height: 1.25; } .ud-tip .meta { display: flex; gap: 12px; margin-top: 5px; font-size: 12.5px; color: var(--ink-soft); } .ud-tip .meta b { color: var(--wax); }
+
+/* planning screen: thin unit strip under the map, and the full panel when it is opened */
+.pdock { padding-block: 2px 0; }
+.pd-hint { display: block; padding: 6px 4px; font-style: italic; font-size: 13.5px; color: #a8916a; text-align: center; }
+.pd { display: flex; align-items: stretch; gap: 6px; min-height: 54px; padding: 4px 6px; border-radius: 8px; background: linear-gradient(#3b2817, #1f150c); border: 2px solid var(--wood-dark); box-shadow: inset 0 1px 0 rgba(255,220,160,.2); color: var(--parchment); }
+.pd button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-align: left; -webkit-tap-highlight-color: transparent; }
+.pd-main { flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 8px; }
+.pd-por { position: relative; flex: none; width: 36px; height: 44px; border: 2px solid var(--c, #c9962f); border-radius: 4px; background: radial-gradient(circle at 50% 35%, #6b9a45, #3e5f26); display: grid; place-items: center; }
+.pd-por img { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; display: block; } .pd-por img.art { image-rendering: auto; object-fit: cover; } .pd-por .gl { font-size: 20px; color: #ecdcb4; }
+.pd-por .lv { position: absolute; right: -6px; bottom: -6px; min-width: 17px; height: 17px; border-radius: 9px; background: linear-gradient(#e2b84a, #a87a1c); color: #2a1608; font: 800 11px/13px var(--f-body); text-align: center; border: 1.5px solid #1a0f07; font-style: normal; padding: 0 2px; box-sizing: border-box; }
+.pd-info { flex: 1 1 0; min-width: 0; display: grid; gap: 2px; }
+.pd-nm { display: flex; align-items: baseline; gap: 6px; white-space: nowrap; overflow: hidden; } .pd-nm b { font-family: var(--f-display); font-weight: 400; font-size: 16px; color: #f3e2b3; } .pd-nm small { font-size: 11.5px; color: #bda57a; overflow: hidden; text-overflow: ellipsis; }
+.pd-bar { position: relative; height: 11px; border-radius: 3px; background: #120a05; border: 1px solid #000; overflow: hidden; } .pd-bar i { position: absolute; inset: 0 auto 0 0; background: linear-gradient(#5fcf63, #38933c); } .pd-bar.bad i { background: linear-gradient(#e0583f, #a52b1b); }
+.pd-bar span { position: relative; display: block; text-align: center; font-size: 9.5px; font-weight: 700; line-height: 9px; color: #fff; text-shadow: 0 1px 1px #000; font-variant-numeric: tabular-nums; }
+.pd-stats { display: flex; gap: 9px; font-size: 12px; color: #cdb78a; white-space: nowrap; overflow: hidden; } .pd-stats b { color: #f6e9c4; font-weight: 600; }
+.pd-note { font-size: 12px; line-height: 1.2; color: #cdb78a; font-style: italic; }
+.pd-chev { align-self: center; color: #c9962f; font-size: 15px; padding: 0 2px; }
+.pd-act { flex: none; display: flex; gap: 3px; align-items: center; }
+.pd-b { width: 38px; height: 46px; border-radius: 6px; border: 1px solid rgba(255,220,160,.2) !important; background: rgba(0,0,0,.3) !important; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; text-align: center !important; }
+.pd-b span { font-size: 17px; line-height: 20px; color: #e8c25a; height: 22px; display: flex; align-items: center; } .pd-b span img.ui { width: 22px; height: 22px; border-radius: 5px; display: block; } .pd-b small { font-size: 9.5px; color: #cdb78a; line-height: 1; }
+.pd-b:disabled { opacity: .35; cursor: default; }
+.ud.udp { --udh: 308px; } .ud-act { display: flex; gap: 5px; align-items: center; } .ud-act .pd-b { height: 40px; width: 42px; }
+body.pdx .ud-tip { bottom: calc(308px + env(safe-area-inset-bottom, 0px) + 8px); }
