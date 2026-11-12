@@ -4,8 +4,7 @@ This spec replaces the current hero abilities (three abilities with four ranks, 
 each, an ultimate with three ranks, and Vigour) with three skill trees per hero. It is written for
 the model that implements it. Read all of it before you change any code.
 
-**Status: built, behind a placeholder date (see §10).** This is a major feature. The pull request
-must not be merged without the user's go-ahead (see `CLAUDE.md`).
+**Status: built and live from 12 Nov 2026 (see §10).**
 
 ---
 
@@ -697,10 +696,11 @@ Files: `js/config/trees.js` (all 15 trees, gates, base heroes, learning rules), 
 drawing in `js/replay/draw.js`. The old abilities are untouched: the 62 original golden battles
 hash exactly as before, and 10 new golden battles (62 to 71) cover skill-tree heroes.
 
-- **Switch-over.** `HERO_V3_FROM` in `js/config/trees.js` is a placeholder (`2099-01-01`), so nothing
-  live changes. The real date must be the first day of a war; **ask the user for it before launch.**
-  To try the trees today, open the game with `?herov3` (or set `localStorage.dsHeroV3 = "1"`) and
-  play practice. In practice the hero levels up two levels a day.
+- **Switch-over.** `HERO_V3_FROM` in `js/config/trees.js` is `2026-11-12`: the user chose to apply the
+  trees from that day, mid-war, with no wait for a war's first day. Battles before it replay with the
+  old abilities. A hero keeps its level; the old ranks are ignored and every point can be spent in a
+  tree. You can also try the trees in practice with `?herov3` (or `localStorage.dsHeroV3 = "1"`), where the
+  hero levels up two levels a day.
 - **Saves.** Plans carry `tree: { b1, b2, b3 }`, three arrays of six ranks in node order
   (T1, T2, T2b, T3, T3b, T4). Battle inputs record `heroV3`, so replays use the rules they were fought with.
   A lord who sealed nothing all week is fought on a stand-in `autoTree` build, as the old stand-in

@@ -8,6 +8,9 @@ const sim = loadSim({ extraFiles: [...WORLD_FILES, "js/dev/goldenCases.js"] });
 const { fightDay, buildBattleInputs, addDays } = { fightDay: sim.get("fightDay"), buildBattleInputs: sim.get("buildBattleInputs"), addDays: sim.get("addDays") };
 const J = v => JSON.parse(JSON.stringify(v)); // values made inside the sim's own context: copy before comparing
 const D1 = "2026-11-16", ids = ["a", "b", "c", "d"];
+// These scenarios were written for the old hero abilities (their seeds pick fights between old-style heroes), so the file pins the
+// switch-over date out of reach. The skill-tree rules have their own tests: test/heroTrees.test.mjs and the last test here.
+sim.run('HERO_V3_FROM = "2099-01-01"');
 
 function world(sealedBy) { // four lords; orders for day 1 from a golden battle with four lords
   const g = sim.run("goldenCase(2)").plans, W = { config: { tz: "UTC", lockHour: 20, startDate: D1, maxPlayers: 8 }, players: {}, battles: {} };
@@ -169,4 +172,15 @@ test("a lord whose castle has fallen keeps fighting with what is left, and canno
   assert.equal(off.logs.filter(l => /fights on without a castle/.test(l.msg)).length, 0);
   assert.equal(attacksAfterFall(off), 0, "under the old rules an army ends with its castle");
   assert.ok(!on.events.some(e => e.ty === "respawn" && on.results.some(r => r.pid === e.pid && r.fellAt != null && e.t0 >= r.fellAt)), "no hero respawns after its castle fell");
+});
+
+test("from HERO_V3_FROM the day is fought with skill trees: plans carry the tree, and the saved inputs say so", () => {
+  sim.run('HERO_V3_FROM = "2026-11-12"');
+  try {
+    const W = world(ids); ids.forEach((id, i) => { W.players[id].plans[D1].tree = J(sim.run(`autoTree(7, ${i + 3}, "rogue")`)); });
+    const doc = fightDay(W, D1, 1), again = fightDay(J(W), D1, 1);
+    assert.equal(doc.inputs.heroV3, true); assert.equal(doc.resultHash, again.resultHash);
+    assert.ok(doc.inputs.plans.every(p => p.tree && p.tree.b1.length === 6), "every plan carries a six-node tree for each of three trees");
+    assert.equal(doc.results.length, 4);
+  } finally { sim.run('HERO_V3_FROM = "2099-01-01"'); }
 });

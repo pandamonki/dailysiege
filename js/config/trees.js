@@ -2,8 +2,8 @@
 // Spec: docs/hero-skill-trees.md. The numbers here are the single source for the battle sim, the hero screen and the bots.
 // Battles fought before HERO_V3_FROM keep the old abilities (ABIL in sim/battle.js); nothing here touches them.
 
-// The first day heroes use skill trees. PLACEHOLDER: the real date must be the first day of a war (ask the user before launch).
-const HERO_V3_FROM = "2099-01-01", heroV3For = d => String(d) >= HERO_V3_FROM;
+// The first day heroes use skill trees (battles on or after this day; earlier saved battles replay with the old abilities).
+let HERO_V3_FROM = "2026-11-12"; const heroV3For = d => String(d) >= HERO_V3_FROM;
 const MAX_HERO_LVL_V3 = 15, TREE_ULT_LVL = 9;
 const heroMaxLvl = v3 => (v3 ? MAX_HERO_LVL_V3 : MAX_HERO_LVL);
 // per-level growth: level 15 is about the old level 21 with partial Vigour
