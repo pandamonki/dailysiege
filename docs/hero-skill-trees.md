@@ -51,7 +51,11 @@ The user's plan is the starting point. Changes made during review:
 10. **The per-ability trigger dropdown goes.** Each skill has the built-in condition from the plan.
     This cuts planning time, which the backlog flags as a problem. Ultimates keep the "Plan the
     ultimate for tonight" toggle. The If/Then rules in the orders are unchanged.
-11. **Vigour is removed.** All 14 points go into trees. Per-level stat growth rises to make up
+11. **Side talents added (user request).** Each branch gets two optional dead-end talents, one at
+    Tier 2 (2 ranks) and one at Tier 3 (1 rank), for build variety. Most of them bring back
+    favourite picks from today's game.
+12. **Evasion is capped at 30% (user request).**
+13. **Vigour is removed.** All 14 points go into trees. Per-level stat growth rises to make up
     for the lost levels and Vigour (§1.4).
 
 ---
@@ -68,19 +72,30 @@ The user's plan is the starting point. Changes made during review:
 |---|---|---|
 | T1 (passive) | 4 | 0 |
 | T2 (trigger) | 4 | 2, and T1 rank ≥ 1 |
+| T2b (side talent) | 2 | 2, and T1 rank ≥ 1 |
 | T3 (synergy) | 2 | 5, and T2 rank ≥ 1 |
+| T3b (side talent) | 1 | 5, and T2 rank ≥ 1 |
 | T4 (ultimate) | 1 | 7, T3 rank ≥ 1, and hero level ≥ 9 |
 
-- A full tree is 4 + 4 + 2 + 1 = **11 points**. The fastest route to the ultimate is 7 points
+- **Side talents (T2b, T3b) are dead ends.** No node needs them, and **their points don't count
+  towards any gate**. Gates count only points in T1, T2 and T3. Side talents trade progress
+  towards the ultimate for flexibility.
+- Every branch of every hero has exactly this shape: T1, T2, T2b, T3, T3b, T4.
+- A full tree is 4 + 4 + 2 + 2 + 1 + 1 = **14 points**, exactly a level-15 hero's points, so a
+  hero can max a single tree.
+- The main path alone is 4 + 4 + 2 + 1 = **11 points**. The fastest route to the ultimate is 7 points
   (for example 2 + 3 + 2, or 3 + 3 + 1), then the ultimate as the 8th point at level 9.
 - Example builds at level 15 (14 points):
+  - **Single tree, 14/0:** everything in one tree, side talents included.
   - **Depth, 11/3:** the whole main tree maxed, plus a second tree's T1 2 and T2 1.
   - **Breadth, 8/6:** an ultimate, plus a second tree's T1 2, T2 3 and T3 1. The second synergy
     is reached on the 14th point.
   - **Two synergies, 7/7:** two trees up to rank 2 synergy, no ultimate.
   - **Spread, 8/3/3:** an ultimate plus two small trees.
+  - **Ultimate plus sides, 11/3:** an ultimate (8 main points), all 3 side-talent points in the
+    same tree, and 3 points in a second tree's T1.
 - Only one T4 is possible: two ultimates would need 16 points.
-- Rank values are written `[r1, r2, r3]` for T1 and T2. **Rank 4 continues the trend** of ranks
+- Rank values are written `[r1, r2, r3]` for T1 and T2, and `[r1, r2]` for T2b. **Rank 4 continues the trend** of ranks
   1-3 using the existing `ext()` helper. For example `[6, 10, 15]` gives 20 at rank 4. The
   balance lab may override any rank-4 value that tests too strong. T3 values are `[r1, r2]`.
 - Points can't be refunded mid-war, matching today's rule. Class choice stays locked after day 1.
@@ -191,7 +206,7 @@ use `Math.random` or `Math.sin` and friends.
 | `stealth` | `setFx(e, "stealth", dur)`. Treat it like `vanish` for targeting, except a hostile within `e.revealR` (default 1.0) can see and target it. Breaks when the stealthed unit deals damage. Not untargetable by area damage. |
 | `untargetable` | Reuse the existing `vanish` effect (immune to targeting, still hit by area damage) for Shadow Dance. |
 | Crit on basic attacks | `e.crit` (chance) and `e.critMul` (default 1.75). Roll with `rng()` in the basic-attack path only. Spells pass `crit` explicitly. |
-| Dodge | Generalise the current `evade`: `e.dodge = {all, melee}`. Melee means `src.range < 1.5`. It still only applies to non-area hits. Total dodge is capped at 40%, except during Blade Fury. Hook `onDodge(e, src)` for Riposte, Flurry and Kite. |
+| Dodge | Generalise the current `evade`: `e.dodge = {all, melee}`. Melee means `src.range < 1.5`. It still only applies to non-area hits. Total dodge is capped at **30%**, except during Blade Fury. Hook `onDodge(e, src)` for Riposte, Flurry and Kite. |
 | Anti-heal | `setFx(o, "grievous", dur, v)`: `heal()` multiplies the amount by `1 - v`. |
 | Blind miss chance | Make the existing 50% configurable: `setFx(o, "blind", dur, missChance)`, defaulting to .5 when `val` is 1. |
 | `mres` | In `deal()`, after the type table: `if (atype === "magic") m *= 1 - (tgt.mres + fxv(tgt, "mresbuf"))`. |
@@ -239,7 +254,9 @@ fought.
 Notation:
 - `[a, b, c]` = value at rank 1, 2, 3. Rank 4 (T1 and T2 only) continues the trend via `ext()`.
   Counts like targets or stacks keep their rank-3 value at rank 4 unless the trend is a whole
-  number. T3 values are `[r1, r2]`.
+  number. T3 and T2b values are `[r1, r2]`. T3b has a single rank.
+- Side talents marked "(trigger)" are cast through `tryAbilities` after that branch's T2. The
+  others are passives.
 - `cd` is in seconds before `BAL.cd` and gear modifiers. T2 ranks don't reduce cooldowns; only the
   stated values scale.
 - Damage values have `e.atk * k` added where shown, so they scale with level.
@@ -268,7 +285,7 @@ as the reference fragile hero. Fixes made:
 - **Shaman Spirit Wolves.** Today's wolves (3 × 840 HP, 45s) are a likely reason the Shaman wins
   17%. They're set at today's rank 1 values with a shorter life.
 - **Rogue Deadly Cloud.** "Can't be targeted from outside the cloud" protected the enemy. Dropped.
-- **Dodge stacking.** Total dodge chance is capped at 40% outside Blade Fury (Reflexes, Fleet
+- **Dodge stacking.** Total dodge chance is capped at 30% outside Blade Fury (Reflexes, Fleet
   Footed and any item).
 - These checks used rank 3 values. Rank 4 adds roughly one more step of the same size. The
   balance lab must confirm that a depth build (11/3) and a breadth build (8/6) of the same tree
@@ -289,6 +306,10 @@ as the reference fragile hero. Fixes made:
 - **T3 Unyielding Stance (synergy):** while the Warrior has a shield, own soldiers within 2 tiles
   take [8, 12]% less damage. Each Taunting Shout also gives those soldiers a shield of [10, 15]% of
   the Warrior's shield amount.
+- **T2b Shield Bash (trigger):** fires when an enemy hero hits the Warrior in melee. Bashes it for
+  ([30, 45] + atk × .5) blade damage and stuns it for .5s. cd 12.
+- **T3b Spiked Bulwark (passive):** while the Warrior has a shield, it reflects 15% of melee damage taken
+  back to the attacker. This keeps today's Shield Wall "Reflect" pick.
 - **T4 Fortress Wall (ultimate):** fires when 3+ allied soldiers are within 3 tiles and an enemy
   ranged attacker is within 6. It creates a dome of radius 2.5 at the Warrior for 7s:
   - allies inside take 60% less damage from attackers with range ≥ 2 (not area spells);
@@ -304,6 +325,10 @@ as the reference fragile hero. Fixes made:
 - **T3 Blood Rage (synergy):** kills by the Warrior, or by own melee soldiers within 3 tiles, grant
   a stack of +[4, 5]% attack speed, up to 6 stacks. All stacks expire 6s after the last stack was
   gained.
+- **T2b Bloodthirst (passive):** each kill by the Warrior heals [3, 5]% of its max HP. Internal cooldown
+  .5s.
+- **T3b Unstoppable (passive):** slows and roots on the Warrior last 40% shorter. Below 30% HP it deals
+  +15% damage.
 - **T4 Avatar of War (ultimate):** this replaces and absorbs Last Stand. It fires when the
   Warrior's HP is below 40% and 3+ enemies are within 2.5 tiles. For 7s:
   - the Warrior can't drop below 1 HP;
@@ -324,6 +349,9 @@ as the reference fragile hero. Fixes made:
   - Stacks with the Banner of Might item.
 - **T3 Sapper Coordination (synergy):** inside a Command Banner, units deal +[15, 25]% damage to
   castles and walls. This is reduced from the plan's 40%: castle falls decide placings.
+- **T2b Fortify (passive):** the lord's wall blocks and castle guard get +[20, 40]% max HP.
+- **T3b Fear (synergy):** when a Command Banner is planted, enemy soldiers (not heroes) within 2 tiles
+  are stunned for 1s. This keeps today's War Cry "Fear" pick.
 - **T4 Rallying Charge (ultimate):** fires when 4+ own soldiers are alive and an enemy castle or
   hero is within 7 tiles of the Warrior. For 8s:
   - own soldiers get +60% move speed, +20% damage and crowd-control immunity;
@@ -344,6 +372,9 @@ as the reference fragile hero. Fixes made:
 - **T3 Conductive Discharge (synergy):** targets hit by Chain Lightning take +[12, 20]% damage
   from own and allied bowmen, Battle Mages, snipers and centaurs for 8s. Use the `vuln` effect, keyed to
   those source types.
+- **T2b Thunderclap (trigger):** fires when 3+ enemies are within 1.5 tiles. Deals ([30, 45] + atk × .4)
+  magic damage to them and slows them by 25% for 2s. cd 10.
+- **T3b Overload (passive):** Chain Lightning jumps to 2 more targets. This is today's "Overload" pick.
 - **T4 Chrono-Storm (ultimate):** fires when 5+ enemies are within 3 tiles of a point within 5 tiles
   of the Shaman. Place it at the densest such point.
   - It's a 6s zone of radius 3.
@@ -363,6 +394,9 @@ as the reference fragile hero. Fixes made:
 - **T3 War Drum Pulse (synergy):** this keeps today's Bloodlust. While a Grounding Totem is up,
   every 4s own soldiers within 4 tiles of the Shaman gain +[12, 20]% attack speed for 4s. Melee
   soldiers also gain +[10, 15]% damage to castles and walls.
+- **T2b Ward Totem (passive):** each Grounding Totem blocks the first [1, 2] enemy hero attacks or
+  abilities aimed at allies within its radius. The hit deals 0. This is today's "Ward" pick.
+- **T3b Healing Spring (passive):** Grounding Totem heals 50% more. This is today's "Spring" pick.
 - **T4 Totem of the Titan (ultimate):** fires when 4+ allies and 3+ enemies are within 3 tiles.
   - Drops a relic entity (kind `totem`, HP = 2.5 × Shaman max HP, lasts 8s).
   - 40% of damage aimed at allies within 3 tiles is redirected to the relic instead. Area damage
@@ -379,6 +413,10 @@ as the reference fragile hero. Fixes made:
 - **T3 Last Stand Offering (synergy):** while the Shaman's own castle is below 35% HP **or** the
   Shaman is below 35% HP, Spirit Leech is ×[1.5, 2] and the Shaman gains +[15, 25]% attack speed. It
   stacks with Desperation Frenzy; that's intended, as a comeback tool.
+- **T2b Hex (trigger):** fires when an enemy hero within 3 tiles drops below 50% HP. That hero deals
+  20% less damage (`weaken`) for [2, 3]s. cd 18.
+- **T3b Blood Pact (passive):** own soldiers within 4 tiles of the Shaman heal for 10% of the damage they
+  deal. This is today's Bloodlust "Lifesteal" pick.
 - **T4 Spirit Wolves (ultimate):** today's ultimate, chosen by the user over the plan's Spirit
   Walk. Reuse its code, summon entity (`kind: "summon"`, `key: "wolf"`), `ultfx` "spirit" and
   highlight.
@@ -402,6 +440,10 @@ as the reference fragile hero. Fixes made:
     backline units.
 - **T3 Vanish (synergy):** on a kill, re-enter stealth for 3s and re-arm Ambush. Internal
   cooldown [12, 9]s. Hero kills ignore the internal cooldown.
+- **T2b Smoke Bomb (trigger):** fires when 3+ enemies are within 2 tiles of the Rogue. Blinds them (40%
+  miss chance) for [2, 3]s and makes them drop the Rogue as a target. cd 16. This is today's Smoke
+  Bomb.
+- **T3b Cheap Shot (passive):** Ambush also silences its target for 1.5s.
 - **T4 Shadow Dance (ultimate):** fires when 3+ enemy backline targets are within 6 tiles.
   - Becomes untargetable for 4s and strikes up to 5 of them in sequence, one every .8s, nearest
     first.
@@ -423,6 +465,9 @@ as the reference fragile hero. Fixes made:
 - **T3 Corrosive Agent (synergy):** poisoned enemies take +[8, 12]% physical damage from all
   sources.
   This is the plan's "−25% armour", converted to this game's flat-armour model.
+- **T2b Crippling Poison (passive):** poisoned enemies move [10, 15]% slower.
+- **T3b Weakening Toxin (passive):** enemies at 5 poison stacks deal 15% less damage. This is today's
+  "Weaken" pick.
 - **T4 Deadly Cloud (ultimate):** fires when 5+ enemies are within 2 tiles of a point within 4
   tiles of the Rogue.
   - It's a 7s zone of radius 2 dealing (30 + atk × .4) pure damage per second.
@@ -437,6 +482,10 @@ as the reference fragile hero. Fixes made:
   - Internal cooldown [1.5, 1.2, 1.0]s.
 - **T3 Flurry (synergy):** each dodge grants +[5, 8]% attack speed for 5s, up to 5 stacks, refreshed on
   each new stack.
+- **T2b Backstab (passive):** while the Rogue's target is attacking someone else, the Rogue deals
+  +[15, 25]% damage to it. This keeps today's Backstab rule.
+- **T3b Evasive Roll (passive):** once per life, when the Rogue drops below 30% HP, it vanishes for 1.5s
+  and steps 2 tiles away from the nearest enemy.
 - **T4 Blade Fury (ultimate):** fires when an enemy hero is within 1.5 tiles and the Rogue is below
   70% HP.
   - For 5s the Rogue dodges 100% of non-area attacks.
@@ -455,6 +504,9 @@ as the reference fragile hero. Fixes made:
   - Reuse today's Fireball art.
 - **T3 Melt Armour (synergy):** burning targets take +[10, 15]% physical damage. This is reduced from
   20% because it stacks with Corrosive Agent and Pinning Shot when allied.
+- **T2b Combustion (passive):** when a burning enemy dies, it explodes for [30, 45] magic damage within 1
+  tile. At most 3 explosions per Mage per second.
+- **T3b Pyroblast (passive):** Fireball deals 50% more to its centre target if that target is a hero.
 - **T4 Meteor Strike (ultimate):** fires when 5+ enemies, or any enemy castle, are within the
   blast radius of a point within 6 tiles.
   - Warning for 1.6s, then the strike. This is today's Meteor code and art.
@@ -473,6 +525,10 @@ as the reference fragile hero. Fixes made:
   - Reuse today's Frost Nova.
 - **T3 Ice Barrier (synergy):** each Frost Nova shields the Mage for [12, 20]% of its max HP, and
   allies within 2 tiles for [6, 10]% of their own max HP. Lasts 5s.
+- **T2b Shatter (passive):** rooted or frozen enemies take +[12, 20]% damage from all sources. This is
+  today's "Shatter" pick.
+- **T3b Cold Snap (passive):** once per life, when the Mage drops below 35% HP, Frost Nova's cooldown is
+  reset.
 - **T4 Blizzard (ultimate):** fires when 6+ enemies are within 4 tiles of a point within 6 tiles.
   It's an 8s zone of radius 4 (in place of map-wide):
   - enemies inside are slowed 50% and get −30% attack speed;
@@ -489,6 +545,10 @@ as the reference fragile hero. Fixes made:
   - Replaces today's Escape pick. There's no decoy entity.
 - **T3 Empowered Synergies (synergy):** the Mage's spells ignore [20, 30]% of the target's `mres`
   and `dmgRed`. All of the Mage's other ability cooldowns are [10, 15]% shorter.
+- **T2b Mana Shield (trigger):** fires when the Mage drops below 50% HP. Gains a shield of [15, 25]% max HP
+  for 6s. cd 30.
+- **T3b Arcane Missiles (passive):** every 4th basic attack also fires 2 bolts at other enemies within 3
+  tiles, each for 50% damage (area damage).
 - **T4 Time Warp (ultimate):** fires when 4+ allies and 2+ enemy heroes or 6+ enemies are within 5
   tiles. For 6s, in radius 5:
   - allies get +50% move and attack speed;
@@ -507,6 +567,10 @@ as the reference fragile hero. Fixes made:
 - **T3 Pinning Shot (synergy):** targets hit by Arrow Volley take +[10, 15]% damage from all pierce
   sources (bowmen, centaurs, castles, other Rangers) for 6s. This replaces the plan's "−20% armour
   and +15% from Bowmen", which double-dipped.
+- **T2b Ricochet (passive):** basic attacks have a [15, 25]% chance to bounce to 1 enemy within 2 tiles
+  of the target for 50% damage (area damage). This is today's "Ricochet" pick.
+- **T3b Barrage (passive):** Arrow Volley fires a second volley for half damage .6s later. This is
+  today's "Barrage" pick.
 - **T4 Rain of Feathered Death (ultimate):** today's Rain of Arrows with today's values (the v2
   numbers).
   - Radius 3.4, 14 waves over 5.6s.
@@ -524,6 +588,9 @@ as the reference fragile hero. Fixes made:
   - cd 10.
 - **T3 Entangling Wire (synergy):** when a Spike Trap goes off, enemies within [1, 1.4] tiles of it
   are slowed by [35, 50]% for 4s.
+- **T2b Net Shot (trigger):** fires when an enemy hero comes within 3 tiles. Roots it for [1, 1.5]s (this
+  is already the hero value, so don't halve it). cd 20.
+- **T3b Quick Hands (passive):** Spike Trap's cooldown is 30% shorter.
 - **T4 Barricade & Minefield (ultimate):** fires when 4+ enemies are within 5 tiles and closing.
   - Places 2 wall blocks across the line from the Ranger to the nearest enemy cluster, 2 tiles out.
     Use the existing `walls[]` with the owner's castle-tier HP. They last for the rest of the battle.
@@ -541,6 +608,9 @@ as the reference fragile hero. Fixes made:
   - If the target leaves range + 1 or dies, the shot is cancelled and half the cooldown refunded.
 - **T3 Armour Piercer (synergy):** Headshot ignores [30, 50]% of `armor` and `dmgRed`. It also
   applies a bleed: 2% of the target's max HP per second for 5s.
+- **T2b Hunter's Mark (passive):** the Headshot target takes +[8, 12]% damage from all sources for 6s.
+- **T3b Bounty Hunter (passive):** the lord earns 50% more gold from the hero's own kills of enemy
+  heroes, bounties included.
 - **T4 Dragon-Slayer Shot (ultimate):** fires when an enemy hero is within 9 tiles (instead of
   map-wide) and either below 50% HP or carrying the bounty.
   - Fires a 1s-telegraphed line bolt to it.
@@ -586,12 +656,13 @@ as the reference fragile hero. Fixes made:
 5. **Bots:**
    - replace `autoRanks` with `autoTree(lvl, seed, cls)`, which picks a main tree by seed, fills
      it to 8, then by seed either maxes it to 11 and puts 3 in a second tree (depth), or puts 6
-     in a second tree (breadth);
+     in a second tree (breadth). Side talents are taken by seed in about a third of bot builds;
    - update `lordBotPlan` and practice rivals in `js/sim/plans.js`;
    - update golden cases (`js/dev/goldenCases.js`) to generate v3 plans for a new block of cases,
      keeping the old 50 unchanged.
 6. **UI** (`js/ui/sheets/council.js` hero tab, `castle.js` hero text, `info.js` help):
-   - three columns per class, with nodes locked or unlocked by points spent;
+   - three columns per class, with nodes locked or unlocked by points spent. Side talents sit
+     beside the main T2 and T3 nodes, drawn so they read clearly as branches off the path;
    - tap a node to learn it or see its details;
    - a learning-path editor ("auto-fill the rest");
    - no per-ability trigger dropdowns;
