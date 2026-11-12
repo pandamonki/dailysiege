@@ -27,8 +27,14 @@ function portraitFor(m, color) {
 }
 // ----- unit panel (the permanent strip under the map during a replay) -----
 // Shows whatever is selected, or your own hero when nothing is. Read-only: slots can be tapped for details, never used.
-const UD_STATS = { atk: ["Attack", "Damage per hit, before the target's armour."], arm: ["Armour", "Armour type and the share of damage it blocks."], as: ["Attack speed", "Seconds between attacks. Lower is faster."], rng: ["Range", "How far it can attack, in tiles."], spd: ["Move speed", "Tiles walked per second."], evd: ["Dodge", "Chance to avoid a normal attack."], heal: ["Healing", "Health restored per cast."], lvl: ["Level", "Higher levels give more health and damage."] };
-let cdIdx = null;
+const UD_STATS = { atk: ["Attack", "Damage per hit, before the target's armour."], arm: ["Armour", "Armour type and the share of damage it blocks."], as: ["Attack speed", "Seconds between attacks. Lower is faster."], rng: ["Range", "How far it can attack, in tiles."], spd: ["Move speed", "Tiles walked per second."], evd: ["Dodge", "Chance to avoid a normal attack."], heal: ["Healing", "Health restored per cast."], lvl: ["Level", "Higher levels give more health and damage."], xp: ["Experience", "Heroes learn from every enemy that falls within 8 tiles. Fighting in the centre earns more."] };
+let cdIdx = null, xpIdx = null;
+function xpState(k, m, time) { // experience bar at this moment: { x, n, L, a, t }
+  const R = replay.res, max = m.tree ? MAX_HERO_LVL_V3 : MAX_HERO_LVL;
+  if (!xpIdx || xpIdx.R !== R) { xpIdx = { R, m: {} }; (R.xplog || []).forEach(c => (xpIdx.m[c.id] = xpIdx.m[c.id] || []).push(c)); }
+  const a = xpIdx.m[k] || []; let c = null; for (let i = 0; i < a.length && a[i].t <= time; i++) c = a[i];
+  const L = c ? c.L : (m.lvl || 1), n = c ? c.n : xpNeed(L); return { x: c ? c.x : (m.xp0 || 0), n, L, a: c ? c.a : 0, t: c ? c.t : -99, max: L >= max };
+}
 function cdState(id, key, time) { // { ready, left, max, used } for a skill or item at this moment of the replay
   const R = replay.res; if (!R.cdlog) return { ready: true };
   if (!cdIdx || cdIdx.R !== R) { cdIdx = { R, m: {} }; R.cdlog.forEach(c => (cdIdx.m[c.id + "|" + c.k] = cdIdx.m[c.id + "|" + c.k] || []).push(c)); }
@@ -91,8 +97,8 @@ function dockHTML(k) {
     bot = `<div class="ud-note">${esc(note)}<br><span>Soldiers fight on their own, so there are no skills or items to watch.</span></div>`;
   }
   return `<div class="ud-top"><div class="ud-por" style="--c:${color}">${por}${m.lvl ? `<div class="ud-lv" id="udlv">${m.lvl}</div>` : ""}</div>
-    <div class="ud-id"><div class="ud-nm"><b>${esc(title)}</b><small>${role}</small></div><div class="ud-sub"><i style="background:${color}"></i>${esc(who)}${m.kind === "champ" ? "" : ""}</div>
-    <div class="ud-bar" id="udbar"><i></i><span></span></div><div class="ud-st" id="udst"></div></div></div>
+    <div class="ud-id"><div class="ud-nm"><b>${esc(title)}</b><small>${role}</small></div><div class="ud-sub"><i style="background:${color}"></i>${esc(who)}<span class="ud-st" id="udst"></span></div>
+    <div class="ud-bar" id="udbar"><i></i><span></span></div>${m.kind === "champ" ? `<div class="ud-xp" id="udxp" data-act="dtip" data-v="s:xp"><i></i><span></span></div>` : ""}</div></div>
     <div class="ud-stats">${dockStats(m)}</div>${bot}`;
 }
 // the card that opens when a stat, skill or item is tapped
@@ -122,6 +128,7 @@ function updateInspector() {
   document.getElementById("udst").textContent = st.join(" · ");
   if (m.kind === "champ") {
     atkIndex(); const gained = (replay.lvlEv.get(k) || []).filter(e => e.t <= replay.time), L = (m.lvl || 1) + gained.length;
+    { const xs = xpState(k, m, replay.time), xb = document.getElementById("udxp"); if (xb) { xb.firstChild.style.width = (xs.max ? 100 : Math.min(100, xs.x / xs.n * 100)) + "%"; xb.lastChild.textContent = xs.max ? "Max level" : `XP ${Math.floor(xs.x)} / ${xs.n}`; xb.classList.toggle("gain", replay.time - xs.t < 1.2 && xs.a > 0); } }
     if (replay.inspectLvl !== L) { const first = replay.inspectLvl == null; replay.inspectLvl = L; if (!first && !m.tree) { replay.inspectKey = null; return updateInspector(); } const lv = document.getElementById("udlv"); if (lv) lv.textContent = L; const sl = document.querySelector("#udlvl b"); if (sl) sl.textContent = "Level " + L; }
     box.querySelectorAll(".ud-sl[data-ab], .ud-sl[data-it]").forEach(el => { const key = el.dataset.ab || "i:" + el.dataset.it, c = cdState(k, key, replay.time), o = el.lastElementChild.className === "ud-cd" ? el.lastElementChild : el.querySelector(".ud-cd"); if (!o) return;
       o.hidden = !(c.left || c.used); el.classList.toggle("cool", !!(c.left || c.used)); if (c.used) { o.textContent = "USED"; o.className = "ud-cd used"; o.style.removeProperty("--p"); }

@@ -21,7 +21,7 @@ function runBattle(plans, seed, opts = {}) {
   let curAb = null;
   const mePid = (plans.find(p => p.me) || plans[0]).pid, NN = opts.N || N;
   let t = 0, tick = 0, over = false, anyUlt = false;
-  const ents = [], events = [], cdlog = [], logs = [], frames = [], pending = [], traps = [], walls = [];
+  const ents = [], events = [], cdlog = [], xplog = [], logs = [], frames = [], pending = [], traps = [], walls = [];
   let ctrHolder = null, teamWin = null; const finalDay = !!opts.finalDay;
   const P = {}, order = plans.map(p => p.pid), idx = Object.fromEntries(order.map((p, i) => [p, i]));
   const d = (a, b) => hyp(a.x - b.x, a.y - b.y);
@@ -105,7 +105,7 @@ function runBattle(plans, seed, opts = {}) {
           spd: b.spd * ((g.charm || 0) >= 1 ? 1.15 : 1), armor: b.armor,
           cdMul: (g.charm || 0) >= 2 ? .8 : 1, phoenix: (g.charm || 0) >= 3, respawns: opts.duel ? 0 : 2, shot: b.shot, ranks: { ...pl.ranks }, ranks0: { ...pl.ranks }, picks: pl.picks, triggers: pl.triggers, cds: {} });
         e.hp = e.maxhp; if (!HV3) { ["a1", "a2", "a3"].forEach(k => e.cds[k] = 2 + rng() * 3); e.cds.ult = 10 + rng() * 8; }
-        e.ultArm = pl.ultArm !== false; e.heroLvl = lvl; e.lvl0 = lvl; e.xp = pl.xp0 || 0; e.gains = 0;
+        e.ultArm = pl.ultArm !== false; e.heroLvl = lvl; e.lvl0 = lvl; e.xp = pl.xp0 || 0; e.xp0 = e.xp; e.gains = 0;
         const its = new Set(pl.items || []); e.itemSet = its; if (its.has("rapier")) { e.rapier = true; rapierOwner = rapierHolder = pl.pid; }
         if (its.has("boots")) e.spd *= 1.1; if (its.has("gauntlets")) e.atk *= 1.15; if (its.has("ringprot")) e.dmgRed = (e.dmgRed || 0) + .08;
         if (its.has("fang")) e.lifesteal = (e.lifesteal || 0) + .12; if (its.has("thornmail")) e.thorns = .15; if (its.has("talisman")) e.will = true;
@@ -145,7 +145,7 @@ function runBattle(plans, seed, opts = {}) {
   if (HV3) kit.postSetup();
   const meta = () => ents.map(e => ({ kind: e.kind, pid: e.pid, key: e.key, merc: !!e.merc, champ: e.kind === "champ", maxhp: e.maxhp, tile: e.kind === "castle" ? [Math.floor(e.y), Math.floor(e.x)] : null,
     atk: e.atk, range: e.range, as: e.as, spd: e.spd, armor: Math.min(.8, (e.armor || 0) + (e.dmgRed || 0)), atype: e.atype || null, armour: e.armour || null,
-    lvl: e.kind === "champ" ? (e.lvl0 || 1) : (e.lvl || null), lvlTo: e.kind === "champ" ? e.heroLvl : null, items: e.itemSet ? [...e.itemSet] : null, cls: e.cls || null, ranks: e.ranks0 || e.ranks || null, tree: e.tr0 || null, picks: e.picks || null, evade: e.evade || 0,
+    lvl: e.kind === "champ" ? (e.lvl0 || 1) : (e.lvl || null), xp0: e.kind === "champ" ? (e.xp0 || 0) : null, lvlTo: e.kind === "champ" ? e.heroLvl : null, items: e.itemSet ? [...e.itemSet] : null, cls: e.cls || null, ranks: e.ranks0 || e.ranks || null, tree: e.tr0 || null, picks: e.picks || null, evade: e.evade || 0,
     ctier: e.kind === "castle" ? (P[e.pid].castleTier || 1) : null, banner: e.kind === "castle" ? (P[e.pid].banner || null) : null,
     gear: e.kind === "champ" ? (P[e.pid].gear || {}) : null, defences: e.kind === "castle" ? (P[e.pid].defences || {}) : null, heal: e.healer || e.healAmt || 0 }));
 
@@ -176,6 +176,7 @@ function runBattle(plans, seed, opts = {}) {
     if (inCentre(h.x, h.y)) amt *= CTR_BONUS;
     h.xp += amt;
     while (h.xp >= xpNeed(h.heroLvl)) { if (h.heroLvl >= maxLvl) { h.xp = 0; break; } if (h.gains >= XP_CAP) { h.xp = xpNeed(h.heroLvl) - 1; break; } h.xp -= xpNeed(h.heroLvl); levelUp(h); }
+    if (!fast) xplog.push({ id: h.id, t, x: Math.round(h.xp * 10) / 10, n: xpNeed(h.heroLvl), a: Math.round(amt * 10) / 10, L: h.heroLvl }); // for the replay panel's experience bar (not part of the replay hash)
   }
   // champions nearby learn from every enemy that falls; the strong and the leaders learn more slowly
   const topLvl = () => ents.reduce((m, h) => h.kind === "champ" ? Math.max(m, h.heroLvl) : m, 1);
@@ -957,5 +958,5 @@ function runBattle(plans, seed, opts = {}) {
   const pairsEnd = BV ? (finalDay ? [] : pact0.filter(k => !feudsNew.has(k))) // pacts last until a betrayal or a break ends them, even if a castle fell
     : []; if (!BV) order.forEach(a => order.forEach(b => { if (a < b && P[a].alive && P[b].alive && P[a].pacts.has(b)) pairsEnd.push(a + "|" + b); }));
   const trapsUsed = traps.filter(tr => tr.used && !tr.ranger).map(tr => tr.pid + "|" + Math.round(tr.y - .5) + "," + Math.round(tr.x - .5));
-  return { ...(V3 && !opts.duel ? { waves: true } : {}), me: mePid, feudsNew: [...feudsNew], trapsUsed, awards, ultCast: order.filter(pid => P[pid].ultCast), lvl: lvlOut, rapierEnd: rapierOwner ? rapierHolder : null, rapier: rapierOwner && rapierHolder && rapierHolder !== rapierOwner ? { from: rapierOwner, to: rapierHolder } : null, pairsEnd, team: teamWin, wallMeta: walls.map(w => ({ pid: w.pid, x: w.x0, y: w.y0, dir: w.dir, maxhp: w.maxhp, tier: w.tier, ...(w.born != null ? { born: w.born } : {}) })), tel, frames, events, cdlog, logs, hl, ranks: RANKS, meta: meta(), results, order, colors: Object.fromEntries(order.map(p => [p, P[p].color])), traps, duration: t };
+  return { ...(V3 && !opts.duel ? { waves: true } : {}), me: mePid, feudsNew: [...feudsNew], trapsUsed, awards, ultCast: order.filter(pid => P[pid].ultCast), lvl: lvlOut, rapierEnd: rapierOwner ? rapierHolder : null, rapier: rapierOwner && rapierHolder && rapierHolder !== rapierOwner ? { from: rapierOwner, to: rapierHolder } : null, pairsEnd, team: teamWin, wallMeta: walls.map(w => ({ pid: w.pid, x: w.x0, y: w.y0, dir: w.dir, maxhp: w.maxhp, tier: w.tier, ...(w.born != null ? { born: w.born } : {}) })), tel, frames, events, cdlog, xplog, logs, hl, ranks: RANKS, meta: meta(), results, order, colors: Object.fromEntries(order.map(p => [p, P[p].color])), traps, duration: t };
 }
