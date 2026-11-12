@@ -220,25 +220,10 @@ function combatGroupsHTML() {
       <div class="grp fixed"><div class="fx"><span class="ico">⛫</span><span class="gn"><b>Rams and Powder Carts</b><small>fixed</small></span></div><p class="muted">Always roll on the castle. They can't be stunned, rooted, slowed or turned aside.</p></div>
       <p class="muted">Anyone who is hit always answers back first.</p></div>`;
 }
-// the Garrison tab: three reinforcement waves, each a free footman plus up to three soldiers you have bought, sent out when its condition is met
-const whenName = w => w.when === "timer" ? `at ${Math.floor(w.at / 60)}:${String(w.at % 60).padStart(2, "0")}` : (WAVE_WHEN.find(o => o[0] === w.when) || [0, w.when])[1].replace(/^When /, "when ");
-function garrisonHTML() {
-  ensureGarrison();
-  const open = sheet.wopen, spare = S.owned.filter(u => !UNITS[u.type].castleOnly), nm = u => `${UNITS[u.type].name} Lv${u.lvl}`;
-  const wave = (w, i) => { const have = w.slots.map(id => id && findUnit(id)).filter(Boolean);
-    return `<div class="grp${open === i ? " open" : ""}"><button class="gsum" data-act="wtoggle" data-k="${i}" aria-expanded="${open === i}"><span class="ico wv"><i></i></span><span class="gn"><b>Wave ${i + 1}</b><small>1 free footman${have.length ? ` + ${have.length} bought` : ""}</small></span><span class="cur">${esc(whenName(w))}</span><span class="chev">▾</span></button>
-      ${open === i ? `<div class="gbody"><label class="prow wide"><span>Goes</span><select data-act="wwhen" data-k="${i}" ${dis()}>${WAVE_WHEN.map(([k, n]) => `<option value="${k}"${w.when === k ? " selected" : ""}>${n}</option>`).join("")}</select></label>
-        ${w.when === "timer" ? `<label class="prow wide"><span>At</span><select data-act="wat" data-k="${i}" ${dis()}>${WAVE_TIMES.map(x => `<option value="${x}"${w.at === x ? " selected" : ""}>${Math.floor(x / 60)}:${String(x % 60).padStart(2, "0")}</option>`).join("")}</select></label>` : ""}
-        <p class="muted">Free footman, always.</p>
-        ${w.slots.map((id, j) => `<label class="prow wide"><span>Slot ${j + 1}</span><select data-act="wslot" data-k="${i}" data-v="${j}" ${dis()}><option value="">Empty</option>${spare.filter(u => u.id === id || !inGarrison(u.id)).map(u => `<option value="${u.id}"${u.id === id ? " selected" : ""}>${nm(u)}${placedAt(u.id) ? " (on the field)" : ""}</option>`).join("")}</select></label>`).join("")}</div>` : ""}</div>`; };
-  return `<p class="muted tight">Your castle keeps ${WAVE_COUNT} reinforcement waves in its garrison. Each is one free footman plus up to ${WAVE_SLOTS} soldiers you assign. A wave marches out when its condition is met. Waves are at least ${WAVE_GAP} seconds apart, and one is forced out at each minute mark (by 1:00 the first, by 2:00 the second, by 3:00 the last) so nothing waits forever.</p>
-    <div class="sec tight"><h3>Supply</h3><p class="muted">On the field <b>${fieldCount()}/${S.slots}</b> · In the garrison <b>${garrisonCount()}/${GARRISON_SOLDIERS}</b>. Soldiers you recruit past your field supply wait in the garrison. Siege units can't wait there.</p></div>
-    <div class="sec tight"><h3>Waves</h3>${S.garrison.map(wave).join("")}</div>`;
-}
 function ordersSheet() {
   ensureDip();
-  const tab = ["strategy", "tactics", "garrison", "alliances", "rituals"].includes(sheet.tab) ? sheet.tab : (sheet.grp === "alli" ? "alliances" : "strategy");
-  const tabs = [["strategy", "Strategy"], ["tactics", "Combat"], ["garrison", "Garrison"], ["alliances", "Alliances"], ["rituals", "Rituals"]];
+  const tab = ["strategy", "tactics", "alliances", "rituals"].includes(sheet.tab) ? sheet.tab : (sheet.grp === "alli" ? "alliances" : "strategy");
+  const tabs = [["strategy", "Strategy"], ["tactics", "Combat"], ["alliances", "Alliances"], ["rituals", "Rituals"]];
   let body = "";
   if (tab === "strategy") body = strategyTab();
   if (tab === "tactics") body = `<p class="muted tight">These rules only apply mid-skirmish, once your soldiers are in a fight. Strategy decides where they go.</p>
@@ -247,7 +232,6 @@ function ordersSheet() {
       ${S.rules.map((r, i) => `<div class="rule"><label><span>If</span><select data-act="rif" data-v="${i}" ${dis()}>${opts(IFS, r.if)}</select></label><label><span>Then</span><select data-act="rthen" data-v="${i}" ${dis()}>${opts(THENS, r.then)}</select></label><button class="btn small" data-act="rdel" data-v="${i}" aria-label="Remove command" ${dis()}>✕</button></div>`).join("")}
       <div><button class="btn wood" data-act="radd" ${dis(opUsed() >= OP_MAX)}>Add command</button></div>
       <p class="muted">Tap a soldier or your hero on the map to give it its own job.</p></div>`;
-  if (tab === "garrison") body = garrisonHTML();
   if (tab === "alliances") body = alliancesTab();
   if (tab === "rituals") body = ritualsTab();
   return head(null, sheet.grp === "alli" ? "Alliances" : "Orders", `${avail()} gold free${reserved() ? `, ${reserved()} offered` : ""}`) + `<div class="body">
