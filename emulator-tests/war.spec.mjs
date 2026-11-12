@@ -27,8 +27,9 @@ const TOKENS = { bot01: ["phone-1a", "phone-1b"], bot02: ["phone-2"], bot03: ["d
 const send = async (token, msg) => { if (token === "dead-phone") throw Object.assign(new Error("gone"), { code: "messaging/registration-token-not-registered" }); pushes.push({ token, ...msg }); };
 
 // One lord's orders for a day: taken from a golden battle with the same number of lords (ten), so they are varied and legal.
+// golden cases 50 to 61 are the 9 to 12 lord battles; later ones are the skill-tree cases, which have fewer lords
 function ordersFor(dayIndex, seat) {
-  const day = days[dayIndex], g = sim.run(`goldenCase(${53 + 4 * dayIndex})`).plans[seat], rnd = sim.get("mulberry")(1000 * dayIndex + seat);
+  const day = days[dayIndex], gp = sim.run(`goldenCase(${50 + dayIndex})`).plans, g = gp[seat % gp.length], rnd = sim.get("mulberry")(1000 * dayIndex + seat);
   const others = uids.slice(0, SEATS).filter((_, k) => k !== seat), offers = {}, bids = {};
   if (rnd() < .5) offers[others[Math.floor(rnd() * others.length)]] = { gold: 40, day: addDays(day, rnd() < .7 ? 0 : -1) };
   if (dayIndex >= 3 && rnd() < .6) { const ids = Object.keys(sim.get("MERCS")), m = ids[Math.floor(rnd() * ids.length)]; bids[m] = { gold: sim.get("MERCS")[m].min + 10 * seat, day }; }
@@ -128,7 +129,7 @@ test("the game's rules held across the war", () => {
 test("replaying each battle from its saved orders gives the server's result (Node)", () => {
   for (const day of days) {
     const b = battles[day], plans = JSON.parse(JSON.stringify(b.inputs.plans)); plans.feuds = b.inputs.feuds; plans.mercs = b.mercs;
-    const res = sim.get("runBattle")(plans, sim.get("daySeed")(day), { N: b.inputs.N, finalDay: b.inputs.final, ultV2: b.inputs.ultV2, balV2: b.inputs.balV2, balV3: b.inputs.balV3, dayNo: b.inputs.dayNo, ranks: b.inputs.ranks }); // a full replay run, as a phone does
+    const res = sim.get("runBattle")(plans, sim.get("daySeed")(day), { N: b.inputs.N, finalDay: b.inputs.final, ultV2: b.inputs.ultV2, balV2: b.inputs.balV2, balV3: b.inputs.balV3, heroV3: b.inputs.heroV3, dayNo: b.inputs.dayNo, ranks: b.inputs.ranks }); // a full replay run, as a phone does
     assert.equal(sim.get("battleHash")(res), b.resultHash, day);
   }
 });
@@ -141,7 +142,7 @@ test("a browser signed in as one of the lords replays all seven battles to the s
   const token = await getAuth(app).createCustomToken(uids[1]);
   await p.evaluate(t => firebase.auth().signInWithCustomToken(t), token);
   await p.waitForFunction(() => LIVE.uid && LIVE.playersLoaded && Object.keys(LIVE.battles).length === 7, null, { timeout: 30000 });
-  const got = await p.evaluate(() => Object.keys(LIVE.battles).sort().map(day => { const sv = savedBattle(day), res = runBattle(sv.plans, daySeed(day), { N: sv.N, finalDay: sv.final, ultV2: sv.ultV2, balV2: sv.balV2, balV3: sv.balV3, dayNo: sv.dayNo, ranks: sv.ranks });
+  const got = await p.evaluate(() => Object.keys(LIVE.battles).sort().map(day => { const sv = savedBattle(day), res = runBattle(sv.plans, daySeed(day), { N: sv.N, finalDay: sv.final, ultV2: sv.ultV2, balV2: sv.balV2, balV3: sv.balV3, heroV3: sv.heroV3, dayNo: sv.dayNo, ranks: sv.ranks });
     return { day, same: battleHash(res) === LIVE.battles[day].resultHash, winner: res.results[0].pid === LIVE.battles[day].results[0].pid }; }));
   assert.deepEqual(got, days.map(day => ({ day, same: true, winner: true })));
   // and what this lord's device knows of a rival is exactly what was fought, never today's orders

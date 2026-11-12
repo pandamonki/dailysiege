@@ -92,3 +92,14 @@
 .gr-pop div.on { background: var(--wood); color: var(--parchment); }
 .gr-pop small { display: block; font-size: 11px; opacity: .7; }
 .gr-tip { margin: 0; font-size: 12px; }
+.gr-send { flex-basis: 100%; display: flex; align-items: center; gap: 6px; }
+.gr-send span { font-size: 13px; color: var(--ink-soft); margin-right: 2px; }
+.abar .gr-send .btn { flex: 0 0 auto; }
+/* Deployment tab rows */
+.gr-row { display: grid; gap: 6px; padding: 7px 8px 8px; border: 2px solid var(--wood-dark); border-radius: 10px; background: rgba(60,40,20,.10); }
+.gr-rh { display: flex; align-items: baseline; justify-content: space-between; }
+.gr-rh b { font-family: var(--f-display); font-weight: 400; font-size: 17px; color: var(--ink); }
+.gr-rh small { font-size: 12px; color: var(--ink-soft); font-style: italic; }
+.gr-r5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.gr-t.gr-ph { border-style: dashed; border-bottom-width: 2px; background: rgba(255,250,230,.25); color: var(--ink-soft); min-height: 58px; place-items: center; align-content: center; cursor: pointer; touch-action: auto; }
+.gr-t.gr-ph span { font-size: 10px; }
