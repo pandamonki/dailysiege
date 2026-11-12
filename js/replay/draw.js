@@ -45,13 +45,14 @@ function drawReplay(t) {
   R.traps.forEach(tr => { if (tr.pid === R.me && !(tr.usedT && time >= tr.usedT)) drawTrap(ctx, tr.type, tr.x * ts, (tr.y + .05) * ts, ts * .9); });
   const items = [];
   (R.wallMeta || []).forEach((w, wi) => { const hp = f0.w ? f0.w[wi] : w.maxhp; if (hp == null) return; items.push([w.y + .2, () => drawWallTile(ctx, w.y, w.x, w.tier, Math.max(0, hp) / w.maxhp, R.colors[w.pid], t, w.dir)]); });
+  const wv = R.waves ? { total: WAVE_COUNT, t: replay.waveT || (replay.waveT = (R.events || []).reduce((o, e) => { if (e.ty === "wave") (o[e.pid] = o[e.pid] || []).push(e.t); return o; }, {})) } : null;
   R.meta.forEach((m, k) => {
     const b = k * 4; if (b >= f0.d.length) return;
     let x = f0.d[b], y = f0.d[b + 1]; const hp = f0.d[b + 2], fl = f0.d[b + 3];
     if (f1.d.length > b && !(f1.d[b + 3] & 1)) { const x1 = f1.d[b], y1 = f1.d[b + 1]; if (Math.hypot(x1 - x, y1 - y) < 1.5) { x += (x1 - x) * a; y += (y1 - y) * a; } }
     const color = R.colors[m.pid], frac = hp / m.maxhp, fr = friendly(m.pid);
     if (m.kind === "castle") { if (replay.sel === k) items.push([m.tile[0] - .01, () => { ctx.strokeStyle = "#ffe082"; ctx.lineWidth = ts * .08; ctx.strokeRect(m.tile[1] * ts + 2, m.tile[0] * ts - ts * .3, ts - 4, ts * 1.25); }]);
-      items.push([m.tile[0], () => drawCastle(m.tile[0], m.tile[1], color, t, R.names[m.pid], null, { frac, dead: fl & 1, friendly: fr }, m.banner, m.ctier)]); return; }
+      items.push([m.tile[0], () => drawCastle(m.tile[0], m.tile[1], color, t, R.names[m.pid], null, { frac, dead: fl & 1, friendly: fr, waves: wv ? { total: wv.total, left: wv.total - (wv.t[m.pid] || []).filter(x => x <= time).length } : null }, m.banner, m.ctier)]); return; }
     { atkIndex(); const dv = lastDie(k, time); const dead = (fl & 1) || (dv && f1.d.length > b + 3 && (f1.d[b + 3] & 1));
       if (dead) { if (dv && time - dv.t < deathLen(m)) items.push([dv.y - .4 + .3, () => drawDeath(m, k, color, dv, time - dv.t, t)]); return; } }
     const pose = poseOf(k, time, x, y, f0, f1);

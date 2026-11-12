@@ -27,13 +27,13 @@ const canBanner = () => !isLive() || DAY === 1;
 const ctNow = () => S.castle || 1;
 const rapierTaken = k => isLive() && Object.entries(LIVE.players || {}).some(([uid, p]) => uid !== LIVE.uid && p && p.state && (p.state.items || []).includes(k));
 function castleSheet() {
-  const tab = sheet.lobby ? "banner" : (sheet.tab || "recruit"), full = S.owned.length >= S.slots, ct = ctNow();
+  const tab = sheet.lobby ? "banner" : (sheet.tab || "recruit"), full = supplyFull(), ct = ctNow();
   let body = "";
   if (tab === "recruit") { const pk = sheet.pick || "footman", pu = UNITS[pk], need = UNIT_TIER[pk], lk = ct < need, sCap = !!pu.castleOnly && S.owned.filter(o => UNITS[o.type].castleOnly).length >= SIEGE_MAX;
-    body = `<p class="muted">Units <b>${S.owned.length}/${S.slots}</b> · ${S.owned.filter(u => placedAt(u.id)).length} placed</p>
+    body = `<p class="muted">Field <b>${fieldCount()}/${S.slots}</b> · ${S.owned.filter(u => placedAt(u.id)).length} placed · Garrison <b>${garrisonCount()}/${GARRISON_SOLDIERS}</b>. Soldiers beyond your field supply wait in the garrison and march out in waves.</p>
     <div class="ugrid shopg">${Object.entries(UNITS).filter(([, u]) => !u.merc).map(([k, u]) => tile("upick", k, pk === k, spriteURL(k), u.name, { price: u.cost, lk: ct < UNIT_TIER[k] })).join("")}</div>
     ${udet(pu.name, pu.cost, `<p>${pu.note}</p><p>${IC.hp(pu.hp)} ${IC.atk(pu.atk)} · ${typeLine(UNIT_TYPES[pk])}</p>${lk ? `<p class="muted">Needs a ${tierName(need)}.</p>` : ""}${pu.castleOnly ? `<p class="muted">Siege units: you can own ${SIEGE_MAX} at a time.</p>` : ""}`)}
-    ${abar(`<button class="btn wax" data-act="buy" data-v="${pk}" ${dis(lk || full || sCap || avail() < pu.cost)}>${lk ? `Needs a ${tierName(need)}` : full ? "Barracks full" : sCap ? `Siege limit ${SIEGE_MAX}` : `Recruit · ${pu.cost}g`}</button>`)}`; }
+    ${abar(`<button class="btn wax" data-act="buy" data-v="${pk}" ${dis(lk || full || sCap || avail() < pu.cost)}>${lk ? `Needs a ${tierName(need)}` : full ? "Barracks and garrison full" : sCap ? `Siege limit ${SIEGE_MAX}` : `Recruit · ${pu.cost}g`}</button>`)}`; }
   if (tab === "upgrade") { const ts = sheet.tsel && findUnit(sheet.tsel) ? sheet.tsel : (S.owned.find(o => !placedAt(o.id)) || S.owned[0] || {}).id || null, u = ts ? findUnit(ts) : null, nRes = S.owned.filter(o => !placedAt(o.id)).length;
     let det = "", bar = "";
     if (!u) det = udet("No soldiers yet", null, `<p>Recruit soldiers in the Recruit tab first.</p>`);

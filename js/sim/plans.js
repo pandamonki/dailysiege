@@ -7,7 +7,7 @@ function buildPlans() {
   const plans = [{
     pid: "you", me: true, name: "You", color: YOU_COLOR, cls: S.cls, castle: CASTLE, ranks: S.ranks, picks: S.picks, triggers: S.triggers, gear: S.gear, defences: S.defences,
     ultArm: planUlt(), blessing: planBless(), level: level(), xp0: S.xp || 0, items: (S.items || []).slice(), castleTier: S.castle || 1, banner: S.banner, ...pactPlan(),
-    formation: S.formation !== false, stance: S.stance, prio: S.prio, rules: S.rules, pieces: youPieces,
+    formation: S.formation !== false, stance: S.stance, prio: S.prio, gprio: S.gprio, engage: S.engage, waves: garrisonPlan(), rules: S.rules, pieces: youPieces,
     targets: S.lists.hostile.slice(), tmode: S.strategy.mode, heading: S.strategy.heading, offers: Object.assign({}, S.offers), replies: Object.assign({}, S.replies), terms: S.terms, bids: Object.assign({}, S.bids),
   }];
   RIVALS.forEach((rv, i) => {
@@ -24,7 +24,7 @@ function buildPlans() {
       pieces: RARMY.filter(u => u.rid === rv.id).map(u => u.champ ? { kind: "champ", r: u.r, c: u.c } : { kind: "unit", type: u.key, lvl: u.lvl, hp: u.hp, r: u.r, c: u.c }).concat(RWALLS.filter(w => w.rid === rv.id).map(w => ({ kind: "wall", r: w.r, c: w.c, dir: w.dir }))),
       targets: (ai.hostile || []).concat(["you", ...RIVALS.map(r => r.id)].filter(q => q !== rv.id && !(ai.hostile || []).includes(q) && !Object.keys(ai.offers || {}).includes(q))
         .sort((x, y) => { const px = x === "you" ? CASTLE : RIVALS.find(r => r.id === x).pos, py = y === "you" ? CASTLE : RIVALS.find(r => r.id === y).pos; return hyp(px[0] - rv.pos[0], px[1] - rv.pos[1]) - hyp(py[0] - rv.pos[0], py[1] - rv.pos[1]); })),
-      auto: true, offers: Object.fromEntries(Object.entries(ai.offers || {}).map(([k, v]) => [k, Object.assign({}, v, { day: DAY - 1 })])), terms: ai.terms || {},
+      ...botCombat(botSeed(rv.id)), auto: true, offers: Object.fromEntries(Object.entries(ai.offers || {}).map(([k, v]) => [k, Object.assign({}, v, { day: DAY - 1 })])), terms: ai.terms || {},
       bids: DAY >= MERC_DAY && hash(i, DAY, 91) > .35 ? (() => { const ids = Object.keys(MERCS), id = ids[Math.floor(hash(i, DAY, 92) * ids.length)]; return { [id]: { gold: MERCS[id].min + 10 * Math.floor(hash(i, DAY, 93) * 7), day: DAY } }; })() : {},
     });
   });
