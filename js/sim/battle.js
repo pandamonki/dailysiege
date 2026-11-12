@@ -108,7 +108,12 @@ function runBattle(plans, seed, opts = {}) {
         const its = new Set(pl.items || []); e.itemSet = its; if (its.has("rapier")) { e.rapier = true; rapierOwner = rapierHolder = pl.pid; }
         if (its.has("boots")) e.spd *= 1.1; if (its.has("gauntlets")) e.atk *= 1.15; if (its.has("ringprot")) e.dmgRed = (e.dmgRed || 0) + .08;
         if (its.has("fang")) e.lifesteal = (e.lifesteal || 0) + .12; if (its.has("thornmail")) e.thorns = .15; if (its.has("talisman")) e.will = true;
-        e.cons = ["salve", "elixir", "net", "scroll"].filter(k => its.has(k)).map(k => ({ k, ready: 0 }));
+        if (its.has("vanguard")) { e.maxhp *= 1.15; e.hp = e.maxhp; e.block = 12; }
+        if (its.has("antimagic")) e.spellRed = .3;
+        if (its.has("shiva")) e.dmgRed = (e.dmgRed || 0) + .06;
+        if (its.has("daedalus")) e.atk *= 1.15;
+        if (its.has("crystalys")) e.itemCrit = [.2, 1.6]; if (its.has("daedalus")) e.itemCrit = [.25, 2.4];
+        e.cons = ["salve", "elixir", "net", "scroll", "shiva"].filter(k => its.has(k)).map(k => ({ k, ready: 0 }));
         if (!HV3 && pl.cls === "archer" && pl.ranks.a3) { e.evade = ext([.1, .18, .25], pl.ranks.a3); e.counter = pl.picks.a3 === "Counter"; e.kite = pl.picks.a3 === "Kite"; }
         if (!HV3 && pl.cls === "rogue" && pl.ranks.a3) e.poison = { dps: ext([7, 10, 13], pl.ranks.a3), venom: pl.picks.a3 === "Venom", weaken: pl.picks.a3 === "Weaken" };
         [e.atype, e.armour] = CLASS_TYPES[pl.cls];
@@ -199,6 +204,7 @@ function runBattle(plans, seed, opts = {}) {
     if (tick % 10 === 0) {
       if (s.has("banner")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => setFx(o, "atkbuf", 1.3, .12));
       if (s.has("standard")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => setFx(o, "guard", 1.3, .12));
+      if (s.has("pipe")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => setFx(o, "spellward", 1.3, .25));
       if (s.has("mender")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => { if (o.hp < o.maxhp) heal(o, 4, true, e, "Mender's Charm"); });
     }
     (e.cons || []).forEach(c => {
@@ -206,6 +212,7 @@ function runBattle(plans, seed, opts = {}) {
       if (c.k === "salve" && e.hp / e.maxhp < .5) { c.ready = t + ITEMS[c.k].cd; heal(e, e.maxhp * .35, false, e, "Healing Salve"); txt(e, "Salve", "#9cf09c"); }
       else if (c.k === "elixir" && live(e.tgt) && d(e, e.tgt) <= e.range + 1) { c.ready = t + ITEMS[c.k].cd; setFx(e, "asbuf", 8, .25); txt(e, "Fury!", "#ff8a7a"); }
       else if (c.k === "net") { const v = minBy(enemiesNear(e, e.x, e.y, 4).filter(x => x.kind === "champ"), x => d(x, e)); if (v) { c.ready = t + ITEMS[c.k].cd; setFx(v, "root", 2.5); shot(e, v, "#c9a46a", 2); txt(v, "Netted", "#e8cf9a"); } }
+      else if (c.k === "shiva") { const vs = enemiesNear(e, e.x, e.y, 3); if (vs.length >= 2) { c.ready = t + ITEMS[c.k].cd; aoe(e.x, e.y, 3, "#9fe4ff", .6); vs.forEach(x => { deal(e, x, 140, { aoe: 1, ab: "Shiva's Guard" }); if (live(x)) setFx(x, "slow", 4, .4); }); txt(e, "Shiva's Guard", "#bdeeff"); } }
       else if (c.k === "scroll" && !e.orphan && e.hp / e.maxhp < .3 && enemiesNear(e, e.x, e.y, 3).length) { c.ready = t + ITEMS[c.k].cd; aoe(e.x, e.y, .8, "#b48cff", .5); e.x = p.castle.x; e.y = p.castle.y - 1; e.tgt = null; aoe(e.x, e.y, .8, "#b48cff", .5); heal(e, e.maxhp * .2, false, e, "Scroll of Retreat"); txt(e, "Retreat", "#d6c2ff"); }
     });
   }
@@ -258,7 +265,12 @@ function runBattle(plans, seed, opts = {}) {
     const wall = fxv(tgt, "wall");
     if (wall) { const blocked = amt * m * wall; m *= 1 - wall; if (tgt.reflect && live(src) && !o.reflected) deal(tgt, src, blocked * .2, { aoe: 1, reflected: 1, ab: "Shield Wall" }); }
     m *= 1 + fxv(tgt, "vuln"); m *= 1 - fxv(tgt, "guard");
+    const abil = !!(o.ab || curAb) && !o.reflected, plain = !abil && !o.dot && !o.reflected; // abil: a hero ability or ultimate; plain: an ordinary weapon hit
+    if (abil && src) { if (tgt.spellRed) m *= 1 - tgt.spellRed; const sw = fxv(tgt, "spellward"); if (sw) m *= 1 - sw; }
+    let critHit = false;
+    if (src && src.icm && plain && !o.aoe && !o.critMul) { m *= src.icm; src.icm = 0; critHit = true; } // Crystalys / Daedalus
     let dmg = Math.max(1, amt * m);
+    if (tgt.block && plain) dmg = Math.max(1, dmg - tgt.block); // Vanguard
     if (HV3) { if (o.capAbs) dmg = Math.min(dmg, o.capAbs); dmg = kit.redirect(tgt, dmg); if (tgt.sh && tgt.sh.length) dmg = kit.absorb(tgt, dmg); }
     const eff = Math.min(dmg, tgt.hp);
     tgt.hp -= dmg; tgt.hitT = t;
@@ -291,7 +303,7 @@ function runBattle(plans, seed, opts = {}) {
       // betrayal trigger: an ally hitting the target I'm fighting
       order.forEach(pid => { const b = P[pid].betray && P[pid].betray[src.pid]; if (b === "When they attack my target" && P[pid].pacts.has(src.pid) && ents.some(e => !e.dead && e.pid === pid && e.tgt === tgt)) P[pid].stolenT = t; });
     }
-    if (o.big) txt(tgt, Math.round(dmg), o.crit ? "#ffd54a" : "#fff");
+    if (o.big || critHit) txt(tgt, Math.round(dmg), o.crit || critHit ? "#ffd54a" : "#fff");
     if (tgt.hp <= 0) kill(tgt, src);
     return dmg;
   }
@@ -764,7 +776,8 @@ function runBattle(plans, seed, opts = {}) {
     if (e.atkT <= 0) {
       e.atkT = e.as; atkEv(e, o, e.range > 1.5 ? "r" : "m");
       if (e.range > 1.5) shot(e, o, e.shot || "#fff", 1, SHOT_STYLE[e.kind === "champ" ? e.cls : e.key]); else slash(o);
-      const dealt = HV3 && e.tr ? kit.basic(e, o) : deal(e, o, e.atk);
+      if (e.itemCrit && rng() < e.itemCrit[0]) e.icm = e.itemCrit[1];
+      const dealt = HV3 && e.tr ? kit.basic(e, o) : deal(e, o, e.atk); if (e.itemCrit) e.icm = 0;
       if (e.splash && live(o)) enemiesNear(e, o.x, o.y, 1.3).filter(x => x !== o).forEach(x => deal(e, x, e.atk * e.splash, { aoe: 1 }));
       if (e.cls === "rogue") e.hits = (e.hits || 0) + 1;
       if (e.cls === "archer") { const th = minBy(enemiesNear(e, e.x, e.y, 2.6).filter(x => x.range < 2.5), x => d(x, e)); if (th) e.fleeUntil = t + .6; }
