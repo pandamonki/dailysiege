@@ -90,14 +90,14 @@ function makeTreeKit(X) {
       const sp = treeSp(e.cls, bi, i), art = SPELL_ART[sp];
       if (art) { const at = res.x != null ? res : art.at === "t" && live(e.tgt) ? e.tgt : e; ev({ ty: "spell", sp, x: at.x, y: at.y - .2, r: art.r }); }
       X.atkEv(e, live(e.tgt) ? e.tgt : e, "c");
-      e.cds[key] = i === 5 ? 1e9 : now + cdOf(e, bi, i); e.castLock = now + .4; return;
+      e.cds[key] = i === 5 ? 1e9 : now + cdOf(e, bi, i); X.cd(e, key, e.cds[key]); e.castLock = now + .4; return;
     }
   }
   // a reactive skill (no cooldown loop): checked, cooled and recorded by hand
   function react(e, bi, i, fn) {
     const key = bi + "." + i, now = T(); if (!live(e) || !rk(e, bi, i) || e.cds[key] > now || fxv(e, "silence")) return false;
     const node = TREES[e.cls][bi].nodes[i]; const r = withAb(node.name, () => fn(rk(e, bi, i))); if (!r) return false;
-    X.abRec(e, node.name).casts++; e.cds[key] = now + cdOf(e, bi, i); return true;
+    X.abRec(e, node.name).casts++; e.cds[key] = now + cdOf(e, bi, i); X.cd(e, key, e.cds[key]); return true;
   }
   // ----- per-tick upkeep for heroes and soldiers -----
   function tick(e) {

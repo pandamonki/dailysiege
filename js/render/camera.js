@@ -17,9 +17,10 @@ function flyTo(wx, wy, z) {
 function zoneCentre() { let r = 0, q = 0; zoneSet.forEach(k => { const [a, b] = k.split(",").map(Number); r += a; q += b; }); const n = zoneSet.size || 1; return [(q / n + .5) * ts, (r / n + .5) * ts]; }
 const home = () => { const [x, y] = zoneCentre(); flyTo(x, y, .9); };
 function resize(force) {
-  if (!force && bg && cvs.clientWidth === vw && Math.abs(innerHeight - (resize.ih || 0)) < 2) return;
-  resize.ih = innerHeight;
-  vw = cvs.clientWidth; vh = Math.round(Math.max(280, Math.min(vw * 1.3, innerHeight * .64)));
+  const rp = mode === "replay";
+  if (!force && bg && cvs.clientWidth === vw && Math.abs(innerHeight - (resize.ih || 0)) < 2 && resize.rp === rp) return;
+  resize.ih = innerHeight; resize.rp = rp;
+  vw = cvs.clientWidth; vh = Math.round(Math.max(280, Math.min(vw * 1.3, rp ? innerHeight - 450 : innerHeight * .64))); // a replay keeps room for the unit panel and the controls
   cvs.style.height = vh + "px";
   const nd = Math.min(window.devicePixelRatio || 1, 3);
   cvs.width = Math.round(vw * nd); cvs.height = Math.round(vh * nd);
