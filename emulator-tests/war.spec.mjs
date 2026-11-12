@@ -27,8 +27,9 @@ const TOKENS = { bot01: ["phone-1a", "phone-1b"], bot02: ["phone-2"], bot03: ["d
 const send = async (token, msg) => { if (token === "dead-phone") throw Object.assign(new Error("gone"), { code: "messaging/registration-token-not-registered" }); pushes.push({ token, ...msg }); };
 
 // One lord's orders for a day: taken from a golden battle with the same number of lords (ten), so they are varied and legal.
+// golden cases 50 to 61 are the 9 to 12 lord battles; later ones are the skill-tree cases, which have fewer lords
 function ordersFor(dayIndex, seat) {
-  const day = days[dayIndex], g = sim.run(`goldenCase(${53 + 4 * dayIndex})`).plans[seat], rnd = sim.get("mulberry")(1000 * dayIndex + seat);
+  const day = days[dayIndex], gp = sim.run(`goldenCase(${50 + dayIndex})`).plans, g = gp[seat % gp.length], rnd = sim.get("mulberry")(1000 * dayIndex + seat);
   const others = uids.slice(0, SEATS).filter((_, k) => k !== seat), offers = {}, bids = {};
   if (rnd() < .5) offers[others[Math.floor(rnd() * others.length)]] = { gold: 40, day: addDays(day, rnd() < .7 ? 0 : -1) };
   if (dayIndex >= 3 && rnd() < .6) { const ids = Object.keys(sim.get("MERCS")), m = ids[Math.floor(rnd() * ids.length)]; bids[m] = { gold: sim.get("MERCS")[m].min + 10 * seat, day }; }
