@@ -17,9 +17,10 @@ The user's plan is the starting point. Changes made during review:
    and "Ranger beats Warrior", and both "Mage beats Shaman" and "Shaman beats Mage". The fixed loop
    below gives each hero two wins and two losses. It also agrees with the existing damage-type table.
 2. **The plan's tree maths didn't add up.** A tree had four nodes but needed 8 points to reach the
-   ultimate, and how ranks worked wasn't defined. Fixed: Tier 1 has 2 ranks, Tier 2 has 3, Tier 3
-   (synergy) has 2 and Tier 4 has 1. A full tree costs 8 points, and the ultimate is the 8th point.
-   A second tree with 6 points reaches its synergy at full rank. 8 + 6 = 14 still holds.
+   ultimate, and how ranks worked wasn't defined. Decided with the user: Tier 1 and Tier 2 have 4
+   ranks each, Tier 3 (synergy) has 2 and Tier 4 has 1. A full tree is 11 points, more than a hero
+   needs to reach its ultimate (the 8th point). After the ultimate, players choose between
+   **depth** (maxing the rest of their tree) and **breadth** (branching into a second tree).
 3. **A 2-day ultimate cooldown means about one ultimate per war.** Ultimates unlock at level 9,
    which is day 4 or 5. With a two-day rest, most players would fire once. Decided: a **1-day
    rest**, which is the current rule. The ultimate is armed in orders and rests the day after it
@@ -65,18 +66,23 @@ The user's plan is the starting point. Changes made during review:
 ### 1.2 Tree structure (the same for every class)
 | Node | Max ranks | Needs points already spent in this tree |
 |---|---|---|
-| T1 (passive) | 2 | 0 |
-| T2 (trigger) | 3 | 2 |
-| T3 (synergy) | 2 | 4 |
-| T4 (ultimate) | 1 | 7, and hero level ≥ 9 |
+| T1 (passive) | 4 | 0 |
+| T2 (trigger) | 4 | 2, and T1 rank ≥ 1 |
+| T3 (synergy) | 2 | 5, and T2 rank ≥ 1 |
+| T4 (ultimate) | 1 | 7, T3 rank ≥ 1, and hero level ≥ 9 |
 
-- A full tree is 2 + 3 + 2 + 1 = 8 points. Valid builds include:
-  - 8/6/0: an ultimate, plus a second tree's synergy at rank 2 (2 + 2 + 2) or at rank 1 with a
-    maxed trigger (2 + 3 + 1);
-  - 7/7/0: two full synergies, no ultimate;
-  - 8/4/2 and so on.
-- Rank values are written `[r1, r2]` for T1 and T3, and `[r1, r2, r3]` for T2.
-- Only one T4 is possible, because 8 + 8 > 14.
+- A full tree is 4 + 4 + 2 + 1 = **11 points**. The fastest route to the ultimate is 7 points
+  (for example 2 + 3 + 2, or 3 + 3 + 1), then the ultimate as the 8th point at level 9.
+- Example builds at level 15 (14 points):
+  - **Depth, 11/3:** the whole main tree maxed, plus a second tree's T1 2 and T2 1.
+  - **Breadth, 8/6:** an ultimate, plus a second tree's T1 2, T2 3 and T3 1. The second synergy
+    is reached on the 14th point.
+  - **Two synergies, 7/7:** two trees up to rank 2 synergy, no ultimate.
+  - **Spread, 8/3/3:** an ultimate plus two small trees.
+- Only one T4 is possible: two ultimates would need 16 points.
+- Rank values are written `[r1, r2, r3]` for T1 and T2. **Rank 4 continues the trend** of ranks
+  1-3 using the existing `ext()` helper. For example `[6, 10, 15]` gives 20 at rank 4. The
+  balance lab may override any rank-4 value that tests too strong. T3 values are `[r1, r2]`.
 - Points can't be refunded mid-war, matching today's rule. Class choice stays locked after day 1.
 
 ### 1.3 Ultimate
@@ -231,7 +237,9 @@ fought.
 ## 6. Skill trees
 
 Notation:
-- `[a, b, c]` = value at rank 1, 2, 3 (use the existing `ext()` helper).
+- `[a, b, c]` = value at rank 1, 2, 3. Rank 4 (T1 and T2 only) continues the trend via `ext()`.
+  Counts like targets or stacks keep their rank-3 value at rank 4 unless the trend is a whole
+  number. T3 values are `[r1, r2]`.
 - `cd` is in seconds before `BAL.cd` and gear modifiers. T2 ranks don't reduce cooldowns; only the
   stated values scale.
 - Damage values have `e.atk * k` added where shown, so they scale with level.
@@ -262,13 +270,17 @@ as the reference fragile hero. Fixes made:
 - **Rogue Deadly Cloud.** "Can't be targeted from outside the cloud" protected the enemy. Dropped.
 - **Dodge stacking.** Total dodge chance is capped at 40% outside Blade Fury (Reflexes, Fleet
   Footed and any item).
+- These checks used rank 3 values. Rank 4 adds roughly one more step of the same size. The
+  balance lab must confirm that a depth build (11/3) and a breadth build (8/6) of the same tree
+  win within 2 percentage points of each other. If depth wins clearly, flatten the rank-4 step;
+  if breadth wins, raise it.
 - Reviewed and fine as written: Avatar of War (close to today's Last Stand), Fortress Wall, Time
   Warp, Totem of the Titan, Whirlwind, Chain Lightning, Blizzard and Rallying Charge.
 
 ### 6.A Warrior
 
 **Vanguard (tank)**
-- **T1 Iron Clad (passive):** +[10, 15]% max HP; take [7, 10]% less physical damage.
+- **T1 Iron Clad (passive):** +[6, 10, 15]% max HP; take [4, 7, 10]% less physical damage.
 - **T2 Taunting Shout (trigger):** fires when 2+ enemies within 3 tiles are attacking an ally of
   the Warrior's that isn't the Warrior.
   - Taunts enemies within 2 tiles for 3s.
@@ -284,7 +296,7 @@ as the reference fragile hero. Fixes made:
 
 **Berserker (burst)**
 - **T1 Cleave (passive):** basic attacks also hit up to 2 enemies within 1.2 tiles of the target,
-  for [28, 35]% damage. This counts as area damage, so it can't be dodged.
+  for [20, 28, 35]% damage. This counts as area damage, so it can't be dodged.
 - **T2 Executioner's Whirlwind (trigger):** fires when an enemy within 1.5 tiles is below 30% HP.
   - Spins for 2s, hitting every enemy within 1.6 tiles each 0.5s for ([22, 30, 38] + atk × .4)
     blade damage.
@@ -301,7 +313,7 @@ as the reference fragile hero. Fixes made:
   - when it fires, the Warrior heals 25% max HP.
 
 **Tactician (army)**
-- **T1 Marching Cadence (passive):** own soldiers move +[14, 20]% faster until their first
+- **T1 Marching Cadence (passive):** own soldiers move +[8, 14, 20]% faster until their first
   attack or first hit taken in the battle.
 - **T2 Command Banner (trigger):** fires when the Warrior engages an enemy hero or siege engine
   within 2 tiles.
@@ -320,8 +332,8 @@ as the reference fragile hero. Fixes made:
 ### 6.B Shaman
 
 **Storm (magic burst)**
-- **T1 Static Surge (passive):** basic attacks deal +[7, 10]% damage. They also arc to 1 enemy
-  within 2 tiles of the target for [40, 50]% (area damage).
+- **T1 Static Surge (passive):** basic attacks deal +[4, 7, 10]% damage. They also arc to 1 enemy
+  within 2 tiles of the target for [30, 40, 50]% (area damage).
 - **T2 Chain Lightning (trigger):** fires when 3+ enemies are within 2 tiles of each other and the
   first one is within 4.5 tiles of the Shaman.
   - Bolt chains up to [3, 4, 4] targets, for ([80, 100, 120] + atk × .5) magic damage, ×.85 per
@@ -342,8 +354,8 @@ as the reference fragile hero. Fixes made:
 **Totemic (field control)**
 - **T1 Grounding Totem (passive):** every 14s in combat, plants a totem. This reuses the existing
   Healing Totem entity: 120 HP, lasts 7s. Allies within 2.5 tiles of it:
-  - take [9, 12]% less physical damage;
-  - heal [8, 11] HP per second.
+  - take [6, 9, 12]% less physical damage;
+  - heal [5, 8, 11] HP per second.
 - **T2 Earthgrab Totem (trigger):** fires when an enemy hero or siege engine comes within 3 tiles.
   - Roots up to [2, 3, 3] nearest enemies within 3 tiles for [2, 2.5, 3]s. Heroes and siege
     engines get half.
@@ -359,7 +371,7 @@ as the reference fragile hero. Fixes made:
   - Redirected damage can't kill the relic faster than 25% of its HP per second.
 
 **Ancestral (drain)**
-- **T1 Spirit Leech (passive):** heals for [10, 15]% of spell and ability damage dealt.
+- **T1 Spirit Leech (passive):** heals for [6, 10, 15]% of spell and ability damage dealt.
 - **T2 Ancestral Grasp (trigger):** fires when the Shaman's HP drops below 50%.
   - Drains ([50, 65, 80] + atk × .5) magic damage from the 3 nearest enemies within 3 tiles.
   - Gains a shield equal to the total dealt, for 6s.
@@ -381,7 +393,7 @@ as the reference fragile hero. Fixes made:
 
 **Shadow (infiltration)**
 - **T1 Shadowstep (passive):** starts the battle and each respawn in stealth (reveal radius 1.0).
-  Moves +[18, 25]% faster while stealthed. While stealthed, pathing prefers the nearest enemy
+  Moves +[10, 18, 25]% faster while stealthed. While stealthed, pathing prefers the nearest enemy
   backline hero, then backline units.
 - **T2 Ambush (trigger):** fires on the first damaging hit out of stealth.
   - Deals ([40, 60, 80] + atk) × 1.8 damage. It doesn't get the finishing-blow bonus.
@@ -400,8 +412,8 @@ as the reference fragile hero. Fixes made:
 
 **Venom (damage over time and control)**
 - **T1 Poisoned Blades (passive):** each hit adds a poison stack:
-  - [4, 5] damage per second per stack, 6s, up to 5 stacks, refreshed on hit;
-  - poisoned targets receive [22, 30]% less healing (`grievous`).
+  - [3, 4, 5] damage per second per stack, 6s, up to 5 stacks, refreshed on hit;
+  - poisoned targets receive [15, 22, 30]% less healing (`grievous`).
   This replaces today's Poison Blade. The Orb of Venom item stacks separately.
 - **T2 Caltrop Bomb (trigger):** fires when 3+ enemy melee units are within 2.5 tiles.
   - Throws a zone of radius 1.2 at their centre for 5s.
@@ -418,7 +430,7 @@ as the reference fragile hero. Fixes made:
   - Enemies inside are blinded (40% miss chance).
 
 **Duelist (evasion)**
-- **T1 Reflexes (passive):** +[14, 20]% chance to dodge non-area physical attacks.
+- **T1 Reflexes (passive):** +[8, 14, 20]% chance to dodge non-area physical attacks.
 - **T2 Riposte (trigger):** fires on a dodge.
   - Counter-attacks the attacker if it's within 1.5 tiles, for atk × [1.0, 1.25, 1.5].
   - Reduces the attacker's attack speed by 30% for 4s.
@@ -434,7 +446,7 @@ as the reference fragile hero. Fixes made:
 ### 6.D Mage
 
 **Pyromancy (burst and burn)**
-- **T1 Ignite (passive):** spells and abilities add a burn worth [12, 15]% of their damage over
+- **T1 Ignite (passive):** spells and abilities add a burn worth [8, 12, 15]% of their damage over
   4s. Today's Burn pick becomes this.
 - **T2 Fireball (trigger):** fires when 3+ enemies are within 1.3 tiles of a point within 4.5 tiles.
   - Deals ([90, 125, 165] + atk) magic damage in radius 1.3 at that point.
@@ -452,7 +464,7 @@ as the reference fragile hero. Fixes made:
   - Leaves burning ground for 6s: radius 2.2, 35 magic damage per second.
 
 **Frost (control)**
-- **T1 Chilling Touch (passive):** basic attacks slow movement and attack speed by [12, 15]%
+- **T1 Chilling Touch (passive):** basic attacks slow movement and attack speed by [8, 12, 15]%
   for 3s. It doesn't stack with the Frostbrand Dagger: take the larger slow.
 - **T2 Frost Nova (trigger):** fires when an enemy melee unit comes within 2 tiles.
   - Deals ([45, 60, 75] + atk × .5) magic damage in radius 2.
@@ -467,8 +479,8 @@ as the reference fragile hero. Fixes made:
   - it deals (25 + atk × .3) magic damage per second.
 
 **Arcane (utility)**
-- **T1 Arcane Mastery (passive):** +[.4, .5] tiles to attack range and to every spell's reach.
-  Own units within 3 tiles get +[8, 10]% `mres`.
+- **T1 Arcane Mastery (passive):** +[.3, .4, .5] tiles to attack range and to every spell's reach.
+  Own units within 3 tiles get +[5, 8, 10]% `mres`.
 - **T2 Blink & Disrupt (trigger):** fires when the Mage takes damage from an enemy hero ability,
   or from a melee attacker, and is below 70% HP.
   - Blinks up to 3 tiles towards its own castle (today's `blink()`).
@@ -485,7 +497,7 @@ as the reference fragile hero. Fixes made:
 ### 6.E Ranger (key `archer`)
 
 **Marksman (ranged damage)**
-- **T1 Eagle Eye (passive):** +[.35, .5] tiles of range; +[9, 12]% damage.
+- **T1 Eagle Eye (passive):** +[.2, .35, .5] tiles of range; +[5, 9, 12]% damage.
 - **T2 Arrow Volley (trigger):** fires when 3+ enemies are within 1.5 tiles of a point within
   range + 2.
   - Deals ([30, 42, 55] + atk × .5) pierce damage in radius 1.5.
@@ -502,7 +514,7 @@ as the reference fragile hero. Fixes made:
   - Fires when 4+ enemies are within 3 tiles of the Ranger's target.
 
 **Trapper (kiting)**
-- **T1 Fleet Footed (passive):** +[10, 15]% move speed, +[12, 15]% dodge against melee.
+- **T1 Fleet Footed (passive):** +[6, 10, 15]% move speed, +[8, 12, 15]% dodge against melee.
   This is reduced from the plan's 25%, which overlapped the Rogue's Duelist tree. Kept from today:
   after a dodge, step .7 tiles away from the attacker (today's Kite).
 - **T2 Spike Trap (trigger):** fires when an enemy melee unit comes within 2 tiles.
@@ -519,7 +531,7 @@ as the reference fragile hero. Fixes made:
   - Walls must not be placed on occupied tiles, castles or the centre circle. Skip a blocked tile.
 
 **Sniper (hero hunting)**
-- **T1 Focused Aim (passive):** each consecutive basic attack on the same target adds +[7, 10]%
+- **T1 Focused Aim (passive):** each consecutive basic attack on the same target adds +[4, 7, 10]%
   crit chance, up to 5 stacks. Crit deals ×1.75.
 - **T2 Headshot (trigger):** fires when an enemy hero comes within range + .5.
   - Aims for 1.2s; this is a `pending` entry, and the Ranger can't attack meanwhile.
@@ -573,7 +585,8 @@ as the reference fragile hero. Fixes made:
 4. **Mid-battle level-ups** follow the `path` (§1.5).
 5. **Bots:**
    - replace `autoRanks` with `autoTree(lvl, seed, cls)`, which picks a main tree by seed, fills
-     it to 8, then the next to 6 (2 + 2 + 2);
+     it to 8, then by seed either maxes it to 11 and puts 3 in a second tree (depth), or puts 6
+     in a second tree (breadth);
    - update `lordBotPlan` and practice rivals in `js/sim/plans.js`;
    - update golden cases (`js/dev/goldenCases.js`) to generate v3 plans for a new block of cases,
      keeping the old 50 unchanged.
