@@ -20,7 +20,7 @@ function runBattle(plans, seed, opts = {}) {
   const rng = mulberry(seed), DT = .1, fast = !!opts.fast, leaderPid = (plans.find(p => p.leader) || {}).pid;
   let curAb = null;
   const mePid = (plans.find(p => p.me) || plans[0]).pid, NN = opts.N || N;
-  let t = 0, tick = 0, over = false;
+  let t = 0, tick = 0, over = false, anyUlt = false;
   const ents = [], events = [], logs = [], frames = [], pending = [], traps = [], walls = [];
   let ctrHolder = null, teamWin = null; const finalDay = !!opts.finalDay;
   const P = {}, order = plans.map(p => p.pid), idx = Object.fromEntries(order.map((p, i) => [p, i]));
@@ -61,6 +61,22 @@ function runBattle(plans, seed, opts = {}) {
   const abRec = (e, name) => e.tel.ab[name] || (e.tel.ab[name] = { casts: 0, dmg: 0, heal: 0 });
   const abName = (e, k) => (k === "a4" ? "Vigour" : k === "ult" ? CLASSES[e.cls].ult.name : CLASSES[e.cls].abilities.find(a => a.key === k).name);
   const DOT_AB = { burn: "Fireball", bleed: "Cleave", fire: "Volley", poison: "Poison Blade", orb: "Orb of Venom" };
+  // one soldier of a lord's, from a plan piece: used for the army at the start and for reinforcement waves
+  function makeUnit(pl, pc, x, y) {
+    const g = pl.gear || {}, base = UNITS[pc.type], s = UNIT_SIM[pc.type], isCart = pc.type === "cart", fixed = isCart || !!base.merc, m = fixed ? 1 : 1 + UNIT_LVL_GAIN * (pc.lvl - 1), gm = fixed ? 1 : 1 + .15 * (g.armour || 0), ga = fixed ? 1 : 1 + .15 * (g.weapon || 0);
+    const e = add({ order: pc.order || "army", pid: pl.pid, kind: "unit", key: pc.type, lvl: pc.lvl, ref: pc.id || null, x, y, maxhp: base.hp * m * gm, atk: base.atk * m * ga, cart: isCart, ram: pc.type === "ram" || !!s.rammer, merc: !!base.merc, regen: s.regen || 0, hunter: !!s.hunter, dmgRed: fixed ? 0 : [0, 0, .1, .2][g.armour || 0], lifesteal: s.lifesteal || (!fixed && (g.weapon || 0) >= 3 ? .1 : 0), range: s.range, as: s.as, spd: s.spd, armor: s.armor, shot: s.shot, siege: s.siege, splash: s.splash || 0, healer: s.heal ? s.heal * m : 0 });
+    e.hp = e.maxhp * (pc.hp ?? 1); [e.atype, e.armour] = UNIT_TYPES[pc.type];
+    return e;
+  }
+  // a wave marches out of the castle gate
+  function deployWave(p, i) {
+    const w = p.waves[i], c = p.castle, dx = NN / 2 - c.x, dy = NN / 2 - c.y, L = hyp(dx, dy) || 1, px = -dy / L, py = dx / L, n = w.units.length;
+    w.done = true; p.lastWave = t;
+    w.units.forEach((u, j) => { const o = (j - (n - 1) / 2) * .45, e = makeUnit(p, { ...u, kind: "unit" }, c.x + dx / L * .9 + px * o, c.y + dy / L * .9 + py * o);
+      e.hx = e.x; e.hy = e.y; e.spd *= BAL.move; e.as *= BAL.swing; e.retreats = 1; e.wave = i + 1; if (p.noRetreat) e.noRetreat = true; });
+    ev({ ty: "wave", pid: p.pid, i, n: p.waves.filter(x => x.done).length });
+    log(`${poss(p.pid)} reinforcements march out of the castle.`, p.pid === mePid ? "you" : undefined);
+  }
   // ----- set up players and armies -----
   plans.forEach(pl => {
     P[pl.pid] = { ...pl, stance: STANCE_FIX[pl.stance] || pl.stance, bombs: (pl.bombs || []).map(b => ({ ...b })), alive: true, place: 0, kills: 0, ukills: 0, castles: 0, gold: 0, fired: new Set(), retreat: false, defendAll: false, focusLeader: false, helpPid: null, helpUntil: 0,
@@ -91,9 +107,7 @@ function runBattle(plans, seed, opts = {}) {
         [e.atype, e.armour] = CLASS_TYPES[pl.cls];
         p.champ = e;
       } else if (pc.kind === "unit") {
-        const base = UNITS[pc.type], s = UNIT_SIM[pc.type], isCart = pc.type === "cart", fixed = isCart || !!base.merc, m = fixed ? 1 : 1 + UNIT_LVL_GAIN * (pc.lvl - 1), gm = fixed ? 1 : 1 + .15 * (g.armour || 0), ga = fixed ? 1 : 1 + .15 * (g.weapon || 0);
-        const e = add({ order: pc.order || "army", pid: pl.pid, kind: "unit", key: pc.type, lvl: pc.lvl, ref: pc.id || null, x: pc.c + .5, y: pc.r + .5, maxhp: base.hp * m * gm, atk: base.atk * m * ga, cart: isCart, ram: pc.type === "ram" || !!s.rammer, merc: !!base.merc, regen: s.regen || 0, hunter: !!s.hunter, dmgRed: fixed ? 0 : [0, 0, .1, .2][g.armour || 0], lifesteal: s.lifesteal || (!fixed && (g.weapon || 0) >= 3 ? .1 : 0), range: s.range, as: s.as, spd: s.spd, armor: s.armor, shot: s.shot, siege: s.siege, splash: s.splash || 0, healer: s.heal ? s.heal * m : 0 });
-        e.hp = e.maxhp * (pc.hp ?? 1); [e.atype, e.armour] = UNIT_TYPES[pc.type];
+        makeUnit(pl, pc, pc.c + .5, pc.r + .5);
       } else if (pc.kind === "wall") {
         const tier = Math.max(1, Math.min(3, pl.castleTier || 1));
         wallTiles(pc.r, pc.c, pc.dir).forEach(([r, c]) => { if (r >= 0 && c >= 0 && r < NN && c < NN) walls.push({ id: walls.length, pid: pl.pid, x0: c, y0: r, dir: pc.dir === "v" ? "v" : "h", hp: WALL_TIERS[tier - 1].hp, maxhp: WALL_TIERS[tier - 1].hp, tier }); });
@@ -108,6 +122,7 @@ function runBattle(plans, seed, opts = {}) {
       const gd = add({ order: "guard", pid: pl.pid, kind: "unit", key: "guard", free: true, lvl: 1, x: p.castle.x + gx / GL * .9, y: p.castle.y + gy / GL * .9, maxhp: 300 * gm, atk: 14 * gm, range: 1.1, as: 1.0, spd: 1.5, armor: .2 });
       gd.hp = gd.maxhp; gd.atype = "blade"; gd.armour = "medium"; gd.retreats = 1;
     }
+    if (V3 && !opts.duel) { p.waves = cleanWaves(pl.waves).map(w => ({ ...w, units: [{ type: "footman", lvl: 1, id: null, hp: 1, free: true }, ...w.units], done: false })); p.lastWave = -99; p.heroDied = false; p.enemyHeroDied = false; }
     ents.filter(e => e.pid === pl.pid).forEach(e => { e.hx = e.x; e.hy = e.y; e.spd *= BAL.move; e.as *= BAL.swing; if (pl.noRetreat) e.noRetreat = true; });
   });
   const meta = () => ents.map(e => ({ kind: e.kind, pid: e.pid, key: e.key, merc: !!e.merc, champ: e.kind === "champ", maxhp: e.maxhp, tile: e.kind === "castle" ? [Math.floor(e.y), Math.floor(e.x)] : null,
@@ -281,6 +296,7 @@ function runBattle(plans, seed, opts = {}) {
   function kill(e, src) {
     e.dead = true; e.hp = 0; e.tgt = null; ev({ ty: "die", id: e.id, x: e.x, y: e.y, fx: src && src.x != null ? Math.sign(e.x - src.x) : 0 }); if (e.cart) boom(e);
     e.tel.deaths++; if (e.tel.diedAt == null) e.tel.diedAt = t;
+    if (e.kind === "champ" && V3) order.forEach(q => { if (q === e.pid) P[q].heroDied = true; else if (hostile(q, e.pid)) P[q].enemyHeroDied = true; });
     const kc = src && (src.owner || src); if (kc && kc.pid !== e.pid && e.kind !== "totem" && e.kind !== "castle") { kc.tel.kills++; if (e.kind !== "champ" && P[kc.pid]) P[kc.pid].ukills++; }
     if (!opts.duel) { awardXp(e); awardGold(e, kc); if ((e.kind === "champ" || e.kind === "castle") && kc && kc.pid !== e.pid && RANKS[e.pid] && RANKS[e.pid] <= 3 && hostile(kc.pid, e.pid)) { const kh = champOf(kc.pid); if (kh) giveXp(kh, bountyGold(RANKS[e.pid], e.kind === "champ" ? e.heroLvl : (champOf(e.pid) || {}).heroLvl) * .8); } }
     if (src && src.pid !== e.pid && e.kind === "champ") { P[src.pid].kills++; log(`${nm(src.pid)} slew ${lposs(e.pid)} hero.`);
@@ -554,7 +570,7 @@ function runBattle(plans, seed, opts = {}) {
       const escape = e.cls === "mage" && k === "a3" && e.picks.a3 === "Escape" && e.hp / e.maxhp < .3;
       if (!escape && !triggerOk(e, k)) continue;
       const fn = ABIL[e.cls][k]; if (!fn) continue;
-      curAb = abName(e, k); const ok = fn(e); if (ok) { abRec(e, curAb).casts++; if (k === "ult") { P[e.pid].ultCast = true; if (!hl.some(h => h.kind === "ult" && h.pid === e.pid && h.t === t)) H({ kind: "ult", ab: curAb, gen: 1, pid: e.pid, x: e.x, y: e.y, score: 50 }); } } curAb = null;
+      curAb = abName(e, k); const ok = fn(e); if (ok) { abRec(e, curAb).casts++; if (k === "ult") { P[e.pid].ultCast = true; anyUlt = true; if (!hl.some(h => h.kind === "ult" && h.pid === e.pid && h.t === t)) H({ kind: "ult", ab: curAb, gen: 1, pid: e.pid, x: e.x, y: e.y, score: 50 }); } } curAb = null;
       if (!ok) continue;
       { const sp = e.cls + "_" + k, art = SPELL_ART[sp]; if (art) { const at = art.at === "t" && live(e.tgt) ? e.tgt : e; ev({ ty: "spell", sp, x: at.x, y: at.y - .2, r: art.r }); } atkEv(e, live(e.tgt) ? e.tgt : e, "c"); }
       e.cds[k] = k === "ult" ? 1e9 : t + COOLDOWN[e.cls][k] * BAL.cd * (1 - .1 * (e.ranks[k] - 1)) * e.cdMul; e.castLock = t + .4; // the ultimate is once per fight
@@ -758,6 +774,15 @@ function runBattle(plans, seed, opts = {}) {
     for (let i = pending.length - 1; i >= 0; i--) if (pending[i].at <= t) { const pe = pending.splice(i, 1)[0]; curAb = pe.ab; pe.fn(); curAb = null; }
     if (tick % 10 === 0) { order.forEach(pid => { const p = P[pid]; if (p.alive && !p.frenzy && p.castle.hp / p.castle.maxhp <= .2) { p.frenzy = true; aoe(p.castle.x, p.castle.y, 3, "#ff5a2a", 1.2); txt(p.castle, "Desperation Frenzy!", "#ff8a4a"); log(`${poss(pid)} defenders fight with Desperation Frenzy!`, "big"); H({ kind: "frenzy", pid, x: p.castle.x, y: p.castle.y, score: 50 }); } }); council(); }
     if (tick % 20 === 0 && !opts.duel) centreTick();
+    // reinforcement waves (from 14 Nov 2026): each castle sends the garrison out when its conditions are met, never sooner than WAVE_GAP after the last, and forced out at each minute mark
+    if (V3 && !opts.duel && tick % 5 === 0) order.forEach(pid => {
+      const p = P[pid]; if (!p.alive || !p.waves || t - p.lastWave < WAVE_GAP) return;
+      const c = p.castle, soldiers = ents.some(x => !x.dead && x.pid === pid && x.kind === "unit" && !x.free && !x.militia && !x.merc);
+      const met = w => w.when === "timer" ? t >= w.at : w.when === "castle_hit" ? p.castleHitT > 0 : w.when === "castle_low" ? c.hp / c.maxhp < .5 : w.when === "hero_dies" ? p.heroDied : w.when === "army_dead" ? t > 5 && !soldiers : w.when === "enemy_hero" ? p.enemyHeroDied : anyUlt;
+      let i = p.waves.findIndex(w => !w.done && met(w));
+      if (i < 0 && p.waves.filter(w => w.done).length < Math.floor(t / WAVE_FORCE_EVERY)) i = p.waves.findIndex(w => !w.done);
+      if (i >= 0) deployWave(p, i);
+    });
     // reinforcements: every living castle musters militia on a timer, so the field never empties into hero-only sieges
     if (!opts.duel && t >= MILITIA.first && Math.abs(((t - MILITIA.first) % MILITIA.every)) < DT / 2) order.forEach(pid => {
       const p = P[pid]; if (!p.alive) return;
@@ -877,5 +902,5 @@ function runBattle(plans, seed, opts = {}) {
   const pairsEnd = BV ? (finalDay ? [] : pact0.filter(k => !feudsNew.has(k))) // pacts last until a betrayal or a break ends them, even if a castle fell
     : []; if (!BV) order.forEach(a => order.forEach(b => { if (a < b && P[a].alive && P[b].alive && P[a].pacts.has(b)) pairsEnd.push(a + "|" + b); }));
   const trapsUsed = traps.filter(tr => tr.used).map(tr => tr.pid + "|" + Math.round(tr.y - .5) + "," + Math.round(tr.x - .5));
-  return { me: mePid, feudsNew: [...feudsNew], trapsUsed, awards, ultCast: order.filter(pid => P[pid].ultCast), lvl: lvlOut, rapierEnd: rapierOwner ? rapierHolder : null, rapier: rapierOwner && rapierHolder && rapierHolder !== rapierOwner ? { from: rapierOwner, to: rapierHolder } : null, pairsEnd, team: teamWin, wallMeta: walls.map(w => ({ pid: w.pid, x: w.x0, y: w.y0, dir: w.dir, maxhp: w.maxhp, tier: w.tier })), tel, frames, events, logs, hl, ranks: RANKS, meta: meta(), results, order, colors: Object.fromEntries(order.map(p => [p, P[p].color])), traps, duration: t };
+  return { ...(V3 && !opts.duel ? { waves: true } : {}), me: mePid, feudsNew: [...feudsNew], trapsUsed, awards, ultCast: order.filter(pid => P[pid].ultCast), lvl: lvlOut, rapierEnd: rapierOwner ? rapierHolder : null, rapier: rapierOwner && rapierHolder && rapierHolder !== rapierOwner ? { from: rapierOwner, to: rapierHolder } : null, pairsEnd, team: teamWin, wallMeta: walls.map(w => ({ pid: w.pid, x: w.x0, y: w.y0, dir: w.dir, maxhp: w.maxhp, tier: w.tier })), tel, frames, events, logs, hl, ranks: RANKS, meta: meta(), results, order, colors: Object.fromEntries(order.map(p => [p, P[p].color])), traps, duration: t };
 }

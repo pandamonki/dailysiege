@@ -43,3 +43,6 @@
 .grp.fixed p { margin: 4px 0 0; }
 .reach { display: flex; align-items: center; gap: 10px; }
 .reach .stepper { display: inline-flex; align-items: center; gap: 8px; flex: none; }
+.grp .ico.wv { background: none; width: 24px; height: 24px; display: inline-flex; align-items: center; gap: 2px; }
+.grp .ico.wv i { display: block; width: 100%; height: 8px; border: 1.5px solid var(--leather); background: #e8b923; border-radius: 2px; }
+.prow.wide { grid-template-columns: 64px minmax(0, 1fr); }

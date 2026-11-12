@@ -26,7 +26,7 @@ function renderTop() {
   document.getElementById("chips").innerHTML =
     chip("open", "day", UIIMG("day"), `${DAY}/7`, "Day of the war and battle countdown") +
     chip("open", "gold", UIIMG("gold"), avail(), "Gold and tomorrow's income") +
-    chip("opencastle", "recruit", UIIMG("units"), `${S.owned.length}/${S.slots}${un ? `<sup class="dot">${un}</sup>` : ""}`, un ? `${un} soldier${un === 1 ? "" : "s"} still to place` : "Soldiers and supply", un ? "hot" : "") +
+    chip("opencastle", "recruit", UIIMG("units"), `${fieldCount()}/${S.slots}${un ? `<sup class="dot">${un}</sup>` : ""}`, un ? `${un} soldier${un === 1 ? "" : "s"} still to place` : "Soldiers and supply", un ? "hot" : "") +
     chip("ulti", null, UIIMG("ultimate"), u[1], u[3], u[2]) +
     chip("open", "board", UIIMG("board"), "", "Leaderboard") +
     chip("rep", null, UIIMG("report"), "", "Last battle report") +
@@ -58,7 +58,7 @@ function renderHint() {
 }
 function renderTray() {
   const up = unplaced();
-  document.getElementById("tray").innerHTML = `<span class="lbl" title="Soldiers you own out of the supply you have built">Units ${S.owned.length}/${S.slots}<small class="muted"> · ${S.owned.filter(u => placedAt(u.id)).length} placed</small></span>` + (up.length
+  document.getElementById("tray").innerHTML = `<span class="lbl" title="Soldiers on the field out of the supply you have built, and soldiers waiting in the garrison">Units ${fieldCount()}/${S.slots}<small class="muted"> · ${S.owned.filter(u => placedAt(u.id)).length} placed${garrisonCount() ? ` · ${garrisonCount()} in garrison` : ""}</small></span>` + (up.length
     ? up.map(p => `<button class="chip${sel === p ? " on" : ""}" data-act="pick" data-v="${p}" ${dis()}><img class="${findWall(p) ? "wide" : ""}" alt="" src="${pieceImg(p)}">${esc(pieceName(p).replace(" (your hero)", ""))}</button>`).join("")
     : `<span class="empty">Everyone is on the field.</span>`);
 }

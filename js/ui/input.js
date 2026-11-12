@@ -20,6 +20,7 @@ function tapAt(clientX, clientY) {
     const wl = findWall(sel);
     if (wl) { if (!wallFree(r, q, wl.dir, sel)) { toast("That tile isn't free."); return; } }
     else { if (wref) { toast("A wall stands there."); return; } if (here && here !== sel) { toast("Someone already holds that ground."); return; } }
+    if (inGarrison(sel)) { if (fieldCount() >= S.slots) { toast("Your field supply is full."); return; } unGarrison(sel); }
     const old = placedAt(sel); if (old) delete S.place[old];
     S.place[key] = sel; sel = null; render(); return;
   }

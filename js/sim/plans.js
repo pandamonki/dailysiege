@@ -7,7 +7,7 @@ function buildPlans() {
   const plans = [{
     pid: "you", me: true, name: "You", color: YOU_COLOR, cls: S.cls, castle: CASTLE, ranks: S.ranks, picks: S.picks, triggers: S.triggers, gear: S.gear, defences: S.defences,
     ultArm: planUlt(), blessing: planBless(), level: level(), xp0: S.xp || 0, items: (S.items || []).slice(), castleTier: S.castle || 1, banner: S.banner, ...pactPlan(),
-    formation: S.formation !== false, stance: S.stance, prio: S.prio, gprio: S.gprio, engage: S.engage, rules: S.rules, pieces: youPieces,
+    formation: S.formation !== false, stance: S.stance, prio: S.prio, gprio: S.gprio, engage: S.engage, waves: garrisonPlan(), rules: S.rules, pieces: youPieces,
     targets: S.lists.hostile.slice(), tmode: S.strategy.mode, heading: S.strategy.heading, offers: Object.assign({}, S.offers), replies: Object.assign({}, S.replies), terms: S.terms, bids: Object.assign({}, S.bids),
   }];
   RIVALS.forEach((rv, i) => {
