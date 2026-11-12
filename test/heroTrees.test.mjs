@@ -39,10 +39,11 @@ test("gates: T2 needs 2 points and T1, T3 needs 5 and T2, the ultimate needs 7, 
   assert.equal(lrn("warrior", tree(row(2, 3, 0, 1, 1, 1), row(2, 2, 0, 1, 1, 0)), "b2", 5, 15), false, "only one ultimate per hero");
 });
 
-test("points: one per level from level 2, 14 in all, and none to spend means nothing can be learned", () => {
+test("points: one per level from level 1, 15 in all, and none to spend means nothing can be learned", () => {
   const free = (t, L) => sim.run(`treeFree(${JSON.stringify(t)}, ${L})`);
-  assert.equal(free(tree(row()), 1), 0); assert.equal(free(tree(row()), 2), 1); assert.equal(free(tree(row()), 15), 14); assert.equal(free(tree(row()), 21), 14);
-  assert.equal(lrn("mage", tree(row(1)), "b1", 0, 2), false, "level 2 has one point and it is spent");
+  assert.equal(free(tree(row()), 1), 1); assert.equal(free(tree(row()), 2), 2); assert.equal(free(tree(row()), 15), 15); assert.equal(free(tree(row()), 21), 15);
+  assert.equal(lrn("mage", tree(row()), "b1", 0, 1), true, "a level 1 hero has a point to spend");
+  assert.equal(lrn("mage", tree(row(1)), "b1", 0, 1), false, "level 1 has one point and it is spent");
 });
 
 test("bot builds are always legal, deterministic, and spend what the level allows", () => {
@@ -50,8 +51,8 @@ test("bot builds are always legal, deterministic, and spend what the level allow
     const t = sim.run(`autoTree(${lvl}, ${seed * 977}, "${cls}")`), again = sim.run(`autoTree(${lvl}, ${seed * 977}, "${cls}")`);
     assert.deepEqual(J(t), J(again));
     const spent = [t.b1, t.b2, t.b3].flat().reduce((a, b) => a + b, 0);
-    assert.ok(spent <= lvl - 1, `${cls} L${lvl} spent ${spent}`);
-    if (lvl >= 3) assert.ok(spent >= Math.min(lvl - 1, 2), "uses its points");
+    assert.ok(spent <= lvl, `${cls} L${lvl} spent ${spent}`);
+    if (lvl >= 3) assert.ok(spent >= Math.min(lvl, 2), "uses its points");
     for (const b of ["b1", "b2", "b3"]) t[b].forEach((r, i) => assert.ok(r <= sim.get("TREE_MAX")[i], "within max rank"));
     const ults = [t.b1[5], t.b2[5], t.b3[5]].reduce((a, b) => a + b, 0); assert.ok(ults <= 1); if (lvl < 9) assert.equal(ults, 0, "no ultimate before level 9");
     if (lvl >= 9) assert.equal(ults, 1, `${cls} L${lvl} should have its ultimate`);

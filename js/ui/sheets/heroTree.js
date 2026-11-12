@@ -43,7 +43,7 @@ function treeDetailHTML(bi, i) {
     <button class="btn wood tlearn${canL ? "" : " off"}" data-act="tlearn" data-v="${nodeKey(bi, i)}" ${canL && !S.locked ? "" : "disabled"}>${S.locked && canL ? "Orders are sealed" : label}</button>`;
 }
 function champSheetV3() {
-  const c = cls(), L = level(), nd = xpNeed(L), xp = Math.min(S.xp || 0, nd), free = freePts(), canChange = !isLive() || DAY === 1, now = champNowV3();
+  const c = cls(), L = level(), nd = xpNeed(L), xp = Math.min(S.xp || 0, nd), free = freePts(), now = champNowV3();
   const sel = treeSelection(), learned = treeHasUlt(S.tree), cool = typeof ultCooling === "function" && ultCooling();
   const slots = Array.from({ length: ITEM_SLOTS }, (_, i) => S.items[i] || null);
   return head(spriteURL("c-" + S.cls), `${c.name} Hero`, `Level ${L} of ${MAX_HERO_LVL_V3}`) + `<div class="body">
@@ -51,10 +51,9 @@ function champSheetV3() {
     <div class="tpoints${free ? " has" : ""}" title="Skill points to spend"><span class="plus">+</span><b>${free}</b><small>skill point${free === 1 ? "" : "s"}</small></div>
     <div class="xpbar" title="Experience toward the next level"><i style="width:${Math.round(xp / nd * 100)}%"></i><span>Level ${L} · ${xp}/${nd} XP</span></div>
     <div class="stats"><span>${IC.hp(now.hp)}</span><span>${IC.atk(now.atk)}</span><span>${typeLine(CLASS_TYPES[S.cls])}</span></div>
-    <div class="row"><button class="btn small wood" data-act="move" data-v="champ" ${dis()}>Move on the map</button>${canChange ? `<button class="btn small wood" data-act="heropick" ${dis()}>Change hero…</button>` : ""}</div>
     <div class="tcols">${[0, 1, 2].map(bi => treeColumnHTML(bi, sel)).join("")}</div>
     ${treeDetailHTML(sel[0], sel[1])}
-    <p class="muted">Your hero gains a skill point at every level (14 in all, enough to max one tree), but only you spend them, here. Nothing skills itself in a battle. The ultimate needs level ${TREE_ULT_LVL}, and you can learn only one.</p>
+    <p class="muted">Your hero gains a skill point at every level (15 in all, enough to max one tree and a little more), but only you spend them, here. Nothing skills itself in a battle. The ultimate needs level ${TREE_ULT_LVL}, and you can learn only one.</p>
     <div><button class="btn ${S.ultArm && learned && !cool ? "wax" : "wood"}" data-act="ultarm" ${dis(!learned || cool)}>${!learned ? "Ultimate not learned yet" : cool ? "Ultimate recharging until tomorrow" : S.ultArm ? "Ultimate planned for tonight ✓ (tap to cancel)" : "Plan the ultimate for tonight"}</button></div>
     <div class="sec"><div class="spread"><h3>Items (${S.items.length}/${ITEM_SLOTS})</h3><button class="btn small wood" data-act="shop">Shop</button></div>
       <div class="islots tiny">${slots.map(k => k ? `<div class="islot" title="${esc(ITEMS[k].desc)}"><img alt="" src="${itemURL(k)}"><b>${esc(ITEMS[k].name)}</b></div>` : `<div class="islot empty"><span>Empty</span></div>`).join("")}</div></div>

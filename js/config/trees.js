@@ -168,7 +168,7 @@ const emptyTree = () => ({ b1: [0, 0, 0, 0, 0, 0], b2: [0, 0, 0, 0, 0, 0], b3: [
 const cleanTree = tr => { const o = emptyTree(); TREE_BKEY.forEach(b => { const a = tr && tr[b]; if (Array.isArray(a)) o[b] = TREE_MAX.map((m, i) => Math.max(0, Math.min(m, a[i] | 0))); }); return o; };
 const treePts = (tr, b) => ((tr && tr[b]) || []).reduce((s, x) => s + (x || 0), 0);
 const treeSpentAll = tr => TREE_BKEY.reduce((s, b) => s + treePts(tr, b), 0);
-const treeFree = (tr, L) => Math.max(0, Math.min(L, MAX_HERO_LVL_V3) - 1 - treeSpentAll(tr)); // one point per level from level 2
+const treeFree = (tr, L) => Math.max(0, Math.min(L, MAX_HERO_LVL_V3) - treeSpentAll(tr)); // one point per level, starting with level 1 (15 in all)
 const treeHasUlt = tr => TREE_BKEY.some(b => ((tr && tr[b]) || [])[5] > 0);
 // why a node can't be learned yet: the list of unmet requirements, each { ok, text }
 function treeNeeds(tr, b, i, L) {
