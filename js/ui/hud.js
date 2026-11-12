@@ -5,7 +5,7 @@ const esc = s => String(s).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;"
 const opts = (list, cur) => list.map(x => `<option${x === cur ? " selected" : ""}>${esc(x)}</option>`).join("");
 const dis = c => (c || S.locked ? "disabled" : "");
 let toastT;
-function toast(m) { const t = document.getElementById("toast"); t.textContent = m; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => (t.hidden = true), 1900); }
+function toast(m, ms) { const t = document.getElementById("toast"); t.textContent = m; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => (t.hidden = true), 1900); }
 function lockTime() { const t = new Date(); t.setHours(20, 0, 0, 0); if (t <= new Date()) t.setDate(t.getDate() + 1); return t; }
 function countdown() { if (isLive()) { const m = liveClock().minsToLock; return `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, "0")}m`; } const ms = lockTime() - new Date(); return `${Math.floor(ms / 36e5)}h ${String(Math.floor(ms % 36e5 / 6e4)).padStart(2, "0")}m`; }
 

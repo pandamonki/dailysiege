@@ -33,7 +33,7 @@
   // the game's code expects error codes spelt with underscores
   const legacyErr = e => { const code = e && e.code ? String(e.code).replace(/^.*\//, "").replace(/-/g, "_") : null; return Object.assign(new Error((e && e.message) || "error"), { code, cause: e }); };
   const redraw = () => { try { if (typeof render === "function") render(); } catch (e) {} };
-  const say = m => { try { toast(m); } catch (e) {} };
+  const say = m => { try { toast(m, 7000); } catch (e) {} };
 
   let fb = null, auth = null, fs = null, initP = null, epoch = 0;
   const DS = window.DS = { kind: "firebase", available: null, user: null, emulator: false, busy: null, note: null, error: null };
