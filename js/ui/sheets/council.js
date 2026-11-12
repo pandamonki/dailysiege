@@ -201,7 +201,7 @@ const planUlt = () => !!S.ultArm && !ultCooling() && ultLearned();
 const planBless = () => (blessLocked() ? null : S.bless || null);
 function ritualsTab() {
   const cd = ultCooling(), learned = ultLearned(), cl = { ult: (heroV3Now() && treeUlt()) || CLASSES[S.cls].ult }, used = blessLocked();
-  return `<div class="sec tight"><h3>Ultimate · ${esc(cl.ult.name)}</h3><p class="muted">${esc(cl.ult.desc)} Your hero only uses it if you plan it here, once per battle, and it then needs one full day to recharge.</p>
+  return `<div class="sec tight"><h3>${ultIconHTML(cl.ult)}Ultimate · ${esc(cl.ult.name)}</h3><p class="muted">${esc(cl.ult.desc)} Your hero only uses it if you plan it here, once per battle, and it then needs one full day to recharge.</p>
     ${!learned ? `<p class="need">Your hero hasn't learned the ultimate yet. Spend a skill point on it in the Hero sheet.</p>` : cd ? `<p class="need">Recharging. It was cast in the last battle and is ready again tomorrow.</p>` : ""}
     <button class="btn ${S.ultArm && learned && !cd ? "wax" : "wood"}" data-act="ultarm" ${dis(!learned || cd)}>${S.ultArm && learned && !cd ? "Planned for tonight ✓ (tap to cancel)" : "Plan the ultimate for tonight"}</button></div>
   <div class="sec tight"><h3>Weekly blessing</h3><p class="muted">One ritual per war, in effect for a single battle. ${used ? "You have already used yours this week." : "Choose one, or none to save it for later."}</p>
@@ -255,7 +255,7 @@ function sealMerc() {
 function sealPowers() { // ultimate and weekly ritual can be switched on right where you seal
   const cl = { ult: (heroV3Now() && treeUlt()) || CLASSES[S.cls].ult }, learned = ultLearned(), cd = ultCooling(), armed = planUlt(), used = blessLocked();
   const ult = !learned ? `<p class="muted">Learn the ultimate in the Hero sheet to use it.</p>` : cd ? `<p class="need">Recharging. It was cast in the last battle and is ready again tomorrow.</p>` : `<p class="muted">Cast once this battle. It then needs a full day to recharge.</p>`;
-  return `<div class="sec tight"><h3>Ultimate · ${esc(cl.ult.name)}</h3>${ult}
+  return `<div class="sec tight"><h3>${ultIconHTML(cl.ult)}Ultimate · ${esc(cl.ult.name)}</h3>${ult}
       <button class="btn ${armed ? "wax" : "wood"}" data-act="ultarm" ${dis(!learned || cd)}>${armed ? "Using it this battle ✓ (tap to cancel)" : "Use ultimate this battle"}</button></div>
     <div class="sec tight"><h3>Weekly ritual</h3><p class="muted">${used ? "Already used this week. Your next one is a new war." : "One ritual per week, for a single battle. Once spent it is gone until next week."}</p>
       <div class="row">${Object.entries(BLESSINGS).map(([k, [n]]) => `<button class="btn ${S.bless === k && !used ? "wax" : "wood"}" data-act="bless" data-v="${S.bless === k ? "" : k}" ${dis(used)}>${S.bless === k && !used ? `${n} ✓` : n}</button>`).join("")}</div>
