@@ -32,9 +32,24 @@ const BOT_LORD_BANNERS = [{ pat: "halves", c2: "#ecdcb4", em: "crown" }, { pat: 
 const BOT_STANCES = ["aggressive", "skirmish", "cautious", "aggressive"];
 const botSeed = uid => { let h = 7; for (let k = 0; k < uid.length; k++) h = (h * 31 + uid.charCodeAt(k)) % 99991; return h; };
 
+// How a bot fights (battles from 12 Nov 2026): one of five styles, fixed for the war by its seed, using the same combat groups a player sets.
+// Each style gives its hero, melee soldiers, ranged soldiers and healers their priorities, plus a reach and a way of marching.
+const BOT_STYLES = [
+  { name: "hunter",   heading: "hero",   gprio: { hero: ["hero", "ranged", "melee"], melee: ["ranged", "hero", "melee"], ranged: ["hero", "melee", "ranged"], heal: ["hero", "lowhp", "any"] } },
+  { name: "brawler",  heading: "castle", gprio: { hero: ["melee", "hero", "ranged"], melee: ["melee", "ranged", "hero"], ranged: ["ranged", "melee", "hero"], heal: ["melee", "wounded", "any"] } },
+  { name: "sniper",   heading: "castle", gprio: { hero: ["ranged", "hero", "healer"], melee: ["ranged", "healer", "any"], ranged: ["hero", "ranged", "healer"], heal: ["hero", "wounded", "ranged"] } },
+  { name: "assassin", heading: "castle", gprio: { hero: ["healer", "hero", "lowhp"], melee: ["healer", "ranged", "lowhp"], ranged: ["healer", "hero", "lowhp"], heal: ["hero", "lowhp", "any"] } },
+  { name: "balanced", heading: "castle", gprio: { hero: ["hero", "ranged", "melee"], melee: ["melee", "ranged", "hero"], ranged: ["hero", "ranged", "melee"], heal: ["hero", "wounded", "any"] } },
+];
+const BOT_WAVES = { hunter: [["enemy_hero", 0], ["hero_dies", 0], ["timer", 90]], brawler: [["castle_hit", 0], ["timer", 60], ["army_dead", 0]], sniper: [["ult", 0], ["castle_low", 0], ["timer", 120]], assassin: [["enemy_hero", 0], ["timer", 45], ["hero_dies", 0]], balanced: [["castle_hit", 0], ["hero_dies", 0], ["timer", 150]] };
+// a bot keeps some of its soldiers back in the garrison, more as the week goes on: up to 3 a wave, filled wave by wave
+const botWaves = (seed, kinds, dayNo) => { const st = BOT_STYLES[(seed >> 1) % BOT_STYLES.length].name, n = Math.min(GARRISON_SOLDIERS, Math.floor(dayNo * 1.5)), ulvl = 1 + Math.floor((dayNo - 1) / 2);
+  return BOT_WAVES[st].map(([when, at], i) => ({ when, at: at || 60, units: [...Array(Math.max(0, Math.min(WAVE_SLOTS, n - i * WAVE_SLOTS)))].map((_, k) => ({ type: kinds[Math.floor(hash(seed, i * 3 + k, 41 + dayNo) * kinds.length)], lvl: ulvl, id: null, hp: 1 })) })); };
+const botCombat = seed => { const st = BOT_STYLES[(seed >> 1) % BOT_STYLES.length]; return { gprio: cleanGprio(st.gprio), engage: 1 + (seed >> 3) % 3, heading: st.heading }; };
+
 // One bot lord's orders for one day. uid: its seat id; cls: its hero; i: its place in the roster (its castle is L.castles[i]);
 // ids: everyone in the roster, in order; L: the seat layout; zone: the tiles it may deploy on; dayNo: 1 to 7; lvl: its hero's level that day.
-function lordBotPlan({ uid, cls, i, ids, L, zone, dayNo, lvl }) {
+function lordBotPlan({ uid, cls, i, ids, L, zone, dayNo, lvl, v2 }) {
   const seed = botSeed(uid), me = L.castles[i], c = CLASSES[cls] || CLASSES.warrior, sp = armySpots(me, L.N);
   const picks = {}; c.abilities.forEach((a, j) => { picks[a.key] = a.choice[hash(seed, j, 77) > .5 ? 1 : 0][0]; });
   const rot = Math.floor(hash(seed, 5, 3) * PRIORITIES.length), tier = Math.min(3, 1 + Math.floor((dayNo - 1) / 3));
@@ -54,5 +69,5 @@ function lordBotPlan({ uid, cls, i, ids, L, zone, dayNo, lvl }) {
   return { cls, sealed: true, ranks: autoRanks(lvl, seed), picks, triggers: { a1: TRIGGERS[1], a2: TRIGGERS[2], a3: TRIGGERS[0], ult: TRIGGERS[1] },
     gear: { weapon: Math.min(2, Math.floor(dayNo / 3)), armour: Math.min(2, Math.floor((dayNo + 1) / 3)), charm: dayNo >= 5 ? 1 : 0 }, defences: { walls: dayNo >= 3 ? 1 : 0, tower: dayNo >= 5 && seed % 2 ? 1 : 0 },
     items: botItems(seed).slice(0, Math.floor(dayNo / 2)), castleTier: tier, stance: BOT_STANCES[seed % BOT_STANCES.length], prio: PRIORITIES.slice(rot).concat(PRIORITIES.slice(0, rot)), rules: [{ if: IFS[0], then: THENS[0] }],
-    pieces, targets: near, tmode: "list", heading: "near", offers: {}, replies: {}, terms: {}, bids: {}, pacts: [], hostile: [], betray: {}, bot: true };
+    pieces, targets: near, tmode: "list", heading: "near", offers: {}, replies: {}, terms: {}, bids: {}, pacts: [], hostile: [], betray: {}, bot: true, ...(v2 ? { ...botCombat(seed), waves: botWaves(seed, kinds, dayNo) } : {}) };
 }

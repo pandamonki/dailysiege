@@ -127,6 +127,10 @@ function drawCastle(r, q, color, t, label, rel, st, ban, tier) {
     ctx.fillStyle = "rgba(20,12,6,.9)"; ctx.fillRect(bx - 2, byy - 2, bw + 4, bh + 4);
     ctx.fillStyle = st.friendly ? "#47b04b" : "#d4402f"; ctx.fillRect(bx, byy, bw * Math.max(0, st.frac), bh);
     ctx.fillStyle = "rgba(255,255,255,.3)"; ctx.fillRect(bx, byy, bw * Math.max(0, st.frac), bh * .35);
+    if (st.waves) { // reinforcement waves still in the garrison: one yellow bar each, grey once the wave has marched out
+      const n = st.waves.total, gap = ts * .05, gw = (bw - gap * (n - 1)) / n, gh = ts * .09, gy = byy - gh - ts * .08;
+      for (let i = 0; i < n; i++) { const x0 = bx + i * (gw + gap); ctx.fillStyle = "rgba(20,12,6,.9)"; ctx.fillRect(x0 - 1.5, gy - 1.5, gw + 3, gh + 3); ctx.fillStyle = i < st.waves.left ? "#e8b923" : "#7d776b"; ctx.fillRect(x0, gy, gw, gh); if (i < st.waves.left) { ctx.fillStyle = "rgba(255,255,255,.35)"; ctx.fillRect(x0, gy, gw, gh * .35); } }
+    }
   }
   }
   if (label) {

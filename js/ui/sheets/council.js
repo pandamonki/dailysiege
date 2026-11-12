@@ -54,7 +54,8 @@ function uorderSheet(id) {
 }
 function ensureDip() {
   if (!S) return;
-  S.strategy = S.strategy || { mode: "list", heading: "near" };
+  S.strategy = S.strategy || { mode: "list", heading: "castle" };
+  S.gprio = cleanGprio(S.gprio); S.engage = cleanEngage(S.engage); ensureGarrison();
   if (!S.prio || S.prio.length !== 5 || S.prio.some(x => !PRIORITY_OPTS.includes(x))) S.prio = PRIORITIES.slice(0, 5);
   S.lists = S.lists || { hostile: [], neutral: [], ally: [] }; S.offers = S.offers || {}; S.replies = S.replies || {}; S.declined = S.declined || {}; S.bids = S.bids || {}; S.mercHist = S.mercHist || {};
   S.lists.neutral = (S.lists.neutral || []).concat(S.lists.ally || []); S.lists.ally = []; S.terms = S.terms || {}; S.uorders = S.uorders || {}; S.diplo = S.diplo || {};
@@ -206,19 +207,47 @@ function ritualsTab() {
     ${Object.entries(BLESSINGS).map(([k, [n, ds]]) => `<button class="btn ${S.bless === k && !used ? "wax" : ""}" style="display:block;width:100%;text-align:left;margin:4px 0" data-act="bless" data-v="${k}" ${dis(used)}><b>${n}</b><br><small>${esc(ds)}</small></button>`).join("")}
     ${S.bless && !used ? `<button class="btn small" data-act="bless" data-v="">Save it for later</button>` : ""}</div>`;
 }
+// the Combat tab's groups: one row each (collapsed), tap one to open its three priority slots
+const gprioName = (opts, id) => (opts.find(o => o[0] === id) || [id, id])[1];
+function combatGroupsHTML() {
+  const open = sheet.gopen, shorten = n => n.replace(/^Enemy /, "").replace(" soldiers", "").replace(" (nearest)", " nearest").replace(" ally (%)", "").replace(" ally", "");
+  const grp = ([k, name, sub, opts]) => `<div class="grp${open === k ? " open" : ""}"><button class="gsum" data-act="gtoggle" data-k="${k}" aria-expanded="${open === k}"><span class="ico">${{ hero: "♛", melee: "⚔", ranged: "➶", heal: "✚" }[k]}</span><span class="gn"><b>${name}</b><small>${sub}</small></span><span class="cur">${S.gprio[k].map(id => esc(shorten(gprioName(opts, id)))).join(" → ")}</span><span class="chev">▾</span></button>
+    ${open === k ? `<div class="gbody">${[...Array(GPRIO_SLOTS)].map((_, i) => `<label class="prow"><span>${["1st", "2nd", "3rd"][i]}</span><select data-act="gprioset" data-k="${k}" data-v="${i}" ${dis()}>${i ? `<option value=""${S.gprio[k][i] ? "" : " selected"}>None</option>` : ""}${opts.map(([id, n]) => `<option value="${id}"${S.gprio[k][i] === id ? " selected" : ""}>${n}</option>`).join("")}</select></label>`).join("")}
+      ${k === "heal" ? `<p class="muted">Healers only heal allies within reach. With nobody hurt, they stay with the army. If none of your picks is hurt, they heal whoever is most wounded.</p>` : `<p class="muted">Picks from the top slot down, among enemies within reach. Anything not listed is fought last, nearest first.</p>`}</div>` : ""}</div>`;
+  return `<div class="sec tight"><h3>Combat reach</h3><div class="reach"><span class="stepper"><button class="btn small" data-act="engage" data-v="-1" ${dis(S.engage <= ENGAGE_MIN)}>−</button><b>${S.engage} tile${S.engage === 1 ? "" : "s"}</b><button class="btn small" data-act="engage" data-v="1" ${dis(S.engage >= ENGAGE_MAX)}>+</button></span><small class="muted">Fighters join a fight when an enemy is this close. Short reach keeps marching on the castle; long reach brawls.</small></div></div>
+    <div class="sec tight"><h3>Who each group fights first</h3><p class="muted">Tap a group to change its priorities.</p>${COMBAT_GROUPS.map(grp).join("")}
+      <div class="grp fixed"><div class="fx"><span class="ico">⚑</span><span class="gn"><b>Raiders</b><small>fixed</small></span></div><p class="muted">Make for the castle. Struck by a melee fighter they turn and fight it; struck from range they keep going.</p></div>
+      <div class="grp fixed"><div class="fx"><span class="ico">⛫</span><span class="gn"><b>Rams and Powder Carts</b><small>fixed</small></span></div><p class="muted">Always roll on the castle. They can't be stunned, rooted, slowed or turned aside.</p></div>
+      <p class="muted">Anyone who is hit always answers back first.</p></div>`;
+}
+// the Garrison tab: three reinforcement waves, each a free footman plus up to three soldiers you have bought, sent out when its condition is met
+const whenName = w => w.when === "timer" ? `at ${Math.floor(w.at / 60)}:${String(w.at % 60).padStart(2, "0")}` : (WAVE_WHEN.find(o => o[0] === w.when) || [0, w.when])[1].replace(/^When /, "when ");
+function garrisonHTML() {
+  ensureGarrison();
+  const open = sheet.wopen, spare = S.owned.filter(u => !UNITS[u.type].castleOnly), nm = u => `${UNITS[u.type].name} Lv${u.lvl}`;
+  const wave = (w, i) => { const have = w.slots.map(id => id && findUnit(id)).filter(Boolean);
+    return `<div class="grp${open === i ? " open" : ""}"><button class="gsum" data-act="wtoggle" data-k="${i}" aria-expanded="${open === i}"><span class="ico wv"><i></i></span><span class="gn"><b>Wave ${i + 1}</b><small>1 free footman${have.length ? ` + ${have.length} bought` : ""}</small></span><span class="cur">${esc(whenName(w))}</span><span class="chev">▾</span></button>
+      ${open === i ? `<div class="gbody"><label class="prow wide"><span>Goes</span><select data-act="wwhen" data-k="${i}" ${dis()}>${WAVE_WHEN.map(([k, n]) => `<option value="${k}"${w.when === k ? " selected" : ""}>${n}</option>`).join("")}</select></label>
+        ${w.when === "timer" ? `<label class="prow wide"><span>At</span><select data-act="wat" data-k="${i}" ${dis()}>${WAVE_TIMES.map(x => `<option value="${x}"${w.at === x ? " selected" : ""}>${Math.floor(x / 60)}:${String(x % 60).padStart(2, "0")}</option>`).join("")}</select></label>` : ""}
+        <p class="muted">Free footman, always.</p>
+        ${w.slots.map((id, j) => `<label class="prow wide"><span>Slot ${j + 1}</span><select data-act="wslot" data-k="${i}" data-v="${j}" ${dis()}><option value="">Empty</option>${spare.filter(u => u.id === id || !inGarrison(u.id)).map(u => `<option value="${u.id}"${u.id === id ? " selected" : ""}>${nm(u)}${placedAt(u.id) ? " (on the field)" : ""}</option>`).join("")}</select></label>`).join("")}</div>` : ""}</div>`; };
+  return `<p class="muted tight">Your castle keeps ${WAVE_COUNT} reinforcement waves in its garrison. Each is one free footman plus up to ${WAVE_SLOTS} soldiers you assign. A wave marches out when its condition is met. Waves are at least ${WAVE_GAP} seconds apart, and one is forced out at each minute mark (by 1:00 the first, by 2:00 the second, by 3:00 the last) so nothing waits forever.</p>
+    <div class="sec tight"><h3>Supply</h3><p class="muted">On the field <b>${fieldCount()}/${S.slots}</b> · In the garrison <b>${garrisonCount()}/${GARRISON_SOLDIERS}</b>. Soldiers you recruit past your field supply wait in the garrison. Siege units can't wait there.</p></div>
+    <div class="sec tight"><h3>Waves</h3>${S.garrison.map(wave).join("")}</div>`;
+}
 function ordersSheet() {
   ensureDip();
-  const tab = ["strategy", "tactics", "alliances", "rituals"].includes(sheet.tab) ? sheet.tab : (sheet.grp === "alli" ? "alliances" : "strategy");
-  const tabs = [["strategy", "Strategy"], ["tactics", "Combat"], ["alliances", "Alliances"], ["rituals", "Rituals"]];
+  const tab = ["strategy", "tactics", "garrison", "alliances", "rituals"].includes(sheet.tab) ? sheet.tab : (sheet.grp === "alli" ? "alliances" : "strategy");
+  const tabs = [["strategy", "Strategy"], ["tactics", "Combat"], ["garrison", "Garrison"], ["alliances", "Alliances"], ["rituals", "Rituals"]];
   let body = "";
   if (tab === "strategy") body = strategyTab();
   if (tab === "tactics") body = `<p class="muted tight">These rules only apply mid-skirmish, once your soldiers are in a fight. Strategy decides where they go.</p>
-    <div class="sec tight"><h3>Hunt first</h3><p class="muted">In a fight, soldiers pick their target from the top slot down.</p>
-      ${S.prio.map((pr, i) => `<label class="prow"><span>${["1st", "2nd", "3rd", "4th", "5th"][i]}</span><select data-act="prioset" data-v="${i}" ${dis()}>${PRIORITY_OPTS.map(o => `<option${o === pr ? " selected" : ""}>${o}</option>`).join("")}</select></label>`).join("")}</div>
+    ${combatGroupsHTML()}
     <div class="sec tight"><h3>Battle commands</h3><p class="muted">If this happens mid-battle, do that. Each costs one order seal (${OP_MAX - opUsed()} left).</p>
       ${S.rules.map((r, i) => `<div class="rule"><label><span>If</span><select data-act="rif" data-v="${i}" ${dis()}>${opts(IFS, r.if)}</select></label><label><span>Then</span><select data-act="rthen" data-v="${i}" ${dis()}>${opts(THENS, r.then)}</select></label><button class="btn small" data-act="rdel" data-v="${i}" aria-label="Remove command" ${dis()}>✕</button></div>`).join("")}
       <div><button class="btn wood" data-act="radd" ${dis(opUsed() >= OP_MAX)}>Add command</button></div>
       <p class="muted">Tap a soldier or your hero on the map to give it its own job.</p></div>`;
+  if (tab === "garrison") body = garrisonHTML();
   if (tab === "alliances") body = alliancesTab();
   if (tab === "rituals") body = ritualsTab();
   return head(null, sheet.grp === "alli" ? "Alliances" : "Orders", `${avail()} gold free${reserved() ? `, ${reserved()} offered` : ""}`) + `<div class="body">
@@ -227,7 +256,7 @@ function ordersSheet() {
 function planJSON() {
   const place = {};
   Object.entries(S.place).forEach(([k, v]) => { const u = findUnit(v), t = findTrap(v); place[k] = v === "champ" ? "champion" : u ? `${u.type}:Lv${u.lvl}` : t ? `trap:${t.type}` : v; });
-  return JSON.stringify({ day: DAY, class: S.cls, level: level(), ranks: S.ranks, upgrades: S.picks, castOn: S.triggers, gear: S.gear, defences: S.defences, placements: place, stance: S.stance, advanceOn: S.strategy.heading, attackMode: S.strategy.mode, priority: S.prio, commands: S.rules,
+  return JSON.stringify({ day: DAY, class: S.cls, level: level(), ranks: S.ranks, upgrades: S.picks, castOn: S.triggers, gear: S.gear, defences: S.defences, placements: place, stance: S.stance, advanceOn: S.strategy.heading, attackMode: S.strategy.mode, priority: S.prio, combatPriorities: S.gprio, combatReach: S.engage, commands: S.rules,
     attackOrder: S.lists.hostile.map(id => (RIVALS.find(r => r.id === id) || {}).name), neutral: S.lists.neutral.map(id => (RIVALS.find(r => r.id === id) || {}).name),
     allianceOffers: Object.fromEntries(Object.keys(S.offers).map(id => [(RIVALS.find(r => r.id === id) || {}).name, S.offers[id]])),
     allianceTerms: Object.fromEntries(RIVALS.map(r => [r.name, S.terms[r.id]])), soldierOrders: S.uorders }, null, 2);

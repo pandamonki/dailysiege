@@ -17,7 +17,23 @@ const unitValue = u => { const c = UNITS[u.type].cost; let g = c; for (let l = 1
 const unitSellPrice = u => Math.floor(unitValue(u) * .25);
 const upgradeCost = u => Math.round(UNITS[u.type].cost * 0.5 * u.lvl);
 const unitStats = u => { const b = UNITS[u.type], m = 1 + UNIT_LVL_GAIN * (u.lvl - 1), g = (S && S.gear) || {}; return { hp: Math.round(b.hp * m * (1 + .15 * (g.armour || 0))), atk: Math.round(b.atk * m * (1 + .15 * (g.weapon || 0))) }; };
-const pieces = () => ["champ", ...S.owned.map(u => u.id), ...(S.walls || []).map(w => w.id), ...S.traps.map(t => t.id)];
+// the garrison: S.garrison = three waves { when, at, slots: [unit id | null, x3] }. A soldier is on the field (placed on the map) or in a wave, never both.
+const garrisonIds = () => (S.garrison || []).flatMap(w => w.slots).filter(Boolean);
+const inGarrison = id => garrisonIds().includes(id);
+const fieldCount = () => S.owned.filter(u => !inGarrison(u.id)).length; // soldiers that go onto the map: limited by supply (beds)
+const garrisonCount = () => garrisonIds().length;
+const supplyFull = () => fieldCount() >= S.slots && garrisonCount() >= GARRISON_SOLDIERS;
+function ensureGarrison() {
+  const cw = cleanWaves(S.garrison), seen = new Set();
+  S.garrison = cw.map((w, i) => { const old = (S.garrison && S.garrison[i] && S.garrison[i].slots) || [];
+    return { when: w.when, at: w.at, slots: [...Array(WAVE_SLOTS)].map((_, j) => { const id = old[j], u = id && S.owned.find(x => x.id === id); if (!u || UNITS[u.type].castleOnly || seen.has(id)) return null; seen.add(id); return id; }) }; });
+}
+function unGarrison(id) { (S.garrison || []).forEach(w => w.slots.forEach((x, j) => { if (x === id) w.slots[j] = null; })); }
+function toGarrison(id) { // first free slot, earliest wave first; the unit leaves the map
+  for (const w of S.garrison) { const j = w.slots.indexOf(null); if (j > -1) { w.slots[j] = id; const k = placedAt(id); if (k) delete S.place[k]; return true; } } return false;
+}
+const garrisonPlan = () => (S.garrison || []).map(w => ({ when: w.when, at: w.at, units: w.slots.map(id => id && S.owned.find(u => u.id === id)).filter(Boolean).map(u => ({ type: u.type, lvl: u.lvl, id: u.id, hp: u.hp ?? 1 })) }));
+const pieces = () => ["champ", ...S.owned.filter(u => !inGarrison(u.id)).map(u => u.id), ...(S.walls || []).map(w => w.id), ...S.traps.map(t => t.id)];
 const unplaced = () => pieces().filter(p => !placedAt(p));
 const findUnit = id => S.owned.find(u => u.id === id);
 const findTrap = id => S.traps.find(t => t.id === id);

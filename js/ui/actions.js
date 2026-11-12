@@ -65,15 +65,16 @@ const A = {
   ctab: v => { sheet.tab = v; sheet.keep = false; },
   pick: v => { sel = sel === v ? null : v; },
   move: v => { sel = v; sheet = null; toast("Tap a glowing tile."); },
-  usell: id => { const u = findUnit(id); if (!u) return; S.sells = (S.sells || 0) + 1; const k = placedAt(id); if (k) delete S.place[k]; S.owned = S.owned.filter(x => x.id !== id); S.gold += unitSellPrice(u); if (!sheet || sheet.type !== "castle") sheet = null; toast(`${UNITS[u.type].name} sold for ${unitSellPrice(u)}g.`); },
+  usell: id => { const u = findUnit(id); if (!u) return; S.sells = (S.sells || 0) + 1; const k = placedAt(id); if (k) delete S.place[k]; unGarrison(id); S.owned = S.owned.filter(x => x.id !== id); S.gold += unitSellPrice(u); if (!sheet || sheet.type !== "castle") sheet = null; toast(`${UNITS[u.type].name} sold for ${unitSellPrice(u)}g.`); },
   bench: v => { const k = placedAt(v); if (k) delete S.place[k]; if (!sheet || sheet.type !== "castle") sheet = null; },
   deploy: (v, k) => { { const cu = findUnit(v); if (cu && cu.cool > 0) { toast(`${UNITS[cu.type].name} is recharging for ${cu.cool} more day${cu.cool > 1 ? "s" : ""}.`); return; } }
     { const [r0, c0] = k.split(",").map(Number), wl0 = findWall(v); if (wl0 && !wallFree(r0, c0, wl0.dir, v)) { toast("That tile isn't free."); return; } }
+    if (inGarrison(v)) { if (fieldCount() >= S.slots) { toast("Your field supply is full."); return; } unGarrison(v); }
     const old = placedAt(v); if (old) delete S.place[old]; S.place[k] = v; sheet = null; },
   cls: v => { if (v === S.cls) return; if (isLive() && DAY > 1) { toast("Your class is set for the week. Pick again next week."); return; } S.cls = v; S.ranks = { a1: 0, a2: 0, a3: 0, ult: 0 }; S.picks = {}; toast(`${CLASSES[v].name} chosen. Skill points refunded.`); },
   rank: (_, k) => { if (canRank(k)) S.ranks[k] = (S.ranks[k] || 0) + 1; },
   choose: (v, k) => { S.picks[k] = v; },
-  buy: k => { const u = UNITS[k]; if (u.castleOnly && S.owned.filter(x => UNITS[x.type].castleOnly).length >= SIEGE_MAX) { toast(`You can only keep ${SIEGE_MAX} siege units.`); return; } if (avail() < u.cost || S.owned.length >= S.slots || ctNow() < UNIT_TIER[k]) return; S.gold -= u.cost; const id = "u" + idc++; S.owned.push({ id, type: k, lvl: 1, hp: 1 }); sel = id; sheet = null; toast(`${u.name} recruited. Tap a glowing tile.`); },
+  buy: k => { const u = UNITS[k]; if (u.castleOnly && S.owned.filter(x => UNITS[x.type].castleOnly).length >= SIEGE_MAX) { toast(`You can only keep ${SIEGE_MAX} siege units.`); return; } if (avail() < u.cost || supplyFull() || ctNow() < UNIT_TIER[k]) return; ensureGarrison(); const toGar = fieldCount() >= S.slots && !u.castleOnly; if (toGar && garrisonCount() >= GARRISON_SOLDIERS) { toast("Siege units can't wait in the garrison, and your field supply is full."); return; } S.gold -= u.cost; const id = "u" + idc++; S.owned.push({ id, type: k, lvl: 1, hp: 1 }); if (toGar) { toGarrison(id); sel = null; toast(`${u.name} recruited into your garrison.`); } else { sel = id; sheet = null; toast(`${u.name} recruited. Tap a glowing tile.`); } },
   up: id => { const u = findUnit(id), c = upgradeCost(u); if (u.lvl < 3 && avail() >= c && ctNow() >= UNIT_LVL_TIER[u.lvl]) { S.gold -= c; u.lvl++; } },
   slot: () => { const c = slotCost(S.slots); if (avail() >= c && S.slots < SLOT_MAX) { S.gold -= c; S.slots++; } },
   trap: k => { const t = TRAPS[k]; if (avail() < t.cost) return; S.gold -= t.cost; const id = "t" + idc++; S.traps.push({ id, type: k }); sel = id; sheet = null; toast(`${t.name} bought. Tap a glowing tile.`); },
@@ -121,6 +122,9 @@ const A = {
   stance: v => { S.stance = v; },
   formation: () => { S.formation = S.formation === false; },
   heading: v => { S.strategy.heading = v; },
+  gtoggle: (_, k) => { sheet.gopen = sheet.gopen === k ? null : k; },
+  wtoggle: (_, k) => { sheet.wopen = sheet.wopen === k ? null : k; },
+  engage: v => { if (!S.locked) S.engage = cleanEngage(S.engage + +v); },
   heropick: () => { showHeroPick(null); },
   invite: (_, k) => { ensureDip(); if (S.offers[k]) return; if (carriedPartners().includes(k)) { toast("You are already allied."); return; }
     if (Object.keys(S.offers).length >= MAX_INVITES) { toast("Only 2 invitations can be open at once."); return; }
@@ -182,6 +186,10 @@ document.addEventListener("change", e => {
   if (act === "tmode") S.terms[k].mode = s.value;
   if (act === "tmodeset") S.strategy.mode = s.value;
   if (act === "prioset") S.prio[+v] = s.value;
+  if (act === "wwhen" && !S.locked) S.garrison[+k].when = s.value;
+  if (act === "wat" && !S.locked) S.garrison[+k].at = +s.value;
+  if (act === "wslot" && !S.locked) { const id = s.value || null; if (id) { unGarrison(id); const pk = placedAt(id); if (pk) delete S.place[pk]; } S.garrison[+k].slots[+v] = id; }
+  if (act === "gprioset" && !S.locked) { const l = S.gprio[k].slice(); l[+v] = s.value; S.gprio[k] = cleanGprio({ ...S.gprio, [k]: l.filter(Boolean) })[k]; }
   if (act === "pactset") { ensureDip(); S.pactAct[k] = s.value; if (s.value === "betray") S.pactWhen[k] = S.pactWhen[k] || BETRAY_WHEN[0]; }
   if (act === "tmin") S.terms[k].min = +s.value;
   render();
