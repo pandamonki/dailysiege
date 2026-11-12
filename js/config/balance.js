@@ -6,11 +6,11 @@ const slotCost = n => SLOT_COSTS[Math.min(n, SLOT_COSTS.length - 1)];
 
 // ---- castle tiers, walls, shop items, hero levelling, gold ----
 const CASTLE_TIERS = [
-  { name: "Castle", cost: 0, hp: 1, note: "Where every lord begins. Earns the base 200 gold a day." },
-  { name: "Fortress", cost: 150, hp: 1.15, note: "+15% castle health and +40 gold a day. Opens tier 2 gear, Arrow Slits, Bastions and stronger timber walls." },
-  { name: "Citadel", cost: 300, hp: 1.3, note: "+30% castle health and +90 gold a day. Opens tier 3 gear, the Ballista and stone walls." },
+  { name: "Castle", cost: 0, hp: 1, note: "Where every lord begins. Earns the base 250 gold a day." },
+  { name: "Fortress", cost: 150, hp: 1.15, note: "+15% castle health and +90 gold a day, so it pays for itself in under two days. Opens tier 2 gear, Arrow Slits, Bastions and stronger timber walls." },
+  { name: "Citadel", cost: 300, hp: 1.3, note: "+30% castle health and +170 gold a day in all. Opens tier 3 gear, the Ballista and stone walls." },
 ];
-const CASTLE_INCOME = [0, 40, 90]; // extra gold a day for each castle tier
+const CASTLE_INCOME = [0, 90, 170]; // extra gold a day for each castle tier
 const UPGRADE_NEEDS = { weapon: [1, 2, 3], armour: [1, 2, 3], charm: [1, 2, 3], walls: [1, 2], tower: [2, 3] }; // castle tier each upgrade tier needs
 const WALL_TIERS = [{ name: "Palisade", hp: 200 }, { name: "Timber Wall", hp: 340 }, { name: "Stone Wall", hp: 520 }];
 const WALL_COST = 35, WALL_CAP = 6, wallLimit = tier => WALL_CAP;
@@ -22,7 +22,7 @@ const HOLD_END = 120; // orders to hold the battleground dissolve after 2 minute
 const CTR_BONUS = 1.25; // any hero standing on the battleground earns 25% more gold and XP, held or contested
 const CTR_R = 2.0; // the centre: bonus XP and gold for whoever holds it
 const GOLD_KILL = { unit: 2, militia: 1, summon: 1, guard: 2 };
-const BASE_INCOME = 200;
+const BASE_INCOME = 250;
 function catchUpGold(n, idxFromBottom) { const k = Math.max(1, Math.round(n * .3)); return idxFromBottom < k ? Math.round(140 + 160 * (1 - idxFromBottom / k)) : 0; }
 
 const BOUNTY = { base: 15, rank: [40, 25, 15], perLvl: 5 }; // gold on the heads of the top three: base + board position + hero level x 5

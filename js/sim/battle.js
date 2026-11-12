@@ -112,6 +112,8 @@ function runBattle(plans, seed, opts = {}) {
         if (its.has("vanguard")) { e.maxhp *= 1.15; e.hp = e.maxhp; e.block = 12; }
         if (its.has("antimagic")) e.shellAt = Math.max(1, Math.min(10, Math.round(+pl.shellAt || 2)));
         if (its.has("hpring")) { e.maxhp *= 1.08; e.hp = e.maxhp; }
+        if (its.has("whetstone")) e.atk *= 1.07; if (its.has("sandals")) e.spd *= 1.06; if (its.has("buckler")) e.dmgRed = (e.dmgRed || 0) + .04;
+        if (its.has("jerkin")) { e.maxhp *= 1.06; e.hp = e.maxhp; }
         { const oc = ["frostdagger", "fireorb", "venomorb", "corruptorb"].filter(k => its.has(k)); if (oc.length) e.orbCols = oc.map(k => ITEMS[k].col); }
         if (its.has("shiva")) e.dmgRed = (e.dmgRed || 0) + .06;
         if (its.has("daedalus")) e.atk *= 1.15;
@@ -210,6 +212,7 @@ function runBattle(plans, seed, opts = {}) {
       if (s.has("banner")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => setFx(o, "atkbuf", 1.3, .12));
       if (s.has("standard")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => setFx(o, "guard", 1.3, .12));
       if (s.has("hpring") && e.hp < e.maxhp) heal(e, e.maxhp * .012, true, e, "Ring of Health");
+      if (s.has("herbs") && e.hp < e.maxhp) heal(e, e.maxhp * .006, true, e, "Mending Herbs");
       if (s.has("pipe")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => setFx(o, "spellward", 1.3, .25));
       if (s.has("mender")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => { if (o.hp < o.maxhp) heal(o, 4, true, e, "Mender's Charm"); });
     }
