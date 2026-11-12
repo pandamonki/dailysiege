@@ -109,14 +109,17 @@ function runBattle(plans, seed, opts = {}) {
         if (its.has("boots")) e.spd *= 1.1; if (its.has("gauntlets")) e.atk *= 1.15; if (its.has("ringprot")) e.dmgRed = (e.dmgRed || 0) + .08;
         if (its.has("fang")) e.lifesteal = (e.lifesteal || 0) + .12; if (its.has("thornmail")) e.thorns = .15; if (its.has("talisman")) e.will = true;
         if (its.has("vanguard")) { e.maxhp *= 1.15; e.hp = e.maxhp; e.block = 12; }
-        if (its.has("antimagic")) e.spellRed = .3;
+        if (its.has("antimagic")) e.shellAt = Math.max(1, Math.min(10, Math.round(+pl.shellAt || 2)));
+        if (its.has("hpring")) { e.maxhp *= 1.08; e.hp = e.maxhp; }
+        { const oc = ["frostdagger", "fireorb", "venomorb", "corruptorb"].filter(k => its.has(k)); if (oc.length) e.orbCols = oc.map(k => ITEMS[k].col); }
         if (its.has("shiva")) e.dmgRed = (e.dmgRed || 0) + .06;
         if (its.has("daedalus")) e.atk *= 1.15;
         if (its.has("crystalys")) e.itemCrit = [.2, 1.6]; if (its.has("daedalus")) e.itemCrit = [.25, 2.4];
-        e.cons = ["salve", "elixir", "net", "scroll", "shiva"].filter(k => its.has(k)).map(k => ({ k, ready: 0 }));
+        e.cons = ["salve", "elixir", "net", "scroll", "shiva", "antimagic"].filter(k => its.has(k)).map(k => ({ k, ready: 0 }));
         if (!HV3 && pl.cls === "archer" && pl.ranks.a3) { e.evade = ext([.1, .18, .25], pl.ranks.a3); e.counter = pl.picks.a3 === "Counter"; e.kite = pl.picks.a3 === "Kite"; }
         if (!HV3 && pl.cls === "rogue" && pl.ranks.a3) e.poison = { dps: ext([7, 10, 13], pl.ranks.a3), venom: pl.picks.a3 === "Venom", weaken: pl.picks.a3 === "Weaken" };
         [e.atype, e.armour] = CLASS_TYPES[pl.cls];
+        if (its.has("evasion")) e.evade = 1 - (1 - (e.evade || 0)) * .8;
         if (HV3) { kit.setup(e, pl); e.hp = e.maxhp; }
         p.champ = e;
       } else if (pc.kind === "unit") {
@@ -204,16 +207,22 @@ function runBattle(plans, seed, opts = {}) {
     if (tick % 10 === 0) {
       if (s.has("banner")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => setFx(o, "atkbuf", 1.3, .12));
       if (s.has("standard")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => setFx(o, "guard", 1.3, .12));
+      if (s.has("hpring") && e.hp < e.maxhp) heal(e, e.maxhp * .012, true, e, "Ring of Health");
       if (s.has("pipe")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => setFx(o, "spellward", 1.3, .25));
       if (s.has("mender")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => { if (o.hp < o.maxhp) heal(o, 4, true, e, "Mender's Charm"); });
     }
+    if (s.has("antimagic")) { if (enemiesNear(e, e.x, e.y, 7).some(x => x.kind === "champ")) { if (e.engT == null) e.engT = t; } else e.engT = null; } // the clock on the Shell starts when an enemy hero comes into view
     (e.cons || []).forEach(c => {
       if (t < c.ready) return;
       if (c.k === "salve" && e.hp / e.maxhp < .5) { c.ready = t + ITEMS[c.k].cd; heal(e, e.maxhp * .35, false, e, "Healing Salve"); txt(e, "Salve", "#9cf09c"); }
       else if (c.k === "elixir" && live(e.tgt) && d(e, e.tgt) <= e.range + 1) { c.ready = t + ITEMS[c.k].cd; setFx(e, "asbuf", 8, .25); txt(e, "Fury!", "#ff8a7a"); }
       else if (c.k === "net") { const v = minBy(enemiesNear(e, e.x, e.y, 4).filter(x => x.kind === "champ"), x => d(x, e)); if (v) { c.ready = t + ITEMS[c.k].cd; setFx(v, "root", 2.5); shot(e, v, "#c9a46a", 2); txt(v, "Netted", "#e8cf9a"); } }
       else if (c.k === "shiva") { const vs = enemiesNear(e, e.x, e.y, 3); if (vs.length >= 2) { c.ready = t + ITEMS[c.k].cd; aoe(e.x, e.y, 3, "#9fe4ff", .6); vs.forEach(x => { deal(e, x, 140, { aoe: 1, ab: "Shiva's Guard" }); if (live(x)) setFx(x, "slow", 4, .4); }); txt(e, "Shiva's Guard", "#bdeeff"); } }
-      else if (c.k === "scroll" && !e.orphan && e.hp / e.maxhp < .3 && enemiesNear(e, e.x, e.y, 3).length) { c.ready = t + ITEMS[c.k].cd; aoe(e.x, e.y, .8, "#b48cff", .5); e.x = p.castle.x; e.y = p.castle.y - 1; e.tgt = null; aoe(e.x, e.y, .8, "#b48cff", .5); heal(e, e.maxhp * .2, false, e, "Scroll of Retreat"); txt(e, "Retreat", "#d6c2ff"); }
+      else if (c.k === "antimagic" && e.engT != null && t - e.engT >= e.shellAt - 1e-6) { c.ready = t + ITEMS[c.k].cd; setFx(e, "shell", 5, .7); ev({ ty: "shell", id: e.id, dur: 5 }); txt(e, "Anti-Magic Shell", "#9ff0e0"); }
+      else if (c.k === "scroll" && !e.orphan && t - (p.castleHitT == null ? -99 : p.castleHitT) < .3 && p.castle && !p.castle.dead && d(e, p.castle) > 4) { // Rune of Homecoming: once a battle, as the castle comes under attack
+        c.ready = 1e9; const grp = friendsNear(e.pid, e.x, e.y, 4).filter(o => o.kind !== "totem" && P[o.pid] && P[o.pid].castle && !P[o.pid].castle.dead);
+        grp.forEach((o, i) => { const cs = P[o.pid].castle, a = i * 2.399, r = 1.1 + (i % 3) * .45; aoe(o.x, o.y, .7, "#b48cff", .5); o.x = cs.x + dcos(a) * r; o.y = cs.y + .4 + dsin(a) * r * .8; o.tgt = null; aoe(o.x, o.y, .7, "#b48cff", .5); });
+        txt(e, "Homecoming!", "#d6c2ff"); }
     });
   }
   // fences: soldiers can't walk through an enemy wall. They slide round it, and hack through if they get stuck
@@ -266,7 +275,7 @@ function runBattle(plans, seed, opts = {}) {
     if (wall) { const blocked = amt * m * wall; m *= 1 - wall; if (tgt.reflect && live(src) && !o.reflected) deal(tgt, src, blocked * .2, { aoe: 1, reflected: 1, ab: "Shield Wall" }); }
     m *= 1 + fxv(tgt, "vuln"); m *= 1 - fxv(tgt, "guard");
     const abil = !!(o.ab || curAb) && !o.reflected, plain = !abil && !o.dot && !o.reflected; // abil: a hero ability or ultimate; plain: an ordinary weapon hit
-    if (abil && src) { if (tgt.spellRed) m *= 1 - tgt.spellRed; const sw = fxv(tgt, "spellward"); if (sw) m *= 1 - sw; }
+    if (abil && src) { const sh = fxv(tgt, "shell"); if (sh) m *= 1 - sh; const sw = fxv(tgt, "spellward"); if (sw) m *= 1 - sw; }
     let critHit = false;
     if (src && src.icm && plain && !o.aoe && !o.critMul) { m *= src.icm; src.icm = 0; critHit = true; } // Crystalys / Daedalus
     let dmg = Math.max(1, amt * m);
@@ -776,12 +785,15 @@ function runBattle(plans, seed, opts = {}) {
     if (e.atkT <= 0) {
       e.atkT = e.as; atkEv(e, o, e.range > 1.5 ? "r" : "m");
       if (e.range > 1.5) shot(e, o, e.shot || "#fff", 1, SHOT_STYLE[e.kind === "champ" ? e.cls : e.key]); else slash(o);
+      if (e.orbCols) ev({ ty: "orbfx", id: e.id, x: o.x, y: o.y - .35, cs: e.orbCols });
       if (e.itemCrit && rng() < e.itemCrit[0]) e.icm = e.itemCrit[1];
       const dealt = HV3 && e.tr ? kit.basic(e, o) : deal(e, o, e.atk); if (e.itemCrit) e.icm = 0;
       if (e.splash && live(o)) enemiesNear(e, o.x, o.y, 1.3).filter(x => x !== o).forEach(x => deal(e, x, e.atk * e.splash, { aoe: 1 }));
       if (e.cls === "rogue") e.hits = (e.hits || 0) + 1;
       if (e.cls === "archer") { const th = minBy(enemiesNear(e, e.x, e.y, 2.6).filter(x => x.range < 2.5), x => d(x, e)); if (th) e.fleeUntil = t + .6; }
-      if (dealt && e.itemSet && e.itemSet.size && live(o)) { if (e.itemSet.has("frostdagger")) setFx(o, "slow", 1.5, .3); if (e.itemSet.has("venomorb")) addDot(o, e, 7, 3, "orb"); }
+      if (dealt && e.itemSet && e.itemSet.size && live(o)) { if (e.itemSet.has("frostdagger")) setFx(o, "slow", 1.5, .3); if (e.itemSet.has("venomorb")) addDot(o, e, 7, 3, "orb");
+        if (e.itemSet.has("corruptorb")) setFx(o, "vuln", 3, .15);
+        if (e.itemSet.has("fireorb")) { const sp = enemiesNear(e, o.x, o.y, 1.3).filter(x => x !== o); if (sp.length) aoe(o.x, o.y, 1.3, "#ff7a2a", .35); sp.forEach(x => deal(e, x, dealt * .35, { aoe: 1, ab: "Orb of Fire" })); } }
       if (dealt && e.poison) { addDot(o, e, e.poison.dps, 4, "poison"); if (e.poison.weaken) setFx(o, "weaken", 4); }
     }
   }

@@ -45,6 +45,6 @@ function freshLiveState(ck) {
 function mySnapshot() {
   const pieces = myPieces();
   ensureDip();
-  return { formation: S.formation !== false, ultArm: planUlt(), blessing: planBless(), items: (S.items || []).slice(), castleTier: S.castle || 1, banner: S.banner, ...pactPlan(), cls: S.cls, ranks: S.ranks, tree: S.tree, picks: S.picks, triggers: S.triggers, gear: S.gear, defences: S.defences, stance: S.stance, prio: S.prio, gprio: S.gprio, engage: S.engage, waves: garrisonPlan(), rules: S.rules, pieces,
+  return { formation: S.formation !== false, ultArm: planUlt(), shellAt: S.shellAt, blessing: planBless(), items: (S.items || []).slice(), castleTier: S.castle || 1, banner: S.banner, ...pactPlan(), cls: S.cls, ranks: S.ranks, tree: S.tree, picks: S.picks, triggers: S.triggers, gear: S.gear, defences: S.defences, stance: S.stance, prio: S.prio, gprio: S.gprio, engage: S.engage, waves: garrisonPlan(), rules: S.rules, pieces,
     targets: S.lists.hostile.slice(), offers: Object.assign({}, S.offers), replies: Object.assign({}, S.replies), terms: S.terms, bids: Object.assign({}, S.bids), tmode: S.strategy.mode, heading: S.strategy.heading, sealed: !!S.locked, ...(!S.locked && S.sealedSnap ? { sealedPlan: S.sealedSnap } : {}) };
 }

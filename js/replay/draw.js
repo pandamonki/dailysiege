@@ -67,10 +67,12 @@ function drawReplay(t) {
           glow(cx, by - ts * .5, ts * 1.0, ts * 1.05, color, .8 + Math.sin(t * 3 + k) * .12);
           ctx.strokeStyle = color; ctx.lineWidth = ts * .06; ctx.beginPath(); ctx.ellipse(cx, by - ts * .05, ts * .36, ts * .13, 0, 0, 7); ctx.stroke();
         }
+        if (m.champ && m.items) { drawHeroAuras(ctx, cx, by, ts, t, m.items, k); drawHeroOrbs(ctx, cx, by, ts, t, m.items, k, true); }
         if (fl & 4) glow(cx, by - ts * .5, ts * .7, ts * .8, "#ffe082", .7);
         if (pose.flash) glow(cx, by - ts * .5, ts * .6, ts * .7, pose.flash, .6);
         top = drawSprite(m.key, color, cx, by, m.champ ? 1.15 : .95, m.champ ? Object.assign({}, pose, { aura: color }) : m.merc ? Object.assign({}, pose, { aura: "#ffd24a" }) : pose);
       }
+      if (m.champ && m.items) drawHeroOrbs(ctx, cx, by, ts, t, m.items, k, false);
       if (fl & 16) { ctx.fillStyle = "rgba(140,200,255,.35)"; ctx.beginPath(); ctx.ellipse(cx, by - ts * .4, ts * .3, ts * .45, 0, 0, 7); ctx.fill(); }
       if (fl & 64) { ctx.strokeStyle = "rgba(190,225,255,.95)"; ctx.fillStyle = "rgba(150,200,255,.22)"; ctx.lineWidth = ts * .05; ctx.beginPath(); ctx.ellipse(cx, by - ts * .42, ts * .4, ts * .52, 0, 0, 7); ctx.fill(); ctx.stroke(); } // a shield from a skill
       if (fl & 32) { ctx.strokeStyle = "rgba(127,178,255,.9)"; ctx.lineWidth = ts * .05; ctx.beginPath(); ctx.arc(cx, by - ts * .45, ts * .42, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke(); }
@@ -161,10 +163,11 @@ function poseOf(k, time, x, y, f0, f1) {
   return o;
 }
 function drawLongFx(time) { // effects that outlast the 2-second window: respawn countdowns and a dropped Rapier
-  const E = replay.res.events; if (!replay.longFx) replay.longFx = E.filter(e => e.ty === "respawn" || e.ty === "rapier" || e.ty === "zone" || e.ty === "taunt");
+  const E = replay.res.events; if (!replay.longFx) replay.longFx = E.filter(e => e.ty === "respawn" || e.ty === "rapier" || e.ty === "zone" || e.ty === "taunt" || e.ty === "shell");
   replay.longFx.forEach(e => {
     if (e.ty === "zone") { drawZoneFx(e, time); return; }
     if (e.ty === "taunt") { drawTauntFx(e, time); return; }
+    if (e.ty === "shell") { drawShellFx(e, time); return; }
     if (e.ty === "respawn") {
       if (time < e.t0 || time >= e.t1) return; const left = Math.ceil(e.t1 - time), px = e.x * ts, py = (e.y - 1.25) * ts, col = (replay.res.colors || {})[e.pid] || "#fff";
       ctx.font = `700 ${Math.round(ts * .3)}px Alegreya, Georgia, serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
@@ -272,6 +275,7 @@ function drawEffects(time) {
       if (age > e.dur) continue; const p = age / e.dur, r = e.r * ts * (.6 + .4 * Math.min(1, p * 3));
       ctx.fillStyle = hexA(e.c, .32 * (1 - p)); ctx.beginPath(); ctx.ellipse(e.x * ts, e.y * ts, r, r * .75, 0, 0, 7); ctx.fill();
       ctx.strokeStyle = hexA(e.c, .9 * (1 - p)); ctx.lineWidth = ts * .05; ctx.stroke();
+    } else if (e.ty === "orbfx") { drawOrbFx(e, age, time);
     } else if (e.ty === "ultfx") { if (age <= e.dur) drawUltFx(ctx, e, age, ts);
     } else if (e.ty === "fuse") { // bomb about to go off: the keep pulses red, faster and brighter as the fuse burns down
       if (age > e.dur) continue; const p = age / e.dur, on = Math.sin(age * (8 + p * 22)) > 0, x = e.x * ts, y = e.y * ts;
@@ -294,4 +298,27 @@ function drawEffects(time) {
       ctx.globalAlpha = 1; ctx.textAlign = "start";
     }
   }
+}
+
+// each orb the hero owns flies out at the target: a comet in the orb's colour that bursts on impact
+function drawOrbFx(e, age, time) {
+  if (age > .42) return; const fr = replayFrameAt(time), ok = fr && fr.d && fr.d.length > e.id * 4 + 1; if (!ok) return;
+  const sx = fr.d[e.id * 4] * ts, sy = (fr.d[e.id * 4 + 1] - .35) * ts, ex = e.x * ts, ey = e.y * ts, p = Math.min(1, age / .3);
+  e.cs.forEach((col, i) => {
+    const n = e.cs.length, off = (i - (n - 1) / 2) * ts * .22, dx = ex - sx, dy = ey - sy, L = Math.hypot(dx, dy) || 1, nx = -dy / L, ny = dx / L;
+    const at = q => { const arc = Math.sin(q * Math.PI) * off; return [sx + dx * q + nx * arc, sy + dy * q + ny * arc]; };
+    if (p < 1) { for (let j = 5; j >= 1; j--) { const [tx, ty] = at(Math.max(0, p - j * .05)); orbGlow(ctx, tx, ty, ts * .05 * (1 - j * .12), col, .5 - j * .08); } const [px, py] = at(p); orbGlow(ctx, px, py, ts * .07, col); }
+    else { const q = Math.min(1, (age - .3) / .12); ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.strokeStyle = hexA(col, 1 - q); ctx.lineWidth = ts * .05; ctx.beginPath(); ctx.arc(ex, ey, ts * (.12 + q * .35), 0, 7); ctx.stroke();
+      for (let s = 0; s < 5; s++) { const a = s * 1.257 + i, rr = ts * (.1 + q * .4); ctx.fillStyle = hexA(col, 1 - q); ctx.fillRect(ex + Math.cos(a) * rr - 2, ey + Math.sin(a) * rr - 2, 4, 4); } ctx.restore(); }
+  });
+}
+// the Anti-Magic Shell: a shimmering bubble round the hero for its five seconds
+function drawShellFx(e, time) {
+  const age = time - e.t; if (age < 0 || age > e.dur) return; const fr = replayFrameAt(time), ok = fr && fr.d && fr.d.length > e.id * 4 + 3; if (!ok || (fr.d[e.id * 4 + 3] & 1)) return;
+  const x = fr.d[e.id * 4] * ts, y = (fr.d[e.id * 4 + 1] - .2) * ts, fade = Math.min(1, age / .25, (e.dur - age) / .6), R = ts * .85, pu = .5 + .5 * Math.sin(time * 7);
+  ctx.save(); ctx.globalAlpha = fade; ctx.globalCompositeOperation = "lighter";
+  const g = ctx.createRadialGradient(x, y, R * .3, x, y, R); g.addColorStop(0, "rgba(120,240,220,.04)"); g.addColorStop(1, `rgba(120,240,220,${.32 + .12 * pu})`); ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(x, y, R, R * 1.1, 0, 0, 7); ctx.fill();
+  ctx.strokeStyle = "rgba(170,255,240,.9)"; ctx.lineWidth = ts * .045; ctx.stroke();
+  for (let s = 0; s < 6; s++) { const a = time * 1.5 + s * 1.047; ctx.fillStyle = "rgba(200,255,245,.9)"; ctx.beginPath(); ctx.arc(x + Math.cos(a) * R, y + Math.sin(a) * R * 1.1, ts * .035, 0, 7); ctx.fill(); }
+  ctx.restore();
 }

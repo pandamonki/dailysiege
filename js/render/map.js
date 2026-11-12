@@ -197,7 +197,10 @@ function drawFigure(key, color, r, q, isChamp, frac, friendly, t, extra) {
     ctx.strokeStyle = color; ctx.lineWidth = ts * .06; ctx.beginPath(); ctx.ellipse(cx, by - ts * .05, ts * .36, ts * .13, 0, 0, 7); ctx.stroke();
   }
   if (extra && extra.ring) { ctx.strokeStyle = "#ffe082"; ctx.lineWidth = ts * .06; ctx.beginPath(); ctx.ellipse(cx, by - ts * .05, ts * .42, ts * .16, 0, 0, 7); ctx.stroke(); }
+  const fx = isChamp && extra && extra.items && extra.items.length ? extra.items : null;
+  if (fx) { drawHeroAuras(ctx, cx, by, ts, t, fx, q); drawHeroOrbs(ctx, cx, by, ts, t, fx, q, true); }
   const top = drawSprite(key, color, cx, by, isChamp ? 1.15 : .95, isChamp ? { aura: color } : undefined);
+  if (fx) drawHeroOrbs(ctx, cx, by, ts, t, fx, q, false);
   const y = hpBar(cx, top, frac, friendly);
   if (extra && extra.name) nameTag(cx, y - ts * .02, extra.name, color, isChamp ? extra.lvl : null);
   if (extra && extra.lvl && !(isChamp && extra.name)) {
