@@ -28,7 +28,7 @@ test("healer priorities change who gets healed", () => {
 });
 
 test("group priorities change who fights whom, and a plan with them still replays identically", () => {
-  const hashes = new Set(); let differs = false;
+  let differs = false;
   for (let i = 0; i < 12 && !differs; i++) {
     const c = sim.run(`goldenCase(${i})`), g = (hero, melee) => c.plans.map(p => ({ ...p, gprio: { hero, melee, ranged: ["hero"], heal: ["hero"] }, engage: 3 }));
     const a = run(g(["hero"], ["melee"]), c.seed, c.opts), b = run(g(["lowhp"], ["any"]), c.seed, c.opts), a2 = run(g(["hero"], ["melee"]), c.seed, c.opts);

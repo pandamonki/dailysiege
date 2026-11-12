@@ -11,7 +11,6 @@ import { loadSim } from "./load-sim.mjs";
 
 const sim = loadSim(), V2 = !process.env.BAL_OLD, DOCTRINE = process.env.DOCTRINE || "none"; // none | raider | march | marchhero | mixed | two | twomix (army heads for the castle, combat priorities pick fights within reach; ENGAGE=tiles): how armies pick targets by group
 const wars = +process.argv[2] || 12, nLords = +process.argv[3] || 10;
-const STYLES = ["soldiers", "siege", "hero", "balanced"];
 // what each style buys, in order; every step is bought when affordable and the list restarts each day
 sim.run(`globalThis.__lab = (function () {
   const mk = (seed, pids, wars) => {};
