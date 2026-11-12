@@ -72,9 +72,9 @@ function runBattle(plans, seed, opts = {}) {
   function deployWave(p, i) {
     const w = p.waves[i], c = p.castle, dx = NN / 2 - c.x, dy = NN / 2 - c.y, L = hyp(dx, dy) || 1, px = -dy / L, py = dx / L, n = w.units.length;
     w.done = true; p.lastWave = t;
-    w.units.forEach((u, j) => { const o = (j - (n - 1) / 2) * .45, e = makeUnit(p, { ...u, kind: "unit", order: w.order === "guard" ? "guard" : "army" }, c.x + dx / L * .9 + px * o, c.y + dy / L * .9 + py * o);
+    w.units.forEach((u, j) => { const o = (j - (n - 1) / 2) * .45, e = makeUnit(p, { ...u, kind: "unit" }, c.x + dx / L * .9 + px * o, c.y + dy / L * .9 + py * o);
       e.hx = e.x; e.hy = e.y; e.spd *= BAL.move; e.as *= BAL.swing; e.retreats = 1; e.wave = i + 1; if (p.noRetreat) e.noRetreat = true;
-      if (w.order === "castle") e.purpose = "castle"; else if (w.order === "hero") e.hunter = true; }); // the wave's purpose: raider-style march on a castle, or hunt heroes
+      if (w.order === "castle") e.purpose = "castle"; else if (w.order === "hero") e.hunter = true; else if (w.order === "nearest") e.purpose = "nearest"; }); // the wave's purpose: raider-style march on a castle, hunt heroes, or fight the nearest enemy
     ev({ ty: "wave", pid: p.pid, i, n: p.waves.filter(x => x.done).length });
     log(`${poss(p.pid)} reinforcements march out of the castle.`, p.pid === mePid ? "you" : undefined);
   }
@@ -420,6 +420,8 @@ function runBattle(plans, seed, opts = {}) {
     // raiders (from 12 Nov 2026) make for a castle: struck by a melee fighter they turn and fight it, struck from range they keep going
     if (V3 && (e.key === "raider" || e.purpose === "castle") && !guard && !escort) { const ag = e.aggro; if (ag && ag.until > t && live(ag.src) && hostile(e.pid, ag.src.pid) && !fxv(ag.src, "vanish") && (ag.src.range || 1.1) <= 1.5 && d(ag.src, e) <= 6) return ag.src;
       const g = goalPid(e), c = g && ents.find(o => !o.dead && o.kind === "castle" && o.pid === g); if (c) return c; }
+    // a wave sent at the nearest enemies: whoever is closest, anywhere on the field; with nobody left it marches as usual
+    if (V3 && e.purpose === "nearest" && !guard && !escort) { const pool = ents.filter(o => !o.dead && o.kind !== "castle" && o.kind !== "totem" && hostile(e.pid, o.pid) && fighting(o.pid) && !fxv(o, "vanish")); if (pool.length) return minBy(pool, o => d(o, e)); }
     // aggression: answer whoever just struck you or a friend nearby
     if (e.aggro && e.aggro.until > t && live(e.aggro.src) && hostile(e.pid, e.aggro.src.pid) && !fxv(e.aggro.src, "vanish") && d(e.aggro.src, e) <= 6 && (!guard || d(e.aggro.src, p.castle) <= 8)) return e.aggro.src;
     // pursuit: stay on a target that is fleeing or badly hurt, unless it has escaped far away

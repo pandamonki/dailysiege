@@ -21,16 +21,12 @@ function garrisonWaveHTML(w, i) {
 }
 function garrisonTab(ct) {
   ensureGarrison();
-  const sel = sheet.tsel && findUnit(sheet.tsel) ? sheet.tsel : null, u = sel ? findUnit(sel) : null, res = S.owned.filter(o => !placedAt(o.id) && !inGarrison(o.id)).length;
+  const sel = sheet.tsel && findUnit(sheet.tsel) ? sheet.tsel : null, res = S.owned.filter(o => !placedAt(o.id) && !inGarrison(o.id)).length;
   const tile = o => { const [c] = waveStatus(o.id); return `<button class="gr-t ${c}${sel === o.id ? " sel" : ""}" data-drag="${o.id}" data-act="tsel" data-v="${o.id}" aria-label="${UNITS[o.type].name} level ${o.lvl}, ${waveStatus(o.id)[1]}"><img alt="" src="${spriteURL(o.type)}"><b>${UNITS[o.type].name}</b><span class="gr-pp">${[1, 2, 3].map(x => `<i class="${x <= o.lvl ? "on" : ""}"></i>`).join("")}</span></button>`; };
-  let act = "";
-  if (u) { const st = unitStats(u), lk = ct < UNIT_LVL_TIER[u.lvl], dep = !!placedAt(u.id), tr = UNITS[u.type].noUpgrade ? "Can't train" : u.lvl >= 3 ? "Max level" : lk ? `Needs a ${tierName(UNIT_LVL_TIER[u.lvl])}` : `Train to Lv${u.lvl + 1} · ${upgradeCost(u)}g`;
-    act = `<div class="gr-act"><div><b>${UNITS[u.type].name} · Lv ${u.lvl}/3</b><small>${waveStatus(u.id)[1]} · ${IC.hp(st.hp)} ${IC.atk(st.atk)}${u.cool > 0 ? ` · ⏳ ${u.cool}d` : ""}</small></div>
-      <div class="gr-btns"><button class="btn small wax" data-act="move" data-v="${u.id}" ${dis(u.cool > 0)}>${dep ? "Move on map" : "To the map"}</button>${dep ? `<button class="btn small" data-act="bench" data-v="${u.id}">Reserve</button>` : ""}<button class="btn small" data-act="up" data-v="${u.id}" ${dis(UNITS[u.type].noUpgrade || u.lvl >= 3 || lk || avail() < upgradeCost(u))}>${tr}</button><button class="btn small" data-act="usell" data-v="${u.id}">Sell +${unitSellPrice(u)}g</button></div></div>`; }
   return `<div class="gr-sum"><span><b>${fieldCount()}/${S.slots}</b>field</span><span class="y"><b>${garrisonCount()}/${GARRISON_SOLDIERS}</b>waves</span><span><b>${res}</b>reserve</span></div>
     <div class="gr-sec"><h4>Soldiers <small>${S.locked ? "orders are sealed" : "drag a soldier into a wave"}</small></h4>
       ${S.owned.length ? `<div class="gr-pool" data-drop="pool">${S.owned.map(tile).join("")}</div>` : `<p class="muted">No soldiers yet. Recruit some in the Recruit tab.</p>`}
-      <div class="gr-legend"><span><i class="dep"></i>on the map</span><span><i class="wv"></i>in a wave</span><span><i class="res"></i>reserve</span></div>${act}</div>
+      <div class="gr-legend"><span><i class="dep"></i>on the map</span><span><i class="wv"></i>in a wave</span><span><i class="res"></i>reserve</span></div></div>
     <div class="gr-sec"><h4>Waves <small>one free footman each</small></h4><div class="gr-waves">${S.garrison.map(garrisonWaveHTML).join("")}</div></div>
     <p class="muted gr-tip">Tap a chip to change when a wave goes or what it does. Tap a soldier, then a slot, if you'd rather not drag. Waves are at least ${WAVE_GAP}s apart and one is forced out at each minute mark.</p>`;
 }
