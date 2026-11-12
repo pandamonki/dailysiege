@@ -92,3 +92,6 @@
 .gr-pop div.on { background: var(--wood); color: var(--parchment); }
 .gr-pop small { display: block; font-size: 11px; opacity: .7; }
 .gr-tip { margin: 0; font-size: 12px; }
+.gr-send { flex-basis: 100%; display: flex; align-items: center; gap: 6px; }
+.gr-send span { font-size: 13px; color: var(--ink-soft); margin-right: 2px; }
+.abar .gr-send .btn { flex: 0 0 auto; }
