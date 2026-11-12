@@ -19,21 +19,27 @@ function garrisonWaveHTML(w, i) {
     ${garrisonPopHTML(i)}
     <div class="gr-r4"><div class="gr-s free"><img alt="" src="${spriteURL("footman")}"><b>Footman</b><small>free</small></div>${w.slots.map(slot).join("")}</div></div>`;
 }
-function garrisonTab(ct) {
+// the Deployment tab: five rows, each holding the soldiers in that place: on the map, reserve, and the three waves
+function deploymentTab() {
   ensureGarrison();
-  const sel = sheet.tsel && findUnit(sheet.tsel) ? sheet.tsel : null, res = S.owned.filter(o => !placedAt(o.id) && !inGarrison(o.id)).length;
-  const tile = o => { const [c] = waveStatus(o.id); return `<button class="gr-t ${c}${sel === o.id ? " sel" : ""}" data-drag="${o.id}" data-act="tsel" data-v="${o.id}" aria-label="${UNITS[o.type].name} level ${o.lvl}, ${waveStatus(o.id)[1]}"><img alt="" src="${spriteURL(o.type)}"><b>${UNITS[o.type].name}</b><span class="gr-pp">${[1, 2, 3].map(x => `<i class="${x <= o.lvl ? "on" : ""}"></i>`).join("")}</span></button>`; };
-  return `<div class="gr-sum"><span><b>${fieldCount()}/${S.slots}</b>field</span><span class="y"><b>${garrisonCount()}/${GARRISON_SOLDIERS}</b>waves</span><span><b>${res}</b>reserve</span></div>
-    <div class="gr-sec"><h4>Soldiers <small>${S.locked ? "orders are sealed" : "drag a soldier into a wave"}</small></h4>
-      ${S.owned.length ? `<div class="gr-pool" data-drop="pool">${S.owned.map(tile).join("")}</div>` : `<p class="muted">No soldiers yet. Recruit some in the Recruit tab.</p>`}
-      <div class="gr-legend"><span><i class="dep"></i>on the map</span><span><i class="wv"></i>in a wave</span><span><i class="res"></i>reserve</span></div></div>
-    <div class="gr-sec"><h4>Waves <small>one free footman each</small></h4><div class="gr-waves">${S.garrison.map(garrisonWaveHTML).join("")}</div></div>
-    <p class="muted gr-tip">Tap a chip to change when a wave goes or what it does. Tap a soldier, then a slot, if you'd rather not drag. Waves are at least ${WAVE_GAP}s apart and one is forced out at each minute mark.</p>`;
+  const sel = sheet.tsel && findUnit(sheet.tsel) ? sheet.tsel : null, placed = S.owned.filter(o => placedAt(o.id)), reserve = S.owned.filter(o => !placedAt(o.id) && !inGarrison(o.id)), freeField = Math.max(0, S.slots - fieldCount());
+  const tile = o => `<button class="gr-t${sel === o.id ? " sel" : ""}" data-drag="${o.id}" data-act="tsel" data-v="${o.id}" aria-label="${UNITS[o.type].name} level ${o.lvl}, ${waveStatus(o.id)[1]}"><img alt="" src="${spriteURL(o.type)}"><b>${UNITS[o.type].name}</b><span class="gr-pp">${[1, 2, 3].map(x => `<i class="${x <= o.lvl ? "on" : ""}"></i>`).join("")}</span></button>`;
+  const ph = (act, text) => `<button class="gr-t gr-ph" data-act="${act}" ${dis()}><span>${text}</span></button>`;
+  const row = (title, count, drop, body) => `<div class="gr-row" data-drop="${drop}"><div class="gr-rh"><b>${title}</b><small>${count}</small></div><div class="gr-r5">${body}</div></div>`;
+  return `<div class="gr-sum"><span><b>${fieldCount()}/${S.slots}</b>field</span><span class="y"><b>${garrisonCount()}/${GARRISON_SOLDIERS}</b>waves</span><span><b>${reserve.length}</b>reserve</span></div>
+    <p class="muted gr-tip">${S.locked ? "Your orders are sealed. Draft new orders to change this." : "Drag a soldier from one row to another, or tap a soldier then tap where it should go."}</p>
+    <div class="gr-waves">
+      ${row("Deployed", `${placed.length} on the map`, "dep", placed.map(tile).join("") + (freeField ? [...Array(freeField)].map(() => ph("wdep", "free")).join("") : ph("wdep", "deploy")))}
+      ${row("Reserve", `${reserve.length} waiting`, "res", reserve.map(tile).join("") + ph("wres", reserve.length ? "bench" : "empty"))}
+      ${S.garrison.map(garrisonWaveHTML).join("")}</div>
+    <p class="muted gr-tip">Tap a chip to change when a wave goes or what it does. Waves are at least ${WAVE_GAP}s apart and one is forced out at each minute mark. Training and selling are on the Garrison tab.</p>`;
 }
 // actions
 Object.assign(A, {
   wsend: (v, k) => { if (S.locked) { toast("Draft new orders to change your garrison."); return; } const err = assignWave(v, +k); if (err) toast(err); else toast(`Sent to Wave ${+k + 1}.`); },
-  wback: v => { if (S.locked) return; toReserve(v); },
+  wback: v => { if (S.locked) return; const err = reserveUnit(v); if (err) toast(err); },
+  wdep: () => { if (S.locked) { toast("Draft new orders to change your garrison."); return; } if (!sheet.tsel) { toast("Tap a soldier first."); return; } const err = deployUnit(sheet.tsel); if (err) toast(err); },
+  wres: () => { if (S.locked) { toast("Draft new orders to change your garrison."); return; } if (!sheet.tsel) { toast("Tap a soldier first."); return; } const err = reserveUnit(sheet.tsel); if (err) toast(err); },
   wpop: (v, k) => { const w = +k; sheet.wpop = sheet.wpop && sheet.wpop.w === w && sheet.wpop.kind === v ? null : { w, kind: v }; },
   wopt: (v, k) => { if (S.locked) return; const w = S.garrison[+k], [kind, val] = v.split(":");
     if (kind === "when") { w.when = val; sheet.wpop = val === "timer" ? { w: +k, kind: "time" } : null; }
@@ -42,7 +48,7 @@ Object.assign(A, {
   wslot: (v, k) => { if (S.locked) { toast("Draft new orders to change your garrison."); return; } const u = sheet.tsel && findUnit(sheet.tsel);
     if (!u) { toast("Tap a soldier above first, or drag one here."); return; }
     const err = assignWave(u.id, +k, +v); if (err) toast(err); },
-  wunslot: (v, k) => { if (S.locked) return; S.garrison[+k].slots[+v] = null; },
+  wunslot: (v, k) => { if (S.locked) return; const id = S.garrison[+k].slots[+v]; if (id) { const err = reserveUnit(id); if (err) toast(err); } },
 });
 // drag and drop: pointer events, so it works with a finger as well as a mouse
 (() => {
@@ -58,7 +64,7 @@ Object.assign(A, {
     if (d.on) { swallow = true; setTimeout(() => { swallow = false; }, 0); const t = under(e), id = d.id; end();
       if (S.locked) { toast("Draft new orders to change your garrison."); return; }
       if (t) { const [kind, w, j] = t.dataset.drop.split(":"); let err = null;
-        if (kind === "pool") toReserve(id); else if (kind === "w") err = assignWave(id, +w, j != null ? +j : undefined);
+        if (kind === "dep") err = deployUnit(id); else if (kind === "res") err = reserveUnit(id); else if (kind === "w") err = assignWave(id, +w, j != null ? +j : undefined);
         if (err) toast(err); sheet.tsel = id; render(true); }
     } else end(); });
   document.addEventListener("pointercancel", end);

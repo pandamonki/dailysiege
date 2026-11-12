@@ -42,7 +42,24 @@ function assignWave(id, w, slot) {
   wv.slots[j] = id; if (old && old !== id) { /* the soldier it replaces goes back to reserve */ }
   return null;
 }
-function toReserve(id) { unGarrison(id); const k = placedAt(id); if (k) delete S.place[k]; }
+// the first free tile of your field, nearest your army's usual spots first
+function autoPlace(id) {
+  const sp = armySpots(CASTLE, N), pref = sp.units.map(x => x.join(",")), dist = k => { const [r, c] = k.split(",").map(Number); return hyp(r - CASTLE[0], c - CASTLE[1]); };
+  const free = k => zoneSet.has(k) && !S.place[k] && !wallRefAt(...k.split(",").map(Number));
+  const k = pref.find(free) || [...zoneSet].filter(free).sort((x, y) => dist(x) - dist(y) || (x < y ? -1 : 1))[0];
+  if (!k) return false; S.place[k] = id; return true;
+}
+// move a soldier onto the map / back to reserve; each returns a reason when it can't
+function deployUnit(id) {
+  const u = findUnit(id); if (!u) return "No such soldier."; if (u.cool > 0) return `${UNITS[u.type].name} is recharging for ${u.cool} more day${u.cool > 1 ? "s" : ""}.`;
+  if (inGarrison(id) && fieldCount() >= S.slots) return "Your field supply is full.";
+  if (!placedAt(id) && !autoPlace(id)) return "There is no free ground in your field.";
+  unGarrison(id); return null;
+}
+function reserveUnit(id) {
+  if (!findUnit(id)) return "No such soldier."; if (inGarrison(id) && fieldCount() >= S.slots) return "Your field supply is full.";
+  unGarrison(id); const k = placedAt(id); if (k) delete S.place[k]; return null;
+}
 const garrisonPlan = () => (S.garrison || []).map(w => ({ when: w.when, at: w.at, order: w.order, units: w.slots.map(id => id && S.owned.find(u => u.id === id)).filter(Boolean).map(u => ({ type: u.type, lvl: u.lvl, id: u.id, hp: u.hp ?? 1 })) }));
 const pieces = () => ["champ", ...S.owned.filter(u => !inGarrison(u.id)).map(u => u.id), ...(S.walls || []).map(w => w.id), ...S.traps.map(t => t.id)];
 const unplaced = () => pieces().filter(p => !placedAt(p));

@@ -44,7 +44,7 @@ function castleSheet() {
         : `<button class="btn wax" data-act="move" data-v="${u.id}" ${dis(u.cool > 0)}>${u.cool > 0 ? `⏳ Recharging · ${u.cool}d` : "Deploy to map"}</button>${tr}`) + `<button class="btn" data-act="usell" data-v="${u.id}">Sell +${unitSellPrice(u)}g</button>`
         + (UNITS[u.type].castleOnly ? "" : `<div class="gr-send"><span>Send to</span>${[0, 1, 2].map(i => { const wv = (S.garrison || [])[i], here = wv && wv.slots.includes(u.id), full = wv && !here && !wv.slots.includes(null); return `<button class="btn small${here ? " wax" : ""}" data-act="wsend" data-v="${u.id}" data-k="${i}" ${dis(full)}>Wave ${i + 1}</button>`; }).join("")}${inGarrison(u.id) ? `<button class="btn small" data-act="wback" data-v="${u.id}">Reserve</button>` : ""}</div>`); }
     body = `<p class="muted">${S.owned.length} soldiers · ${S.owned.length - nRes} deployed · ${garrisonCount()} in waves · ${nRes - garrisonCount()} in reserve</p><div class="ugrid shopg">${S.owned.map(o => tile("tsel", o.id, ts === o.id, spriteURL(o.type), UNITS[o.type].name, { price: o.lvl < 3 ? upgradeCost(o) : null, pips: [o.lvl, 3], tag: o.cool > 0 ? ["r", `⏳ ${o.cool}d`] : placedAt(o.id) ? ["d", `Deployed`] : inGarrison(o.id) ? ["r", `In a wave`] : ["r", `Reserve`] })).join("")}</div>${det}${bar ? abar(bar) : ""}`; }
-  if (tab === "waves") body = garrisonTab(ct);
+  if (tab === "deployment") body = deploymentTab();
   if (tab === "armoury") {
     const slots = [["weapon", "Weapon", "⚔"], ["armour", "Armour", "⛨"], ["charm", "Charm", "✦"], ["walls", "Bastion", "▦"], ["tower", "Tower", "➶"]];
     const selG = sheet.gear || "weapon", isDef = selG === "walls" || selG === "tower";
@@ -107,7 +107,7 @@ function castleSheet() {
   }
   if (sheet.lobby) return head(null, "Coat of arms", "Shown on your castle and banner all war") + `<div class="body">${body}<div class="row"><button class="btn wax" data-act="lobbydone">Done</button></div></div>`;
   return head(null, sheet.grp === "army" ? "Army" : "Base", `Tier ${ct} ${tierName(ct)} · ${S.gold} gold in the treasury`) + `<div class="body">
-    <div class="tabs scrolltabs">${[["recruit", "Recruit"], ["garrison", "Garrison"], ["waves", "Waves"], ["keep", "Castle"], ["traps", "Defences"], ["armoury", "Armoury"], ["shop", "Shop"]].filter(([k]) => (sheet.grp === "army" ? ["recruit", "garrison", "waves"] : ["keep", "traps", "armoury", "shop"]).includes(k) || !sheet.grp).map(([k, l]) => `<button class="${tab === k ? "on" : ""}" data-act="ctab" data-v="${k}"><img class="tabi" alt="" src="icons/ui/${{ recruit: "recruit", garrison: "roster", waves: "units", keep: "castle" + ct, traps: "defences", armoury: "armoury", shop: "shop" }[k]}.webp">${l}</button>`).join("")}</div>${body}</div>`;
+    <div class="tabs scrolltabs">${[["recruit", "Recruit"], ["garrison", "Garrison"], ["deployment", "Deployment"], ["keep", "Castle"], ["traps", "Defences"], ["armoury", "Armoury"], ["shop", "Shop"]].filter(([k]) => (sheet.grp === "army" ? ["recruit", "garrison", "deployment"] : ["keep", "traps", "armoury", "shop"]).includes(k) || !sheet.grp).map(([k, l]) => `<button class="${tab === k ? "on" : ""}" data-act="ctab" data-v="${k}"><img class="tabi" alt="" src="icons/ui/${{ recruit: "recruit", garrison: "roster", deployment: "units", keep: "castle" + ct, traps: "defences", armoury: "armoury", shop: "shop" }[k]}.webp">${l}</button>`).join("")}</div>${body}</div>`;
 }
 function wallSheet(id) {
   const w = findWall(id); if (!w) return head(null, "Wall", "") + `<div class="body"><p class="muted">That wall is gone.</p></div>`;
