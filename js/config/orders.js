@@ -26,7 +26,7 @@ function cleanGprio(g) { // a full, valid set of lists: unknown or repeated entr
   return out;
 }
 
-// Reinforcement waves (battles from 14 Nov 2026): a castle's garrison holds WAVE_COUNT waves. Each wave is one free footman plus WAVE_SLOTS bought soldiers.
+// Reinforcement waves (battles from 12 Nov 2026): a castle's garrison holds WAVE_COUNT waves. Each wave is one free footman plus WAVE_SLOTS bought soldiers.
 // A wave goes out when its condition is met. Two waves are never sent within WAVE_GAP seconds of each other, and at every minute mark a wave that has not
 // gone is forced out, so that by 1:00 one has gone, by 2:00 two, and by 3:00 all three.
 const WAVE_COUNT = 3, WAVE_SLOTS = 3, WAVE_GAP = 30, WAVE_FORCE_EVERY = 60, GARRISON_SOLDIERS = WAVE_COUNT * WAVE_SLOTS;

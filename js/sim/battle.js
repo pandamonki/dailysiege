@@ -9,8 +9,8 @@ const ULT_V2_FROM = "2026-11-10", ultV2For = d => String(d) >= ULT_V2_FROM;
 //   - the last days of the week score more (DAY_WEIGHT), and orders drafted but not sealed are fought at the lock
 const BAL_V2_FROM = "2026-11-12", balV2For = d => String(d) >= BAL_V2_FROM;
 // Combat groups, siege rules, no castle burn and reinforcement waves (battles fought on or after this day; earlier saved battles replay as fought).
-// Keep it after the day this reaches the live game, or battles already fought under the V2 rules would change when replayed.
-const BAL_V3_FROM = "2026-11-14", balV3For = d => String(d) >= BAL_V3_FROM;
+// Set to the day it went live: any battle already fought under the V2 rules on or after this day would change when replayed.
+const BAL_V3_FROM = "2026-11-12", balV3For = d => String(d) >= BAL_V3_FROM;
 const BLOC_MAX = 3, TREACHERY_PTS = 3, TREACHERY_LOOT = .25, DAY_WEIGHT = { 5: 1.5, 6: 1.5, 7: 2 };
 // A lord whose castle falls keeps their hero and soldiers on the field: they fight on to the end of the battle, but can no longer fall back, heal at the castle, teleport home or respawn. Placing is still decided by when the castle fell.
 const ORPHAN_ARMIES = true;
@@ -774,7 +774,7 @@ function runBattle(plans, seed, opts = {}) {
     for (let i = pending.length - 1; i >= 0; i--) if (pending[i].at <= t) { const pe = pending.splice(i, 1)[0]; curAb = pe.ab; pe.fn(); curAb = null; }
     if (tick % 10 === 0) { order.forEach(pid => { const p = P[pid]; if (p.alive && !p.frenzy && p.castle.hp / p.castle.maxhp <= .2) { p.frenzy = true; aoe(p.castle.x, p.castle.y, 3, "#ff5a2a", 1.2); txt(p.castle, "Desperation Frenzy!", "#ff8a4a"); log(`${poss(pid)} defenders fight with Desperation Frenzy!`, "big"); H({ kind: "frenzy", pid, x: p.castle.x, y: p.castle.y, score: 50 }); } }); council(); }
     if (tick % 20 === 0 && !opts.duel) centreTick();
-    // reinforcement waves (from 14 Nov 2026): each castle sends the garrison out when its conditions are met, never sooner than WAVE_GAP after the last, and forced out at each minute mark
+    // reinforcement waves (from 12 Nov 2026): each castle sends the garrison out when its conditions are met, never sooner than WAVE_GAP after the last, and forced out at each minute mark
     if (V3 && !opts.duel && tick % 5 === 0) order.forEach(pid => {
       const p = P[pid]; if (!p.alive || !p.waves || t - p.lastWave < WAVE_GAP) return;
       const c = p.castle, soldiers = ents.some(x => !x.dead && x.pid === pid && x.kind === "unit" && !x.free && !x.militia && !x.merc);
