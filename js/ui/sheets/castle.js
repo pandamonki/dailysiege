@@ -124,12 +124,12 @@ function champSheet() {
   const lines = (L) => L ? L.map(([l, v]) => `<div><span>${l}</span><b>${v}</b></div>`).join("") : `<p class="muted">Not learned</p>`;
   let nowL = abilLines(selK, r), nextL = r < max ? abilLines(selK, r + 1) : null;
   if (nextL && nowL) { const a = nowL.find(x => x[0] === "Recharge"), bI = nextL.findIndex(x => x[0] === "Recharge"); if (a && bI > -1) { const d = parseFloat(nextL[bI][1]) - parseFloat(a[1]); if (Math.abs(d) >= .05) nextL[bI] = [nextL[bI][0], `${nextL[bI][1]} <i class="dl">${d < 0 ? "−" : "+"}${Math.abs(d).toFixed(1)}s</i>`]; } }
-  const canChange = !isLive() || DAY === 1, L = level(), nd = xpNeed(L), xp = Math.min(S.xp || 0, nd);
+  const canChange = !isLive(), L = level(), nd = xpNeed(L), xp = Math.min(S.xp || 0, nd);
   const slots = Array.from({ length: ITEM_SLOTS }, (_, i) => S.items[i] || null);
   return head(spriteURL("c-" + S.cls), `${c.name} Hero`, `Level ${L} · ${freePts()} skill point${freePts() === 1 ? "" : "s"} to spend`) + `<div class="body">
     ${S.ob === 2 ? `<div class="obbox"><b>Step 1 of 2 · Choose your hero</b><span>Pick a class below, then spend your first skill point on an ability.</span><button class="btn wax" data-act="obnext">Next: design your banner →</button></div>` : ""}
     <div class="xpbar" title="Experience toward the next level"><i style="width:${Math.round(xp / nd * 100)}%"></i><span>Level ${L} · ${xp}/${nd} XP</span></div>
-    <p class="muted xpnote">Your hero earns experience in battle from deaths nearby, gaining up to ${XP_CAP} levels a day (slower the higher you climb, and faster if you hold the centre). Every level is one skill point (21 in all): four ranks for each ability, three for your ultimate (from levels 5, 10 and 15) and six in Vigour, which adds 2% health and damage a rank. Levels won mid-fight sharpen your abilities automatically.</p>
+    <p class="muted xpnote">Gains up to ${XP_CAP} levels a day in battle. Every level is one skill point.</p>
     <div class="stats"><span>${IC.hp(now.hp)}</span><span>${IC.atk(now.atk)}</span><span>${typeLine(CLASS_TYPES[S.cls])}</span></div>
     <div class="row"><button class="btn small wood" data-act="move" data-v="champ" ${dis()}>Move on the map</button><span class="muted">or drag your hero to a glowing tile</span></div>
     ${canChange ? `<div><button class="btn wood" data-act="heropick" ${dis()}>Change hero…</button></div>` : ""}

@@ -288,9 +288,8 @@ function sealSheet() {
     ${sealWarnings()}<div class="waxseal">LB</div><p class="muted" style="text-align:center">These orders will be fought at the lock. You can draft new orders until then: the sealed ones stay in effect until you seal the new ones.</p>
     <p class="muted" style="text-align:center">Ultimate: ${planUlt() ? "<b>will be used</b>" : "not planned"} · Ritual: ${planBless() ? `<b>${esc(BLESSINGS[S.bless][0])}</b>` : "none"}${mercOpen() ? ` · Mercenaries: ${bidSummary() ? `<b>${esc(bidSummary())}</b>` : "no bids"}` : ""}</p>
     <div class="row" style="justify-content:center">${isLive() ? "" : `<button class="btn wax" data-act="battle">Watch tonight's battle</button>`}<button class="btn" data-act="unseal">Draft new orders</button>${isLive() ? "" : `<button class="btn wood" data-act="copy">Copy plan</button>`}</div>
-    <p class="muted" style="text-align:center">${isLive() ? `The real battle is fought at ${lockLabel(LIVE.config)}. Watch it afterwards from the Battle report. A test battle uses what you know of your rivals from yesterday.` : "In this prototype the battle runs now on your phone against the example players."}</p>
-    ${isLive() ? `<div class="row" style="justify-content:center"><button class="btn wood" data-act="battle">Run a test battle</button></div>` : ""}
-    <div class="sec"><h3>Your sealed plan</h3><p class="muted">This is what the battle will read.</p><div class="plan" id="plan">${esc(planJSON())}</div></div></div>`;
+    <p class="muted" style="text-align:center">${isLive() ? `The real battle is fought at ${lockLabel(LIVE.config)}. Watch it afterwards from the Battle report.` : "In this prototype the battle runs now on your phone against the example players."}</p>
+    ${isLive() ? "" : `<div class="sec"><h3>Your sealed plan</h3><p class="muted">This is what the battle will read.</p><div class="plan" id="plan">${esc(planJSON())}</div></div>`}</div>`;
   const checks = [
     [!!placedAt("champ"), "Hero is on the field"],
     [S.owned.every(u => placedAt(u.id)), `Soldiers placed (${S.owned.filter(u => placedAt(u.id)).length} of ${S.owned.length})`],
