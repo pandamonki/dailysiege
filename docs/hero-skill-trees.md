@@ -135,12 +135,15 @@ The user's plan is the starting point. Changes made during review:
   so that level 15 ≈ old level 21 with partial Vigour. The balance lab will tune them (§7).
 - Remove `a4` / Vigour from the data, UI, `autoRanks` and the sim (behind the version gate, §5).
 
-### 1.5 Mid-battle level-ups
-- Today `autoPick` spends points on its own. In the new system the player saves a **learning
-  path**, which is the ordered list of all 14 picks, on the hero screen.
-- When a hero levels up mid-battle, it takes the next legal pick in the path.
-- If there's no path, fall back to: the deepest tree first, then the next legal node in that tree.
-- Bots use a seeded path from §6.
+### 1.5 Spending points (player-controlled only)
+- **Heroes never skill themselves.** There is no auto-pick, no learning path and no fallback. A
+  point is spent only when the player taps Learn on the hero screen.
+- Points earned in a battle (level-ups) sit unspent until the player spends them. The sim never
+  spends them mid-battle, so a hero fights with exactly the tree the plan sealed at the start.
+  Stat growth (§1.4) still applies on level-up.
+- Remove `autoPick` for human heroes in the v3 path.
+- **Bots are the exception**, since they have no player. They get a seeded full build (§8 step 5)
+  and spend it as they level.
 
 ---
 
@@ -242,8 +245,7 @@ fought.
   new table (e.g. `TREES` in `js/config/trees.js`, loaded after `classes.js` in `index.html` and in
   `tools/load-sim.mjs`). Use a separate `TREE_ABIL` in the sim.
 - Plan and save shape (new):
-  `tree: { b1: [t1, t2, t3, t4], b2: [...], b3: [...] }` with rank counts, and
-  `path: ["b1.t1", "b1.t1", ...]` for the learning path.
+  `tree: { b1: [t1, t2, t3, t4], b2: [...], b3: [...] }` with rank counts.
   Keep `ranks`, `picks` and `triggers` only for legacy plans.
 - Migration: a v3 war starts heroes at level 1 with an empty `tree`. Drop old `ranks` and
   `picks` when the war rolls over.
@@ -654,7 +656,7 @@ as the reference fragile hero. Fixes made:
 3. **Trees, one class at a time.** Start with the Warrior as the vertical slice, then Mage, Ranger,
    Rogue, Shaman. Add a `SPELL_ART` entry per active skill. Reuse the existing symbols and fx where
    the skill came from an old one.
-4. **Mid-battle level-ups** follow the `path` (§1.5).
+4. **No mid-battle skilling for human heroes** (§1.5). Level-ups add stat growth only.
 5. **Bots:**
    - replace `autoRanks` with `autoTree(lvl, seed, cls)`, which picks a main tree by seed, fills
      it to 8, then by seed either maxes it to 11 and puts 3 in a second tree (depth), or puts 6
@@ -666,7 +668,8 @@ as the reference fragile hero. Fixes made:
    - three columns per class, with nodes locked or unlocked by points spent. Side talents sit
      beside the main T2 and T3 nodes, drawn so they read clearly as branches off the path;
    - tap a node to learn it or see its details;
-   - a learning-path editor ("auto-fill the rest");
+   - a red rank square on the corner of every node, showing points spent there (for example 2/4);
+   - a red "+" badge at the top right of the hero screen with the number of unspent skill points;
    - no per-ability trigger dropdowns;
    - keep "Plan the ultimate for tonight".
    - Phone-first: one tree visible at a time with tabs is fine.
