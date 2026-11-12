@@ -77,9 +77,11 @@ The user's plan is the starting point. Changes made during review:
 | T3b (side talent) | 1 | 5, and T2 rank ≥ 1 |
 | T4 (ultimate) | 1 | 7, T3 rank ≥ 1, and hero level ≥ 9 |
 
-- **Side talents (T2b, T3b) are dead ends.** No node needs them, and **their points don't count
-  towards any gate**. Gates count only points in T1, T2 and T3. Side talents trade progress
-  towards the ultimate for flexibility.
+- **Side talents (T2b, T3b) are dead ends:** no node needs them. **Their points still count
+  towards every gate**, the ultimate's included (decided by the user). Gates count all points
+  spent in the tree. So a side talent is a sideways step, not a detour. For example, T1 2 + T2 1 +
+  T2b 2 = 5 opens T3; T3 1 + T3b 1 = 7 opens the ultimate. The ultimate still needs at least one
+  rank in the main T3.
 - Every branch of every hero has exactly this shape: T1, T2, T2b, T3, T3b, T4.
 - A full tree is 4 + 4 + 2 + 2 + 1 + 1 = **14 points**, exactly a level-15 hero's points, so a
   hero can max a single tree.
