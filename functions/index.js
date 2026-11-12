@@ -13,7 +13,7 @@ const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, Timestamp, FieldValue } = require("firebase-admin/firestore");
 const { clockFor } = require("./lib/clock");
 const { getMessaging } = require("firebase-admin/messaging");
-const { resolveDue, resolveAllDue, explainNotDue, reassignSeat, remindAll } = require("./lib/resolve");
+const { resolveDue, resolveAllDue, explainNotDue, fightMissing, reassignSeat, remindAll } = require("./lib/resolve");
 const { setBots } = require("./lib/bots");
 const { REGION, TRIGGER_REGION } = require("./region");
 
@@ -63,7 +63,9 @@ async function hostOnly(request) {
 
 exports.resolveNow = onCall(async request => {
   const gameId = await hostOnly(request);
-  try { const days = await resolveDue(getFirestore(), gameId, { send }); return { days, note: days.length ? "" : await explainNotDue(getFirestore(), gameId) }; }
+  try { let days = await resolveDue(getFirestore(), gameId, { send }), note = "";
+    if (!days.length) { const m = await fightMissing(getFirestore(), gameId); days = m.days; note = days.length ? "" : (m.why + " " + await explainNotDue(getFirestore(), gameId)).trim(); }
+    return { days, note }; }
   catch (e) { console.error("resolveNow", gameId, e); throw new HttpsError("internal", "The battle could not be fought: " + ((e && e.message) || "error")); }
 });
 

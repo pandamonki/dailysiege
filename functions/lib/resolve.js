@@ -101,6 +101,22 @@ function remindAll(db, send, { now = Date.now() } = {}) {
   return remindUnsealed(db, send, { now, wRoster: (pubs, cfg) => { const W = { config: Object.assign({}, cfg, { startDate: startDate(cfg) }), players: pubs, battles: {} }; return wRoster(W, wWeekOf(W, cfg.planDay)).map(p => p.uid); } });
 }
 
+// Recovery: fight any earlier day of this war that was passed without a saved result.
+// Returns the days fought, and a plain-words reason for any day that could not be.
+async function fightMissing(db, gameId, { now = Date.now() } = {}) {
+  const gameRef = db.collection("games").doc(gameId), snap = await gameRef.get(); if (!snap.exists) return { days: [], why: "" };
+  const cfg = snap.data(), planDay = cfg.planDay; if (!planDay) return { days: [], why: "" };
+  const { addDays, wRoster, wWeekOf, fightDay } = { addDays: g().get("addDays"), wRoster: g().get("wRoster"), wWeekOf: g().get("wWeekOf"), fightDay: g().get("fightDay") };
+  const week = wWeekOf({ config: Object.assign({}, cfg, { startDate: startDate(cfg) }) }, planDay), days = [], war = cfg.war || 1; let why = "";
+  for (let d = week; d < planDay; d = addDays(d, 1)) {
+    const ref = gameRef.collection("battles").doc(d); if ((await ref.get()).exists) continue;
+    const W = await loadWorld(gameRef, cfg, d), lords = wRoster(W, wWeekOf(W, d)).length;
+    if (lords < 2) { why = `Only ${lords} lord${lords === 1 ? "" : "s"} counted for ${d}, and a battle needs two.`; continue; }
+    await ref.create(Object.assign(plain(fightDay(W, d, now)), { war })); days.push({ day: d, fought: true, lords });
+  }
+  return { days, why };
+}
+
 // Why nothing is due, in plain words, for the host's button.
 async function explainNotDue(db, gameId, { now = Date.now() } = {}) {
   const snap = await db.collection("games").doc(gameId).get(); if (!snap.exists) return "This game was not found.";
@@ -111,4 +127,4 @@ async function explainNotDue(db, gameId, { now = Date.now() } = {}) {
   return now < at ? `The server's next battle is for ${day} at ${when}.` : `The server is already planning ${day}.`;
 }
 
-module.exports = { explainNotDue, resolveDue, resolveAllDue, reassignSeat, loadWorld, remindAll };
+module.exports = { fightMissing, explainNotDue, resolveDue, resolveAllDue, reassignSeat, loadWorld, remindAll };
