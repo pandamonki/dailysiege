@@ -252,15 +252,15 @@ button.rrow { width: 100%; text-align: left; font: inherit; color: inherit; curs
 .tpoints .plus { font-size: 22px; line-height: 1; } .tpoints b { font-size: 20px; } .tpoints small { font-size: 11px; font-weight: 400; }
 .tpoints.has { background: #b3261e; color: #fff; border-color: #f3d98a; box-shadow: 0 2px 6px rgba(0,0,0,.35); }
 .tcols { display: flex; gap: 4px; }
-.tcol { flex: 1; min-width: 0; background: rgba(62,39,20,.08); border: 2px solid rgba(62,39,20,.3); border-radius: 10px; overflow: hidden; }
+.tcol { flex: 1; min-width: 0; container-type: inline-size; background: rgba(62,39,20,.08); border: 2px solid rgba(62,39,20,.3); border-radius: 10px; }
 .tcol.on { border-color: var(--gold); }
-.tch { text-align: center; font-variant: small-caps; font-size: 13px; padding: 4px 0; background: var(--wood-dark); color: var(--parchment); }
+.tch { border-radius: 8px 8px 0 0; text-align: center; font-variant: small-caps; font-size: 13px; padding: 4px 0; background: var(--wood-dark); color: var(--parchment); }
 .tch span { display: block; font-size: 10px; color: var(--gold); font-variant: normal; }
 .tbody { position: relative; padding: 6px 0 8px; }
 .trow { position: relative; z-index: 1; isolation: isolate; display: grid; grid-template-columns: 1fr 1fr; align-items: center; padding: 6px 0 14px; }
 .tn { display: flex; flex-direction: column; align-items: center; gap: 2px; background: none; border: 0; padding: 0; color: var(--ink); cursor: pointer; min-width: 0; }
 .tn .ti { position: relative; width: 42px; height: 42px; display: block; }
-.tn .ti img { width: 100%; height: 100%; border-radius: 50%; border: 3px solid var(--wood); background: #caa66b; object-fit: cover; display: block; }
+.tn .ti img { width: 100%; height: 100%; border-radius: 10px; border: 3px solid var(--wood); background: #caa66b; object-fit: cover; display: block; }
 .tn.side .ti { width: 30px; height: 30px; } .tn.side .ti img { border-radius: 8px; border-width: 2px; }
 .tn.ult .ti { width: 50px; height: 50px; } .tn.ult .ti img { border-radius: 12px; border-color: var(--gold); box-shadow: 0 0 10px 2px rgba(201,150,47,.75); }
 .tn .ti::before { content: ""; position: absolute; left: 50%; bottom: 100%; width: 5px; margin-left: -2.5px; height: 22px; background: #8a7a62; border-radius: 3px; z-index: -1; }
@@ -269,6 +269,11 @@ button.rrow { width: 100%; text-align: left; font: inherit; color: inherit; curs
 .trow:first-child .tn:not(.side) .ti::before { display: none; }
 .tn.side .ti::before { left: auto; right: 100%; bottom: auto; top: 50%; width: 26px; height: 3px; margin: -1.5px 0 0; background: repeating-linear-gradient(90deg, #8a7a62 0 4px, transparent 4px 7px); }
 .tn.st-learned .ti img, .tn.st-maxed .ti img { border-color: var(--verdant); }
+/* the baseline: the three starting skills (one per tree) are joined by one line across the screen */
+.tn.base .ti::after { content: ""; position: absolute; top: 50%; height: 5px; margin-top: -2.5px; left: 50%; width: calc(75cqw + 5px); background: #a8863f; border-radius: 3px; z-index: -1; }
+.tcol:not(:first-child) .tn.base .ti::after { left: calc(50% - 25cqw - 5px); width: calc(100cqw + 10px); }
+.tcol:last-child .tn.base .ti::after { width: calc(25cqw + 5px); }
+.tdet .tdico { float: left; width: 52px; height: 52px; border-radius: 10px; border: 2px solid var(--gold); margin: 0 8px 4px 0; }
 .tn.st-avail .ti img { border-color: var(--gold); box-shadow: 0 0 8px 1px rgba(201,150,47,.9); }
 .tn.st-wait .ti img { border-color: #a58a55; }
 .tn.st-locked .ti img { border-color: #8a7a62; filter: grayscale(.75) brightness(.9); }
@@ -279,6 +284,7 @@ button.rrow { width: 100%; text-align: left; font: inherit; color: inherit; curs
 .tn.side .miss { font-size: 10px; padding: 0 4px; }
 .tn .tl { font-size: 9px; line-height: 1.05; font-weight: 700; text-align: center; max-width: 62px; background: rgba(224,209,168,.9); border-radius: 4px; }
 .tn.side .tl { font-size: 8px; max-width: 46px; }
+.tn:not(.side) .tl { min-height: 20px; box-sizing: border-box; } /* every row is the same height in all three trees, so the baseline stays level */
 .tdet { margin-top: 8px; } .tdet h3 { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; } .tdet h3 em { font-style: normal; color: var(--wax); font-size: 12px; white-space: nowrap; }
 .tdet .req { margin-top: 8px; border-top: 1px solid rgba(62,39,20,.25); padding-top: 6px; }
 .tdet .req div { display: flex; gap: 8px; align-items: center; margin: 4px 0; font-size: 13.5px; }

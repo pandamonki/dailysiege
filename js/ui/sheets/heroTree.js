@@ -22,7 +22,7 @@ function treeNodeState(bi, i) {
 function treeNodeHTML(bi, i, sel) {
   const node = TREES[S.cls][bi].nodes[i], s = treeNodeState(bi, i), side = i === 2 || i === 4, ult = i === 5;
   const badge = s.st === "locked" ? `<i class="miss">${s.miss ? "+" + s.miss : "🔒"}</i>` : `<i class="rk">${s.rank}/${TREE_MAX[i]}</i>`;
-  return `<button class="tn st-${s.st}${side ? " side" : ""}${ult ? " ult" : ""}${sel ? " sel" : ""}" data-act="tnode" data-v="${nodeKey(bi, i)}" aria-label="${esc(node.name)}, ${s.rank} of ${TREE_MAX[i]}"><span class="ti"><img alt="" src="${spellURL(node.ic, 64)}">${badge}</span><span class="tl">${esc(node.name)}</span></button>`;
+  return `<button class="tn st-${s.st}${i === 0 ? " base" : ""}${side ? " side" : ""}${ult ? " ult" : ""}${sel ? " sel" : ""}" data-act="tnode" data-v="${nodeKey(bi, i)}" aria-label="${esc(node.name)}, ${s.rank} of ${TREE_MAX[i]}"><span class="ti"><img alt="" src="${spellURL(node.ic, 96)}">${badge}</span><span class="tl">${esc(node.name)}</span></button>`;
 }
 function treeColumnHTML(bi, sel) {
   const tr = TREES[S.cls][bi], pts = treePts(S.tree, TREE_BKEY[bi]), N = (i) => treeNodeHTML(bi, i, sel[0] === bi && sel[1] === i);
@@ -37,7 +37,7 @@ function treeDetailHTML(bi, i) {
   const reqs = need.maxed ? [] : [...need.list, { ok: free > 0, text: free > 0 ? `A skill point to spend (${free} free)` : "A skill point to spend (none free yet: your hero gains them as it levels up)" }];
   const unmet = reqs.filter(x => !x.ok), cd = node.kind === "trigger" && node.cd ? `<div class="row muted">Recharge about ${Math.round(node.cd * BAL.cd)}s</div>` : node.kind === "ultimate" ? `<div class="row muted">Once per battle, and only if you plan it for the night. It rests the next day.</div>` : "";
   const label = need.maxed ? "Fully learned" : canL ? (rank ? "Level up (1 point)" : `Learn ${esc(node.name)} (1 point)`) : unmet.some(x => !/skill point/.test(x.text)) ? "Locked" : "No skill point to spend";
-  return `<div class="det tdet"><h3><span>${esc(node.name)}</span><em>${kindName} · ${rank}/${max}</em></h3>
+  return `<div class="det tdet"><img class="tdico" alt="" src="${spellURL(node.ic, 96)}"><h3><span>${esc(node.name)}</span><em>${kindName} · ${rank}/${max}</em></h3>
     <p>${esc(rank ? now : `Rank 1: ${now}`)}</p>${nxt ? `<p class="muted">Next rank: ${esc(nxt)}</p>` : ""}${cd}
     ${reqs.length ? `<div class="req">${reqs.map(x => `<div class="${x.ok ? "ok" : "no"}"><i>${x.ok ? "✓" : "✕"}</i>${esc(x.text)}</div>`).join("")}</div>` : ""}</div>
     <button class="btn wood tlearn${canL ? "" : " off"}" data-act="tlearn" data-v="${nodeKey(bi, i)}" ${canL && !S.locked ? "" : "disabled"}>${S.locked && canL ? "Orders are sealed" : label}</button>`;
@@ -62,6 +62,7 @@ function champSheetV3() {
 const champNowV3 = () => { const b = CHAMP_V3[S.cls], L = level(); return { hp: Math.round(b.hp * hpLvV3(L)), atk: Math.round(b.atk * atkLvV3(L)) }; };
 // the ultimate a v3 hero has learned, for the orders screen and the top bar
 function treeUlt() {
-  for (let bi = 0; bi < 3; bi++) if (S.tree && S.tree[TREE_BKEY[bi]][5] > 0) { const n = TREES[S.cls][bi].nodes[5]; return { name: n.name, desc: nodeDesc(S.cls, bi, 5, 1) }; }
+  for (let bi = 0; bi < 3; bi++) if (S.tree && S.tree[TREE_BKEY[bi]][5] > 0) { const n = TREES[S.cls][bi].nodes[5]; return { name: n.name, desc: nodeDesc(S.cls, bi, 5, 1), ic: n.ic }; }
   return null;
 }
+const ultIconHTML = u => (u && u.ic ? `<img class="sico" alt="" src="${spellURL(u.ic, 32)}"> ` : "");

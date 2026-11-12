@@ -32,6 +32,7 @@ function symPaint(c, sym, x, y, s, col) { // s = half-size
 }
 const SPELL_CV = {};
 const ART_FILES = { warrior_a1: "warrior_cleave", warrior_a2: "warrior_shield_wall", warrior_a3: "warrior_war_cry", warrior_ult: "warrior_last_stand", mage_a1: "mage_fireball", mage_a2: "mage_frost_nova", mage_a3: "mage_blink", mage_ult: "mage_meteor", archer_a1: "archer_piercing_shot", archer_a2: "archer_volley", archer_a3: "archer_evasion", archer_ult: "archer_rain_of_arrows", shaman_a1: "shaman_healing_totem", shaman_a2: "shaman_lightning_bolt", shaman_a3: "shaman_bloodlust", shaman_ult: "shaman_spirit_wolves", rogue_a1: "rogue_backstab", rogue_a2: "rogue_smoke_bomb", rogue_a3: "rogue_poison_blade", rogue_ult: "rogue_assassinate" };
+TREE_ART_CLASSES.forEach(cls => TREE_BKEY.forEach(b => TREE_NODE.forEach(n => { ART_FILES[`${cls}_${b}_${n}`] = `skills/${cls}_${b}_${n}`; })));
 const ART_IMG = {};
 const loadSpellArt = () => Object.keys(ART_FILES).forEach(k => { const im = new Image(); im.onload = () => { Object.keys(SPELL_CV).forEach(x => delete SPELL_CV[x]); Object.keys(SPELL_URL).forEach(x => delete SPELL_URL[x]); }; im.src = "icons/" + ART_FILES[k] + ".webp"; ART_IMG[k] = im; });
 addEventListener("load", () => setTimeout(loadSpellArt, 400));
