@@ -154,8 +154,8 @@ const TREES = {
   ],
 };
 
-// skill icons: warrior, shaman, rogue and mage have their own art per skill (icons/skills/<class>_<tree>_<node>.webp); archer is still pending
-const TREE_ART_CLASSES = ["warrior", "shaman", "rogue", "mage"];
+// skill icons: every hero has its own art per skill (icons/skills/<class>_<tree>_<node>.webp)
+const TREE_ART_CLASSES = ["warrior", "shaman", "rogue", "mage", "archer"];
 TREE_ART_CLASSES.forEach(cls => TREES[cls].forEach((tr, bi) => tr.nodes.forEach((n, i) => { n.ic = `${cls}_${TREE_BKEY[bi]}_${TREE_NODE[i]}`; })));
 
 // base heroes for skill-tree battles (hp, attack, armour, magic resist, range, attack speed, speed)
