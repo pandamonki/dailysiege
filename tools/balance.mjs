@@ -23,7 +23,7 @@ const battles = +process.argv[2] || 60, sizes = (process.argv[3] || "8,10,12").s
 for (const n of sizes) {
   const N = sim.run(`seatLayout(${n}).N`), cls = {}, seatWins = Array(n).fill(0), seatPts = Array(n).fill(0); let dur = 0, timeUp = 0, alive = 0, ms = 0, firstFall = 0;
   for (let i = 0; i < battles; i++) {
-    const t0 = performance.now(), res = sim.run(`runBattle(labPlans(${9000 + i * 31}, ${n}), ${777 + i * 977}, { fast: true, N: ${N}, balV2: ${V2} })`); ms += performance.now() - t0;
+    const t0 = performance.now(), res = sim.run(`runBattle(labPlans(${9000 + i * 31}, ${n}), ${777 + i * 977}, { fast: true, N: ${N}, balV2: ${V2}, balV3: ${V2} })`); ms += performance.now() - t0;
     dur += res.duration; if (res.duration >= sim.get("TMAX")) timeUp++; alive += res.results.filter(r => r.fellAt == null).length;
     firstFall += Math.min(...res.results.map(r => r.fellAt ?? res.duration));
     res.results.forEach(r => { const c = cls[r.cls] = cls[r.cls] || { n: 0, w: 0 }; c.n++; if (r.place === 1) c.w++; const s = +r.pid.slice(1); seatPts[s] += r.points; if (r.place === 1) seatWins[s]++; });

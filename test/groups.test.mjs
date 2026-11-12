@@ -5,7 +5,7 @@ import { loadSim } from "../tools/load-sim.mjs";
 
 const sim = loadSim({ extraFiles: ["js/dev/goldenCases.js"] });
 const J = v => JSON.parse(JSON.stringify(v));
-const run = (plans, seed, opts = {}) => sim.get("runBattle")(J(plans), seed, { N: 17, balV2: true, ultV2: true, dayNo: 3, ...opts });
+const run = (plans, seed, opts = {}) => sim.get("runBattle")(J(plans), seed, { N: 17, balV2: true, balV3: true, ultV2: true, dayNo: 3, ...opts });
 
 test("cleanGprio keeps valid lists, drops unknown and repeated entries, and fills missing groups with the defaults", () => {
   const c = J(sim.run(`cleanGprio({ hero: ["melee", "bogus", "melee", "hero", "ranged", "any"], melee: [], extra: ["x"] })`));

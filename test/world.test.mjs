@@ -160,7 +160,7 @@ test("yesterday's sealed orders beat today's unsealed draft; a lord who never se
 // ----- armies fight on after their castle falls (battles from 12 Nov 2026) -----
 test("a lord whose castle has fallen keeps fighting with what is left, and cannot respawn or fall back", () => {
   // castles no longer burn down on their own, so look through the golden battles for one where a castle falls with an army still standing
-  const fight = (c, balV2) => sim.get("runBattle")(J(c.plans), c.seed, { ...J(c.opts), balV2, dayNo: 1 });
+  const fight = (c, balV2) => sim.get("runBattle")(J(c.plans), c.seed, { ...J(c.opts), balV2, balV3: balV2, dayNo: 1 });
   const attacksAfterFall = r => { let n = 0; r.results.filter(x => x.fellAt != null).forEach(x => r.events.forEach(e => { if (e.ty === "atk" && e.t > x.fellAt + .5 && r.meta[e.id] && r.meta[e.id].pid === x.pid) n++; })); return n; };
   let found = null; for (let i = 0; i < 40 && !found; i++) { const c = sim.run(`goldenCase(${i})`), on = fight(c, true); if (attacksAfterFall(on) > 0) found = { on, c }; }
   assert.ok(found, "in some fight an orphaned army still attacks after its castle fell");

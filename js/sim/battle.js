@@ -8,12 +8,15 @@ const ULT_V2_FROM = "2026-11-10", ultV2For = d => String(d) >= ULT_V2_FROM;
 //   - castles no longer burn down on their own from 100s (a castle only falls to an attack)
 //   - the last days of the week score more (DAY_WEIGHT), and orders drafted but not sealed are fought at the lock
 const BAL_V2_FROM = "2026-11-12", balV2For = d => String(d) >= BAL_V2_FROM;
+// Combat groups, siege rules, no castle burn and reinforcement waves (battles fought on or after this day; earlier saved battles replay as fought).
+// Keep it after the day this reaches the live game, or battles already fought under the V2 rules would change when replayed.
+const BAL_V3_FROM = "2026-11-14", balV3For = d => String(d) >= BAL_V3_FROM;
 const BLOC_MAX = 3, TREACHERY_PTS = 3, TREACHERY_LOOT = .25, DAY_WEIGHT = { 5: 1.5, 6: 1.5, 7: 2 };
 // A lord whose castle falls keeps their hero and soldiers on the field: they fight on to the end of the battle, but can no longer fall back, heal at the castle, teleport home or respawn. Placing is still decided by when the castle fell.
 const ORPHAN_ARMIES = true;
 const dayWeight = (v2, dayNo) => (v2 && DAY_WEIGHT[dayNo]) || 1;
 function runBattle(plans, seed, opts = {}) {
-  const BV = !!opts.balV2, OA = !!opts.balV2 && ORPHAN_ARMIES, UV = !!opts.ultV2, UD = UV ? .75 : 1, UR = rk => UV ? [.7, .85, 1][Math.min(3, Math.max(1, rk || 1)) - 1] : 1;
+  const BV = !!opts.balV2, V3 = !!opts.balV3, OA = !!opts.balV2 && ORPHAN_ARMIES, UV = !!opts.ultV2, UD = UV ? .75 : 1, UR = rk => UV ? [.7, .85, 1][Math.min(3, Math.max(1, rk || 1)) - 1] : 1;
   const rng = mulberry(seed), DT = .1, fast = !!opts.fast, leaderPid = (plans.find(p => p.leader) || {}).pid;
   let curAb = null;
   const mePid = (plans.find(p => p.me) || plans[0]).pid, NN = opts.N || N;
@@ -23,7 +26,7 @@ function runBattle(plans, seed, opts = {}) {
   const P = {}, order = plans.map(p => p.pid), idx = Object.fromEntries(order.map((p, i) => [p, i]));
   const d = (a, b) => hyp(a.x - b.x, a.y - b.y);
   const fxv = (e, k) => (e.fx[k] && e.fx[k].until > t ? e.fx[k].val : 0);
-  const setFx = (e, k, dur, val = 1) => { if ((e.cart || e.ram) && (k === "slow" || k === "frozen" || (BV && (k === "stun" || k === "root")))) return; /* siege engines can't be slowed, and from 12 Nov 2026 can't be stunned or rooted either */ if (P[e.pid] && P[e.pid].frenzy && e.kind !== "castle" && (k === "stun" || k === "root" || k === "slow" || k === "frozen" || k === "silence" || k === "fear")) return; if (e.will && (k === "stun" || k === "root")) dur *= .4; if (!e.fx[k] || e.fx[k].until < t + dur || e.fx[k].val < val) e.fx[k] = { until: t + dur, val }; };
+  const setFx = (e, k, dur, val = 1) => { if ((e.cart || e.ram) && (k === "slow" || k === "frozen" || (V3 && (k === "stun" || k === "root")))) return; /* siege engines can't be slowed, and from 12 Nov 2026 can't be stunned or rooted either */ if (P[e.pid] && P[e.pid].frenzy && e.kind !== "castle" && (k === "stun" || k === "root" || k === "slow" || k === "frozen" || k === "silence" || k === "fear")) return; if (e.will && (k === "stun" || k === "root")) dur *= .4; if (!e.fx[k] || e.fx[k].until < t + dur || e.fx[k].val < val) e.fx[k] = { until: t + dur, val }; };
   const allied = (a, b) => a === b || P[a].pacts.has(b);
   const hostile = (a, b) => !allied(a, b);
   const ev = o => { if (fast) return; o.t = t; events.push(o); };
@@ -385,7 +388,7 @@ function runBattle(plans, seed, opts = {}) {
   }
   // who a cleric heals: the lord's heal list, then whoever is most wounded
   function healPick(e, hurt) {
-    const gl = BV && P[e.pid].gprio && P[e.pid].gprio.heal, kind = o => { const c = catOf(o); return c === "healer" ? "ranged" : c; };
+    const gl = V3 && P[e.pid].gprio && P[e.pid].gprio.heal, kind = o => { const c = catOf(o); return c === "healer" ? "ranged" : c; };
     for (const cat of gl || []) {
       const pool = cat === "any" || cat === "lowhp" || cat === "wounded" ? hurt : hurt.filter(o => cat === "hero" ? o.kind === "champ" : kind(o) === cat);
       if (!pool.length) continue;
@@ -398,7 +401,7 @@ function runBattle(plans, seed, opts = {}) {
     const p = P[e.pid], guard = e.order === "guard", escort = e.order === "escort" && live(p.champ);
     if (!e.cart && !e.ram && ((UNIT_TYPES[e.key] || [])[0] !== "siege" || e.order === "guard")) { const carts = ents.filter(o => o.cart && !o.dead && hostile(e.pid, o.pid) && ents.some(c => c.kind === "castle" && !c.dead && !hostile(e.pid, c.pid) && d(c, o) <= 4) && d(o, e) <= 9); if (carts.length) return minBy(carts, o => d(o, e)); } // a powder cart within 4 tiles of a friendly castle: stop it
     // raiders (from 12 Nov 2026) make for a castle: struck by a melee fighter they turn and fight it, struck from range they keep going
-    if (BV && e.key === "raider" && !guard && !escort) { const ag = e.aggro; if (ag && ag.until > t && live(ag.src) && hostile(e.pid, ag.src.pid) && !fxv(ag.src, "vanish") && (ag.src.range || 1.1) <= 1.5 && d(ag.src, e) <= 6) return ag.src;
+    if (V3 && e.key === "raider" && !guard && !escort) { const ag = e.aggro; if (ag && ag.until > t && live(ag.src) && hostile(e.pid, ag.src.pid) && !fxv(ag.src, "vanish") && (ag.src.range || 1.1) <= 1.5 && d(ag.src, e) <= 6) return ag.src;
       const g = goalPid(e), c = g && ents.find(o => !o.dead && o.kind === "castle" && o.pid === g); if (c) return c; }
     // aggression: answer whoever just struck you or a friend nearby
     if (e.aggro && e.aggro.until > t && live(e.aggro.src) && hostile(e.pid, e.aggro.src.pid) && !fxv(e.aggro.src, "vanish") && d(e.aggro.src, e) <= 6 && (!guard || d(e.aggro.src, p.castle) <= 8)) return e.aggro.src;
@@ -407,8 +410,8 @@ function runBattle(plans, seed, opts = {}) {
     if (live(cur) && cur.kind !== "castle" && hostile(e.pid, cur.pid) && !fxv(cur, "vanish") && (cur.retreating || cur.hp / cur.maxhp < .35) && d(cur, e) <= (guard ? 4.5 : 7)) return cur;
     const runners = ents.filter(o => !o.dead && o.retreating && o.kind !== "castle" && hostile(e.pid, o.pid) && !fxv(o, "vanish") && d(o, e) <= ENGAGE + 1.5);
     if (runners.length && !guard) return minBy(runners, o => o.hp / o.maxhp + d(o, e) * .1);
-    if (BV && p.gprio && !guard && !escort) { const t2 = groupPick(e); if (t2) return t2; } // per-group priorities: the lord's order of what this kind of fighter goes for
-    const anchor = guard ? p.castle : escort ? p.champ : e, radius = guard ? (t - p.castleHitT < 6 ? 7 : 4) : (BV && p.engage) || ENGAGE;
+    if (V3 && p.gprio && !guard && !escort) { const t2 = groupPick(e); if (t2) return t2; } // per-group priorities: the lord's order of what this kind of fighter goes for
+    const anchor = guard ? p.castle : escort ? p.champ : e, radius = guard ? (t - p.castleHitT < 6 ? 7 : 4) : (V3 && p.engage) || ENGAGE;
     const near = ents.filter(o => !o.dead && o.kind !== "castle" && hostile(e.pid, o.pid) && fighting(o.pid) && !fxv(o, "vanish") && d(o, anchor) <= radius);
     if (near.length) return byPrio(e, near);
     if (guard || escort) return null;
@@ -784,7 +787,7 @@ function runBattle(plans, seed, opts = {}) {
         return;
       }
       if (e.dots.length) { e.dots = e.dots.filter(x => x.until > t); e.dots.forEach(x => { if (!e.dead) deal(x.src, e, x.dps * DT, { aoe: 1, ab: x.ab }); }); if (e.dead) return; }
-      if (t >= SUDDEN && e.kind === "castle" && !BV) deal(null, e, e.maxhp * .015 * DT, { aoe: 1 });
+      if (t >= SUDDEN && e.kind === "castle" && !V3) deal(null, e, e.maxhp * .015 * DT, { aoe: 1 });
       if (!e.dead) think(e);
     });
     traps.forEach(tr => {
