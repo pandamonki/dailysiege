@@ -22,6 +22,7 @@ const SIM_FILES = [
   "js/config/items.js",
   "js/config/balance.js",
   "js/config/spells.js",
+  "js/config/trees.js",
   "js/config/seats.js",
   "js/core/util.js",
   "js/core/detmath.js",
@@ -29,6 +30,7 @@ const SIM_FILES = [
   "js/core/player.js",
   "js/sim/bots.js",
   "js/sim/alliances.js",
+  "js/sim/heroTrees.js",
   "js/sim/battle.js",
   "js/sim/hash.js",
 ];

@@ -4,8 +4,8 @@ This spec replaces the current hero abilities (three abilities with four ranks, 
 each, an ultimate with three ranks, and Vigour) with three skill trees per hero. It is written for
 the model that implements it. Read all of it before you change any code.
 
-**Status: approved design, not yet built.** This is a major feature. Open the pull request, but do
-not merge it without the user's go-ahead (see `CLAUDE.md`).
+**Status: built, behind a placeholder date (see §10).** This is a major feature. The pull request
+must not be merged without the user's go-ahead (see `CLAUDE.md`).
 
 ---
 
@@ -142,8 +142,8 @@ The user's plan is the starting point. Changes made during review:
   spends them mid-battle, so a hero fights with exactly the tree the plan sealed at the start.
   Stat growth (§1.4) still applies on level-up.
 - Remove `autoPick` for human heroes in the v3 path.
-- **Bots are the exception**, since they have no player. They get a seeded full build (§8 step 5)
-  and spend it as they level.
+- Bots are no different in the sim: their build (`autoTree`, §8 step 5) is worked out for the level
+  they start the day at, and sealed with their orders. Nothing is learned mid-battle by anyone.
 
 ---
 
@@ -688,3 +688,35 @@ as the reference fragile hero. Fixes made:
 - Respecs mid-war.
 - Real-time inputs.
 - Changing the soldier, item or castle balance, except where a skill interacts with them as above.
+
+## 10. Implementation notes (what was built, and what was decided on the way)
+
+Files: `js/config/trees.js` (all 15 trees, gates, base heroes, learning rules), `js/sim/heroTrees.js`
+(every skill, passive and primitive, as a kit the battle builds when `opts.heroV3` is set),
+`js/ui/sheets/heroTree.js` (the hero screen), `autoTree` in `js/sim/bots.js`, and the replay
+drawing in `js/replay/draw.js`. The old abilities are untouched: the 62 original golden battles
+hash exactly as before, and 10 new golden battles (62 to 71) cover skill-tree heroes.
+
+- **Switch-over.** `HERO_V3_FROM` in `js/config/trees.js` is a placeholder (`2099-01-01`), so nothing
+  live changes. The real date must be the first day of a war; **ask the user for it before launch.**
+  To try the trees today, open the game with `?herov3` (or set `localStorage.dsHeroV3 = "1"`) and
+  play practice. In practice the hero levels up two levels a day.
+- **Saves.** Plans carry `tree: { b1, b2, b3 }`, three arrays of six ranks in node order
+  (T1, T2, T2b, T3, T3b, T4). Battle inputs record `heroV3`, so replays use the rules they were fought with.
+  A lord who sealed nothing all week is fought on a stand-in `autoTree` build, as the old stand-in
+  fought on `autoRanks`.
+- **Rank 4** values continue the trend of ranks 1 to 3 through `ext()`, as written in §1.2.
+- **Skills with no cooldown loop.** Riposte, Flurry, Evasive Roll, Cold Snap and the other reactive
+  skills run from the hit that triggers them; their casts still show in the telemetry.
+- **Headshot.** The "always crits" in the spec is the x1.5 multiplier, not an extra x1.75 on top.
+- **Spell animations.** Every active skill has a `SPELL_ART` entry (`v3_<class>_<tree>_<node>`) that
+  reuses the existing effects and icons. New replay effects: zones (circles that last as long as the
+  zone), taunt lines, a shield ring on any unit holding a shield, and the existing hidden look for stealth.
+- **Ranger traps and walls.** A Ranger's Spike Traps use `traps[]` with `ranger: true` and lapse
+  after 8s; they are never counted as used traps. Barricade walls carry a `born` time so the replay
+  draws them only from then on.
+- **Balance, first look** (`HERO_V3=1 node tools/balance.mjs 80 10`): class win rates 6% to 16% against
+  a fair 10%. Shaman's Storm tree is the high spot (about 23%) and Mage's Pyromancy the low (about 2%).
+  Rallying Charge, Fortress Wall and Shadow Dance fire in under 70% of armed battles. The balance pass
+  in §7 (first knobs: per-level growth, then T2 cooldowns, then ultimate damage) is still to do.
+- **Not done yet:** the in-game help text and the Spell book still describe the old abilities.

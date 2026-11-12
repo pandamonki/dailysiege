@@ -15,7 +15,7 @@ function underdogChip() {
   return g ? `<span class="under" title="The bottom 30% earn extra gold every day to catch up">Catch-up gold +${g}</span>` : `<span class="under"></span>`;
 }
 function ultChip() {
-  if (!(S.ranks && S.ranks.ult)) return ["⚡", "–", "off", "Ultimate not learned yet"];
+  if (!ultLearned()) return ["⚡", "–", "off", "Ultimate not learned yet"];
   if (ultCooling()) return ["⚡", "1d", "off", "Ultimate recharging, ready tomorrow"];
   return S.ultArm ? ["⚡", "Set", "ok", "Ultimate planned for tonight"] : ["⚡", "Rdy", "ok", "Ultimate ready. Plan it in Orders"];
 }

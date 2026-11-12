@@ -54,6 +54,7 @@ function uorderSheet(id) {
 }
 function ensureDip() {
   if (!S) return;
+  S.tree = cleanTree(S.tree);
   S.strategy = S.strategy || { mode: "list", heading: "castle" };
   S.gprio = cleanGprio(S.gprio); S.engage = cleanEngage(S.engage); ensureGarrison();
   if (!S.prio || S.prio.length !== 5 || S.prio.some(x => !PRIORITY_OPTS.includes(x))) S.prio = PRIORITIES.slice(0, 5);
@@ -196,10 +197,10 @@ const planDayKey = () => (isLive() ? liveClock().planDay : DAY);
 const ultCooling = () => { if (!isLive()) return S.ultLast != null && S.ultLast === DAY - 1; const ck = liveClock(), b = LIVE.battles[addDays(ck.planDay, -1)]; return !!(b && b.week === ck.week && b.ults && b.ults[LIVE.uid]); };
 const blessLocked = () => { if (!isLive()) return S.blessDone != null && S.blessDone < DAY; const ck = liveClock(); return Object.keys(LIVE.battles).some(k => { const b = LIVE.battles[k]; return b.week === ck.week && k < ck.planDay && b.inputs && (b.inputs.plans || []).some(p => p.pid === LIVE.uid && p.blessing); }); };
 const BLESSINGS = { vamp: ["Blood Rite", "Your whole army heals for 15% of the damage it deals, for the entire battle."], ward: ["Ward of Arrows", "Missiles cannot hurt your army for the first 45 seconds of the battle."] };
-const planUlt = () => !!S.ultArm && !ultCooling() && (S.ranks.ult || 0) > 0;
+const planUlt = () => !!S.ultArm && !ultCooling() && ultLearned();
 const planBless = () => (blessLocked() ? null : S.bless || null);
 function ritualsTab() {
-  const cd = ultCooling(), learned = (S.ranks.ult || 0) > 0, cl = CLASSES[S.cls], used = blessLocked();
+  const cd = ultCooling(), learned = ultLearned(), cl = { ult: (heroV3Now() && treeUlt()) || CLASSES[S.cls].ult }, used = blessLocked();
   return `<div class="sec tight"><h3>Ultimate · ${esc(cl.ult.name)}</h3><p class="muted">${esc(cl.ult.desc)} Your hero only uses it if you plan it here, once per battle, and it then needs one full day to recharge.</p>
     ${!learned ? `<p class="need">Your hero hasn't learned the ultimate yet. Spend a skill point on it in the Hero sheet.</p>` : cd ? `<p class="need">Recharging. It was cast in the last battle and is ready again tomorrow.</p>` : ""}
     <button class="btn ${S.ultArm && learned && !cd ? "wax" : "wood"}" data-act="ultarm" ${dis(!learned || cd)}>${S.ultArm && learned && !cd ? "Planned for tonight ✓ (tap to cancel)" : "Plan the ultimate for tonight"}</button></div>
@@ -268,7 +269,7 @@ function sealMerc() {
     <button class="btn ${b ? "wood" : "wax"}" data-act="opencamp" ${free ? "" : "disabled"}>${b ? "Change mercenary bids" : "Place mercenary bid"}</button></div>`;
 }
 function sealPowers() { // ultimate and weekly ritual can be switched on right where you seal
-  const cl = CLASSES[S.cls], learned = (S.ranks.ult || 0) > 0, cd = ultCooling(), armed = planUlt(), used = blessLocked();
+  const cl = { ult: (heroV3Now() && treeUlt()) || CLASSES[S.cls].ult }, learned = ultLearned(), cd = ultCooling(), armed = planUlt(), used = blessLocked();
   const ult = !learned ? `<p class="muted">Learn the ultimate in the Hero sheet to use it.</p>` : cd ? `<p class="need">Recharging. It was cast in the last battle and is ready again tomorrow.</p>` : `<p class="muted">Cast once this battle. It then needs a full day to recharge.</p>`;
   return `<div class="sec tight"><h3>Ultimate · ${esc(cl.ult.name)}</h3>${ult}
       <button class="btn ${armed ? "wax" : "wood"}" data-act="ultarm" ${dis(!learned || cd)}>${armed ? "Using it this battle ✓ (tap to cancel)" : "Use ultimate this battle"}</button></div>

@@ -71,7 +71,7 @@ const A = {
     { const [r0, c0] = k.split(",").map(Number), wl0 = findWall(v); if (wl0 && !wallFree(r0, c0, wl0.dir, v)) { toast("That tile isn't free."); return; } }
     if (inGarrison(v)) { if (fieldCount() >= S.slots) { toast("Your field supply is full."); return; } unGarrison(v); }
     const old = placedAt(v); if (old) delete S.place[old]; S.place[k] = v; sheet = null; },
-  cls: v => { if (v === S.cls) return; if (isLive() && DAY > 1) { toast("Your class is set for the week. Pick again next week."); return; } S.cls = v; S.ranks = { a1: 0, a2: 0, a3: 0, ult: 0 }; S.picks = {}; toast(`${CLASSES[v].name} chosen. Skill points refunded.`); },
+  cls: v => { if (v === S.cls) return; if (isLive() && DAY > 1) { toast("Your class is set for the week. Pick again next week."); return; } S.cls = v; S.ranks = { a1: 0, a2: 0, a3: 0, ult: 0 }; S.tree = emptyTree(); S.picks = {}; toast(`${CLASSES[v].name} chosen. Skill points refunded.`); },
   rank: (_, k) => { if (canRank(k)) S.ranks[k] = (S.ranks[k] || 0) + 1; },
   choose: (v, k) => { S.picks[k] = v; },
   buy: k => { const u = UNITS[k]; if (u.castleOnly && S.owned.filter(x => UNITS[x.type].castleOnly).length >= SIEGE_MAX) { toast(`You can only keep ${SIEGE_MAX} siege units.`); return; } if (avail() < u.cost || supplyFull() || ctNow() < UNIT_TIER[k]) return; ensureGarrison(); const toGar = fieldCount() >= S.slots && !u.castleOnly; if (toGar && garrisonCount() >= GARRISON_SOLDIERS) { toast("Siege units can't wait in the garrison, and your field supply is full."); return; } S.gold -= u.cost; const id = "u" + idc++; S.owned.push({ id, type: k, lvl: 1, hp: 1 }); if (toGar) { toGarrison(id); sel = null; toast(`${u.name} recruited into your garrison.`); } else { sel = id; sheet = null; toast(`${u.name} recruited. Tap a glowing tile.`); } },
@@ -146,6 +146,8 @@ const A = {
   radd: () => { if (opUsed() < OP_MAX) S.rules.push({ if: IFS[1], then: THENS[1] }); },
   rdel: v => { S.rules.splice(+v, 1); },
   abil: v => { sheet.ab = v; },
+  tnode: v => { sheet.tn = v; },
+  tlearn: v => { const [bi, i] = v.split(".").map(Number); TREE_NAME_CLS = S.cls; if (!S.locked && treeCanLearn(S.tree, TREE_BKEY[bi], i, level())) { S.tree[TREE_BKEY[bi]][i]++; sheet.tn = v; } },
   gsel: v => { sheet.gear = v; },
   rvopen: v => { sheet.rv = sheet.rv === v ? null : v; },
   rvset: (v, k) => { ensureDip(); if (v === "hostile" && S.lists.hostile.includes(k)) { S.lists.hostile = [k, ...S.lists.hostile.filter(x => x !== k)]; toast("Main target set."); return; } A.lmove(v, k); },
