@@ -26,8 +26,6 @@ function buildReplayUI() {
       ${isLive() ? "" : `<button class="btn small" data-act="lab">Stats</button>`}
       <button class="btn small wax" data-act="rexit">Leave</button>
     </div>
-    <div class="inspect" id="inspect" hidden></div>
-    <p class="rtip">Tap any hero, soldier or castle to inspect it.</p>
     <ol class="ticker" id="ticker"></ol>`;
   replay.logN = -1; updateReplayUI();
 }
@@ -43,7 +41,7 @@ function updateReplayUI() {
   const L = replay.res.logs, n = lowerBound(L, replay.time + 1e-6);
   if (n !== replay.logN) {
     replay.logN = n;
-    document.getElementById("ticker").innerHTML = L.slice(Math.max(0, n - 4), n).reverse().map((l, j) => `<li class="${l.kind}${j ? "" : " new"}"><span>${fmt(l.t)}</span>${esc(l.msg)}</li>`).join("");
+    document.getElementById("ticker").innerHTML = L.slice(Math.max(0, n - 1), n).reverse().map((l, j) => `<li class="${l.kind}${j ? "" : " new"}"><span>${fmt(l.t)}</span>${esc(l.msg)}</li>`).join("");
   }
   updateInspector();
   let big = null; for (let j = n - 1; j >= 0; j--) { if (replay.time - L[j].t > 2.8) break; if (L[j].kind === "big") { big = L[j]; break; } }
