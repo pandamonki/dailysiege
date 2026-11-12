@@ -95,13 +95,13 @@ const A = {
     gameMode = "practice"; PRACTICE_S = newPlayerState(); LASTP = null; PRAC_BET = []; reportBack = null; mode = "plan"; replay = null; sel = null;
     enterPractice(); home(); sheet = null; render(); setTimeout(() => startWizard(true), 300); toast("A new game begins on day 1."); },
   nextday: () => { if (isLive()) return; if (DAY >= 7) { toast("Day 7 is the last day. Start a new game to begin again."); return; }
-    const inc = BASE_INCOME + CASTLE_INCOME[ctNow() - 1] + ((LASTP && LASTP.gold && LASTP.gold.you) || 0);
+    const inc = baseIncome(DAY) + CASTLE_INCOME[ctNow() - 1] + ((LASTP && LASTP.gold && LASTP.gold.you) || 0);
     if (LASTP) { if ((LASTP.ults || []).includes("you")) S.ultLast = DAY; if (LASTP.blessed) S.blessDone = DAY; } S.ultArm = false; S.gold += inc; S.gain = inc; if (LASTP && LASTP.mercs) { ensureDip(); S.mercHist[DAY] = LASTP.mercs; Object.values(LASTP.mercs).forEach(h => { if (h.pid === "you") S.gold -= h.gold; }); } S.bids = {}; { const g = LASTP && LASTP.gain && LASTP.gain.you != null ? LASTP.gain.you : MIN_GAIN; S.lvl = Math.min(MAX_HERO_LVL, (S.lvl || DAY) + Math.max(MIN_GAIN, g)); S.xp = (LASTP && LASTP.xp && LASTP.xp.you) || 0; } DAY++; S.locked = false; S.phase = "muster"; S.offers = Object.fromEntries(Object.entries(S.offers || {}).filter(([, o]) => o.day === DAY - 1)); S.replies = {}; S.owned.forEach(u => { u.hp = 1; });
     S.owned.forEach(u => { if (UNITS[u.type].cool) { if (placedAt(u.id)) { u.cool = UNITS[u.type].cool; delete S.place[placedAt(u.id)]; } else u.cool = Math.max(0, (u.cool || 0) - 1); } });
     { const used = new Set((LASTP && LASTP.trapsUsed) || []); S.traps = S.traps.filter(t => { const k = placedAt(t.id); if (k && used.has("you|" + k)) { delete S.place[k]; return false; } return true; }); } LASTP = null;
     try { localStorage.setItem("lastbanner.pday", String(DAY)); } catch (e) {}
     toast(`Day ${DAY}. +${inc} gold.`); sheet = null; },
-  castleup: () => { const nx = CASTLE_TIERS[ctNow()]; if (nx && avail() >= nx.cost) { S.gold -= nx.cost; S.castle = ctNow() + 1; toast(`${nx.name} raised. Daily income is now ${BASE_INCOME + CASTLE_INCOME[ctNow() - 1]} gold.`); } },
+  castleup: () => { const nx = CASTLE_TIERS[ctNow()]; if (nx && avail() >= nx.cost) { S.gold -= nx.cost; S.castle = ctNow() + 1; toast(`${nx.name} raised. Daily income is now ${baseIncome(curDayNo()) + CASTLE_INCOME[ctNow() - 1]} gold.`); } },
   wallbuy: () => { if (S.walls.length >= wallLimit(ctNow()) || avail() < WALL_COST) return; S.gold -= WALL_COST; const id = "w" + idc++; S.walls.push({ id, dir: "h" }); sel = id; sheet = null; toast("Wall built. Tap a glowing tile to place it. Tap it afterwards to turn it."); },
   wrot: id => { const w = findWall(id), k = placedAt(id), nd = w.dir === "h" ? "v" : "h"; if (k) { const [r, c] = k.split(",").map(Number); if (!wallFree(r, c, nd, id)) { toast("It doesn't fit that way round."); return; } } w.dir = nd; },
   wsell: id => { const k = placedAt(id); if (k) delete S.place[k]; S.walls = S.walls.filter(w => w.id !== id); S.gold += Math.floor(WALL_COST / 2); sheet = null; },

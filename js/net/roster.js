@@ -32,11 +32,12 @@ function incomeFor(uid, week, dayKey) {
   const order = ids.slice().sort((x, y) => (pts[x] || 0) - (pts[y] || 0)), idx = order.indexOf(uid);
   const spoils = (b && b.gold && b.gold[uid]) || 0, catchUp = idx > -1 ? catchUpGold(order.length, idx) : 0;
   const pl = LIVE.players[uid], plan = pl && latestPlan(pl, dayKey, true), castle = CASTLE_INCOME[Math.max(0, Math.min(2, ((plan && plan.castleTier) || 1) - 1))];
-  return { base: BASE_INCOME, castle, spoils, catchUp, total: BASE_INCOME + castle + spoils + catchUp };
+  const base = baseIncome(weekdayOf(dayKey));
+  return { base, castle, spoils, catchUp, total: base + castle + spoils + catchUp };
 }
 const standingsThrough = (week, dayKey) => standings(week, dayKey);
 function freshLiveState(ck) {
-  return { week: ck.week, day: ck.planDay, gold: 300 + BASE_INCOME * (ck.dayNo - 1), cls: "warrior", ranks: { a1: 0, a2: 0, a3: 0, ult: 0 }, picks: {},
+  return { week: ck.week, day: ck.planDay, gold: startGold(ck.dayNo), cls: "warrior", ranks: { a1: 0, a2: 0, a3: 0, ult: 0 }, picks: {},
     triggers: { a1: TRIGGERS[1], a2: TRIGGERS[2], a3: TRIGGERS[0], ult: TRIGGERS[1] }, owned: [], slots: SLOT_START, traps: [], place: defaultPlace([]),
     stance: "skirmish", prio: PRIORITIES.slice(), rules: [{ if: IFS[0], then: THENS[0] }, { if: IFS[1], then: THENS[0] }], diplo: {}, locked: false, phase: "muster",
     gear: { weapon: 0, armour: 0, charm: 0 }, defences: { walls: 0, tower: 0 }, lvl: 1, xp: 0,
