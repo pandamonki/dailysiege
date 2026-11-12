@@ -54,7 +54,7 @@ The user's plan is the starting point. Changes made during review:
     Tier 2 (2 ranks) and one at Tier 3 (1 rank), for build variety. Most of them bring back
     favourite picks from today's game.
 12. **Evasion is capped at 30% (user request).**
-13. **Vigour is removed.** All 14 points go into trees. Per-level stat growth rises to make up
+13. **Vigour is removed.** All 15 points go into trees. Per-level stat growth rises to make up
     for the lost levels and Vigour (§1.4).
 
 ---
@@ -62,7 +62,7 @@ The user's plan is the starting point. Changes made during review:
 ## 1. Core rules
 
 ### 1.1 Levels and points
-- `MAX_HERO_LVL = 15`. One skill point per level from 2 to 15 = **14 points**.
+- `MAX_HERO_LVL = 15`. One skill point per level from 1 to 15 = **15 points** (a level 1 hero already has one to spend; changed after the first in-game review).
 - Level gain per battle is unchanged: `MIN_GAIN = 2`, `XP_CAP = 3`, and the centre XP bonus.
   Heroes reach level 9 on day 4 or 5 and the cap on day 6 or 7.
 
@@ -82,11 +82,11 @@ The user's plan is the starting point. Changes made during review:
   T2b 2 = 5 opens T3; T3 1 + T3b 1 = 7 opens the ultimate. The ultimate still needs at least one
   rank in the main T3.
 - Every branch of every hero has exactly this shape: T1, T2, T2b, T3, T3b, T4.
-- A full tree is 4 + 4 + 2 + 2 + 1 + 1 = **14 points**, exactly a level-15 hero's points, so a
-  hero can max a single tree.
+- A full tree is 4 + 4 + 2 + 2 + 1 + 1 = **14 points**, one fewer than a level-15 hero has, so a
+  hero can max a single tree with a point to spare.
 - The main path alone is 4 + 4 + 2 + 1 = **11 points**. The fastest route to the ultimate is 7 points
   (for example 2 + 3 + 2, or 3 + 3 + 1), then the ultimate as the 8th point at level 9.
-- Example builds at level 15 (14 points):
+- Example builds at level 15 (15 points; the examples count 14, and the last point goes anywhere legal):
   - **Single tree, 14/0:** everything in one tree, side talents included.
   - **Depth, 11/3:** the whole main tree maxed, plus a second tree's T1 2 and T2 1.
   - **Breadth, 8/6:** an ultimate, plus a second tree's T1 2, T2 3 and T3 1. The second synergy
