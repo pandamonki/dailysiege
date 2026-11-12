@@ -25,6 +25,7 @@ const latestPlan = (p, dayKey, inclusive) => wLatestPlan(LIVE, p, dayKey, inclus
 const standings = (week, through) => wStandings(LIVE, week, through);
 const heroState = (uid, week, dayKey) => wHeroState(LIVE, uid, week, dayKey);
 const carriedPairs = dayKey => wCarriedPairs(LIVE, dayKey);
+const feudsBefore = (dayKey, week) => wFeudsBefore(LIVE, dayKey, week);
 // what a player earns after battle `dayKey`: base pay, spoils from kills, and the catch-up for the bottom 30% of the board
 function incomeFor(uid, week, dayKey) {
   const b = LIVE.battles[dayKey], pts = standingsThrough(week, dayKey), ids = rosterFor(week).map(p => p.uid);
