@@ -103,6 +103,7 @@ const A = {
   wallbuy: () => { if (S.walls.length >= wallLimit(ctNow()) || avail() < WALL_COST) return; S.gold -= WALL_COST; const id = "w" + idc++; S.walls.push({ id, dir: "h" }); sel = id; sheet = null; toast("Wall built. Tap a glowing tile to place it. Tap it afterwards to turn it."); },
   wrot: id => { const w = findWall(id), k = placedAt(id), nd = w.dir === "h" ? "v" : "h"; if (k) { const [r, c] = k.split(",").map(Number); if (!wallFree(r, c, nd, id)) { toast("It doesn't fit that way round."); return; } } w.dir = nd; },
   wsell: id => { const k = placedAt(id); if (k) delete S.place[k]; S.walls = S.walls.filter(w => w.id !== id); S.gold += Math.floor(WALL_COST / 2); sheet = null; },
+  shellat: v => { if (!S.locked) S.shellAt = Math.max(1, Math.min(10, (S.shellAt || 2) + +v)); },
   ibuy: k => { const it = ITEMS[k]; if (!it || S.items.includes(k) || S.items.length >= ITEM_SLOTS || avail() < itemCost(k) || (it.unique && rapierTaken(k))) return; S.gold -= itemCost(k); S.items.push(k); toast(`${it.name} bought.`); },
   isell: k => { const it = ITEMS[k]; if (!it) return; S.items = S.items.filter(x => x !== k); S.gold += Math.floor(itemCost(k) / 2); },
   bset: (v, k) => { if (!canBanner()) { toast("Banners are designed on Day 1."); return; }

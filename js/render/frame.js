@@ -54,7 +54,7 @@ function draw(t) {
   const ghost = dragPc && dragPc.active ? dragPc.ref : null, Wg = (ref, fn) => ref === ghost ? () => { ctx.save(); ctx.globalAlpha = .35; fn(); ctx.restore(); } : fn;
   Object.entries(S.place).forEach(([key, ref]) => {
     const [r, q] = key.split(",").map(Number), ring = (sheet && sheet.id === ref) || sel === ref;
-    if (ref === "champ") items.push([r + .1, Wg(ref, () => drawFigure("c-" + S.cls, MY_COLOR, r, q, true, 1, true, t, { ring, name: myName(), lvl: level() }))]);
+    if (ref === "champ") items.push([r + .1, Wg(ref, () => drawFigure("c-" + S.cls, MY_COLOR, r, q, true, 1, true, t, { ring, name: myName(), lvl: level(), items: S.items }))]);
     else if (findUnit(ref)) { const u = findUnit(ref); items.push([r + .1, Wg(ref, () => drawFigure(u.type, MY_COLOR, r, q, false, u.hp ?? 1, true, t, { ring, lvl: u.lvl }))]); }
     else if (findWall(ref)) { const w = findWall(ref); wallTiles(r, q, w.dir).forEach(([a, b]) => items.push([a + .2, Wg(ref, () => { drawWallTile(ctx, a, b, Math.min(3, S.castle || 1), 1, MY_COLOR, t, w.dir); if (ring) { ctx.strokeStyle = "#ffe082"; ctx.lineWidth = ts * .06; ctx.strokeRect(b * ts + 3, a * ts + ts * .2, ts - 6, ts * .66); } })])); }
     else if (findTrap(ref)) items.push([r, Wg(ref, () => {
