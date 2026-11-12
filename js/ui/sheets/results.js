@@ -41,8 +41,8 @@ function resultsSheet() {
   if (isLive() && replay.day && R.board) {
     const after = { ...R.board }; R.results.forEach(r => after[r.pid] = (after[r.pid] || 0) + r.points);
     const sorted = R.order.slice().sort((a, b) => (after[a] || 0) - (after[b] || 0)), cu = catchUpGold(sorted.length, sorted.indexOf(R.me));
-    const dow = (R.transfers || []).reduce((g, t) => g + (t.to === R.me ? t.gold : 0) - (t.from === R.me ? t.gold : 0), 0), cb = CASTLE_INCOME[((R.meta.find(m => m.kind === "castle" && m.pid === R.me) || {}).ctier || 1) - 1], tot = BASE_INCOME + cb + (me.gold || 0) + cu + dow;
-    goldLine += `<div class="stat"><b>${tot >= 0 ? "+" : ""}${tot}</b><span>gold tomorrow (${BASE_INCOME} base${cb ? `, ${cb} from your castle` : ""}${cu ? `, ${cu} catch-up` : ""}${dow ? `, ${dow > 0 ? "+" : ""}${dow} dowries` : ""} and spoils)</span></div>`;
+    const dow = (R.transfers || []).reduce((g, t) => g + (t.to === R.me ? t.gold : 0) - (t.from === R.me ? t.gold : 0), 0), cb = CASTLE_INCOME[((R.meta.find(m => m.kind === "castle" && m.pid === R.me) || {}).ctier || 1) - 1], bi = baseIncome(dayNo), tot = bi + cb + (me.gold || 0) + cu + dow;
+    goldLine += `<div class="stat"><b>${tot >= 0 ? "+" : ""}${tot}</b><span>gold tomorrow (${bi} base${cb ? `, ${cb} from your castle` : ""}${cu ? `, ${cu} catch-up` : ""}${dow ? `, ${dow > 0 ? "+" : ""}${dow} dowries` : ""} and spoils)</span></div>`;
   }
   const v2 = replay.day ? balV2For(replay.day) : true, wt = dayWeight(v2, dayNo), finale = isLive() && replay.day && dayNo === 7 && R.week ? warFinale(R, N) : "";
   const board = R.board ? (() => { const after = { ...R.board }; R.results.forEach(r => after[r.pid] = (after[r.pid] || 0) + r.points);
