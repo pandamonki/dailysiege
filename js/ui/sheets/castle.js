@@ -26,6 +26,14 @@ const trapImg = k => TRAP_ICON(k) ? `icons/ui/${TRAP_ICON(k)}.webp` : trapURL(k)
 const canBanner = () => !isLive() || DAY === 1;
 const ctNow = () => S.castle || 1;
 const rapierTaken = k => isLive() && Object.entries(LIVE.players || {}).some(([uid, p]) => uid !== LIVE.uid && p && p.state && (p.state.items || []).includes(k));
+const itemKindTag = it => `<span class="kind k-${it.kind}"><b>T${it.tier}</b> · ${it.kind === "use" ? (it.cd ? `Active · ${it.cd}s recharge` : "Active · once per battle") : it.kind === "aura" ? "Aura" : "Passive"}</span>`;
+// the hero's item slots: tap an item for its details (like the shop), with Sell and a way to the shop
+function heroItemsHTML(slots) {
+  const k = S.items.includes(sheet.hit) ? sheet.hit : null, it = k && ITEMS[k];
+  return `<div class="sec"><div class="spread"><h3>Items (${S.items.length}/${ITEM_SLOTS})</h3><button class="bagbtn" data-act="shop" aria-label="Shop"><img alt="" src="icons/ui/shop.webp"></button></div>
+      <div class="islots tiny">${slots.map(x => x ? `<button class="islot${x === k ? " sel" : ""}" data-act="hitem" data-v="${x}" aria-label="${esc(ITEMS[x].name)}: details"><img alt="" src="${itemURL(x)}"><b>${esc(ITEMS[x].name)}</b></button>` : `<div class="islot empty"><span>Empty</span></div>`).join("")}</div>
+      ${it ? `${udet(esc(it.name), null, `<p>${itemKindTag(it)} ${esc(it.desc)}</p>`)}<div class="row"><button class="btn" data-act="isell" data-v="${k}" ${dis()}>Sell +${Math.floor(itemCost(k) / 2)}g</button><button class="btn small" data-act="shop">Shop</button></div>` : S.items.length ? `<p class="muted">Tap an item for its details.</p>` : ""}</div>`;
+}
 function castleSheet() {
   const tab = sheet.lobby ? "banner" : (sheet.tab || "recruit"), full = supplyFull(), ct = ctNow();
   let body = "";
@@ -83,7 +91,7 @@ function castleSheet() {
       <div class="toprow"><div class="islots tiny">${Array.from({ length: ITEM_SLOTS }, (_, i) => S.items[i] || null).map(k => k ? `<button class="islot${k === ik ? " sel" : ""}" data-act="ish" data-v="${k}"><img alt="" src="${itemURL(k)}"></button>` : `<div class="islot empty"><span>·</span></div>`).join("")}</div>
         <div class="pg"><button class="btn small" data-act="ipg" data-v="${pg - 1}" ${dis(pg <= 0)}>‹</button><span>${pg + 1}/${pages}</span><button class="btn small" data-act="ipg" data-v="${pg + 1}" ${dis(pg >= pages - 1)}>›</button></div></div>
       <div class="ugrid shopg">${keys.slice(pg * ISH_PAGE, pg * ISH_PAGE + ISH_PAGE).map(k => tile("ish", k, k === ik, itemURL(k), esc(ITEMS[k].name), S.items.includes(k) ? { own: 1 } : { price: itemCost(k) })).join("")}</div>
-      ${udet(esc(it.name), itemCost(ik), `<p><span class="kind k-${it.kind}"><b>T${it.tier}</b> · ${it.kind === "use" ? (it.cd ? `Active · ${it.cd}s recharge` : "Active · once per battle") : it.kind === "aura" ? "Aura" : "Passive"}</span> ${esc(it.desc)}</p>`)}
+      ${udet(esc(it.name), itemCost(ik), `<p>${itemKindTag(it)} ${esc(it.desc)}</p>`)}
       ${own && ik === "antimagic" ? `<div class="sec tight"><h3>Shell timing</h3><div class="reach"><span class="stepper"><button class="btn small" data-act="shellat" data-v="-1" ${dis((S.shellAt || 2) <= 1 || S.locked)}>−</button><b>${S.shellAt || 2}s</b><button class="btn small" data-act="shellat" data-v="1" ${dis((S.shellAt || 2) >= 10 || S.locked)}>+</button></span><span class="muted">after you meet an enemy hero</span></div></div>` : ""}
       ${abar(own ? `<button class="btn wax" data-act="isell" data-v="${ik}">Sell +${Math.floor(itemCost(ik) / 2)}g</button>` : `<button class="btn wax" data-act="ibuy" data-v="${ik}" ${dis(lk || fullI || avail() < itemCost(ik))}>${lk ? "Held by a rival" : fullI ? "Slots full" : `Buy · ${itemCost(ik)}g`}</button>`)}</div>`;
   }
@@ -136,7 +144,7 @@ function champSheet() {
     <div class="xpbar" title="Experience toward the next level"><i style="width:${Math.round(xp / nd * 100)}%"></i><span>Level ${L} · ${xp}/${nd} XP</span></div>
     <p class="muted xpnote">Gains up to ${XP_CAP} levels a day in battle. Every level is one skill point.</p>
     <div class="stats"><span>${IC.hp(now.hp)}</span><span>${IC.atk(now.atk)}</span><span>${typeLine(CLASS_TYPES[S.cls])}</span></div>
-    <div class="row"><button class="btn small wood" data-act="move" data-v="champ" ${dis()}>Move on the map</button><span class="muted">or drag your hero to a glowing tile</span></div>
+    <div class="row"><button class="btn small wood" data-act="move" data-v="champ" ${dis()}>Move on the map</button><span class="muted">then tap a glowing tile</span></div>
     ${canChange ? `<div><button class="btn wood" data-act="heropick" ${dis()}>Change hero…</button></div>` : ""}
     <div class="abtiles five">${abil.map(a => { const rr = S.ranks[a.key] || 0, mx = rankMax(a.key), cd = isPassive(a.key) ? "passive" : abilCD(a.key, rr || 1).toFixed(0) + "s";
       return `<button class="abt${selK === a.key ? " on" : ""}${rr ? "" : " off"}${a.ult ? " ult" : ""}${a.vig ? " vig" : ""}" data-act="abil" data-v="${a.key}" aria-label="${esc(a.name)}"><img class="aico" alt="" src="${spellURL(a.vig ? "hero_a4" : S.cls + "_" + a.key, 64)}"><span class="pips">${Array.from({ length: mx }, (_, i) => `<i class="pip${i < rr ? " on" : ""}"></i>`).join("")}</span><small class="cdchip">${cd}</small>${canRank(a.key) ? `<em>+</em>` : ""}</button>`; }).join("")}</div>
@@ -149,7 +157,6 @@ function champSheet() {
         : `<p class="muted">At rank 3, pick an upgrade: ${A0.choice.map(([n]) => `<b>${esc(n)}</b>`).join(" or ")}.</p>`) : ""}
       ${isPassive(selK) ? "" : `<label class="inline">Cast<select data-act="trig" data-k="${selK}" ${dis(!r)}>${opts(TRIGGERS, S.triggers[selK])}</select></label>`}
     </div>
-    <div class="sec"><div class="spread"><h3>Items (${S.items.length}/${ITEM_SLOTS})</h3><button class="bagbtn" data-act="shop" aria-label="Shop"><img alt="" src="icons/ui/shop.webp"></button></div>
-      <div class="islots tiny">${slots.map(k => k ? `<div class="islot" title="${esc(ITEMS[k].desc)}"><img alt="" src="${itemURL(k)}"><b>${esc(ITEMS[k].name)}</b></div>` : `<div class="islot empty"><span>Empty</span></div>`).join("")}</div></div>
+    ${heroItemsHTML(slots)}
     <div><button class="btn small" data-act="open" data-v="spells">Spell book</button></div></div>`;
 }

@@ -55,6 +55,7 @@ const A = {
   zall: () => { if (replay) replay.auto = false; flyTo(W / 2, W / 2, 0); },
   zhome: () => { if (replay) replay.auto = false; home(); },
   cancel: () => { sel = null; },
+  trainunit: id => { S.phase = "muster"; sel = null; sheet = { type: "castle", tab: "garrison", grp: "army", tsel: id }; }, // the unit strip's Train button: open the training screen on that soldier
   opencastle: v => { S.phase = "muster"; sel = null; sheet = { type: "castle", tab: v, grp: v === "recruit" ? "army" : "base" }; if (v === "armoury") sheet.tab = "keep"; },
   openhero: v => { S.phase = "muster"; sel = null; open("champ", "champ"); if (v === "items" || v === "abilities" || v === "stats") sheet.tab = v; },
   rhero: (v, k) => { sheet = { type: "rhero", id: v, tab: k === "items" ? "items" : "abilities" }; },
@@ -113,6 +114,7 @@ const A = {
   wsell: id => { const k = placedAt(id); if (k) delete S.place[k]; S.walls = S.walls.filter(w => w.id !== id); S.gold += Math.floor(WALL_COST / 2); sheet = null; },
   shellat: v => { if (!S.locked) S.shellAt = Math.max(1, Math.min(10, (S.shellAt || 2) + +v)); },
   ibuy: k => { const it = ITEMS[k]; if (!it || S.items.includes(k) || S.items.length >= ITEM_SLOTS || avail() < itemCost(k) || (it.unique && rapierTaken(k))) return; S.gold -= itemCost(k); S.items.push(k); toast(`${it.name} bought.`); },
+  hitem: k => { sheet.hit = sheet.hit === k ? null : k; }, // hero screen: show (or hide) an item's details
   isell: k => { const it = ITEMS[k]; if (!it) return; S.items = S.items.filter(x => x !== k); S.gold += Math.floor(itemCost(k) / 2); },
   bset: (v, k) => { if (!canBanner()) { toast("Banners are designed on Day 1."); return; }
     if (v === "c1") {

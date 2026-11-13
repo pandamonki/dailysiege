@@ -15,6 +15,8 @@ const RELEASES = [
     ["⚔", "Heroes keep fighting", "Retreating heroes return at half health, and a castle under attack only calls home a hero that is nearby."],
     ["🏹", "Steadier archers and mages", "They only step back while they are actually being hit."],
     ["🗡", "Braver rogues", "Rogues fight through hits and only slip away when outnumbered 3 to 1."],
+    ["🌲", "A fresh look", "Pixel-art walls and battleground, the original grass, and a forest round the edge of the map."],
+    ["✥", "Move, don't drag", "Units are moved with the Move button, Train opens the training page, and items on the hero screen show their details."],
   ] },
   { id: "1.0", title: "What's new in v1.0", sub: "The big changes since v0.02", items: [
     ["🌐", "Play online with friends", "Sign in with Google, join a war and install the game on your home screen. It starts offline and tells you when an update is ready."],
