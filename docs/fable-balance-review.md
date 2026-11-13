@@ -6,8 +6,11 @@
 
 Castles should fall by about **200 seconds** (a rough target), with a hard battle limit of **300 seconds**. By
 then every castle except the winner's should be destroyed. If the last castles fall on the same tick, they can all
-be destroyed together. Get there by changing balance values, not by adding new mechanics. Keep each class's
-identity and the game's slower pace.
+be destroyed together. Keep each class's identity and the game's slower pace.
+
+You are free to propose any change that helps, not just sudden death. That includes balance values (castle health,
+unit strength, number of units, militia waves, timings, siege damage, income) and changes to how the game works,
+including new mechanics that don't exist yet.
 
 ### Facts to check first
 
@@ -17,7 +20,7 @@ identity and the game's slower pace.
   should be rare.
 - **Sudden death** starts at `SUDDEN = 100` seconds. From then on, all damage is 25% higher. Older battles also
   drained castle health every second after that point, but that part is off for battles from 12 November
-  (`balV3`). The start time and strength of sudden death are balance values you can recommend changes to.
+  (`balV3`). Sudden death is only one lever among many.
 - **The sim has no draws today.** When castles fall on the same tick, or end on equal health, the winner is decided
   by siege damage, then kills, then a seeded random pick (see the top of `js/sim/battle.js`). "All castles
   destroyed" means the last castles falling on the same tick. Say whether that case should still pick one winner.
@@ -37,8 +40,12 @@ identity and the game's slower pace.
    - win rates by class, by seat and by bot style;
    - castle health against the siege damage each side brings, and when castles actually fall;
    - whether the leaderboard rewards play fairly over the week, including catch-up gold, spoils and bounties.
-3. **Write a recommendations report, then STOP.** List each proposed change with the current value, the new value,
-   the reason, and the measured effect. Wait for my approval before changing anything.
+   Then **trial each candidate change on its own.** Apply it locally, rerun the same measurements, record how much
+   that change alone moves battle length, time-limit finishes and win rates, then revert it. Also trial the
+   combination you would recommend, since changes can stack or cancel out. Nothing from these trials is committed.
+3. **Write a recommendations report, then STOP.** For each proposed change, give what it is (the current and new
+   value, or how the new mechanic works), the reason, and its measured effect on its own from the trial. Then give
+   the effect of the recommended combination. Wait for my approval before changing anything.
 4. **Implement only the approved changes, then verify again.** Rerun the same measurements and tests, and report
    before-and-after numbers. Add release notes as the project notes in `CLAUDE.md` describe.
 
