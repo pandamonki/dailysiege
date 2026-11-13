@@ -2,6 +2,7 @@
 // how long battles last, how they end, and whether any hero or any seat on the map is favoured.
 //   node tools/balance.mjs [battles per size, default 60] [lord counts, default 8,10,12]
 //   HERO_V3=1 node tools/balance.mjs ...   fights skill-tree heroes (random legal builds, levels 5 to 15) and adds win rates by tree and how often each skill fires
+// Fights by the rules for battles from 16 Nov 2026 (no militia, pick-your-targets with nobody picked, so armies go for the nearest castle).
 // Every seat gets a random hero, army, gear and level, with no alliances, so the numbers compare fairly.
 import { loadSim } from "./load-sim.mjs";
 
@@ -27,7 +28,7 @@ for (const n of sizes) {
   const N = sim.run(`seatLayout(${n}).N`), cls = {}, byTree = {}, fired = {}, seatWins = Array(n).fill(0), seatPts = Array(n).fill(0); let dur = 0, timeUp = 0, alive = 0, ms = 0, firstFall = 0;
   for (let i = 0; i < battles; i++) {
     const info = HV3 ? sim.run(`labInfo(${9000 + i * 31}, ${n})`) : null;
-    const t0 = performance.now(), res = sim.run(`runBattle(labPlans(${9000 + i * 31}, ${n}), ${777 + i * 977}, { fast: true, N: ${N}, balV2: ${V2}, balV3: ${V2}${HV3 ? ", heroV3: true" : ""} })`); ms += performance.now() - t0;
+    const t0 = performance.now(), res = sim.run(`runBattle(labPlans(${9000 + i * 31}, ${n}), ${777 + i * 977}, { fast: true, N: ${N}, balV2: ${V2}, balV3: ${V2}, fairV1: ${V2}, pickV1: ${V2}, balV4: ${V2}${HV3 ? ", heroV3: true" : ""} })`); ms += performance.now() - t0;
     if (info) { res.results.forEach(r => { const f = info[+r.pid.slice(1)], k = f.cls + " " + ["1st", "2nd", "3rd"][f.main] + " tree"; const t = byTree[k] = byTree[k] || { n: 0, w: 0 }; t.n++; if (r.place === 1) t.w++; f.skills.forEach(sk => { const q = fired[sk] = fired[sk] || { heroes: 0, casts: 0 }; q.heroes++; }); });
       res.tel.ents.filter(e => e.kind === "champ").forEach(e => Object.entries(e.ab || {}).forEach(([k, v]) => { const q = fired[e.cls + ":" + k]; if (q) q.casts += v.casts; })); }
     dur += res.duration; if (res.duration >= sim.get("TMAX")) timeUp++; alive += res.results.filter(r => r.fellAt == null).length;
