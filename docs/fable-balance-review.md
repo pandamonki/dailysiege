@@ -4,16 +4,20 @@
 
 ## Goal
 
-By about 300 seconds, every battle should have a result: every castle except the winner's is destroyed. If the
-last castles fall on the same tick, they can all be destroyed together. Get there by changing balance values,
-not by adding new mechanics. Keep each class's identity and the game's slower pace.
+Castles should fall by about **200 seconds** (a rough target), with a hard battle limit of **300 seconds**. By
+then every castle except the winner's should be destroyed. If the last castles fall on the same tick, they can all
+be destroyed together. Get there by changing balance values, not by adding new mechanics. Keep each class's
+identity and the game's slower pace.
 
 ### Facts to check first
 
-- **The battle clock stops at 200 seconds today, not 300.** In `js/config/balance.js`, `TMAX = 200` and
-  `SUDDEN = 100`. When time runs out, the castle with the most health wins ("Night falls. The strongest castle
-  claims the banner."). For the 300-second goal, `TMAX` has to rise to about 300, and sudden death probably has to
-  move as well. Treat both as balance values to recommend in stage 3. Don't change them before then.
+- **The battle limit is 200 seconds today, and it should become 300.** In `js/config/balance.js`, `TMAX = 200`.
+  When time runs out, the castle with the most health wins ("Night falls. The strongest castle claims the
+  banner."). Recommend raising `TMAX` to 300 in stage 3. Don't change it before then. Battles that reach the limit
+  should be rare.
+- **Sudden death** starts at `SUDDEN = 100` seconds. From then on, all damage is 25% higher. Older battles also
+  drained castle health every second after that point, but that part is off for battles from 12 November
+  (`balV3`). The start time and strength of sudden death are balance values you can recommend changes to.
 - **The sim has no draws today.** When castles fall on the same tick, or end on equal health, the winner is decided
   by siege damage, then kills, then a seeded random pick (see the top of `js/sim/battle.js`). "All castles
   destroyed" means the last castles falling on the same tick. Say whether that case should still pick one winner.
@@ -28,7 +32,8 @@ not by adding new mechanics. Keep each class's identity and the game's slower pa
    If a sim change shifts the golden files, update them with `npm run golden:update`, and explain why they changed.
 2. **Analyse balance, castle timing and the leaderboard. Analysis only.** No balance changes go into the game in
    this stage. Measure with the tools above, at several lord counts and across days 1 to 7:
-   - how long battles last, and how often they hit the time cap instead of ending with castles destroyed;
+   - how long battles last, how often castles have fallen by 200 seconds, and how often battles hit the time limit
+     instead of ending with castles destroyed;
    - win rates by class, by seat and by bot style;
    - castle health against the siege damage each side brings, and when castles actually fall;
    - whether the leaderboard rewards play fairly over the week, including catch-up gold, spoils and bounties.
