@@ -64,11 +64,11 @@ function ensureDip() {
   S.phase = S.phase || "muster"; if (STANCE_FIX[S.stance]) S.stance = STANCE_FIX[S.stance];
   S.rules = (S.rules || []).map(r => ({ if: r.if, then: r.then === "All units defend castle" ? "All units fall back to regroup" : r.then === "Switch to Defensive" ? "Switch to Cautious" : r.then }));
   const ids = RIVALS.map(r => r.id);
-  ["hostile", "neutral", "ally"].forEach(k => { S.lists[k] = S.lists[k].filter((id, i, a) => ids.includes(id) && a.indexOf(id) === i); });
+  ["hostile", "neutral", "ally"].forEach(k => { S.lists[k] = S.lists[k].filter((id, i, a) => (ids.includes(id) || (k === "hostile" && pickV1Now() && !!PICK_ROLES[id])) && a.indexOf(id) === i); }); // with pick-your-targets the attack list can hold general roles too
   const placed = new Set([...S.lists.hostile, ...S.lists.neutral, ...S.lists.ally]);
   const near = r => Math.round(Math.hypot(r.pos[0] - CASTLE[0], r.pos[1] - CASTLE[1]) * 1e6), tie = r => hash(botSeed(String(r.id)), CASTLE[0] * 100 + CASTLE[1], 29); // equally near rivals go in a fixed but fair order, not sign-up order
   RIVALS.slice().sort((a, b) => (near(a) - near(b)) || (tie(a) - tie(b))).forEach(r => {
-    if (!placed.has(r.id)) S.lists.hostile.push(r.id);
+    if (!placed.has(r.id)) S.lists[pickV1Now() ? "neutral" : "hostile"].push(r.id); // with pick-your-targets nobody is a target until chosen
     S.diplo[r.id] = S.diplo[r.id] || {}; S.diplo[r.id].clues = S.diplo[r.id].clues || [];
     S.terms[r.id] = S.terms[r.id] || { mode: "accept", min: 200, when: BETRAY_WHEN[0] };
   });
@@ -150,14 +150,38 @@ function previewOrder() {
     weakhero: id => (CHAMP[rv(id).cls] || CHAMP.warrior).hp * (1 + .08 * ((rv(id).level || DAY) - 1)), weakcastle: id => rv(id).ctier || 1, closest: dist }[st.mode];
   return ids.sort((a, b) => key(a) - key(b));
 }
+// Pick your targets (PICK_V1): one to three lords a day, in order. Once they have fallen, the army goes for the lord just above on the board.
+function pickTab() {
+  const hostile = S.lists.hostile, idle = RIVALS.filter(r => !hostile.includes(r.id)), roles = Object.keys(PICK_ROLES).filter(k => !hostile.includes(k)), full = hostile.length >= PICK_MAX;
+  const row = (id, i) => { const r = RIVALS.find(x => x.id === id), role = PICK_ROLES[id]; if (!r && !role) return "";
+    return `<li class="tgt cp" data-k="${id}"><span class="grip" aria-label="Drag to reorder">⠿</span><span class="ord">${i + 1}</span>${r ? `<i class="sw" style="background:${r.color}"></i>` : ""}<span class="tn"><b>${esc(r ? r.name : role)}</b></span><button class="btn small" data-act="lmove" data-v="neutral" data-k="${id}" aria-label="Stop attacking ${esc(r ? r.name : role)}" ${dis()}>✕</button></li>`; };
+  const chip = (k, label, sw) => `<button class="chip" data-act="lmove" data-v="hostile" data-k="${k}" ${full ? "disabled" : dis()}>${sw ? `<i class="sw" style="background:${sw}"></i>` : ""}${esc(label)} +</button>`;
+  return `<div class="sec tight"><h3>1 · Today's targets <small class="hint">${hostile.length} of ${PICK_MAX} picked</small></h3>
+      <p class="muted">Pick one to three targets before you seal: a lord, or a kind of target worked out during the battle. Out of combat your army marches on them in this order, and it still fights any army it meets and any rival castle it passes. Once they have fallen it goes for ${fallbackLabel()}.</p>
+      <ol class="tgts cpl" id="tgtlist">${hostile.map(row).join("") || `<li class="muted">Nobody yet.</li>`}</ol>
+      ${full ? `<p class="muted">Full. Remove one to swap.</p>` : ""}
+      ${roles.length ? `<div class="chips"><span class="muted">Roles:</span>${roles.map(k => chip(k, PICK_ROLES[k])).join("")}</div>` : ""}
+      ${idle.length ? `<div class="chips"><span class="muted">Lords:</span>${idle.map(r => chip(r.id, r.name, r.color)).join("")}</div>` : ""}</div>
+    ${strategyTabRest(S.strategy)}`;
+}
+function fallbackLabel() {
+  let rk = {}; try { rk = isLive() ? rankMap(standings(liveClock().week, addDays(liveClock().planDay, -1)), RIVALS.map(r => r.id).concat([LIVE.uid])) : rankMap(PRACTICE_BOARD, RIVALS.map(r => r.id).concat(["you"])); } catch (e) { rk = {}; }
+  const me = isLive() ? LIVE.uid : "you", my = rk[me]; if (!my) return "the nearest castle (there is no board yet)";
+  const want = my === 1 ? 2 : my - 1, id = Object.keys(rk).find(k => rk[k] === want), r = RIVALS.find(x => x.id === id);
+  return my === 1 ? `the lord in second place${r ? ` (${esc(r.name)})` : ""}` : `the lord just above you on the board${r ? ` (${esc(r.name)})` : ""}`;
+}
 function strategyTab() {
+  if (pickV1Now()) return pickTab();
   const st = S.strategy, tm = TMODES.find(x => x[0] === st.mode) || TMODES[0], hostile = S.lists.hostile, idle = RIVALS.filter(r => !hostile.includes(r.id));
   const row = (id, i) => { const r = RIVALS.find(x => x.id === id); if (!r) return "";
     return `<li class="tgt cp" data-k="${id}"><span class="grip" aria-label="Drag to reorder">⠿</span><span class="ord">${i + 1}</span><i class="sw" style="background:${r.color}"></i><span class="tn"><b>${esc(r.name)}</b></span><button class="btn small" data-act="lmove" data-v="neutral" data-k="${id}" aria-label="Stop attacking ${esc(r.name)}" ${dis()}>✕</button></li>`; };
   return `<div class="sec tight"><h3>1 · Who to attack <small class="hint">drives direction out of combat</small></h3><select class="wide" data-act="tmodeset" ${dis()}>${TMODES.map(([k, n]) => `<option value="${k}"${st.mode === k ? " selected" : ""}>${n}</option>`).join("")}</select>${st.mode === "list" ? "" : `<p class="muted">${esc(tm[2])}</p>`}
       ${st.mode === "list" ? `<ol class="tgts cpl" id="tgtlist">${hostile.map(row).join("") || `<li class="muted">Nobody. Your army will pick the nearest castle.</li>`}</ol>` : `<p class="muted">Order tonight: <b>${previewOrder().map(id => esc(RIVALS.find(r => r.id === id).name)).join(" → ") || "nobody"}</b></p>`}
       ${idle.length ? `<div class="chips"><span class="muted">${st.mode === "list" ? "Not attacking:" : "Left out:"}</span>${idle.map(r => `<button class="chip" data-act="lmove" data-v="hostile" data-k="${r.id}" ${dis()}><i class="sw" style="background:${r.color}"></i>${esc(r.name)} +</button>`).join("")}</div>` : ""}</div>
-    <div class="sec tight"><h3>2 · March on their <small class="hint">${st.heading === "hero" ? "straight at it" : st.heading === "castle" ? "straight at it" : st.heading === "centre" ? "hold the hill for 2 min" : "closest first"}</small></h3><div class="seg3 two">${HEADINGS.map(([k, n]) => `<button class="btn small${st.heading === k ? " on" : ""}" data-act="heading" data-v="${k}" ${dis()}>${n}</button>`).join("")}</div>${st.heading === "centre" ? `<p class="muted">Your army skips the attack list and marches to the hill in the middle, fighting anything that comes near. After 2 minutes the order dissolves and it marches on castles instead. Every hero standing on the hill earns 25% more gold and XP.</p>` : ""}</div>
+    ${strategyTabRest(st)}`;
+}
+function strategyTabRest(st) {
+  return `<div class="sec tight"><h3>2 · March on their <small class="hint">${st.heading === "hero" ? "straight at it" : st.heading === "castle" ? "straight at it" : st.heading === "centre" ? "hold the hill for 2 min" : "closest first"}</small></h3><div class="seg3 two">${HEADINGS.map(([k, n]) => `<button class="btn small${st.heading === k ? " on" : ""}" data-act="heading" data-v="${k}" ${dis()}>${n}</button>`).join("")}</div>${st.heading === "centre" ? `<p class="muted">Your army skips the attack list and marches to the hill in the middle, fighting anything that comes near. After 2 minutes the order dissolves and it marches on castles instead. Every hero standing on the hill earns 25% more gold and XP.</p>` : ""}</div>
     <div class="sec tight"><h3>Formation</h3><button class="btn small${S.formation === false ? "" : " on"}" data-act="formation" ${dis()}>${S.formation === false ? "Free advance" : "Keep formation ✓"}</button><p class="muted">${S.formation === false ? "Fast soldiers run ahead and arrive alone." : "Your soldiers march at the slowest soldier's pace and stay in line until the first contact. Siege units and guards move on their own."}</p></div>
     <div class="sec tight"><h3>Stance</h3><div class="seg3">${STANCES.map(([k, n]) => `<button class="btn small${S.stance === k ? " on" : ""}" data-act="stance" data-v="${k}" ${dis()}>${n}</button>`).join("")}</div><p class="muted">${esc(STANCES.find(x => x[0] === S.stance)[2])}.</p></div>`;
 }
@@ -242,7 +266,7 @@ function planJSON() {
   const place = {};
   Object.entries(S.place).forEach(([k, v]) => { const u = findUnit(v), t = findTrap(v); place[k] = v === "champ" ? "champion" : u ? `${u.type}:Lv${u.lvl}` : t ? `trap:${t.type}` : v; });
   return JSON.stringify({ day: DAY, class: S.cls, level: level(), ranks: S.ranks, upgrades: S.picks, castOn: S.triggers, gear: S.gear, defences: S.defences, placements: place, stance: S.stance, advanceOn: S.strategy.heading, attackMode: S.strategy.mode, priority: S.prio, combatPriorities: S.gprio, combatReach: S.engage, commands: S.rules,
-    attackOrder: S.lists.hostile.map(id => (RIVALS.find(r => r.id === id) || {}).name), neutral: S.lists.neutral.map(id => (RIVALS.find(r => r.id === id) || {}).name),
+    attackOrder: S.lists.hostile.map(id => PICK_ROLES[id] || (RIVALS.find(r => r.id === id) || {}).name), neutral: S.lists.neutral.map(id => (RIVALS.find(r => r.id === id) || {}).name),
     allianceOffers: Object.fromEntries(Object.keys(S.offers).map(id => [(RIVALS.find(r => r.id === id) || {}).name, S.offers[id]])),
     allianceTerms: Object.fromEntries(RIVALS.map(r => [r.name, S.terms[r.id]])), soldierOrders: S.uorders }, null, 2);
 }
@@ -280,14 +304,15 @@ function sealSheet() {
     [S.owned.every(u => placedAt(u.id)), `Soldiers placed (${S.owned.filter(u => placedAt(u.id)).length} of ${S.owned.length})`],
     [freePts() === 0, freePts() ? `${freePts()} skill point${freePts() > 1 ? "s" : ""} unspent` : "All skill points spent"],
     [S.traps.every(t => placedAt(t.id)), "Bought traps are set"],
+    pickV1Now() ? [S.lists.hostile.length > 0, S.lists.hostile.length ? `Targets: ${S.lists.hostile.map(id => esc(PICK_ROLES[id] || (RIVALS.find(r => r.id === id) || {}).name || "")).join(" → ")}` : "<b>Pick at least one lord to attack</b> (Strategy)"] :
     [S.strategy.mode !== "list" || S.lists.hostile.length > 0, S.strategy.mode !== "list" ? `Attack: ${esc(TMODES.find(x => x[0] === S.strategy.mode)[1].toLowerCase())}` : S.lists.hostile.length ? `Main attack: ${esc((RIVALS.find(r => r.id === S.lists.hostile[0]) || {}).name || "")}` : "Nobody marked hostile, so your army picks the nearest castle"],
     [opUsed() === OP_MAX, opUsed() < OP_MAX ? `${OP_MAX - opUsed()} order seal${OP_MAX - opUsed() > 1 ? "s" : ""} unused` : "All order seals used"],
   ];
   return head(null, "Seal Your Orders", `Battle in ${countdown()}`) + `<div class="body">
     ${isLive() && S.sealedSnap ? `<div class="warnbox"><b class="wt">Your sealed orders are still in effect</b><p class="muted">You're drafting changes. They won't be fought until you press the seal again. If you don't, the orders you already sealed are used.</p></div>` : ""}${sealWarnings()}<ul class="checks">${checks.map(([ok, t]) => `<li class="${ok ? "ok" : ""}">${t}</li>`).join("")}</ul>
     ${sealPowers()}
-    <p class="muted">${checks[0][0] ? "Unticked items are only reminders." : "Your hero must be on the field before you can seal."}</p>
-    <button class="btn wax" data-act="seal" ${checks[0][0] ? "" : "disabled"}>Press the seal</button>
+    <p class="muted">${checks[0][0] ? "Unticked items are only reminders." : "Your hero must be on the field before you can seal."}${pickV1Now() && !S.lists.hostile.length ? " Pick at least one target before you seal." : ""}</p>
+    <button class="btn wax" data-act="seal" ${checks[0][0] && (!pickV1Now() || S.lists.hostile.length) ? "" : "disabled"}>Press the seal</button>
     ${isLive() ? "" : `<div class="row"><button class="btn wood" data-act="battle">Run a test battle</button><button class="btn" data-act="lab">Balance lab</button></div>`}
     ${isLive() ? `<p class="muted">Orders save to the shared game as you go. If you never seal, your latest draft is used. Once you have sealed, those orders stay in effect until you seal new ones.</p>` : `<button class="btn" data-act="reset">Reset to the example setup</button>`}</div>`;
 }
