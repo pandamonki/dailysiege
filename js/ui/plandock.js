@@ -57,7 +57,9 @@ function renderPlanDock() {
   const el = document.getElementById("pdock"), ud = document.getElementById("ud"), tipEl = document.getElementById("udtip"); if (!el || !ud) return;
   if (mode !== "plan" || !S) { el.hidden = true; ud.className = "ud"; document.body.classList.remove("pdx"); return; }
   el.hidden = false;
-  const src = planSrc(psel);
+  if (!psel) psel = { t: "champ", dflt: true }; // always show something: the hero until you pick another
+  let src = planSrc(psel);
+  if (!src && !psel.dflt) { psel = { t: "champ", dflt: true }; src = planSrc(psel); }
   if (!src) { psel = null; pexp = false; ptip = null; el.innerHTML = `<span class="pd-hint">Tap a soldier, your hero, a castle or a rival to inspect it.</span>`; ud.hidden = true; tipEl.hidden = true; document.body.classList.remove("pdx"); return; }
   const acts = planActions(psel, src.thing ? { rival: false } : src);
   if (src.thing) {
