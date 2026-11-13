@@ -166,13 +166,18 @@ const PATCHES = [
     "Raiders and Battle Mages now unlock at a Fortress (tier 2) instead of a Citadel.",
     "To balance the earlier access: Raider attack 34 to 30 and health 250 to 230. Battle Mage attack 30 to 27, health 180 to 170 and cost 150 to 140.",
   ], changes: [] },
-  { v: "Fairer targeting, no militia, castles worth 3", date: "16 Nov", fixes: [
+  { v: "Pick your targets, fairer targeting, no militia, castles worth 3", date: "16 Nov", fixes: [
     "When two rival castles are equally near, armies, bots and the starting attack list no longer always pick whoever signed up first. A fair draw decides.",
     "Castles left standing on equal health at nightfall are ranked by siege damage, then kills, then a draw, not by sign-up order.",
   ], balance: [
     "Castles no longer send out militia. Your garrison waves do that job now.",
     "Taking a castle scores 3 points (was 2).",
-  ], changes: [] },
+    "The last day now counts 1.5 times, the same as days 5 and 6 (was double).",
+  ], changes: [
+    "Pick your targets: each day your attack list starts empty and you must pick one to three targets before you seal. A target can be a lord, or a role worked out during the battle: weakest castle, board leader, the lord just above me, nearest to my castle, or nearest to my army.",
+    "Your army still fights any army it meets, and now also attacks any rival castle it passes on the way. Once your targets have fallen it goes for the lord just above you on the board (the leader goes for second place).",
+    "If you don't seal new orders, yesterday's sealed targets are used.",
+  ] },
   { v: "Shop bag, one-page shop and page help", date: "13 Nov", fixes: [], balance: [], changes: [
     "A bag of gold on the right edge of the map opens the shop. The Shop tab is gone from Base, and the Hero page has the same bag next to your items.",
     "The shop is one page: 12 items at a time, with the details and Buy button below, and your item slots and gold at the top.",

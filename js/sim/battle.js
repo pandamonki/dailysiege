@@ -19,10 +19,10 @@ const BAL_V3_FROM = "2026-11-12", balV3For = d => String(d) >= BAL_V3_FROM;
 // Also from the same day: castles no longer send out militia (the garrison waves replace them), and taking a castle scores CASTLE_PTS, not 2.
 let FAIR_V1_FROM = "2026-11-16", fairV1For = d => String(d) >= FAIR_V1_FROM;
 const CASTLE_PTS = 3, castlePts = fair => (fair ? CASTLE_PTS : 2);
-// Pick your targets (an experiment, off for the real war until PICK_V1_FROM is set to a date): every lord picks one to PICK_MAX lords to attack
+// Pick your targets (battles fought on or after PICK_V1_FROM; earlier saved battles replay as fought): every lord picks one to PICK_MAX targets
 // each day, and once those have fallen the army goes for the lord just above them on the board (the leader goes for second place).
 // On day 1, with no board yet, it goes for the nearest castle. Target modes other than the lord's own list are not used.
-let PICK_V1_FROM = "2099-01-01"; const pickV1For = d => String(d) >= PICK_V1_FROM, PICK_MAX = 3;
+let PICK_V1_FROM = "2026-11-16"; const pickV1For = d => String(d) >= PICK_V1_FROM, PICK_MAX = 3;
 // With pick-your-targets the final day scores 1.5x like days 5 and 6, not 2x: with targets chosen daily the standings already swing a lot.
 const DAY_WEIGHT_PICK = { 5: 1.5, 6: 1.5, 7: 1.5 };
 // A pick can be a lord or a general role, worked out during the battle (and again whenever the army looks for its next goal):

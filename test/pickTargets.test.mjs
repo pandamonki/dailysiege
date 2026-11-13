@@ -1,12 +1,13 @@
-// Pick your targets (PICK_V1, an experiment): lords pick one to three targets a day; bots pick by their style from the board.
+// Pick your targets (PICK_V1, from 16 Nov 2026): lords pick one to three targets a day; bots pick by their style from the board.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { loadSim, WORLD_FILES } from "../tools/load-sim.mjs";
 
 const sim = loadSim({ extraFiles: [...WORLD_FILES] }), J = v => JSON.parse(JSON.stringify(v));
 
-test("the experiment is off for real wars until a start date is set", () => {
-  assert.equal(sim.run(`pickV1For("2026-12-01")`), false);
+test("pick your targets applies to battles from 16 Nov 2026; earlier battles replay as fought", () => {
+  assert.equal(sim.run(`pickV1For("2026-11-15")`), false);
+  assert.equal(sim.run(`pickV1For("2026-11-16")`), true);
 });
 
 test("bots pick at most three rivals, never themselves, and the same inputs give the same picks", () => {
@@ -30,7 +31,7 @@ test("a seven-day war of bots under the experiment plays out and stays determini
     const a = run(), b = run();
     assert.deepEqual(Object.values(a).map(x => x.resultHash), Object.values(b).map(x => x.resultHash));
     Object.values(a).forEach(x => { assert.equal(x.inputs.pickV1, true); x.inputs.plans.forEach(p => assert.ok(p.targets.length <= 3)); });
-  } finally { sim.run('PICK_V1_FROM = "2099-01-01"'); }
+  } finally { sim.run('PICK_V1_FROM = "2026-11-16"'); }
 });
 
 test("general roles can be picked: they reach the battle, and a battle with them is deterministic", () => {
