@@ -162,6 +162,10 @@ const PATCHES = [
     "The shop is one page: 12 items at a time, with the details and Buy button below, and your item slots and gold at the top.",
     "The unit strip under the map always shows something: your hero until you pick another unit. Health bars are the same width for every unit.",
     "Every page now has a small i in its top corner. Tap it for a short note on what the page is for.",
+    "The hero page has a Stats tab (health, attack, speed and more). The red number on the Abilities tab shows unspent skill points.",
+    "Pixel-art animations for every hero skill, with ground effects drawn beneath the units. The Avatar of War hero is drawn larger.",
+    "A gold coin icon on every price, new Orb of Frost and Orb of Poison art, and the Rune of Homecoming has its own icon.",
+    "Bots added to empty seats now get a spread of heroes instead of always the wizard. The unit strip shows move speed again.",
   ] },
   { v: "Free item spins on days 2 and 5", date: "13 Nov", fixes: [], balance: [], changes: [
     "On day 2 and day 5 every lord gets a spinner of three items and keeps one for free: tier 1 items on day 2, tier 2 on day 5.",
