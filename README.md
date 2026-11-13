@@ -55,7 +55,7 @@ npm run build      # copy the game into dist/ ready for hosting
   (`.github/workflows/deploy.yml`), after the tests pass. Each pull request gets a temporary preview address
   (`preview.yml`); the friends game is switched off on previews so they can never touch the real war.
   `OPERATIONS.md` is the host's guide: starting a war, recovering a player, rolling back, checking costs.
-- CI (`.github/workflows/ci.yml`) runs lint, the tests and the build on every pull request.
+- CI (`.github/workflows/ci.yml`) runs lint, the tests and the build on every pull request (not again on merge, since Deploy re-runs the core tests).
 - The hosting plan and its phases are in `daily-siege-hosting-plan.md`.
 
 | Folder | What lives there |
