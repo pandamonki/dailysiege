@@ -11,12 +11,21 @@ const BAL_V2_FROM = "2026-11-12", balV2For = d => String(d) >= BAL_V2_FROM;
 // Combat groups, siege rules, no castle burn and reinforcement waves (battles fought on or after this day; earlier saved battles replay as fought).
 // Set to the day it went live: any battle already fought under the V2 rules on or after this day would change when replayed.
 const BAL_V3_FROM = "2026-11-12", balV3For = d => String(d) >= BAL_V3_FROM;
+// Fair ties (battles fought on or after this day; earlier saved battles replay as fought). On a symmetric ring two rival castles are often
+// exactly as near, and castles can end with the same health. Both used to go to whoever came first in the roster; now a seeded draw decides:
+//   - an army with nobody left on its list marches on the nearest castle, and an equally near pair is settled by a draw for each lord and day
+//   - the "closest" target mode settles equal distances the same way
+//   - castles still standing with the same health are ranked by siege damage, then kills, then a draw
+// Also from the same day: castles no longer send out militia (the garrison waves replace them), and taking a castle scores CASTLE_PTS, not 2.
+const FAIR_V1_FROM = "2026-11-16", fairV1For = d => String(d) >= FAIR_V1_FROM;
+const CASTLE_PTS = 3, castlePts = fair => (fair ? CASTLE_PTS : 2);
+const fairTie = (seed, a, b) => hash(seed, botSeed(String(a)) * 7919 + botSeed(String(b)), 17);
 const BLOC_MAX = 3, TREACHERY_PTS = 3, TREACHERY_LOOT = .25, DAY_WEIGHT = { 5: 1.5, 6: 1.5, 7: 2 };
 // A lord whose castle falls keeps their hero and soldiers on the field: they fight on to the end of the battle, but can no longer fall back, heal at the castle, teleport home or respawn. Placing is still decided by when the castle fell.
 const ORPHAN_ARMIES = true;
 const dayWeight = (v2, dayNo) => (v2 && DAY_WEIGHT[dayNo]) || 1;
 function runBattle(plans, seed, opts = {}) {
-  const BV = !!opts.balV2, V3 = !!opts.balV3, HV3 = !!opts.heroV3, maxLvl = HV3 ? MAX_HERO_LVL_V3 : MAX_HERO_LVL, hpLvX = HV3 ? hpLvV3 : hpLv, atkLvX = HV3 ? atkLvV3 : atkLv, OA = !!opts.balV2 && ORPHAN_ARMIES, UV = !!opts.ultV2, UD = UV ? .75 : 1, UR = rk => UV ? [.7, .85, 1][Math.min(3, Math.max(1, rk || 1)) - 1] : 1;
+  const BV = !!opts.balV2, V3 = !!opts.balV3, FV = !!opts.fairV1, HV3 = !!opts.heroV3, maxLvl = HV3 ? MAX_HERO_LVL_V3 : MAX_HERO_LVL, hpLvX = HV3 ? hpLvV3 : hpLv, atkLvX = HV3 ? atkLvV3 : atkLv, OA = !!opts.balV2 && ORPHAN_ARMIES, UV = !!opts.ultV2, UD = UV ? .75 : 1, UR = rk => UV ? [.7, .85, 1][Math.min(3, Math.max(1, rk || 1)) - 1] : 1;
   const rng = mulberry(seed), DT = .1, fast = !!opts.fast, leaderPid = (plans.find(p => p.leader) || {}).pid;
   let curAb = null;
   const mePid = (plans.find(p => p.me) || plans[0]).pid, NN = opts.N || N;
@@ -420,7 +429,7 @@ function runBattle(plans, seed, opts = {}) {
     const rk = q => (P[q].rank != null ? P[q].rank : order.indexOf(q) + 1), my = rk(p.pid), hero = q => ents.find(o => o.kind === "champ" && o.pid === q);
     const key = { highest: q => rk(q), lowest: q => -rk(q), above: q => Math.abs(rk(q) - (my - 1)) + (rk(q) < my ? 0 : .5), below: q => Math.abs(rk(q) - (my + 1)) + (rk(q) > my ? 0 : .5),
       weakcastle: q => P[q].castle.maxhp, toplevel: q => -(P[q].level || 1), weakhero: q => { const h = hero(q); return h ? h.maxhp : 1e9; }, closest: q => d(P[q].castle, p.castle) }[mode];
-    if (key) p.targets = p.targets.slice().sort((a, b) => key(a) - key(b) || order.indexOf(a) - order.indexOf(b));
+    if (key) p.targets = p.targets.slice().sort((a, b) => key(a) - key(b) || (FV ? fairTie(seed, p.pid, a) - fairTie(seed, p.pid, b) : 0) || order.indexOf(a) - order.indexOf(b));
   }
   function goalPid(e) {
     const p = P[e.pid], ok = q => !!q && !!P[q] && P[q].alive && q !== e.pid && hostile(e.pid, q);
@@ -430,6 +439,7 @@ function runBattle(plans, seed, opts = {}) {
     if (!p.sorted) { p.sorted = true; sortTargets(p); }
     const listed = p.targets.find(ok); if (listed) return listed;
     // nobody left on the hostile list: the army still has to fight, so it marches on the nearest non-allied castle
+    if (FV) return order.filter(ok).sort((a, b) => (Math.round(d(P[a].castle, p.castle) * 1e6) - Math.round(d(P[b].castle, p.castle) * 1e6)) || (fairTie(seed, p.pid, a) - fairTie(seed, p.pid, b)))[0] || null;
     return minBy(order.filter(ok), q => d(P[q].castle, p.castle));
   }
   // Targeting priorities by kind of fighter (from 12 Nov 2026; the plan's gprio = { hero, melee, ranged, heal }, and engage = reach in tiles).
@@ -847,7 +857,7 @@ function runBattle(plans, seed, opts = {}) {
       if (i >= 0) deployWave(p, i);
     });
     // reinforcements: every living castle musters militia on a timer, so the field never empties into hero-only sieges
-    if (!opts.duel && t >= MILITIA.first && Math.abs(((t - MILITIA.first) % MILITIA.every)) < DT / 2) order.forEach(pid => {
+    if (!opts.duel && !FV && t >= MILITIA.first && Math.abs(((t - MILITIA.first) % MILITIA.every)) < DT / 2) order.forEach(pid => {
       const p = P[pid]; if (!p.alive) return;
       const c = p.castle, dx = NN / 2 - c.x, dy = NN / 2 - c.y, L = hyp(dx, dy) || 1;
       for (let i = 0; i < (nP <= 4 ? 1 : MILITIA.count); i++) {
@@ -924,7 +934,8 @@ function runBattle(plans, seed, opts = {}) {
     if (opts.duel) { const sides = order.filter(pid => ents.some(e => !e.dead && e.pid === pid && e.kind !== "castle" && e.kind !== "totem")); if (sides.length <= 1 || t >= 90) { over = true; opts.duel.winner = sides.length === 1 ? sides[0] : null; opts.duel.t = t; opts.duel.hp = P[mePid].champ ? Math.max(0, P[mePid].champ.hp) / P[mePid].champ.maxhp : 0; } }
   }
   // ----- results -----
-  const alive = alivePlayers().sort((a, b) => P[b].castle.hp / P[b].castle.maxhp - P[a].castle.hp / P[a].castle.maxhp);
+  const hpF = q => Math.round(Math.max(0, P[q].castle.hp) / P[q].castle.maxhp * 1e6);
+  const alive = alivePlayers().sort((a, b) => FV ? (hpF(b) - hpF(a)) || ((P[b].castleDmg || 0) - (P[a].castleDmg || 0)) || (P[b].kills - P[a].kills) || (fairTie(seed, a, 0) - fairTie(seed, b, 0)) : P[b].castle.hp / P[b].castle.maxhp - P[a].castle.hp / P[a].castle.maxhp);
   if (t >= TMAX && alive.length > 1) log("Night falls. The strongest castle claims the banner.", "big");
   alive.forEach((pid, i) => { P[pid].place = i + 1; });
   if (BV) { // castles that fell on the same tick share the places they took between them: the one that dealt more siege damage, then killed more heroes, ranks higher; a seeded draw settles the rest (never seat order)
@@ -953,7 +964,7 @@ function runBattle(plans, seed, opts = {}) {
   const W8 = dayWeight(BV, opts.dayNo);
   const PTS = [10, 7, 5, 4, 3, 2, 1, 0]; // placement points; from 8th place down a lord scores only for kills and castles
   const results = order.map(pid => ({ pid, name: nm(pid), color: P[pid].color, cls: P[pid].cls, place: P[pid].place, kills: P[pid].kills, ukills: P[pid].ukills, castles: P[pid].castles,
-    points: Math.round(((PTS[P[pid].place - 1] || 0) + P[pid].kills + 2 * P[pid].castles) * W8) + (treach[pid] || 0) * TREACHERY_PTS, ...(treach[pid] ? { treachery: treach[pid] } : {}), fellAt: P[pid].elimT, gold: Math.round(P[pid].gold) })).sort((a, b) => a.place - b.place);
+    points: Math.round(((PTS[P[pid].place - 1] || 0) + P[pid].kills + castlePts(FV) * P[pid].castles) * W8) + (treach[pid] || 0) * TREACHERY_PTS, ...(treach[pid] ? { treachery: treach[pid] } : {}), fellAt: P[pid].elimT, gold: Math.round(P[pid].gold) })).sort((a, b) => a.place - b.place);
   const invest = (type, lvl) => { const c = UNITS[type].cost; let g = c; for (let l = 1; l < lvl; l++) g += Math.round(c * .5 * l); return g; };
   const tel = { duration: Math.min(t, TMAX),
     players: order.map(pid => ({ pid, name: nm(pid), cls: P[pid].cls, level: P[pid].level || 1, place: P[pid].place, points: results.find(r => r.pid === pid).points, elimT: P[pid].elimT, trapDmg: Math.round(P[pid].trapDmg || 0) })),

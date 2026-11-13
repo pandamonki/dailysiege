@@ -66,7 +66,8 @@ function ensureDip() {
   const ids = RIVALS.map(r => r.id);
   ["hostile", "neutral", "ally"].forEach(k => { S.lists[k] = S.lists[k].filter((id, i, a) => ids.includes(id) && a.indexOf(id) === i); });
   const placed = new Set([...S.lists.hostile, ...S.lists.neutral, ...S.lists.ally]);
-  RIVALS.slice().sort((a, b) => Math.hypot(a.pos[0] - CASTLE[0], a.pos[1] - CASTLE[1]) - Math.hypot(b.pos[0] - CASTLE[0], b.pos[1] - CASTLE[1])).forEach(r => {
+  const near = r => Math.round(Math.hypot(r.pos[0] - CASTLE[0], r.pos[1] - CASTLE[1]) * 1e6), tie = r => hash(botSeed(String(r.id)), CASTLE[0] * 100 + CASTLE[1], 29); // equally near rivals go in a fixed but fair order, not sign-up order
+  RIVALS.slice().sort((a, b) => (near(a) - near(b)) || (tie(a) - tie(b))).forEach(r => {
     if (!placed.has(r.id)) S.lists.hostile.push(r.id);
     S.diplo[r.id] = S.diplo[r.id] || {}; S.diplo[r.id].clues = S.diplo[r.id].clues || [];
     S.terms[r.id] = S.terms[r.id] || { mode: "accept", min: 200, when: BETRAY_WHEN[0] };
