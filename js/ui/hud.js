@@ -45,6 +45,7 @@ function renderCamp() {
   let show = false, n = 0, fresh = false;
   try { show = !!S && mode === "plan" && mercOpen() && !(isLive() && LIVE.readOnly); n = show ? myBids().length : 0; fresh = show && S.mercSeen !== (isLive() ? liveClock().week : "p"); } catch (e) {}
   b.hidden = !show; b.classList.toggle("pulse", fresh);
+  const sb = document.getElementById("shopbtn"); if (sb) sb.hidden = !(S && mode === "plan" && !(isLive() && LIVE.readOnly));
   const bd = b.querySelector(".cbadge"); bd.hidden = !n; bd.textContent = n;
 }
 function renderHint() {

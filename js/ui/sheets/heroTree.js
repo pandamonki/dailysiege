@@ -61,7 +61,7 @@ function champSheetV3() {
     <p class="muted">Your hero gains a skill point at every level (15 in all, enough to max one tree and a little more), but only you spend them, here. Nothing skills itself in a battle. The ultimate needs level ${TREE_ULT_LVL}, and you can learn only one.</p>
     <div><button class="btn ${S.ultArm && learned && !cool ? "wax" : "wood"}" data-act="ultarm" ${dis(!learned || cool)}>${!learned ? "Ultimate not learned yet" : cool ? "Ultimate recharging until tomorrow" : S.ultArm ? "Ultimate planned for tonight ✓ (tap to cancel)" : "Plan the ultimate for tonight"}</button></div>`;
   const items = `${common}
-    <div class="sec"><div class="spread"><h3>Items (${S.items.length}/${ITEM_SLOTS})</h3><button class="btn small wood" data-act="shop">Shop</button></div>
+    <div class="sec"><div class="spread"><h3>Items (${S.items.length}/${ITEM_SLOTS})</h3><button class="bagbtn" data-act="shop" aria-label="Shop"><img alt="" src="icons/ui/shop.webp"></button></div>
       <div class="islots tiny">${slots.map(k => k ? `<div class="islot" title="${esc(ITEMS[k].desc)}"><img alt="" src="${itemURL(k)}"><b>${esc(ITEMS[k].name)}</b></div>` : `<div class="islot empty"><span>Empty</span></div>`).join("")}</div></div>
     <div class="sec"><h3>Gear</h3>${gearLines(S.gear)}</div>
     <div><button class="btn small" data-act="open" data-v="spells">Spell book</button></div>`;
