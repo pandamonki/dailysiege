@@ -20,14 +20,14 @@ function glow(x, y, rx, ry, color, a) {
 const TERRAIN_SPR = {};
 const vnoise = (x, y, sd) => { const xi = Math.floor(x), yi = Math.floor(y), fx = x - xi, fy = y - yi, sm = t => t * t * (3 - 2 * t), a = hash(xi, yi, sd), b = hash(xi + 1, yi, sd), c = hash(xi, yi + 1, sd), d = hash(xi + 1, yi + 1, sd), u = sm(fx), v = sm(fy);
   return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v; };
-function terrainSprite(key, w, h, draw) { // draw(px(x,y,col), rect(x,y,w,h,col)) on a w x h canvas, then a dark edge round the shape
+function terrainSprite(key, w, h, draw, edge) { // draw(px(x,y,col), rect(x,y,w,h,col)) on a w x h canvas, then a dark edge round the shape (edge: [r, g, b, a], default dark green; null for none)
   if (TERRAIN_SPR[key]) return TERRAIN_SPR[key];
   const cv = document.createElement("canvas"); cv.width = w; cv.height = h; const g = cv.getContext("2d");
   const px = (x, y, col) => { g.fillStyle = col; g.fillRect(Math.round(x), Math.round(y), 1, 1); }, rect = (x, y, ww, hh, col) => { g.fillStyle = col; g.fillRect(Math.round(x), Math.round(y), ww, hh); };
   draw(px, rect, g);
   const src = g.getImageData(0, 0, w, h), d = src.data, out = g.createImageData(w, h); out.data.set(d);
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { if (d[(y * w + x) * 4 + 3]) continue;
-    if ([[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]].some(([a, b]) => a >= 0 && b >= 0 && a < w && b < h && d[(b * w + a) * 4 + 3] > 200)) { const i = (y * w + x) * 4; out.data[i] = 30; out.data[i + 1] = 52; out.data[i + 2] = 26; out.data[i + 3] = 170; } }
+    if ([[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]].some(([a, b]) => a >= 0 && b >= 0 && a < w && b < h && d[(b * w + a) * 4 + 3] > 200)) { const i = (y * w + x) * 4; const ec = edge === undefined ? [30, 52, 26, 170] : edge; if (!ec) continue; out.data[i] = ec[0]; out.data[i + 1] = ec[1]; out.data[i + 2] = ec[2]; out.data[i + 3] = ec[3]; } }
   g.putImageData(out, 0, 0); return (TERRAIN_SPR[key] = cv);
 }
 const GR = { pine: ["#16361c", "#1f4a26", "#2b6130", "#3c7a3a", "#5c9a4a"], oak: ["#235628", "#2f7234", "#43903d", "#62ae4c", "#93cc62"] };
@@ -53,29 +53,44 @@ const bushSprite = v => terrainSprite("bush" + v, 10, 6, px => { for (let y = 0;
 const rockSprite = v => terrainSprite("rock" + v, 10, 6, px => { for (let y = 0; y < 5; y++) for (let x = 0; x < 10; x++) { const dx = (x - 4.5) / 4.5, dy = (y - 2.9) / (2.1 + v * .3); if (dx * dx + dy * dy > 1 + (hash(x, y, 6 + v) - .5) * .25) continue; const l = (-dx - dy) * .55 + hash(x, y, 2) * .25; px(x, y, l > .45 ? "#c4c0b4" : l > .05 ? "#9b978c" : "#6f6c64"); } });
 function pine(c, x, y, s, k) { const sp = pineSprite(Math.floor(k * 3)), u = s / 16; c.imageSmoothingEnabled = false; c.drawImage(sp, Math.round(x - 6.5 * u), Math.round(y - 18 * u), sp.width * u, sp.height * u); }
 function oak(c, x, y, s) { const sp = oakSprite(Math.round(x + y) % 2), u = s / 16; c.imageSmoothingEnabled = false; c.drawImage(sp, Math.round(x - 8.5 * u), Math.round(y - 18 * u), sp.width * u, sp.height * u); }
+// the battleground at the centre of the map: 46 pixels across (about 2.9 tiles), drawn once
+const centreSprite = () => terrainSprite("centre", 46, 46, px => {
+  const C = 22.5, R = 21;
+  for (let y = 0; y < 46; y++) for (let x = 0; x < 46; x++) { const dx = x - C, dy = y - C, d = Math.hypot(dx, dy); if (d > R) continue;
+    if (d > R - 1.3) { px(x, y, "#5e4a2b"); continue; }
+    if (d > R - 2.4) { px(x, y, (x + y) % 3 ? "#8a6f45" : "#7d6440"); continue; }
+    if (Math.abs(d - 11) < .7) { px(x, y, "#8a6f45"); continue; }
+    const row = Math.floor(y / 3), sx = Math.floor((x + (row % 2) * 2) / 4), mortar = y % 3 === 2 || (x + (row % 2) * 2) % 4 === 3;
+    if (mortar) { px(x, y, "#94784c"); continue; }
+    const k = hash(sx, row, 61); px(x, y, k > .66 ? "#c4a674" : k > .33 ? "#b99a68" : "#a8895a"); }
+  // a compass star of pale stones in the middle
+  for (let k = -5; k <= 5; k++) { const a = Math.abs(k) < 2 ? "#e3cf9e" : "#d5bd88"; px(C + k, C, a); px(C, C + k, a); }
+  for (let k = -2; k <= 2; k++) { px(C + k, C + k, "#d5bd88"); px(C + k, C - k, "#d5bd88"); }
+  px(C, C, "#f0e2b8");
+}, null);
 function paintBackground() {
   const res = Math.min(dpr, 2), b = document.createElement("canvas"); b.width = b.height = Math.round(W * res);
   const c = b.getContext("2d"); c.scale(res, res); c.imageSmoothingEnabled = false;
-  // ground: soft patches of lighter and darker grass instead of flat squares
-  const cs = ts / 4, cells = Math.ceil(W / cs);
-  for (let cy = 0; cy < cells; cy++) for (let cx = 0; cx < cells; cx++) {
-    const nx = cx / 7, ny = cy / 7, n = vnoise(nx, ny, 31) * .75 + vnoise(nx * 2.1, ny * 2.1, 32) * .25;
-    c.fillStyle = `hsl(${95 + n * 8}, ${34 + n * 6}%, ${33 + n * 5}%)`; c.fillRect(cx * cs, cy * cs, cs + 1, cs + 1);
+  // ground: the original grass, a slightly varied green square per tile with blades of grass and the odd flower
+  for (let r = 0; r < N; r++) for (let q = 0; q < N; q++) {
+    const v = hash(r, q); c.fillStyle = `hsl(${92 + v * 10}, ${36 + v * 8}%, ${32 + v * 6}%)`; c.fillRect(q * ts, r * ts, ts + 1, ts + 1);
   }
+  c.imageSmoothingEnabled = true;
+  for (let i = 0; i < N * N * 9; i++) {
+    const x = hash(i, 1, 3) * W, y = hash(i, 2, 5) * W, v = hash(i, 3, 7);
+    c.strokeStyle = v > .5 ? "rgba(30,60,20,.45)" : "rgba(150,190,90,.35)"; c.lineWidth = ts * .03;
+    c.beginPath(); c.moveTo(x, y); c.lineTo(x + ts * .04, y - ts * .1); c.stroke();
+    if (v > .985) { c.fillStyle = v > .993 ? "#f2e7a0" : "#f4f0f0"; c.beginPath(); c.arc(x, y, ts * .04, 0, 7); c.fill(); }
+  }
+  c.imageSmoothingEnabled = false;
   const u = ts / 16;
-  for (let i = 0; i < N * N * 2; i++) { // a few grass tufts, rare flowers
-    const x = Math.round(hash(i, 1, 3) * W / u) * u, y = Math.round(hash(i, 2, 5) * W / u) * u, v = hash(i, 3, 7);
-    if (v > .995) { c.fillStyle = "#f6f2f2"; c.fillRect(x, y, u, u); }
-    else { c.fillStyle = v > .5 ? "rgba(24,52,16,.28)" : "rgba(170,210,100,.25)"; c.fillRect(x, y, u, u * 2); }
-  }
   // roads: a dark edge, a dirt body, and a lighter worn middle, with pebbles
   [["#6a5330", .5], ["#a8895a", .4], ["#b99a68", .3]].forEach(([col, w]) => {
     c.strokeStyle = col; c.lineWidth = ts * w; c.lineCap = "round";
     castleTiles.forEach(([r, q]) => { c.beginPath(); c.moveTo((q + .5) * ts, (r + .5) * ts); c.lineTo(MID, MID); c.stroke(); });
   });
-  // the centre plaza: paved with stones
-  const pr = ts * 1.3; c.fillStyle = "#6a5330"; c.beginPath(); c.arc(MID, MID, pr + u, 0, 7); c.fill(); c.fillStyle = "#b99a68"; c.beginPath(); c.arc(MID, MID, pr, 0, 7); c.fill();
-  c.strokeStyle = "rgba(106,83,48,.55)"; c.lineWidth = u; c.beginPath(); c.arc(MID, MID, ts * .7, 0, 7); c.stroke();
+  // the centre battleground: a paved pixel-art plaza (flagstones, a worn inner ring and a compass star), then its ring of standing stones
+  { const sp = centreSprite(); c.drawImage(sp, Math.round(MID - sp.width / 2 * u), Math.round(MID - sp.height / 2 * u), sp.width * u, sp.height * u); }
   for (let i = 0; i < 8; i++) {
     const a = i / 8 * Math.PI * 2 + .2, x = MID + Math.cos(a) * ts * 1.1, y = MID + Math.sin(a) * ts * 1.1, sx = Math.round(x / u) * u, sy = Math.round(y / u) * u;
     c.fillStyle = "rgba(0,0,0,.28)"; c.fillRect(sx - u * 2, sy, u * 5, u); c.fillStyle = "#3a3832"; c.fillRect(sx - u * 2, sy - u * 7, u * 4, u * 8);
@@ -92,10 +107,10 @@ function paintBackground() {
     c.setLineDash([]); });
   const scenery = []; // drawn back to front so nearer trees overlap the ones behind
   for (let r = 0; r < N; r++) for (let q = 0; q < N; q++) {
-    if (nearCastle(r, q) || isCentre(r, q) || roadTiles.has(`${r},${q}`) || inZone(r, q) || occupied.has(`${r},${q}`)) continue;
-    const ring = Math.min(r, q, N - 1 - r, N - 1 - q) === 0, v = hash(r, q, 11);
-    if (v < (ring ? .55 : .2)) {
-      const n = v < .08 ? 2 : 1;
+    const ring = Math.min(r, q, N - 1 - r, N - 1 - q) === 0, v = hash(r, q, 11); // the outer edge of the map is a solid tree line
+    if ((!ring && nearCastle(r, q)) || isCentre(r, q) || roadTiles.has(`${r},${q}`) || inZone(r, q) || occupied.has(`${r},${q}`) || (ring && CASTLE && r === CASTLE[0] && q === CASTLE[1])) continue;
+    if (ring || v < .2) {
+      const n = ring ? 2 : v < .08 ? 2 : 1;
       for (let i = 0; i < n; i++) {
         const x = (q + .3 + hash(r, q, 20 + i) * .4) * ts, y = (r + .75 + hash(r, q, 30 + i) * .2) * ts;
         scenery.push([y, () => { c.fillStyle = "rgba(0,0,0,.24)"; c.beginPath(); c.ellipse(x, y, ts * .3, ts * .1, 0, 0, 7); c.fill(); hash(r, q, 40 + i) > .45 ? pine(c, x, y, ts, hash(r, q, 50)) : oak(c, x, y, ts); }]);

@@ -123,7 +123,7 @@ test("a pact group holds at most three lords", () => {
 test("the last days of the week score more", () => {
   const W = world(ids), at = k => fightDay(W, addDays(D1, k), 1), pts = d => d.results.reduce((n, r) => n + r.points, 0);
   const d1 = at(0), d7 = at(6);
-  assert.ok(pts(d7) > pts(d1) * 1.5, `day 7 (${pts(d7)}) is worth about twice day 1 (${pts(d1)})`);
+  assert.ok(pts(d7) > pts(d1) * 1.2, `day 7 (${pts(d7)}) is worth about 1.5 times day 1 (${pts(d1)})`); // 1.5x from 16 Nov 2026 (2x before)
 });
 
 test("a betrayer who sets off the bomb is paid: points and a share of the victim's spoils", () => {

@@ -13,7 +13,7 @@ function freshState() {
     owned: [{ id: "u1", type: "footman", lvl: 2, hp: .6 }, { id: "u2", type: "bowman", lvl: 1, hp: 1 }],
     slots: SLOT_START, traps: [],
     place: defaultPlace(["u1", "u2"]),
-    stance: "opportunist", prio: PRIORITIES.slice(), rules: [{ if: IFS[0], then: THENS[0] }, { if: IFS[1], then: THENS[0] }],
+    stance: "opportunist", prio: PRIORITIES.slice(), rules: [],
     diplo: Object.fromEntries(RIVALS.map(r => [r.id, { rel: r.id === "p1" ? "ally" : "neutral", betray: "Never", clues: [] }])),
     locked: false,
     gear: { weapon: 1, armour: 0, charm: 0 }, defences: { walls: 0, tower: 0 },
@@ -22,7 +22,7 @@ function freshState() {
 }
 function newPlayerState() {
   return { gold: 300, cls: "warrior", ranks: { a1: 0, a2: 0, a3: 0, ult: 0 }, tree: emptyTree(), picks: {}, triggers: { a1: TRIGGERS[1], a2: TRIGGERS[2], a3: TRIGGERS[0], ult: TRIGGERS[1] },
-    owned: [], slots: SLOT_START, traps: [], place: defaultPlace([]), stance: "skirmish", prio: PRIORITIES.slice(), rules: [{ if: IFS[0], then: THENS[0] }, { if: IFS[1], then: THENS[0] }],
+    owned: [], slots: SLOT_START, traps: [], place: defaultPlace([]), stance: "skirmish", prio: PRIORITIES.slice(), rules: [],
     diplo: {}, locked: false, phase: "muster", gear: { weapon: 0, armour: 0, charm: 0 }, defences: { walls: 0, tower: 0 },
     castle: 1, items: [], walls: [], banner: defaultBanner(), pairs: [], pactAct: {}, pactWhen: {}, xp: 0, lvl: 1, gain: 0, ob: 1 };
 }

@@ -7,12 +7,12 @@ const CLASSES = {
     { key: "a2", name: "Shield Wall", desc: "Reduces damage taken for 4s.", choice: [["Reflect", "Returns 20% of blocked damage"], ["Bulwark", "Also shields adjacent allies"]] },
     { key: "a3", name: "War Cry", desc: "Nearby units attack harder.", choice: [["Fear", "Enemies flee for 1s"], ["Second Wind", "Also heals your units a little"]] } ],
     ult: { name: "Last Stand", desc: "Once per fight: cannot die for 6+ seconds, heals 40% and stuns and blasts everything around you." } },
-  mage: { name: "Mage", role: "Area damage", trait: "Magic damage across whole groups, but light armour and low health. Backs off when engaged.", abilities: [
+  mage: { name: "Mage", role: "Area damage", trait: "Magic damage across whole groups, but light armour and low health. Steps back briefly while it is being hit, then keeps casting.", abilities: [
     { key: "a1", name: "Fireball", desc: "Strong single-target blast.", choice: [["Burn", "Leaves damage over time"], ["Explosion", "Splashes nearby enemies"]] },
     { key: "a2", name: "Frost Nova", desc: "Slows enemies around you.", choice: [["Deep Freeze", "Roots for 1s"], ["Shatter", "Frozen enemies take +25%"]] },
     { key: "a3", name: "Blink", desc: "Short teleport.", choice: [["Escape", "Blinks away when HP drops low"], ["Ambush", "Next Fireball after Blink crits"]] } ],
     ult: { name: "Meteor", desc: "Once per fight: a vast meteor wipes out most soldiers in its blast and cripples heroes." } },
-  archer: { name: "Archer", role: "Ranged kiter", trait: "Pierce damage from the longest range. Stops to shoot, then repositions whenever melee gets close.", abilities: [
+  archer: { name: "Archer", role: "Ranged kiter", trait: "Pierce damage from the longest range. Stops to shoot, and only repositions while melee is hitting it.", abilities: [
     { key: "a1", name: "Piercing Shot", desc: "Hits every enemy in a line.", choice: [["Armour Break", "Targets take +15% damage"], ["Ricochet", "Bounces to one more target"]] },
     { key: "a2", name: "Volley", desc: "Spreads damage over an area.", choice: [["Fire Arrows", "Area keeps burning"], ["Barrage", "Fires twice"]] },
     { key: "a3", name: "Evasion", desc: "Chance to dodge attacks.", choice: [["Counter", "Dodges trigger a free shot"], ["Kite", "Steps back after dodging"]] } ],
@@ -22,7 +22,7 @@ const CLASSES = {
     { key: "a2", name: "Lightning Bolt", desc: "Chains between enemies.", choice: [["Overload", "More chain jumps"], ["Stun", "First target stunned 1s"]] },
     { key: "a3", name: "Bloodlust", desc: "Your units attack faster.", choice: [["Frenzy", "Bigger speed boost"], ["Lifesteal", "Units heal on hit"]] } ],
     ult: { name: "Spirit Wolves", desc: "Once per fight: stuns foes and summons 3-4 powerful wolves." } },
-  rogue: { name: "Rogue", role: "Hit and run", trait: "Precision daggers shred light armour but struggle against heavy. Hits anything below half health 60% harder and heals 12% of the damage dealt. Strikes, then slips away.", abilities: [
+  rogue: { name: "Rogue", role: "Hit and run", trait: "Precision daggers shred light armour but struggle against heavy. Hits anything below half health 60% harder and heals 12% of the damage dealt. Fights on through hits, and only slips away when outnumbered 3 to 1.", abilities: [
     { key: "a1", name: "Backstab", desc: "Big damage from behind.", choice: [["Execute", "Bonus against low-HP targets"], ["Cripple", "Target is slowed"]] },
     { key: "a2", name: "Smoke Bomb", desc: "Enemies lose track of you.", choice: [["Vanish", "Untargetable for 2s"], ["Choke", "Smoke also silences"]] },
     { key: "a3", name: "Poison Blade", desc: "Damage over time on hit.", choice: [["Venom", "Poison stacks"], ["Weaken", "Poisoned enemies deal less"]] } ],

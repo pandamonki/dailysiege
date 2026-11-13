@@ -3,6 +3,22 @@
 // Each item is [icon, headline, one short sentence]. Players who have not seen the newest id get the pop-up the next time they plan;
 // the id is remembered on their device, so changing the id is all it takes to show it again. Keep about 8 to 14 items.
 const RELEASES = [
+  { id: "1.1", title: "What's new in v1.1", sub: "From the battles of Monday 16 November", items: [
+    ["🎯", "Pick your targets", "Each day your attack list starts empty. Pick one to three targets before you seal."],
+    ["🧭", "Targets can be roles", "Pick a lord, or a role worked out in battle: weakest castle, board leader, the lord above you, nearest castle or nearest to your army."],
+    ["⬆", "Chase the lord above", "Once your targets have fallen, your army goes for the lord just above you on the board."],
+    ["🏰", "Castles on the way", "Armies still fight any army they meet, and now also attack rival castles they pass."],
+    ["🏆", "Castles worth 3", "Taking a castle scores 3 points instead of 2."],
+    ["🛡", "No more militia", "Castles no longer send out militia. Your garrison waves do that job now."],
+    ["⚖", "Calmer final day", "The last day counts 1.5 times, the same as days 5 and 6."],
+    ["🎲", "Fair ties", "When two castles are equally near, or end on equal health, a fair draw decides instead of sign-up order."],
+    ["⚔", "Heroes keep fighting", "Retreating heroes return at half health, and a castle under attack only calls home a hero that is nearby."],
+    ["🏹", "Steadier archers and mages", "They only step back while they are actually being hit."],
+    ["☄", "Heroes besiege castles", "Area skills like Fireball, Blizzard, Chain Lightning and Arrow Volley now hit castles, Meteor hits far harder, and magic breaks stone better than blades or arrows."],
+    ["🗡", "Braver rogues", "Rogues fight through hits and only slip away when outnumbered 3 to 1."],
+    ["🌲", "A fresh look", "Pixel-art walls and battleground, the original grass, and a forest round the edge of the map."],
+    ["✥", "Move, don't drag", "Units are moved with the Move button, Train opens the training page, and items on the hero screen show their details."],
+  ] },
   { id: "1.0", title: "What's new in v1.0", sub: "The big changes since v0.02", items: [
     ["🌐", "Play online with friends", "Sign in with Google, join a war and install the game on your home screen. It starts offline and tells you when an update is ready."],
     ["🤖", "Bot lords", "The host can fill empty seats with computer-played lords, each with a different hero. Up to 12 lords per war."],

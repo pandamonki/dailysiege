@@ -38,21 +38,9 @@ function pieceNear(tx, ty) { // the placed piece closest to a point (in tiles), 
   return best || wallRefAt(Math.floor(ty), Math.floor(tx)) || S.place[`${Math.floor(ty)},${Math.floor(tx)}`] || null;
 }
 function worldOf(clientX, clientY) { const rc = cvs.getBoundingClientRect(); return [cam.x + (clientX - rc.left) / cam.z, cam.y + (clientY - rc.top) / cam.z]; }
-function dropPiece(dp, r, q) {
-  const ref = dp.ref, wl = findWall(ref), nr = r - dp.off[0], nq = q - dp.off[1];
-  if (wl) { if (!wallFree(nr, nq, wl.dir, ref)) { toast("The wall doesn't fit there."); return; } const old = placedAt(ref); if (old) delete S.place[old]; S.place[`${nr},${nq}`] = ref; return; }
-  const key = `${r},${q}`; if (!zoneSet.has(key) || wallRefAt(r, q)) { toast("Drop it inside your field."); return; }
-  const other = S.place[key]; if (other === ref) return;
-  if (other && findWall(other)) { toast("A wall stands there."); return; }
-  const old = placedAt(ref); if (old) delete S.place[old]; if (other && old) S.place[old] = other; S.place[key] = ref;
-}
+// pieces are moved with the Move button on the unit strip, not by dragging them on the map
 cvs.addEventListener("pointerdown", e => {
   cvs.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); camTarget = null;
-  dragPc = null;
-  if (ptrs.size === 1 && mode === "plan" && !S.locked && !sel && !sheet) {
-    const [wx, wy] = worldOf(e.clientX, e.clientY), r = Math.floor(wy / ts), q = Math.floor(wx / ts), ref = pieceNear(wx / ts, wy / ts);
-    if (ref) { const k = placedAt(ref), [cr, cc] = k.split(",").map(Number); dragPc = { ref, active: false, sx: e.clientX, sy: e.clientY, wx, wy, off: findWall(ref) ? [r - cr, q - cc] : [0, 0] }; }
-  }
   if (ptrs.size === 1) { moved = false; drag = { x: e.clientX, y: e.clientY, cx: cam.x, cy: cam.y }; }
   else if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = { d: dist(a, b) || 1, z: cam.z, zm: replay && replay.auto ? autoZoomMul() : 1 }; moved = true; }
 });
@@ -60,10 +48,6 @@ cvs.addEventListener("pointermove", e => {
   if (!ptrs.has(e.pointerId)) return;
   ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
   const rc = cvs.getBoundingClientRect();
-  if (dragPc && ptrs.size === 1) {
-    if (!dragPc.active && Math.hypot(e.clientX - dragPc.sx, e.clientY - dragPc.sy) > 10) { dragPc.active = true; moved = true; drag = null; }
-    if (dragPc.active) { [dragPc.wx, dragPc.wy] = worldOf(e.clientX, e.clientY); return; }
-  }
   if (ptrs.size >= 2 && pinch) {
     const [a, b] = [...ptrs.values()];
     if (replay && replay.auto) { replay.zmul = pinch.zm; autoZoomBy(dist(a, b) / pinch.d); }
@@ -77,7 +61,6 @@ cvs.addEventListener("pointermove", e => {
 });
 function endPtr(e) {
   if (!ptrs.has(e.pointerId)) return;
-  if (dragPc) { const dp = dragPc; dragPc = null; if (dp.active) { if (e.type === "pointerup") { const [wx, wy] = worldOf(e.clientX, e.clientY); dropPiece(dp, Math.floor(wy / ts), Math.floor(wx / ts)); sanitizePlace(); render(); } ptrs.delete(e.pointerId); drag = null; pinch = null; return; } }
   const single = ptrs.size === 1; ptrs.delete(e.pointerId);
   if (ptrs.size < 2) pinch = null;
   if (ptrs.size === 1) { const p = [...ptrs.values()][0]; drag = { x: p.x, y: p.y, cx: cam.x, cy: cam.y }; }

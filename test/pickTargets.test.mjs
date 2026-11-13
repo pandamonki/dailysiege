@@ -43,3 +43,10 @@ test("general roles can be picked: they reach the battle, and a battle with them
   const a = J(fight().results), b = J(fight().results);
   assert.deepEqual(a, b); assert.equal(a.length, 6);
 });
+
+test("balance V4: magic beats blades and arrows against fortified armour, and destructive skills reach castles", () => {
+  assert.ok(sim.get("MAGIC_VS_FORT") > sim.get("TYPE_TABLE").blade.fortified && sim.get("MAGIC_VS_FORT") > sim.get("TYPE_TABLE").pierce.fortified);
+  const fights = v4 => { let fell = 0; for (let i = 0; i < 6; i++) { const L = sim.run("seatLayout(6)"), r = sim.run(`(() => { const L = seatLayout(6); const ps = L.castles.map((pos, k) => { const sp = armySpots(pos, L.N); return { pid: "s" + k, name: "S" + k, color: SEAT_COLORS[k], cls: ["mage", "archer", "shaman", "warrior", "mage", "archer"][k], level: 10, castle: pos, ranks: { a1: 0, a2: 0, a3: 0, ult: 0 }, tree: autoTree(10, k + ${i} * 7, ["mage", "archer", "shaman", "warrior", "mage", "archer"][k]), picks: {}, triggers: {}, gear: {}, defences: {}, stance: "aggressive", prio: PRIORITIES.slice(), rules: [], pieces: [{ kind: "champ", r: sp.champ[0], c: sp.champ[1] }, { kind: "unit", type: "footman", lvl: 2, hp: 1, r: sp.units[0][0], c: sp.units[0][1] }], targets: [], pacts: [], hostile: [], betray: {} }; });
+      return runBattle(ps, ${100 + i}, { fast: true, N: L.N, balV2: true, balV3: true, heroV3: true, fairV1: true, pickV1: true, balV4: ${v4}, dayNo: 4 }); })()`); fell += r.results.filter(x => x.fellAt != null).length; void L; } return fell; };
+  assert.ok(fights(true) >= fights(false), "castles fall at least as often under V4");
+});

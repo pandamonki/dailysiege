@@ -19,6 +19,10 @@ function makeTreeKit(X) {
   const heroOf = (pid, cls, bi, i) => heroes(pid).find(h => !h.dead && h.cls === cls && rk(h, bi, i) > 0);
   const reach = e => e.reachBonus || 0;
   const phys = (src, o) => ((o && o.atype) || (src && src.atype) || "pure") !== "magic";
+  // Balance V4: destructive skills also hit castles (a castle's centre counts as within reach a little sooner: it is a big target),
+  // and when no soldiers are about they can be cast at a castle in range
+  const V4 = !!X.v4, forts = (e, x, y, r) => V4 ? ents.filter(c => !c.dead && c.kind === "castle" && hostile(e.pid, c.pid) && d(c, { x, y }) <= r + .4) : [];
+  const fortSpot = (e, range) => { const c = forts(e, e.x, e.y, range)[0]; return c ? { x: c.x, y: c.y, o: c, fort: 1 } : null; };
   const withAb = (name, fn) => { const old = X.getAb(); X.setAb(name); const r = fn(); X.setAb(old); return r; };
   // crowd control: heroes take half duration, siege engines half duration of a root
   function cc(o, k, dur, val) { if (!live(o) || o.kind === "castle") return; if (o.kind === "champ" || (siege(o) && k === "root")) dur *= .5; setFx(o, k, dur, val === undefined ? 1 : val); }
@@ -340,9 +344,9 @@ function makeTreeKit(X) {
     return true;
   };
   FN["warrior.1.1"] = (e, r) => {
-    const t0 = foes(e, e.x, e.y, 1.5).find(o => o.hp / o.maxhp < .3); if (!t0) return false;
+    const t0 = foes(e, e.x, e.y, 1.5).find(o => o.hp / o.maxhp < .3); if (!t0 && !(foes(e, e.x, e.y, 1.5).length === 0 && forts(e, e.x, e.y, 1.6).length)) return false;
     const dm = V(e, 1, 1, 0) + e.atk * .4, name = "Executioner's Whirlwind"; e.whirl = { until: T() + 2 };
-    for (let k = 0; k < 4; k++) pending.push({ ab: name, at: +(T() + k * .5).toFixed(2), fn: () => { if (e.dead) return; aoe(e.x, e.y, 1.6, "#d9d9e0", .35); foes(e, e.x, e.y, 1.6).forEach(o => deal(e, o, dm, { aoe: 1, big: 1 })); } });
+    for (let k = 0; k < 4; k++) pending.push({ ab: name, at: +(T() + k * .5).toFixed(2), fn: () => { if (e.dead) return; aoe(e.x, e.y, 1.6, "#d9d9e0", .35); foes(e, e.x, e.y, 1.6).concat(forts(e, e.x, e.y, 1.6)).forEach(o => deal(e, o, dm, { aoe: 1, big: 1 })); } });
     return true;
   };
   FN["warrior.1.5"] = e => {
@@ -368,21 +372,21 @@ function makeTreeKit(X) {
   function chain(e, first, jumps, dmg0, slow, conduct) {
     let cur = first, from = e, dmg = dmg0; const hit = new Set();
     for (let j = 0; j < jumps && cur; j++) { shot(from, cur, "#8fd3ff", 2); deal(e, cur, dmg, { aoe: 1, big: 1 }); if (live(cur)) { if (slow) setFx(cur, "slow", 4, .2); if (conduct) setFx(cur, "vulnrng", 8, conduct); }
-      hit.add(cur); from = cur; dmg *= .85; cur = minBy(foes(e, cur.x, cur.y, 2.5).filter(x => !hit.has(x)), x => d(x, from)); }
+      hit.add(cur); from = cur; dmg *= .85; cur = minBy(foes(e, cur.x, cur.y, 2.5).concat(forts(e, cur.x, cur.y, 2.5)).filter(x => !hit.has(x)), x => d(x, from)); }
   }
   FN["shaman.0.1"] = (e, r) => {
-    const f = minBy(foes(e, e.x, e.y, 4.5 + reach(e)).filter(o => foes(e, o.x, o.y, 2).length >= 3), o => d(o, e)); if (!f) return false;
+    const f = minBy(foes(e, e.x, e.y, 4.5 + reach(e)).filter(o => foes(e, o.x, o.y, 2).length >= 3), o => d(o, e)) || (!foes(e, e.x, e.y, 4.5 + reach(e)).length && (fortSpot(e, 4.5 + reach(e)) || {}).o); if (!f) return false;
     chain(e, f, ext([3, 4, 4], r) + (rk(e, 0, 4) ? 2 : 0), V(e, 0, 1, 1) + e.atk * .5, true, rk(e, 0, 3) ? V(e, 0, 3, 0) / 100 : 0); return true;
   };
   FN["shaman.0.2"] = (e, r) => {
-    const n = foes(e, e.x, e.y, 1.5); if (n.length < 3) return false;
-    aoe(e.x, e.y, 1.5, "#9fd0ff", .5); n.forEach(o => { deal(e, o, V(e, 0, 2, 0) + e.atk * .4, { aoe: 1, big: 1 }); if (live(o)) setFx(o, "slow", 2, .25); }); return true;
+    const n = foes(e, e.x, e.y, 1.5), fc = forts(e, e.x, e.y, 1.5); if (n.length < 3 && !(n.length === 0 && fc.length)) return false;
+    aoe(e.x, e.y, 1.5, "#9fd0ff", .5); fc.forEach(c => deal(e, c, V(e, 0, 2, 0) + e.atk * .4, { aoe: 1, big: 1 })); n.forEach(o => { deal(e, o, V(e, 0, 2, 0) + e.atk * .4, { aoe: 1, big: 1 }); if (live(o)) setFx(o, "slow", 2, .25); }); return true;
   };
   FN["shaman.0.5"] = e => {
-    const p = densest(e, 5 + reach(e), 3, 5); if (!p) return false;
+    const p = densest(e, 5 + reach(e), 3, 5) || (!foes(e, e.x, e.y, 5 + reach(e)).length && fortSpot(e, 5 + reach(e))); if (!p) return false;
     const dmg = (45 + e.atk * .3) / 2;
     foes(e, p.x, p.y, 3).forEach(o => pull(o, p.x, p.y, 1.5));
-    addZone(e, { x: p.x, y: p.y, r: 3, dur: 6, every: .5, c: "#9fd0ff", k: "storm", fn: z => foes(e, z.x, z.y, z.r).forEach(o => { deal(e, o, dmg, { aoe: 1 }); setFx(o, "asdown", .6, .4); }) });
+    addZone(e, { x: p.x, y: p.y, r: 3, dur: 6, every: .5, c: "#9fd0ff", k: "storm", fn: z => { foes(e, z.x, z.y, z.r).forEach(o => { deal(e, o, dmg, { aoe: 1 }); setFx(o, "asdown", .6, .4); }); forts(e, z.x, z.y, z.r).forEach(c => deal(e, c, dmg, { aoe: 1 })); } });
     return { x: p.x, y: p.y };
   };
   FN["shaman.1.1"] = (e, r) => {
@@ -404,7 +408,7 @@ function makeTreeKit(X) {
     setFx(h, "weaken", V(e, 2, 2, 0)); return { x: h.x, y: h.y };
   };
   FN["shaman.2.5"] = e => {
-    const nf = foes(e, e.x, e.y, 3); if (!foes(e, e.x, e.y, 4).some(o => o.kind === "champ") && nf.length < 4) return false;
+    const nf = foes(e, e.x, e.y, 3); if (!foes(e, e.x, e.y, 4).some(o => o.kind === "champ") && nf.length < 4 && !(nf.length === 0 && forts(e, e.x, e.y, 2.5).length)) return false;
     foes(e, e.x, e.y, 2).forEach(o => cc(o, "stun", 1.5));
     [-1, 0, 1].forEach(s => { const w = add({ owner: e, pid: e.pid, kind: "summon", key: "wolf", atype: "blade", armour: "medium", x: e.x + s * .5, y: e.y + .3, maxhp: 630, atk: 48, range: 1.1, as: .8, spd: 2.5, armor: .15, life: T() + 30, healOwner: .15 }); w.hp = w.maxhp; w.hx = w.x; w.hy = w.y; });
     aoe(e.x, e.y, 2.2, "#bfe3ff", .9); ev({ ty: "ultfx", k: "spirit", x: e.x, y: e.y, r: 2.2, col: P[e.pid].color, dur: 1.8 }); return true;
@@ -443,8 +447,9 @@ function makeTreeKit(X) {
   };
   // ---- Mage ----
   FN["mage.0.1"] = (e, r) => {
-    const p = densest(e, 4.5 + reach(e), 1.3, 3); if (!p) return false;
+    const p = densest(e, 4.5 + reach(e), 1.3, 3) || (!foes(e, e.x, e.y, 4.5 + reach(e)).length && fortSpot(e, 4.5 + reach(e))); if (!p) return false;
     shot(e, p.o, "#ff8a2a", 3);
+    forts(e, p.x, p.y, 1.3).forEach(c => deal(e, c, V(e, 0, 1, 0) + e.atk, { aoe: 1, big: 1 }));
     foes(e, p.x, p.y, 1.3).forEach(o => { let dm = V(e, 0, 1, 0) + e.atk; if (o === p.o && o.kind === "champ" && rk(e, 0, 4)) dm *= 1.5; deal(e, o, dm, { aoe: 1, big: 1 }); if (live(o) && o.kind !== "champ") cc(o, "stun", .5); });
     aoe(p.x, p.y, 1.3, "#ff8a2a", .5); return { x: p.x, y: p.y };
   };
@@ -458,7 +463,7 @@ function makeTreeKit(X) {
     pending.push({ ab: "Meteor Strike", at: +(T() + 1.6).toFixed(2), fn: () => {
       ev({ ty: "ultfx", k: "meteorhit", x, y, r: 3, dur: 2.2 }); aoe(x, y, 3, "#ff7a2a", 1.2); aoe(x, y, 1.8, "#ffd27a", .8);
       foes(e, x, y, 3).forEach(o => { deal(e, o, 600 + e.atk * 3, { aoe: 1, big: 1 }); if (live(o)) cc(o, "stun", 1.5); });
-      ents.filter(c => !c.dead && c.kind === "castle" && hostile(e.pid, c.pid) && hyp(c.x - x, c.y - y) <= 3).forEach(c => deal(e, c, 400, { aoe: 1, big: 1 }));
+      ents.filter(c => !c.dead && c.kind === "castle" && hostile(e.pid, c.pid) && hyp(c.x - x, c.y - y) <= 3).forEach(c => deal(e, c, V4 ? METEOR_CASTLE : 400, { aoe: 1, big: 1 }));
       walls.forEach(w => { if (w.hp > 0 && hostile(e.pid, w.pid) && hyp(w.x0 + .5 - x, w.y0 + .5 - y) <= 3) { w.hp = 0; aoe(w.x0 + .5, w.y0 + .5, .8, "#a08050", .5); } });
       addZone(e, { x, y, r: 2.2, dur: 6, every: 1, c: "#ff7a2a", k: "fire", fn: z => foes(e, z.x, z.y, z.r).forEach(o => deal(e, o, 35, { aoe: 1 })) }); } });
     return { x, y };
@@ -471,9 +476,9 @@ function makeTreeKit(X) {
     return true;
   };
   FN["mage.1.5"] = e => {
-    const p = densest(e, 6 + reach(e), 4, 6); if (!p) return false;
+    const p = densest(e, 6 + reach(e), 4, 6) || (!foes(e, e.x, e.y, 6 + reach(e)).length && fortSpot(e, 6 + reach(e))); if (!p) return false;
     const dps = (25 + e.atk * .3) / 2;
-    addZone(e, { x: p.x, y: p.y, r: 4, dur: 8, every: .5, c: "#8fd8ff", k: "blizzard", fn: z => foes(e, z.x, z.y, z.r).forEach(o => { deal(e, o, dps, { aoe: 1 }); setFx(o, "slow", .6, .5); setFx(o, "asdown", .6, .3); }) });
+    addZone(e, { x: p.x, y: p.y, r: 4, dur: 8, every: .5, c: "#8fd8ff", k: "blizzard", fn: z => { foes(e, z.x, z.y, z.r).forEach(o => { deal(e, o, dps, { aoe: 1 }); setFx(o, "slow", .6, .5); setFx(o, "asdown", .6, .3); }); forts(e, z.x, z.y, z.r).forEach(c => deal(e, c, dps, { aoe: 1 })); } });
     return { x: p.x, y: p.y };
   };
   FN["mage.2.1"] = (e, r) => {
@@ -491,17 +496,18 @@ function makeTreeKit(X) {
   };
   // ---- Ranger ----
   FN["archer.0.1"] = (e, r) => {
-    const p = densest(e, e.range + 2, 1.5, 3); if (!p) return false;
+    const p = densest(e, e.range + 2, 1.5, 3) || (!foes(e, e.x, e.y, e.range + 2).length && fortSpot(e, e.range + 2)); if (!p) return false;
     const dm = V(e, 0, 1, 0) + e.atk * .5, vp = rk(e, 0, 3) ? V(e, 0, 3, 0) / 100 : 0;
-    const volley = half => { aoe(p.x, p.y, 1.5, "#d9c38a", .5); foes(e, p.x, p.y, 1.5).forEach(o => { deal(e, o, dm * (half ? .5 : 1), { aoe: 1, big: 1 }); if (live(o) && !half) { setFx(o, "slow", 3, .3); if (vp) setFx(o, "vulnpierce", 6, vp); } }); };
+    const volley = half => { aoe(p.x, p.y, 1.5, "#d9c38a", .5); forts(e, p.x, p.y, 1.5).forEach(c => deal(e, c, dm * (half ? .5 : 1), { aoe: 1, big: 1 })); foes(e, p.x, p.y, 1.5).forEach(o => { deal(e, o, dm * (half ? .5 : 1), { aoe: 1, big: 1 }); if (live(o) && !half) { setFx(o, "slow", 3, .3); if (vp) setFx(o, "vulnpierce", 6, vp); } }); };
     ev({ ty: "shot", x1: e.x, y1: e.y - .35, x2: p.x, y2: p.y - .35, c: "#f1e6c0", w: 2 }); volley(false);
     if (rk(e, 0, 4)) pending.push({ ab: "Arrow Volley", at: +(T() + .6).toFixed(2), fn: () => { if (!e.dead) volley(true); } });
     return { x: p.x, y: p.y };
   };
   FN["archer.0.5"] = e => {
-    if (!live(e.tgt) || d(e, e.tgt) > e.range + 1.5 || foes(e, e.tgt.x, e.tgt.y, 3).length < 4) return false;
+    const atFort = V4 && live(e.tgt) && e.tgt.kind === "castle";
+    if (!live(e.tgt) || d(e, e.tgt) > e.range + 1.5 || (foes(e, e.tgt.x, e.tgt.y, 3).length < 4 && !atFort)) return false;
     const x = e.tgt.x, y = e.tgt.y, dm = 106; log(`${X.poss(e.pid)} Ranger looses a Rain of Feathered Death.`);
-    for (let i = 0; i < 14; i++) pending.push({ ab: "Rain of Feathered Death", at: +(T() + i * .4).toFixed(2), fn: () => { ev({ ty: "ultfx", k: "arrowwave", x, y, r: 3.4, dur: .85 }); aoe(x, y, 3.4, "#d9c38a", .4); foes(e, x, y, 3.4).forEach(o => { deal(e, o, dm, { aoe: 1 }); setFx(o, "asdown", 1, .4); }); } });
+    for (let i = 0; i < 14; i++) pending.push({ ab: "Rain of Feathered Death", at: +(T() + i * .4).toFixed(2), fn: () => { ev({ ty: "ultfx", k: "arrowwave", x, y, r: 3.4, dur: .85 }); aoe(x, y, 3.4, "#d9c38a", .4); foes(e, x, y, 3.4).forEach(o => { deal(e, o, dm, { aoe: 1 }); setFx(o, "asdown", 1, .4); }); forts(e, x, y, 3.4).forEach(c => deal(e, c, dm * .5, { aoe: 1 })); } });
     return true;
   };
   FN["archer.1.1"] = (e, r) => {
