@@ -30,7 +30,7 @@ const PICK_ROLES = { "@weakcastle": "Weakest castle", "@leader": "Board leader",
 // Under pick-your-targets an army also attacks any rival castle it passes on the way, within this many tiles.
 const PASSING_CASTLE = 2.5;
 // Also from PICK_V1_FROM, heroes keep fighting: an ordered retreat ends at 50% health (was 75%); "my castle is under attack" only calls the hero
-// home when it is within RECALL_R tiles; archers and mages only step back while they are actually being hit; rogues only slip away when
+// home when it is within RECALL_R tiles; archers and mages only step back while they are actually being hit (a mage for at most 1s, then at least 2s of casting); rogues only slip away when
 // outnumbered 3 to 1 close by and taking damage.
 const RECALL_R = 6, RETREAT_END_V2 = .5;
 const fairTie = (seed, a, b) => hash(seed, botSeed(String(a)) * 7919 + botSeed(String(b)), 17);
@@ -800,7 +800,9 @@ function runBattle(plans, seed, opts = {}) {
     // champion fighting styles
     if (e.kind === "champ") {
       const near = r => minBy(enemiesNear(e, e.x, e.y, r).filter(x => x.kind !== "totem"), x => d(x, e));
-      if (e.cls === "mage") { const th = near(2.2); if (th && th.range < 2.5 && (t - e.hitT < 1.5 || (!PV && d(th, e) < 1.4))) e.fleeUntil = Math.max(e.fleeUntil || 0, t + .8); }
+      if (e.cls === "mage") { const th = near(2.2);
+        if (PV) { if (th && th.range < 2.5 && t - e.hitT < .5 && !(e.fleeUntil > t) && (e.fleeCd || 0) <= t) { e.fleeUntil = t + 1; e.fleeCd = t + 3; } } // one short step back (1s), then at least 2s of casting before the next
+        else if (th && th.range < 2.5 && (t - e.hitT < 1.5 || d(th, e) < 1.4)) e.fleeUntil = Math.max(e.fleeUntil || 0, t + .8); }
       if (e.cls === "rogue") { const crowd = enemiesNear(e, e.x, e.y, 2).length; const going = live(e.tgt) && e.tgt.hp / e.tgt.maxhp < FINISH_AT;
         if (PV) { const mates = Math.max(1, friendsNear(e.pid, e.x, e.y, 2).filter(o => o.kind !== "totem").length); if (!going && t - e.hitT < 1 && crowd >= 3 * mates) e.fleeUntil = t + 1; } // only when outnumbered 3 to 1 and being hit
         else if ((e.hp / e.maxhp < .45 && crowd && !going) || crowd >= 4 || ((e.hits || 0) >= 5 && !going)) { e.fleeUntil = t + 1; e.hits = 0; } }

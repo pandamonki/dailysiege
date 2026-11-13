@@ -174,7 +174,7 @@ const PATCHES = [
     "Taking a castle scores 3 points (was 2).",
     "The last day now counts 1.5 times, the same as days 5 and 6 (was double).",
     "Heroes keep fighting: a hero told to retreat comes back at 50% health (was 75%), and \"my castle is under attack\" only calls your hero home if it is within 6 tiles.",
-    "Archers and mages only step back while they are actually being hit, not just because a melee enemy is near.",
+    "Archers and mages only step back while they are actually being hit, not just because a melee enemy is near. A mage steps back for at most a second, then casts for at least two.",
     "Rogues take hits and keep attacking. They only slip away when outnumbered 3 to 1 close by and taking damage.",
     "New lords start with one order (retreat when the hero is below 30% health). The castle-under-attack retreat is no longer added for you.",
   ], changes: [

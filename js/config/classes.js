@@ -7,7 +7,7 @@ const CLASSES = {
     { key: "a2", name: "Shield Wall", desc: "Reduces damage taken for 4s.", choice: [["Reflect", "Returns 20% of blocked damage"], ["Bulwark", "Also shields adjacent allies"]] },
     { key: "a3", name: "War Cry", desc: "Nearby units attack harder.", choice: [["Fear", "Enemies flee for 1s"], ["Second Wind", "Also heals your units a little"]] } ],
     ult: { name: "Last Stand", desc: "Once per fight: cannot die for 6+ seconds, heals 40% and stuns and blasts everything around you." } },
-  mage: { name: "Mage", role: "Area damage", trait: "Magic damage across whole groups, but light armour and low health. Backs off while it is being hit.", abilities: [
+  mage: { name: "Mage", role: "Area damage", trait: "Magic damage across whole groups, but light armour and low health. Steps back briefly while it is being hit, then keeps casting.", abilities: [
     { key: "a1", name: "Fireball", desc: "Strong single-target blast.", choice: [["Burn", "Leaves damage over time"], ["Explosion", "Splashes nearby enemies"]] },
     { key: "a2", name: "Frost Nova", desc: "Slows enemies around you.", choice: [["Deep Freeze", "Roots for 1s"], ["Shatter", "Frozen enemies take +25%"]] },
     { key: "a3", name: "Blink", desc: "Short teleport.", choice: [["Escape", "Blinks away when HP drops low"], ["Ambush", "Next Fireball after Blink crits"]] } ],
