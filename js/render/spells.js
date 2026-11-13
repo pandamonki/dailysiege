@@ -57,11 +57,12 @@ function spellIconCvProc(sp, size = 64) {
 }
 const SPELL_URL = {}; const spellURL = (sp, size = 64) => SPELL_URL[sp + size] || (SPELL_URL[sp + size] = spellIconCv(sp, size).toDataURL());
 function drawSpellFx(e, age) {
-  const a = SPELL_ART[e.sp]; if (!a) return; const dur = SPELL_DUR[a.fx] || .8; if (age > dur) return;
+  const a = SPELL_ART[e.sp]; if (!a) return; const pxd = PIXFX[e.sp], dur = pxd ? pxd.dur : SPELL_DUR[a.fx] || .8; if (age > dur) return;
   const p = age / dur, x = e.x * ts, y = e.y * ts, R = (e.r || a.r || 1.2) * ts, col = a.c, c = ctx, q = 1 - p;
   c.save(); c.lineCap = "round";
   const ring = (rr, al, w) => { c.globalAlpha = Math.max(0, al); c.strokeStyle = col; c.lineWidth = w; c.beginPath(); c.ellipse(x, y, rr, rr * .72, 0, 0, 7); c.stroke(); c.globalAlpha = 1; };
-  switch (a.fx) {
+  if (pxd) drawPixFx(pxd, e, age, c, x, y, ts);
+  switch (pxd ? "" : a.fx) {
     case "arc": for (let i = 0; i < 2; i++) { c.globalAlpha = q; c.strokeStyle = i ? col : "#fff"; c.lineWidth = ts * (i ? .09 : .04); c.beginPath(); c.arc(x, y, R * (.55 + .25 * p) , -2.6 + p * 5.2 + i * .4, -.6 + p * 5.2 + i * .4); c.stroke(); } break;
     case "shield": { const b = 1 + Math.sin(p * 20) * .03; c.globalAlpha = .55 * Math.min(1, q * 2.5); c.fillStyle = hexA(col, .4); c.beginPath(); c.ellipse(x, y - ts * .35, R * b, R * 1.1 * b, 0, 0, 7); c.fill(); c.globalAlpha = Math.min(1, q * 2.5); c.strokeStyle = col; c.lineWidth = ts * .06; c.stroke(); break; }
     case "ring": for (let i = 0; i < 3; i++) { const pp = Math.max(0, Math.min(1, p * 1.4 - i * .18)); ring(R * pp, 1 - pp, ts * .07); } break;

@@ -20,7 +20,7 @@ const udet = (title, price, html) => `<div class="udet"><span class="dtag">Detai
 const rows = L => L.map(([l, v]) => `<div><span>${l}</span><b>${v}</b></div>`).join("");
 const cmpBox = (now, next, nextLabel) => `<div class="cmp"><div><span class="ilabel">Now</span>${rows(now)}</div><div><span class="ilabel">${nextLabel || "After"}</span>${next ? rows(next) : `<p class="muted">Fully upgraded</p>`}</div></div>`;
 const abar = html => `<div class="abar">${html}</div>`;
-const ISH_PAGE = 6;
+const ISH_PAGE = 12;
 const TRAP_ICON = k => ({ spike: "trap_spike", snare: "trap_snare", bell: "trap_bell" }[k]);
 const trapImg = k => TRAP_ICON(k) ? `icons/ui/${TRAP_ICON(k)}.webp` : trapURL(k);
 const canBanner = () => !isLive() || DAY === 1;
@@ -79,12 +79,13 @@ function castleSheet() {
     const keys = Object.keys(ITEMS), pages = Math.ceil(keys.length / ISH_PAGE), ik = ITEMS[sheet.ish] ? sheet.ish : keys[0], it = ITEMS[ik];
     const pg = Math.max(0, Math.min(pages - 1, sheet.ipg != null ? sheet.ipg : Math.floor(keys.indexOf(ik) / ISH_PAGE)));
     const own = S.items.includes(ik), lk = !!it.unique && rapierTaken(ik), fullI = S.items.length >= ITEM_SLOTS;
-    body = `<div class="islots tiny">${Array.from({ length: ITEM_SLOTS }, (_, i) => S.items[i] || null).map(k => k ? `<button class="islot${k === ik ? " sel" : ""}" data-act="ish" data-v="${k}"><img alt="" src="${itemURL(k)}"></button>` : `<div class="islot empty"><span>·</span></div>`).join("")}</div>
+    return `<header><h2>Shop</h2><span class="gchip"><i class="coin"></i>${S.gold}</span><button class="x" data-act="close" aria-label="Close">✕</button></header><div class="body nshop">
+      <div class="toprow"><div class="islots tiny">${Array.from({ length: ITEM_SLOTS }, (_, i) => S.items[i] || null).map(k => k ? `<button class="islot${k === ik ? " sel" : ""}" data-act="ish" data-v="${k}"><img alt="" src="${itemURL(k)}"></button>` : `<div class="islot empty"><span>·</span></div>`).join("")}</div>
+        <div class="pg"><button class="btn small" data-act="ipg" data-v="${pg - 1}" ${dis(pg <= 0)}>‹</button><span>${pg + 1}/${pages}</span><button class="btn small" data-act="ipg" data-v="${pg + 1}" ${dis(pg >= pages - 1)}>›</button></div></div>
       <div class="ugrid shopg">${keys.slice(pg * ISH_PAGE, pg * ISH_PAGE + ISH_PAGE).map(k => tile("ish", k, k === ik, itemURL(k), esc(ITEMS[k].name), S.items.includes(k) ? { own: 1 } : { price: itemCost(k) })).join("")}</div>
-      <div class="pager"><button class="btn small" data-act="ipg" data-v="${pg - 1}" ${dis(pg <= 0)}>‹</button><span>Page ${pg + 1} / ${pages}</span><button class="btn small" data-act="ipg" data-v="${pg + 1}" ${dis(pg >= pages - 1)}>›</button></div>
       ${udet(esc(it.name), itemCost(ik), `<p><span class="kind k-${it.kind}"><b>T${it.tier}</b> · ${it.kind === "use" ? (it.cd ? `Active · ${it.cd}s recharge` : "Active · once per battle") : it.kind === "aura" ? "Aura" : "Passive"}</span> ${esc(it.desc)}</p>`)}
       ${own && ik === "antimagic" ? `<div class="sec tight"><h3>Shell timing</h3><div class="reach"><span class="stepper"><button class="btn small" data-act="shellat" data-v="-1" ${dis((S.shellAt || 2) <= 1 || S.locked)}>−</button><b>${S.shellAt || 2}s</b><button class="btn small" data-act="shellat" data-v="1" ${dis((S.shellAt || 2) >= 10 || S.locked)}>+</button></span><span class="muted">after you meet an enemy hero</span></div></div>` : ""}
-      ${abar(own ? `<button class="btn wax" data-act="isell" data-v="${ik}">Sell +${Math.floor(itemCost(ik) / 2)}g</button>` : `<button class="btn wax" data-act="ibuy" data-v="${ik}" ${dis(lk || fullI || avail() < itemCost(ik))}>${lk ? "Held by a rival" : fullI ? "Slots full" : `Buy · ${itemCost(ik)}g`}</button>`)}`;
+      ${abar(own ? `<button class="btn wax" data-act="isell" data-v="${ik}">Sell +${Math.floor(itemCost(ik) / 2)}g</button>` : `<button class="btn wax" data-act="ibuy" data-v="${ik}" ${dis(lk || fullI || avail() < itemCost(ik))}>${lk ? "Held by a rival" : fullI ? "Slots full" : `Buy · ${itemCost(ik)}g`}</button>`)}</div>`;
   }
   if (tab === "banner") {
     const b = S.banner || defaultBanner(), ok = canBanner();
@@ -108,7 +109,7 @@ function castleSheet() {
   }
   if (sheet.lobby) return head(null, "Coat of arms", "Shown on your castle and banner all war") + `<div class="body">${body}<div class="row"><button class="btn wax" data-act="lobbydone">Done</button></div></div>`;
   return head(null, sheet.grp === "army" ? "Army" : "Base", `Tier ${ct} ${tierName(ct)} · ${S.gold} gold in the treasury`) + `<div class="body">
-    <div class="tabs scrolltabs">${[["recruit", "Recruit"], ["garrison", "Garrison"], ["deployment", "Deployment"], ["keep", "Castle"], ["traps", "Defences"], ["armoury", "Armoury"], ["shop", "Shop"]].filter(([k]) => (sheet.grp === "army" ? ["recruit", "garrison", "deployment"] : ["keep", "traps", "armoury", "shop"]).includes(k) || !sheet.grp).map(([k, l]) => `<button class="${tab === k ? "on" : ""}" data-act="ctab" data-v="${k}"><img class="tabi" alt="" src="icons/ui/${{ recruit: "recruit", garrison: "roster", deployment: "units", keep: "castle" + ct, traps: "defences", armoury: "armoury", shop: "shop" }[k]}.webp">${l}</button>`).join("")}</div>${body}</div>`;
+    <div class="tabs scrolltabs">${[["recruit", "Recruit"], ["garrison", "Garrison"], ["deployment", "Deployment"], ["keep", "Castle"], ["traps", "Defences"], ["armoury", "Armoury"]].filter(([k]) => (sheet.grp === "army" ? ["recruit", "garrison", "deployment"] : ["keep", "traps", "armoury"]).includes(k) || !sheet.grp).map(([k, l]) => `<button class="${tab === k ? "on" : ""}" data-act="ctab" data-v="${k}"><img class="tabi" alt="" src="icons/ui/${{ recruit: "recruit", garrison: "roster", deployment: "units", keep: "castle" + ct, traps: "defences", armoury: "armoury", shop: "shop" }[k]}.webp">${l}</button>`).join("")}</div>${body}</div>`;
 }
 function wallSheet(id) {
   const w = findWall(id); if (!w) return head(null, "Wall", "") + `<div class="body"><p class="muted">That wall is gone.</p></div>`;
@@ -148,7 +149,7 @@ function champSheet() {
         : `<p class="muted">At rank 3, pick an upgrade: ${A0.choice.map(([n]) => `<b>${esc(n)}</b>`).join(" or ")}.</p>`) : ""}
       ${isPassive(selK) ? "" : `<label class="inline">Cast<select data-act="trig" data-k="${selK}" ${dis(!r)}>${opts(TRIGGERS, S.triggers[selK])}</select></label>`}
     </div>
-    <div class="sec"><div class="spread"><h3>Items (${S.items.length}/${ITEM_SLOTS})</h3><button class="btn small wood" data-act="shop">Shop</button></div>
+    <div class="sec"><div class="spread"><h3>Items (${S.items.length}/${ITEM_SLOTS})</h3><button class="bagbtn" data-act="shop" aria-label="Shop"><img alt="" src="icons/ui/shop.webp"></button></div>
       <div class="islots tiny">${slots.map(k => k ? `<div class="islot" title="${esc(ITEMS[k].desc)}"><img alt="" src="${itemURL(k)}"><b>${esc(ITEMS[k].name)}</b></div>` : `<div class="islot empty"><span>Empty</span></div>`).join("")}</div></div>
     <div><button class="btn small" data-act="open" data-v="spells">Spell book</button></div></div>`;
 }

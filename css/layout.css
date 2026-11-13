@@ -138,3 +138,15 @@ html, body { overflow: hidden; overscroll-behavior: none; }
 .newslist { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 8px; }
 .newslist li { display: flex; gap: 10px; align-items: flex-start; padding: 6px 8px; border: 1px solid var(--wood-dark); border-radius: 8px; background: rgba(255,250,230,.45); }
 .newslist .ni { font-size: 22px; line-height: 1.2; } .newslist small { color: var(--ink-soft); }
+
+/* shop: side bag button and single-page layout */
+#shopbtn { position: absolute; right: 0; top: 196px; z-index: 6; width: 50px; height: 54px; padding: 0; border: 2px solid var(--wood-dark); border-right: 0; border-radius: 27px 0 0 27px; background: linear-gradient(#f3e6c4, #d9c290); box-shadow: 0 2px 0 rgba(62,39,20,.5); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+#shopbtn[hidden] { display: none; }
+#shopbtn img, .bagbtn img { width: 36px; height: 36px; border-radius: 8px; }
+.bagbtn { padding: 2px 6px; border: 2px solid var(--wood-dark); border-radius: 8px; background: linear-gradient(#f3e6c4, #d9c290); cursor: pointer; line-height: 0; } .bagbtn img { width: 30px; height: 30px; }
+.nshop { gap: 6px; padding: 8px 12px 8px; }
+.sheet header .gchip { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; font-weight: 700; color: #8a6418; font-size: 18px; } .sheet header .gchip + .x { margin-left: 0; } .sheet header .gchip .coin { width: 18px; height: 18px; }
+.nshop .toprow { display: flex; align-items: center; gap: 8px; } .nshop .toprow .islots { flex: 1; margin: 0; }
+.nshop .pg { display: flex; align-items: center; gap: 4px; font-size: 13px; } .nshop .pg .btn { min-width: 34px; padding: 2px 8px; font-size: 18px; }
+.nshop .ugrid.shopg { gap: 5px; } .nshop .ugrid.shopg .ucard { padding: 4px 1px 3px; } .nshop .ugrid.shopg .ib, .nshop .ugrid.shopg .ib img { width: 42px; height: 42px; } .nshop .ugrid.shopg .ucard b { font-size: 11.5px; }
+.nshop .udet { margin-top: 4px; padding: 14px 10px 8px; } .nshop .abar { margin: 6px 0 0; padding: 0; }

@@ -70,7 +70,7 @@ function drawReplay(t) {
         if (m.champ && m.items) { drawHeroAuras(ctx, cx, by, ts, t, m.items, k); drawHeroOrbs(ctx, cx, by, ts, t, m.items, k, true); }
         if (fl & 4) glow(cx, by - ts * .5, ts * .7, ts * .8, "#ffe082", .7);
         if (pose.flash) glow(cx, by - ts * .5, ts * .6, ts * .7, pose.flash, .6);
-        top = drawSprite(m.key, color, cx, by, m.champ ? 1.15 : .95, m.champ ? Object.assign({}, pose, { aura: color }) : m.merc ? Object.assign({}, pose, { aura: "#ffd24a" }) : pose);
+        top = drawSprite(m.key, color, cx, by, (m.champ ? 1.15 : .95) * (m.champ ? avatarScale(k, time) : 1), m.champ ? Object.assign({}, pose, { aura: color }) : m.merc ? Object.assign({}, pose, { aura: "#ffd24a" }) : pose);
       }
       if (m.champ && m.items) drawHeroOrbs(ctx, cx, by, ts, t, m.items, k, false);
       if (fl & 16) { ctx.fillStyle = "rgba(140,200,255,.35)"; ctx.beginPath(); ctx.ellipse(cx, by - ts * .4, ts * .3, ts * .45, 0, 0, 7); ctx.fill(); }
@@ -83,6 +83,7 @@ function drawReplay(t) {
       ctx.restore();
     }]);
   });
+  drawUnderFx(time); // ground effects go beneath the units
   items.sort((p, q) => p[0] - q[0]).forEach(([, fn]) => fn());
   drawEffects(time);
 }
@@ -244,11 +245,26 @@ function drawShotFx(e, age) {
   }
   ctx.restore();
 }
+// Spell effects that lie on the ground (flames, roots, rings, traps): drawn before the units so everyone stands on top of them
+function drawUnderFx(time) {
+  const E = replay.res.events;
+  for (let i = lowerBound(E, time - 2.2); i < E.length && E[i].t <= time; i++) { const e = E[i]; if (e.ty === "spell" && PIXFX[e.sp] && PIXFX[e.sp].under) drawSpellFx(e, time - e.t); }
+}
+// While Avatar of War burns the warrior hero is drawn larger so he stands out of the flames. Works out which hero cast it from where he stood.
+function avatarScale(k, time) {
+  const R = replay.res, W = replay.avatarWin || (replay.avatarWin = (R.events || []).filter(e => e.ty === "spell" && e.sp === "v3_warrior_b2_t4").map(e => {
+    const fr = replayFrameAt(e.t); let best = -1, bd = 1e9;
+    if (fr && fr.d) R.meta.forEach((m, j) => { if (!m.champ || m.key !== "c-warrior" || j * 4 + 1 >= fr.d.length) return; const d = Math.hypot(fr.d[j * 4] - e.x, fr.d[j * 4 + 1] + .2 - e.y); if (d < bd) { bd = d; best = j; } });
+    return { k: best, t0: e.t }; }));
+  let m = 1; W.forEach(w => { const age = time - w.t0; if (w.k !== k || age < 0 || age > 7) return; m = Math.max(m, 1 + .4 * Math.min(1, age / .25, (7 - age) / .3)); });
+  return m;
+}
 function drawEffects(time) {
   drawLongFx(time);
   const E = replay.res.events;
   for (let i = lowerBound(E, time - 2.2); i < E.length && E[i].t <= time; i++) {
     const e = E[i], age = time - e.t;
+    if (e.ty === "spell" && PIXFX[e.sp] && PIXFX[e.sp].under) continue; // drawn earlier, beneath the units
     if (e.ty === "shot" && e.sk) { drawShotFx(e, age); continue; }
     if (e.ty === "shot") {
       const dur = e.w > 1 ? .35 : .22; if (age > dur) continue;

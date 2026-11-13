@@ -157,6 +157,12 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "Shop bag, one-page shop and page help", date: "13 Nov", fixes: [], balance: [], changes: [
+    "A bag of gold on the right edge of the map opens the shop. The Shop tab is gone from Base, and the Hero page has the same bag next to your items.",
+    "The shop is one page: 12 items at a time, with the details and Buy button below, and your item slots and gold at the top.",
+    "The unit strip under the map always shows something: your hero until you pick another unit. Health bars are the same width for every unit.",
+    "Every page now has a small i in its top corner. Tap it for a short note on what the page is for.",
+  ] },
   { v: "Free item spins on days 2 and 5", date: "13 Nov", fixes: [], balance: [], changes: [
     "On day 2 and day 5 every lord gets a spinner of three items and keeps one for free: tier 1 items on day 2, tier 2 on day 5.",
     "The top two lords on the board get no spin. The lord at the bottom gets items one tier higher.",
