@@ -50,13 +50,13 @@ body.pv #lobby { padding-top: calc(env(safe-area-inset-top, 0px) + 52px); }
 /* free item spinner */
 .spin { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .spincol { display: grid; gap: 6px; justify-items: center; text-align: center; align-content: start; }
-.spincol .reel { width: 64px; height: 64px; overflow: hidden; border: 2px solid rgba(62,39,20,.55); border-radius: 8px; background: rgba(255,250,230,.55); }
-.spincol .strip { display: grid; transform: translateY(-576px); }
-.spincol .strip img { width: 64px; height: 64px; display: block; }
-.spinres { display: grid; gap: 4px; justify-items: center; font-size: 12px; line-height: 1.2; }
+.spincol .reel { width: 52px; height: 52px; overflow: hidden; border: 2px solid rgba(62,39,20,.55); border-radius: 8px; background: rgba(255,250,230,.55); }
+.spincol .strip { display: grid; transform: translateY(-468px); }
+.spincol .strip img { width: 52px; height: 52px; display: block; }
+.spinres { display: grid; gap: 3px; justify-items: center; font-size: 11px; line-height: 1.2; }
 .spin.go .strip { animation: spinreel var(--d) cubic-bezier(.15,.7,.2,1) both; }
 .spin.go .spinres { animation: spinfade .4s 2.3s both; }
-@keyframes spinreel { from { transform: translateY(0); } to { transform: translateY(-576px); } }
+@keyframes spinreel { from { transform: translateY(0); } to { transform: translateY(-468px); } }
 @keyframes spinfade { from { opacity: 0; pointer-events: none; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .spin.go .strip, .spin.go .spinres { animation: none; } }
 .islots.rep .islot b { color: #3e2714; text-shadow: none; }

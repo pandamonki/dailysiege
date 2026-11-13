@@ -7,8 +7,8 @@ const slotCost = n => SLOT_COSTS[Math.min(n, SLOT_COSTS.length - 1)];
 // ---- castle tiers, walls, shop items, hero levelling, gold ----
 const CASTLE_TIERS = [
   { name: "Castle", cost: 0, hp: 1, note: "Where every lord begins. Earns base pay of 225 gold after day 1, growing 30 a day." },
-  { name: "Fortress", cost: 150, hp: 1.15, note: "+15% castle health and +70 gold a day, so it pays for itself in about two days, and a free tier 1 item of your choice from three. Opens tier 2 gear, Arrow Slits, Bastions and stronger timber walls." },
-  { name: "Citadel", cost: 300, hp: 1.3, note: "+30% castle health and +130 gold a day in all, and a free tier 2 item of your choice from three. Opens tier 3 gear, the Ballista and stone walls." },
+  { name: "Fortress", cost: 150, hp: 1.15, note: "+15% castle health and +70 gold a day, so it pays for itself in about two days. Opens tier 2 gear, Arrow Slits, Bastions and stronger timber walls." },
+  { name: "Citadel", cost: 300, hp: 1.3, note: "+30% castle health and +130 gold a day in all. Opens tier 3 gear, the Ballista and stone walls." },
 ];
 const CASTLE_INCOME = [0, 70, 130]; // extra gold a day for each castle tier
 const UPGRADE_NEEDS = { weapon: [1, 2, 3], armour: [1, 2, 3], charm: [1, 2, 3], walls: [1, 2], tower: [2, 3] }; // castle tier each upgrade tier needs

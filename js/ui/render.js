@@ -23,7 +23,7 @@ function renderSheet() {
   const b = p.querySelector(".body"); if (b && sheet.keep) b.scrollTop = scroll;
 }
 function render(keepScroll = true) {
-  try { if (mode === "plan" && !sheet && !reportBack && !document.getElementById("wizring") && S && !S.ob) { if (S.spin) { sheet = { type: "spin" }; } else if (inviteDue()) { S.invSeen = planDayKey(); sheet = { type: "invites" }; } else if (newsDue()) { sheet = { type: "whatsnew" }; } else if (mercDue()) { S.mercSeen = isLive() ? liveClock().week : "p"; sheet = { type: "camp", news: true }; } } } catch (e) {}
+  try { if (mode === "plan" && !sheet && !reportBack && !document.getElementById("wizring") && S && !S.ob) { if (spinCheck()) { sheet = { type: "spin" }; } else if (inviteDue()) { S.invSeen = planDayKey(); sheet = { type: "invites" }; } else if (newsDue()) { sheet = { type: "whatsnew" }; } else if (mercDue()) { S.mercSeen = isLive() ? liveClock().week : "p"; sheet = { type: "camp", news: true }; } } } catch (e) {}
   if (sheet) sheet.keep = keepScroll;
   const rp = mode === "replay";
   document.getElementById("hint").hidden = rp; document.getElementById("tray").hidden = rp;
