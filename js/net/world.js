@@ -77,7 +77,10 @@ function buildBattleInputs(W, dayKey, opts = {}) {
   const raw = roster.map((p, i) => {
     let plan;
     const hs = wHeroState(W, p.uid, week, dayKey), lvl = hs.lvl, z = zoneFor(L.castles[i], L.N, L.castles), sp = armySpots(L.castles[i], L.N);
-    const botDay = n => lordBotPlan({ uid: p.uid, cls: (p.state && p.state.cls) || "warrior", i, ids: roster.map(q => q.uid), L, zone: z, dayNo: n, lvl: wHeroState(W, p.uid, week, addDays(week, n - 1)).lvl, v2: balV3For(dayKey), fair: fairV1For(dayKey), pick: pickV1For(dayKey), ranks: rkm0, v3: heroV3For(dayKey) });
+    // what a bot was paid on each night of the week so far: its spoils (bounties included) and catch-up gold, exactly as a lord is paid (incomeFor in net/roster.js)
+    const botPay = n => [...Array(Math.max(0, n - 1))].map((_, k) => { const key = addDays(week, k), b = W.battles[key]; if (!b || b.week !== week || !b.gold) return null;
+      const sp = wStandings(W, week, key), order = roster.map(q => q.uid).sort((x, y) => (sp[x] || 0) - (sp[y] || 0)); return (b.gold[p.uid] || 0) + catchUpGold(order.length, order.indexOf(p.uid)); });
+    const botDay = n => lordBotPlan({ pay: botPay(n), uid: p.uid, cls: (p.state && p.state.cls) || "warrior", i, ids: roster.map(q => q.uid), L, zone: z, dayNo: n, lvl: wHeroState(W, p.uid, week, addDays(week, n - 1)).lvl, v2: balV3For(dayKey), fair: fairV1For(dayKey), pick: pickV1For(dayKey), ranks: rkm0, v3: heroV3For(dayKey) });
     if (opts.test && p.uid === opts.uid) plan = opts.test.mine;
     else if (p.bot) plan = opts.test ? (dayNo > 1 ? botDay(dayNo - 1) : null) : botDay(dayNo); // bots have no saved orders: theirs are worked out. In a test only yesterday's are known
     else if (opts.test) plan = lvl > 1 ? wLatestPlan(W, p, dayKey, false) : null; // fog: only yesterday's orders are known

@@ -56,15 +56,17 @@ const BOT_STYLES = [
 ];
 const BOT_WAVES = { hunter: [["enemy_hero", 0, "hero"], ["hero_dies", 0, "default"], ["timer", 90, "hero"]], brawler: [["castle_hit", 0, "default"], ["timer", 60, "castle"], ["army_dead", 0, "castle"]], sniper: [["ult", 0, "default"], ["castle_low", 0, "nearest"], ["timer", 120, "default"]], assassin: [["enemy_hero", 0, "hero"], ["timer", 45, "castle"], ["hero_dies", 0, "default"]], balanced: [["castle_hit", 0, "default"], ["hero_dies", 0, "default"], ["timer", 150, "castle"]] };
 // What a bot owns on a given day (battles from 16 Nov 2026). A bot has no purse of its own, so its week of shopping is replayed from day 1 every time:
-// it starts with the same 300 gold as any lord, is paid the same base pay and castle income each night plus BOT_SPOILS (about what a middling lord takes from kills: less after day 1),
+// it starts with the same 300 gold as any lord, and each night is paid the same base pay and castle income plus what it really earned in that day's battle
+// (spoils, bounties, and catch-up gold if it is near the bottom of the board). Where there is no battle on record it gets BOT_SPOILS, about what a middling lord takes from kills,
 // and buys at shop prices under the shop's own rules: beds, castle tiers, soldier tiers, three training levels, no training for powder carts.
 // So a bot fields what a lord could afford that day, no more. The same seed and day always give the same purchases.
 const BOT_SPOILS = [75, 160], botSpoils = d => BOT_SPOILS[Math.min(d, BOT_SPOILS.length) - 1]; // spoils after the battle of day d
-function botShop(seed, dayNo) {
+// pay: what the bot really took each night so far, [after day 1, after day 2, ...] (spoils, bounties and catch-up gold from the war's own battles); a night with no record falls back to BOT_SPOILS.
+function botShop(seed, dayNo, pay) {
   const o = { gold: 300, tier: 1, beds: SLOT_START, field: [], garrison: [], gear: { weapon: 0, armour: 0, charm: 0 }, defences: { walls: 0, tower: 0 }, items: [], wall: false }, wish = botItems(seed).sort((a, b) => itemCost(a) - itemCost(b)); // cheapest item first
   let k = 0; const roll = () => hash(seed, k++, 53), buy = c => o.gold >= c && (o.gold -= c, true), all = () => o.field.concat(o.garrison);
   for (let d = 1; d <= dayNo; d++) {
-    if (d > 1) o.gold += baseIncome(d - 1) + CASTLE_INCOME[o.tier - 1] + botSpoils(d - 1);
+    if (d > 1) o.gold += baseIncome(d - 1) + CASTLE_INCOME[o.tier - 1] + (pay && pay[d - 2] != null ? pay[d - 2] : botSpoils(d - 1));
     const kinds = UTYPES.filter(t => (UNIT_TIER[t] || 1) <= o.tier), pool = ENGINES.filter(t => (UNIT_TIER[t] || 1) <= o.tier), wantEng = pool.length ? (d >= 6 ? 2 : d >= 4 ? 1 : 0) : 0;
     // gold it is saving: a castle tier that is due, or a siege engine it has room and the castle for, comes before the smaller purchases
     const engDue = () => all().filter(u => UNITS[u.type].engine).length < wantEng && (o.field.length < o.beds || o.garrison.length < GARRISON_SOLDIERS);
@@ -104,10 +106,10 @@ function botPicks(uid, seed, near, ranks) {
   const want = { hunter: [top, above(1), near[0]], brawler: [near[0], near[1], above(1)], sniper: [above(1), above(2), near[0]], assassin: ["@weakcastle", above(1), near[0]], balanced: [above(1), near[0], top] }[st] || [above(1), near[0]];
   return want.concat(near).filter((q, k, a) => q && q !== uid && (near.includes(q) || !!PICK_ROLES[q]) && a.indexOf(q) === k).slice(0, PICK_MAX);
 }
-function lordBotPlan({ uid, cls, i, ids, L, zone, dayNo, lvl, v2, v3, fair, pick, ranks }) {
+function lordBotPlan({ uid, cls, i, ids, L, zone, dayNo, lvl, v2, v3, fair, pick, ranks, pay }) {
   const seed = botSeed(uid), me = L.castles[i], c = CLASSES[cls] || CLASSES.warrior, sp = armySpots(me, L.N);
   const picks = {}; c.abilities.forEach((a, j) => { picks[a.key] = a.choice[hash(seed, j, 77) > .5 ? 1 : 0][0]; });
-  const rot = Math.floor(hash(seed, 5, 3) * PRIORITIES.length), shop = botShop(seed, dayNo), tier = shop.tier;
+  const rot = Math.floor(hash(seed, 5, 3) * PRIORITIES.length), shop = botShop(seed, dayNo, pay), tier = shop.tier;
   // soldiers: the three spots just in front of the castle first, then whatever else of the deployment field is nearest
   const taken = new Set([`${sp.champ[0]},${sp.champ[1]}`, `${me[0]},${me[1]}`]);
   const field = Array.from(zone).map(k => k.split(",").map(Number)).filter(([r, q]) => !taken.has(`${r},${q}`)).sort((a, b) => (hyp(a[0] - sp.champ[0], a[1] - sp.champ[1]) - hyp(b[0] - sp.champ[0], b[1] - sp.champ[1])) || (a[0] - b[0]) || (a[1] - b[1]));
