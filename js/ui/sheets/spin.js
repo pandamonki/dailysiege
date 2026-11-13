@@ -38,12 +38,15 @@ function spinSheet() {
   const sp = S.spin, first = !sheet.spun, pool = spinPool(sp.tier, []), full = S.items.length >= ITEM_SLOTS, pend = sheet.pend;
   sheet.spun = true; // the spin plays once; later redraws show where it stopped
   const reel = (k, i) => `<div class="strip" style="--d:${(1.3 + .45 * i).toFixed(2)}s">${Array.from({ length: 10 }, (_, j) => `<img alt="" src="${itemURL(j === 9 ? k : pool[(j * 7 + i * 3) % pool.length], 52)}">`).join("")}</div>`;
-  const col = (k, i) => `<div class="spincol"><div class="reel">${reel(k, i)}</div><div class="spinres"><b>${esc(ITEMS[k].name)}</b><span class="muted">${esc(ITEMS[k].desc)}</span>
-      <button class="btn wax" data-act="spinpick" data-v="${k}" ${pend === k ? "disabled" : ""}>${pend === k ? "Choose what to replace" : "Take it"}</button></div></div>`;
+  const text = k => `<div class="spinres"><b>${esc(ITEMS[k].name)}</b><span class="muted">${esc(ITEMS[k].desc)}</span></div>`;
+  const btn = k => `<button class="btn wax" data-act="spinpick" data-v="${k}" ${pend === k ? "disabled" : ""}>${pend === k ? "Replacing…" : "Take it"}</button>`;
   const rep = pend ? `<p class="note gold"><b>Your item slots are full.</b> ${esc(ITEMS[pend].name)} replaces one of these, which sells for half price.</p>
       <div class="islots rep">${S.items.map(j => `<button class="islot" data-act="spinrep" data-v="${j}"><img alt="" src="${itemURL(j)}"><b>${esc(ITEMS[j].name)}</b><span class="muted">+${Math.floor(itemCost(j) / 2)}g</span></button>`).join("")}</div>
       <div class="row"><button class="btn" data-act="spinno">Choose differently</button></div>`
     : full ? `<p class="muted">Your item slots are full: taking an item will ask which one to replace.</p><div class="row"><button class="btn" data-act="spingold">Take ${SPIN_GOLD} gold instead</button></div>` : "";
   return `<header><div><h2>Day ${sp.day} gift</h2><div class="sub">${sp.bonus ? "Underdog bonus: " : ""}pick one free tier ${sp.tier} item</div></div></header><div class="body">
-    <div class="spin${first ? " go" : ""}">${sp.offer.map(col).join("")}</div>${rep}</div>`;
+    <div class="spin${first ? " go" : ""}">
+      <div class="spinrow">${sp.offer.map((k, i) => `<div class="reel">${reel(k, i)}</div>`).join("")}</div>
+      <div class="spinrow spintext">${sp.offer.map(text).join("")}</div>
+      <div class="spinrow spinbtns">${sp.offer.map(btn).join("")}</div></div>${rep}</div>`;
 }
