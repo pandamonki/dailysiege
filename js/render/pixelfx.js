@@ -33,7 +33,7 @@ const pxHash = (a, b) => { let h = (a * 374761393 + b * 668265263) | 0; h = Math
 
 // ----- Warrior -----
 // Taunting Shout: a horn blast. Speed lines burst out, a dashed ring spreads, a red "!" pops over the hero.
-PIXFX.v3_warrior_b1_t2 = { dur: .7, n: 7,
+PIXFX.v3_warrior_b1_t2 = { under: true, dur: .7, n: 7,
   box: R => { const w = 2 * R + 14, ry = Math.round(R * .72); return [w, 36 + ry + 8, w / 2, 36]; },
   draw(P, f, n, R) {
     const t = f / (n - 1), rad = Math.round(R * (.25 + .75 * Math.min(1, t * 1.2)));
@@ -74,12 +74,12 @@ PIXFX.v3_warrior_b2_t2 = { dur: .8, n: 8,
     for (let b = 0; b < 2; b++) { const a = head + b * Math.PI, x = Math.round(Math.cos(a) * Rr), y = Math.round(Math.sin(a) * Rr * .72); P.rect(x - 1, y - 1, 3, 3, "#ffffff"); P.px(x + Math.round(Math.cos(a + 1.5) * 3), y + Math.round(Math.sin(a + 1.5) * 3), "#ffe29a"); }
   } };
 // Avatar of War: flames burn around the hero, embers rise, rage chevrons pop up over the head.
-PIXFX.v3_warrior_b2_t4 = { dur: .9, n: 9,
+PIXFX.v3_warrior_b2_t4 = { under: true, dur: .9, n: 9,
   box: () => [60, 66, 30, 46],
   draw(P, f, n) {
     const grow = f < 3 ? (f + 1) / 3 : f >= n - 2 ? .55 : 1;
     if (f < 2) P.ell(10 + f * 9, i => i % 3 < 2 ? (f ? "#d9381e" : "#fff3c0") : null);
-    const fl = []; for (let k = 0; k < 9; k++) { const a = k * Math.PI * 2 / 9 + .4; fl.push([Math.cos(a) * 11, Math.sin(a) * 8 + 7, k]); }
+    const fl = []; for (let k = 0; k < 9; k++) { const a = k * Math.PI * 2 / 9 + .4; fl.push([Math.cos(a) * 15, Math.sin(a) * 10 + 8, k]); }
     fl.sort((a, b) => a[1] - b[1]).forEach(([x, y, k]) => pxFlame(P, Math.round(x), Math.round(y), 16 + Math.floor(pxHash(k, f) * 6), f, k * 2.1, grow));
     for (let k = 0; k < 6; k++) { const x = (pxHash(k, 7) - .5) * 26, y = 2 - ((f * 3 + pxHash(k, 9) * 26) % 30); if (grow > .6) P.rect(Math.round(x), Math.round(y), 1, 1, k % 2 ? "#ffb43a" : "#ffe29a"); }
     if (f <= 4) { const by = -26 - f; for (let r = 0; r < 2; r++) { const y = by - r * 5; for (let i = 0; i < 4; i++) { P.px(-3 + i, y + 3 - i, PXD); P.px(3 - i, y + 3 - i, PXD); } for (let i = 0; i < 3; i++) { P.px(-2 + i, y + 3 - i, r ? "#ffd34d" : "#e0443a"); P.px(2 - i, y + 3 - i, r ? "#ffd34d" : "#e0443a"); } } }
@@ -186,7 +186,7 @@ PIXFX.v3_mage_b3_t2b = { dur: .9, n: 8, box: () => [44, 50, 22, 28],
     if (f >= 2 && f < n - 1) for (let k = 0; k < 3; k++) { const a = f * .9 + k * 2.1, x = Math.round(Math.cos(a) * 12), y = Math.round(Math.sin(a) * 14 - 3); pxSpot(P, x, y, "#ffffff"); }
   } };
 // Time Warp: a clock face of ticks spreads out, a hand sweeps backwards, ripples run out.
-PIXFX.v3_mage_b3_t4 = { dur: 1.1, n: 10, box: R => { R = Math.min(R, 56); const w = 2 * R + 20; return [w, w * .72 + 20, w / 2, w * .36 + 8]; },
+PIXFX.v3_mage_b3_t4 = { under: true, dur: 1.1, n: 10, box: R => { R = Math.min(R, 56); const w = 2 * R + 20; return [w, w * .72 + 20, w / 2, w * .36 + 8]; },
   draw(P, f, n, R) {
     R = Math.min(R, 56); const t = Math.min(1, (f + 1) / 4), rad = Math.round(R * t);
     P.ell(rad, i => f < n - 1 && i % 5 < 3 ? "#c9a0ff" : null);
@@ -206,7 +206,7 @@ PIXFX.v3_archer_b1_t2 = { dur: .6, n: 6, box: R => { const w = 2 * R + 24; retur
         if (f < n - 1 || k % 2) { P.rect(x, y - 11, 2, 11, "#8a5a2b"); P.rect(x, y - 11, 1, 11, "#c9955a"); P.rect(x - 1, y - 14, 4, 3, "#e0443a"); P.rect(x, y - 14, 2, 1, "#ff9a8a"); P.rect(x, y - 1, 2, 1, "#c0c4cc"); } } }
   } };
 // Spike Trap: iron spikes spring up out of the ground, glint, then sink away.
-PIXFX.v3_archer_b2_t2 = { dur: .6, n: 7, box: () => [48, 40, 24, 24],
+PIXFX.v3_archer_b2_t2 = { under: true, dur: .6, n: 7, box: () => [48, 40, 24, 24],
   draw(P, f, n) {
     const h = [0, 5, 10, 11, 11, 7, 3][f]; if (f === 0) { P.ell(8, i => i % 2 ? "#6e6a66" : null); return; }
     [[-9, 2], [-4, 5], [0, 0], [5, 4], [10, 1]].forEach(([x, y], k) => { const hh = h - (k % 2); for (let r = 0; r < hh; r++) { const w = Math.max(0, 1 - Math.floor(r / (hh / 2.2))); P.rect(x - w - 1, y - r, 2 * w + 3, 1, PXD); }
@@ -222,7 +222,7 @@ PIXFX.v3_archer_b2_t2b = { dur: .6, n: 7, box: () => [52, 56, 26, 38],
     if (f >= 2 && f < n - 1) [[-rx, 1], [rx, 1], [-rx * .6, ry], [rx * .6, ry]].forEach(([x, y]) => { P.rect(Math.round(x) - 2, y + oy - 1, 5, 5, PXD); P.rect(Math.round(x) - 1, y + oy, 3, 3, "#9a9aa8"); P.px(Math.round(x) - 1, y + oy, "#d8d8e0"); });
   } };
 // Barricade & Minefield: sharpened stakes drive into the ground in an arc, mines scatter and blink.
-PIXFX.v3_archer_b2_t4 = { dur: .9, n: 9, box: R => { R = Math.min(R, 44); const w = 2 * R + 20; return [w, R * 1.44 + 40, w / 2, R * .72 + 28]; },
+PIXFX.v3_archer_b2_t4 = { under: true, dur: .9, n: 9, box: R => { R = Math.min(R, 44); const w = 2 * R + 20; return [w, R * 1.44 + 40, w / 2, R * .72 + 28]; },
   draw(P, f, n, R) {
     R = Math.min(R, 44);
     for (let k = 0; k < 7; k++) { const a = Math.PI * (.15 + .7 * k / 6), x = Math.round(Math.cos(a) * R * .7), y = Math.round(Math.sin(a) * R * .55), h = Math.min(10, Math.max(0, (f + 1 - k * .35) * 4)); if (h < 1 || (f === n - 1 && k % 2)) continue;
@@ -287,7 +287,7 @@ PIXFX.v3_shaman_b2_t1 = { dur: .9, n: 8, box: R => { R = Math.min(R, 40); const 
     for (let k = 0; k < 7; k++) { if (f < 2 || (f === n - 1)) continue; const a = k * .9, x = Math.cos(a) * R * .7 * pxHash(k, 1), y = Math.sin(a) * R * .5 * pxHash(k, 1) - ((f * 3 + k * 4) % 20); pxSpot(P, Math.round(x), Math.round(y), k % 2 ? "#7fe08a" : "#d4ffd8"); }
   } };
 // Earthgrab Totem: roots burst out of the ground in a ring and twist.
-PIXFX.v3_shaman_b2_t2 = { dur: .9, n: 8, box: R => { R = Math.min(R, 40); const w = 2 * R + 20; return [w, R * 1.44 + 40, w / 2, R * .72 + 28]; },
+PIXFX.v3_shaman_b2_t2 = { under: true, dur: .9, n: 8, box: R => { R = Math.min(R, 40); const w = 2 * R + 20; return [w, R * 1.44 + 40, w / 2, R * .72 + 28]; },
   draw(P, f, n, R) {
     R = Math.min(R, 40);
     for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4 + .3, bx = Math.round(Math.cos(a) * R * .75), by = Math.round(Math.sin(a) * R * .55), h = Math.round(Math.min(14, Math.max(0, (f + 1 - (k % 3) * .4) * 4.5))); if (f === n - 1 && k % 2) continue;
@@ -311,7 +311,7 @@ function pxHand(P, x, y, curl, c1, c2) { // a spirit hand with four fingers and 
     P.rect(fx - 1, y - fh - 1, 3, fh + 2, PXD); P.rect(fx, y - fh, 1, fh, c1); P.rect(fx + lean, y - fh - 1, 1, 1, "#ffffff"); }
   P.rect(x - 6, y - 4 + Math.round(curl * 2), 3, 5, PXD); P.rect(x - 5, y - 3 + Math.round(curl * 2), 1, 4, c1);
 }
-PIXFX.v3_shaman_b3_t2 = { dur: .9, n: 8, box: R => { R = Math.min(R, 40); const w = 2 * R + 20; return [w, R * 1.44 + 36, w / 2, R * .72 + 24]; },
+PIXFX.v3_shaman_b3_t2 = { under: true, dur: .9, n: 8, box: R => { R = Math.min(R, 40); const w = 2 * R + 20; return [w, R * 1.44 + 36, w / 2, R * .72 + 24]; },
   draw(P, f, n, R) {
     R = Math.min(R, 40);
     for (let k = 0; k < 5; k++) { const a = k * 1.26 + .4, x = Math.round(Math.cos(a) * R * .7), y = Math.round(Math.sin(a) * R * .5), rise = Math.min(1, (f + 1 - k * .3) / 3), cur = f >= 4 ? Math.min(1, (f - 3) / 2) : 0; if (rise <= 0 || (f === n - 1 && k % 2)) continue;
@@ -346,7 +346,7 @@ PIXFX.v3_rogue_b1_t2b = { dur: 1.0, n: 8, box: R => { R = Math.min(R, 36); const
     if (f <= 2) pxStar(P, 0, -4, 8, "#ffffff", "#ffe29a");
   } };
 // Caltrop Bomb: a pop, then spiked caltrops scatter over the ground and stick there, leaking green poison.
-PIXFX.v3_rogue_b2_t2 = { dur: .6, n: 7, box: R => { const w = 2 * R + 24; return [w, R * 1.44 + 40, w / 2, R * .72 + 26]; },
+PIXFX.v3_rogue_b2_t2 = { under: true, dur: .6, n: 7, box: R => { const w = 2 * R + 24; return [w, R * 1.44 + 40, w / 2, R * .72 + 26]; },
   draw(P, f, n, R) {
     if (f === 0) pxStar(P, 0, -4, 6, "#ffffff", "#7ad84a");
     for (let k = 0; k < 9; k++) { const a = k * .7 + .2, d = R * (.35 + .65 * pxHash(k, 4)), tx = Math.cos(a) * d, ty = Math.sin(a) * d * .72, t = Math.min(1, (f + 1) / 4), arc = Math.sin(t * Math.PI) * 14 * (1 - t * .3);
