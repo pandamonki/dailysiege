@@ -4,6 +4,7 @@ name: CI
 # runs lint, the tests and the rules tests before it ships, so this saves Actions minutes.
 on:
   pull_request:
+    paths-ignore: ["**.md"]
 
 permissions:
   contents: read
