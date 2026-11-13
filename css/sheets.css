@@ -385,3 +385,8 @@ body.pdx .ud-tip { bottom: calc(308px + env(safe-area-inset-bottom, 0px) + 8px);
 .gline span { color: var(--ink-soft); } .gline small { grid-column: 1 / -1; color: var(--ink-soft); font-size: 12.5px; } .gline.none b { color: var(--ink-soft); font-weight: 400; font-style: italic; }
 .islist { margin-top: 6px; }
 .det.rrow { display: grid; grid-template-columns: 48px 1fr; gap: 0 10px; margin-top: 6px; } .det.rrow.off { opacity: .55; } .det.rrow .tdico { grid-row: span 2; }
+/* page help: small "i" in the header, note at the top of the page */
+.sheet header .hbtn { margin-left: auto; flex: none; width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--wood-dark); background: transparent; color: var(--wood-dark); font: italic 700 15px/1 var(--f-body, serif); opacity: .7; cursor: pointer; padding: 0; } .sheet header .hbtn:hover, .sheet header .hbtn.on { opacity: 1; background: rgba(255,250,230,.6); }
+.sheet header .hbtn + .x { margin-left: 4px; } .sheet header .gchip + .hbtn { margin-left: 8px; }
+.helpwrap { position: relative; height: 0; z-index: 5; }
+.helpbox { position: absolute; left: 10px; right: 10px; top: 6px; display: block; text-align: left; padding: 8px 12px; border: 1px solid rgba(90,58,32,.5); border-left: 4px solid var(--gold, #c9962f); border-radius: 6px; background: #f6ecc9; box-shadow: 0 6px 16px rgba(0,0,0,.35); font: inherit; font-size: 14px; line-height: 1.35; color: var(--ink); cursor: pointer; } .helpbox b { display: block; font-family: var(--f-display); font-weight: 400; font-size: 16px; color: var(--wax); } .helpbox span { display: block; margin-top: 2px; }

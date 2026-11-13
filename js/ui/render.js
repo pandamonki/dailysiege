@@ -20,6 +20,7 @@ function renderSheet() {
     title: titleSheet, patch: patchSheet, gold: goldSheet, day: daySheet, board: boardSheet, report: () => reportSheet(sheet.id), invites: inviteSheet, whatsnew: newsSheet, camp: campSheet, spin: spinSheet, rhero: () => rivalHeroSheet(sheet.id), guide: guideSheet, spells: spellsSheet, wall: () => wallSheet(sheet.id),
     council: councilSheet, uorder: () => uorderSheet(sheet.id), game: gameSheet, install: installSheet, orders: ordersSheet, seal: sealSheet, results: resultsSheet, lab: labSheet, deploy: () => deploySheet(sheet.id) }[sheet.type]();
   p.innerHTML = html; sh.hidden = veil.hidden = false; sh.classList.toggle("splash", sheet.type === "title" && sheet.tab !== "test");
+  decorateHelp(p);
   const b = p.querySelector(".body"); if (b && sheet.keep) b.scrollTop = scroll;
 }
 function render(keepScroll = true) {
@@ -36,7 +37,7 @@ let wizCtx = null; // the screen the player was on before opening Options, so th
 function open(type, id) { if (type === "title" && sheet && sheet.type !== "title") wizCtx = { type: sheet.type, grp: sheet.grp, tab: sheet.tab }; else if (type !== "title") wizCtx = null; sheet = { type, id }; render(false); }
 function wizStartStep() { const c = wizCtx; wizCtx = null; if (!c) return Math.max(0, WIZARD.findIndex(w => w[0] === "#map"));
   const find = sel => WIZARD.findIndex(w => w[0] === (sel.startsWith("[") ? "#cmdbar " + sel : sel));
-  const k = c.type === "castle" ? (c.grp === "army" || c.tab === "recruit" || c.tab === "train" ? '[data-act="opencastle"][data-v="recruit"]' : '[data-act="opencastle"][data-v="keep"]')
+  const k = c.type === "castle" && c.tab === "shop" ? "#shopbtn" : c.type === "castle" ? (c.grp === "army" || c.tab === "recruit" || c.tab === "train" ? '[data-act="opencastle"][data-v="recruit"]' : '[data-act="opencastle"][data-v="keep"]')
     : c.type === "champ" ? '[data-act="openhero"]' : c.type === "orders" ? (c.grp === "alli" ? '[data-act="openorders"][data-v="alli"]' : '[data-act="openorders"][data-v="ord"]')
     : ["gold", "day", "board", "rep"].includes(c.type) ? ".topchips" : null;
   const i = k ? find(k) : find("#map"); return i < 0 ? 0 : i; }
