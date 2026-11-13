@@ -29,6 +29,10 @@ const DAY_WEIGHT_PICK = { 5: 1.5, 6: 1.5, 7: 1.5 };
 const PICK_ROLES = { "@weakcastle": "Weakest castle", "@leader": "Board leader", "@above": "Lord just above me", "@nearcastle": "Nearest to my castle", "@neararmy": "Nearest to my army" };
 // Under pick-your-targets an army also attacks any rival castle it passes on the way, within this many tiles.
 const PASSING_CASTLE = 2.5;
+// Also from PICK_V1_FROM, heroes keep fighting: an ordered retreat ends at 50% health (was 75%); "my castle is under attack" only calls the hero
+// home when it is within RECALL_R tiles; archers and mages only step back while they are actually being hit; rogues only slip away when
+// outnumbered 3 to 1 close by and taking damage.
+const RECALL_R = 6, RETREAT_END_V2 = .5;
 const fairTie = (seed, a, b) => hash(seed, botSeed(String(a)) * 7919 + botSeed(String(b)), 17);
 const BLOC_MAX = 3, TREACHERY_PTS = 3, TREACHERY_LOOT = .25, DAY_WEIGHT = { 5: 1.5, 6: 1.5, 7: 2 };
 // A lord whose castle falls keeps their hero and soldiers on the field: they fight on to the end of the battle, but can no longer fall back, heal at the castle, teleport home or respawn. Placing is still decided by when the castle fell.
@@ -685,6 +689,7 @@ function runBattle(plans, seed, opts = {}) {
         }
         if (!ok) return;
         if (repeat && (p.retreat || t - p.retreatT < 10)) return;
+        if (repeat && PV && r.if === "My castle is under attack" && !(live(p.champ) && d(p.champ, p.castle) <= RECALL_R)) return; // too far away to help: keep fighting
         p.fired.add(i);
         switch (r.then) {
           case "Retreat hero to castle": p.retreat = true; p.retreatT = t; break;
@@ -761,7 +766,7 @@ function runBattle(plans, seed, opts = {}) {
     if (e.kind === "champ" && p.retreat) {
       moveToward(e, p.castle.x, p.castle.y - .8, .3);
       if (d(e, p.castle) < 1.5) heal(e, e.maxhp * .04 * DT, true);
-      if (e.hp / e.maxhp > .75) p.retreat = false;
+      if (e.hp / e.maxhp > (PV ? RETREAT_END_V2 : .75)) p.retreat = false;
       if (e.kind === "champ") tryAbilities(e);
       return;
     }
@@ -795,8 +800,10 @@ function runBattle(plans, seed, opts = {}) {
     // champion fighting styles
     if (e.kind === "champ") {
       const near = r => minBy(enemiesNear(e, e.x, e.y, r).filter(x => x.kind !== "totem"), x => d(x, e));
-      if (e.cls === "mage") { const th = near(2.2); if (th && th.range < 2.5 && (t - e.hitT < 1.5 || d(th, e) < 1.4)) e.fleeUntil = Math.max(e.fleeUntil || 0, t + .8); }
-      if (e.cls === "rogue") { const crowd = enemiesNear(e, e.x, e.y, 2).length; const going = live(e.tgt) && e.tgt.hp / e.tgt.maxhp < FINISH_AT; if ((e.hp / e.maxhp < .45 && crowd && !going) || crowd >= 4 || ((e.hits || 0) >= 5 && !going)) { e.fleeUntil = t + 1; e.hits = 0; } }
+      if (e.cls === "mage") { const th = near(2.2); if (th && th.range < 2.5 && (t - e.hitT < 1.5 || (!PV && d(th, e) < 1.4))) e.fleeUntil = Math.max(e.fleeUntil || 0, t + .8); }
+      if (e.cls === "rogue") { const crowd = enemiesNear(e, e.x, e.y, 2).length; const going = live(e.tgt) && e.tgt.hp / e.tgt.maxhp < FINISH_AT;
+        if (PV) { const mates = Math.max(1, friendsNear(e.pid, e.x, e.y, 2).filter(o => o.kind !== "totem").length); if (!going && t - e.hitT < 1 && crowd >= 3 * mates) e.fleeUntil = t + 1; } // only when outnumbered 3 to 1 and being hit
+        else if ((e.hp / e.maxhp < .45 && crowd && !going) || crowd >= 4 || ((e.hits || 0) >= 5 && !going)) { e.fleeUntil = t + 1; e.hits = 0; } }
       if (e.fleeUntil > t) {
         const th = near(5);
         if (th) { const dx = e.x - th.x, dy = e.y - th.y, L = hyp(dx, dy) || 1, hx = p.castle.x - e.x, hy = p.castle.y - e.y, H = hyp(hx, hy) || 1;
@@ -842,7 +849,7 @@ function runBattle(plans, seed, opts = {}) {
       const dealt = HV3 && e.tr ? kit.basic(e, o) : deal(e, o, e.atk); if (e.itemCrit) e.icm = 0;
       if (e.splash && live(o)) enemiesNear(e, o.x, o.y, 1.3).filter(x => x !== o).forEach(x => deal(e, x, e.atk * e.splash, { aoe: 1 }));
       if (e.cls === "rogue") e.hits = (e.hits || 0) + 1;
-      if (e.cls === "archer") { const th = minBy(enemiesNear(e, e.x, e.y, 2.6).filter(x => x.range < 2.5), x => d(x, e)); if (th) e.fleeUntil = t + .6; }
+      if (e.cls === "archer" && (!PV || t - e.hitT < 1)) { const th = minBy(enemiesNear(e, e.x, e.y, 2.6).filter(x => x.range < 2.5), x => d(x, e)); if (th) e.fleeUntil = t + .6; } // from PICK_V1 only while being hit
       if (dealt && e.itemSet && e.itemSet.size && live(o)) { if (e.itemSet.has("frostdagger")) setFx(o, "slow", 1.5, .3); if (e.itemSet.has("venomorb")) addDot(o, e, 7, 3, "orb");
         if (e.itemSet.has("corruptorb")) setFx(o, "vuln", 3, .15);
         if (e.itemSet.has("fireorb")) { const sp = enemiesNear(e, o.x, o.y, 1.3).filter(x => x !== o); if (sp.length) aoe(o.x, o.y, 1.3, "#ff7a2a", .35); sp.forEach(x => deal(e, x, dealt * .35, { aoe: 1, ab: "Orb of Fire" })); } }
