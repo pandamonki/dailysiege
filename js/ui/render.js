@@ -17,13 +17,13 @@ function renderSheet() {
   if (!sheet) { sh.hidden = veil.hidden = true; return; }
   const p = document.getElementById("paper"), scroll = p.querySelector(".body")?.scrollTop || 0;
   const html = { castle: castleSheet, champ: champSheet, unit: () => unitSheet(sheet.id), trap: () => trapSheet(sheet.id), rival: () => rivalSheet(sheet.id),
-    title: titleSheet, patch: patchSheet, gold: goldSheet, day: daySheet, board: boardSheet, report: () => reportSheet(sheet.id), invites: inviteSheet, whatsnew: newsSheet, camp: campSheet, guide: guideSheet, spells: spellsSheet, wall: () => wallSheet(sheet.id),
+    title: titleSheet, patch: patchSheet, gold: goldSheet, day: daySheet, board: boardSheet, report: () => reportSheet(sheet.id), invites: inviteSheet, whatsnew: newsSheet, camp: campSheet, spin: spinSheet, guide: guideSheet, spells: spellsSheet, wall: () => wallSheet(sheet.id),
     council: councilSheet, uorder: () => uorderSheet(sheet.id), game: gameSheet, install: installSheet, orders: ordersSheet, seal: sealSheet, results: resultsSheet, lab: labSheet, deploy: () => deploySheet(sheet.id) }[sheet.type]();
   p.innerHTML = html; sh.hidden = veil.hidden = false; sh.classList.toggle("splash", sheet.type === "title" && sheet.tab !== "test");
   const b = p.querySelector(".body"); if (b && sheet.keep) b.scrollTop = scroll;
 }
 function render(keepScroll = true) {
-  try { if (mode === "plan" && !sheet && !reportBack && !document.getElementById("wizring") && S && !S.ob) { if (inviteDue()) { S.invSeen = planDayKey(); sheet = { type: "invites" }; } else if (newsDue()) { sheet = { type: "whatsnew" }; } else if (mercDue()) { S.mercSeen = isLive() ? liveClock().week : "p"; sheet = { type: "camp", news: true }; } } } catch (e) {}
+  try { if (mode === "plan" && !sheet && !reportBack && !document.getElementById("wizring") && S && !S.ob) { if (S.spin) { sheet = { type: "spin" }; } else if (inviteDue()) { S.invSeen = planDayKey(); sheet = { type: "invites" }; } else if (newsDue()) { sheet = { type: "whatsnew" }; } else if (mercDue()) { S.mercSeen = isLive() ? liveClock().week : "p"; sheet = { type: "camp", news: true }; } } } catch (e) {}
   if (sheet) sheet.keep = keepScroll;
   const rp = mode === "replay";
   document.getElementById("hint").hidden = rp; document.getElementById("tray").hidden = rp;

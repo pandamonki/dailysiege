@@ -101,7 +101,11 @@ const A = {
     { const used = new Set((LASTP && LASTP.trapsUsed) || []); S.traps = S.traps.filter(t => { const k = placedAt(t.id); if (k && used.has("you|" + k)) { delete S.place[k]; return false; } return true; }); } LASTP = null;
     try { localStorage.setItem("lastbanner.pday", String(DAY)); } catch (e) {}
     toast(`Day ${DAY}. +${inc} gold.`); sheet = null; },
-  castleup: () => { const nx = CASTLE_TIERS[ctNow()]; if (nx && avail() >= nx.cost) { S.gold -= nx.cost; S.castle = ctNow() + 1; toast(`${nx.name} raised. Daily income is now ${baseIncome(curDayNo()) + CASTLE_INCOME[ctNow() - 1]} gold.`); } },
+  castleup: () => { const nx = CASTLE_TIERS[ctNow()]; if (nx && avail() >= nx.cost) { S.gold -= nx.cost; S.castle = ctNow() + 1; startSpin(); toast(`${nx.name} raised. Daily income is now ${baseIncome(curDayNo()) + CASTLE_INCOME[ctNow() - 1]} gold.`); } },
+  spinpick: k => { const sp = S.spin; if (!sp || !sp.offer.includes(k)) return; if (S.items.length >= ITEM_SLOTS) { sheet.pend = k; return; } S.items.push(k); toast(`${ITEMS[k].name} added to your hero.`); endSpin(); },
+  spinrep: j => { const sp = S.spin, k = sheet && sheet.pend; if (!sp || !k || !S.items.includes(j)) return; S.items = S.items.filter(x => x !== j); S.gold += Math.floor(itemCost(j) / 2); S.items.push(k); toast(`${ITEMS[k].name} replaces ${ITEMS[j].name}.`); endSpin(); },
+  spinno: () => { if (sheet) sheet.pend = null; },
+  spingold: () => { if (!S.spin || S.items.length < ITEM_SLOTS) return; S.gold += SPIN_GOLD; toast(`+${SPIN_GOLD} gold.`); endSpin(); },
   wallbuy: () => { if (S.walls.length >= wallLimit(ctNow()) || avail() < WALL_COST) return; S.gold -= WALL_COST; const id = "w" + idc++; S.walls.push({ id, dir: "h" }); sel = id; sheet = null; toast("Wall built. Tap a glowing tile to place it. Tap it afterwards to turn it."); },
   wrot: id => { const w = findWall(id), k = placedAt(id), nd = w.dir === "h" ? "v" : "h"; if (k) { const [r, c] = k.split(",").map(Number); if (!wallFree(r, c, nd, id)) { toast("It doesn't fit that way round."); return; } } w.dir = nd; },
   wsell: id => { const k = placedAt(id); if (k) delete S.place[k]; S.walls = S.walls.filter(w => w.id !== id); S.gold += Math.floor(WALL_COST / 2); sheet = null; },
