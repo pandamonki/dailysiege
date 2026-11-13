@@ -30,7 +30,7 @@ function render(keepScroll = true) {
   document.getElementById("hint").hidden = rp; document.getElementById("tray").hidden = rp;
   document.getElementById("rbar").hidden = !rp; document.getElementById("commands").hidden = rp;
   document.body.classList.toggle("inreplay", rp); document.querySelector(".ribbon").hidden = rp; document.getElementById("ud").hidden = !rp || !!(replay && replay.reel); try { resize(); } catch (e) {} // in a replay the unit panel owns the bottom of the screen and the map is shorter
-  renderTop(); renderHint(); renderTray(); renderPlanDock(); renderSheet(); save();
+  renderTop(); renderHint(); renderTray(); renderPlanDock(); fitMapToStrip(); renderSheet(); save();
   try { MUSIC.sync(); } catch (e) {}
 }
 let wizCtx = null; // the screen the player was on before opening Options, so the tour can start there
