@@ -6,7 +6,7 @@ const heroV3Flag = () => { try { return /[?&]herov3\b/.test(location.search) || 
 // pick your targets (PICK_V1): always on in practice while it is being tried; in a real war from PICK_V1_FROM
 const pickV1Now = () => (typeof isLive === "function" && isLive() ? pickV1For(liveClock().planDay) : true);
 // a new day: nobody is a target until the lord picks again
-const pickReset = () => { if (!pickV1Now() || !S || !S.lists) return; S.lists.neutral = S.lists.neutral.concat(S.lists.hostile.filter(k => !S.lists.neutral.includes(k))); S.lists.hostile = []; if (S.strategy) S.strategy.mode = "list"; };
+const pickReset = () => { if (!pickV1Now() || !S || !S.lists) return; S.lists.neutral = S.lists.neutral.concat(S.lists.hostile.filter(k => !PICK_ROLES[k] && !S.lists.neutral.includes(k))); S.lists.hostile = []; if (S.strategy) S.strategy.mode = "list"; };
 const heroV3Now = () => (typeof isLive === "function" && isLive() ? heroV3For(liveClock().planDay) : heroV3Flag());
 let MY_COLOR = YOU_COLOR;
 // Example lobby for practice battles (castles are placed by the seat layout)

@@ -160,7 +160,7 @@ const A = {
   rvopen: v => { sheet.rv = sheet.rv === v ? null : v; },
   rvset: (v, k) => { ensureDip(); if (v === "hostile" && S.lists.hostile.includes(k)) { S.lists.hostile = [k, ...S.lists.hostile.filter(x => x !== k)]; toast("Main target set."); return; } A.lmove(v, k); },
   phase: v => { S.phase = v; sel = null; sheet = null; if (v === "orders") { ensureDip(); open("orders"); } },
-  lmove: (v, k) => { ensureDip(); if (v === "hostile" && pickV1Now() && !S.lists.hostile.includes(k) && S.lists.hostile.length >= PICK_MAX) { toast(`You can pick up to ${PICK_MAX} targets a day.`); return; } ["hostile", "neutral"].forEach(l => { S.lists[l] = S.lists[l].filter(x => x !== k); }); S.lists[v === "hostile" ? "hostile" : "neutral"].push(k); },
+  lmove: (v, k) => { ensureDip(); if (v === "hostile" && pickV1Now() && !S.lists.hostile.includes(k) && S.lists.hostile.length >= PICK_MAX) { toast(`You can pick up to ${PICK_MAX} targets a day.`); return; } ["hostile", "neutral"].forEach(l => { S.lists[l] = S.lists[l].filter(x => x !== k); }); if (PICK_ROLES[k] && v !== "hostile") return; S.lists[v === "hostile" ? "hostile" : "neutral"].push(k); }, // a general role is only ever on the attack list
   lup: (_, k) => { const L = S.lists.hostile, i = L.indexOf(k); if (i > 0) [L[i - 1], L[i]] = [L[i], L[i - 1]]; },
   ldown: (_, k) => { const L = S.lists.hostile, i = L.indexOf(k); if (i > -1 && i < L.length - 1) [L[i + 1], L[i]] = [L[i], L[i + 1]]; },
   preset: v => { ensureDip(); const pick = RIVALS.filter(r => sideOf(r) === v).sort((a, b) => Math.hypot(a.pos[0] - CASTLE[0], a.pos[1] - CASTLE[1]) - Math.hypot(b.pos[0] - CASTLE[0], b.pos[1] - CASTLE[1]))[0];
@@ -170,7 +170,7 @@ const A = {
   tmin: (v, k) => { S.terms[k].min = stepGold(S.terms[k].min, +v); },
   ogold: (v, k) => { const o = S.offers[k]; if (!o || o.day !== planDayKey()) { toast("Already sent. The dowry is locked."); return; } const next = stepGold(o.gold, +v); if (next - o.gold > avail()) { toast("Not enough free gold."); return; } o.gold = next; },
   uorder: (v, k) => { if (v === "army") delete S.uorders[k]; else S.uorders[k] = v; sheet = null; },
-  seal: () => { if (pickV1Now() && !S.lists.hostile.length) { toast("Pick at least one lord to attack first (Strategy)."); return; } S.locked = true; sel = null; if (isLive()) { const snap = mySnapshot(); delete snap.sealedPlan; S.sealedSnap = JSON.parse(JSON.stringify(snap)); } }, // a copy of what was sealed: it stays in effect while new orders are drafted, until they are sealed
+  seal: () => { if (pickV1Now() && !S.lists.hostile.length) { toast("Pick at least one target first (Strategy)."); return; } S.locked = true; sel = null; if (isLive()) { const snap = mySnapshot(); delete snap.sealedPlan; S.sealedSnap = JSON.parse(JSON.stringify(snap)); } }, // a copy of what was sealed: it stays in effect while new orders are drafted, until they are sealed
   unseal: () => { S.locked = false; },
   copy: () => { const txt = planJSON(); try { navigator.clipboard.writeText(txt).then(() => toast("Plan copied."), selectPlan); } catch (e) { selectPlan(); } },
   reset: () => { if (isLive()) return; S = freshState(); ensureDip(); sel = null; sheet = null; toast("Back to the example setup."); },

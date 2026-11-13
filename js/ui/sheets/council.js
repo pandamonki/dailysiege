@@ -64,7 +64,7 @@ function ensureDip() {
   S.phase = S.phase || "muster"; if (STANCE_FIX[S.stance]) S.stance = STANCE_FIX[S.stance];
   S.rules = (S.rules || []).map(r => ({ if: r.if, then: r.then === "All units defend castle" ? "All units fall back to regroup" : r.then === "Switch to Defensive" ? "Switch to Cautious" : r.then }));
   const ids = RIVALS.map(r => r.id);
-  ["hostile", "neutral", "ally"].forEach(k => { S.lists[k] = S.lists[k].filter((id, i, a) => ids.includes(id) && a.indexOf(id) === i); });
+  ["hostile", "neutral", "ally"].forEach(k => { S.lists[k] = S.lists[k].filter((id, i, a) => (ids.includes(id) || (k === "hostile" && pickV1Now() && !!PICK_ROLES[id])) && a.indexOf(id) === i); }); // with pick-your-targets the attack list can hold general roles too
   const placed = new Set([...S.lists.hostile, ...S.lists.neutral, ...S.lists.ally]);
   const near = r => Math.round(Math.hypot(r.pos[0] - CASTLE[0], r.pos[1] - CASTLE[1]) * 1e6), tie = r => hash(botSeed(String(r.id)), CASTLE[0] * 100 + CASTLE[1], 29); // equally near rivals go in a fixed but fair order, not sign-up order
   RIVALS.slice().sort((a, b) => (near(a) - near(b)) || (tie(a) - tie(b))).forEach(r => {
@@ -152,15 +152,17 @@ function previewOrder() {
 }
 // Pick your targets (PICK_V1): one to three lords a day, in order. Once they have fallen, the army goes for the lord just above on the board.
 function pickTab() {
-  const hostile = S.lists.hostile, idle = RIVALS.filter(r => !hostile.includes(r.id)), full = hostile.length >= PICK_MAX;
-  const row = (id, i) => { const r = RIVALS.find(x => x.id === id); if (!r) return "";
-    return `<li class="tgt cp" data-k="${id}"><span class="grip" aria-label="Drag to reorder">⠿</span><span class="ord">${i + 1}</span><i class="sw" style="background:${r.color}"></i><span class="tn"><b>${esc(r.name)}</b></span><button class="btn small" data-act="lmove" data-v="neutral" data-k="${id}" aria-label="Stop attacking ${esc(r.name)}" ${dis()}>✕</button></li>`; };
-  const st = S.strategy;
+  const hostile = S.lists.hostile, idle = RIVALS.filter(r => !hostile.includes(r.id)), roles = Object.keys(PICK_ROLES).filter(k => !hostile.includes(k)), full = hostile.length >= PICK_MAX;
+  const row = (id, i) => { const r = RIVALS.find(x => x.id === id), role = PICK_ROLES[id]; if (!r && !role) return "";
+    return `<li class="tgt cp" data-k="${id}"><span class="grip" aria-label="Drag to reorder">⠿</span><span class="ord">${i + 1}</span>${r ? `<i class="sw" style="background:${r.color}"></i>` : ""}<span class="tn"><b>${esc(r ? r.name : role)}</b></span><button class="btn small" data-act="lmove" data-v="neutral" data-k="${id}" aria-label="Stop attacking ${esc(r ? r.name : role)}" ${dis()}>✕</button></li>`; };
+  const chip = (k, label, sw) => `<button class="chip" data-act="lmove" data-v="hostile" data-k="${k}" ${full ? "disabled" : dis()}>${sw ? `<i class="sw" style="background:${sw}"></i>` : ""}${esc(label)} +</button>`;
   return `<div class="sec tight"><h3>1 · Today's targets <small class="hint">${hostile.length} of ${PICK_MAX} picked</small></h3>
-      <p class="muted">Pick at least one lord to attack before you seal. Your army goes for them in this order. Once they have fallen it goes for ${fallbackLabel()}.</p>
+      <p class="muted">Pick one to three targets before you seal: a lord, or a kind of target worked out during the battle. Out of combat your army marches on them in this order, and it still fights any army it meets and any rival castle it passes. Once they have fallen it goes for ${fallbackLabel()}.</p>
       <ol class="tgts cpl" id="tgtlist">${hostile.map(row).join("") || `<li class="muted">Nobody yet.</li>`}</ol>
-      ${idle.length ? `<div class="chips"><span class="muted">${full ? "Full. Remove one to swap:" : "Add:"}</span>${idle.map(r => `<button class="chip" data-act="lmove" data-v="hostile" data-k="${r.id}" ${full ? "disabled" : dis()}><i class="sw" style="background:${r.color}"></i>${esc(r.name)} +</button>`).join("")}</div>` : ""}</div>
-    ${strategyTabRest(st)}`;
+      ${full ? `<p class="muted">Full. Remove one to swap.</p>` : ""}
+      ${roles.length ? `<div class="chips"><span class="muted">Roles:</span>${roles.map(k => chip(k, PICK_ROLES[k])).join("")}</div>` : ""}
+      ${idle.length ? `<div class="chips"><span class="muted">Lords:</span>${idle.map(r => chip(r.id, r.name, r.color)).join("")}</div>` : ""}</div>
+    ${strategyTabRest(S.strategy)}`;
 }
 function fallbackLabel() {
   let rk = {}; try { rk = isLive() ? rankMap(standings(liveClock().week, addDays(liveClock().planDay, -1)), RIVALS.map(r => r.id).concat([LIVE.uid])) : rankMap(PRACTICE_BOARD, RIVALS.map(r => r.id).concat(["you"])); } catch (e) { rk = {}; }
@@ -264,7 +266,7 @@ function planJSON() {
   const place = {};
   Object.entries(S.place).forEach(([k, v]) => { const u = findUnit(v), t = findTrap(v); place[k] = v === "champ" ? "champion" : u ? `${u.type}:Lv${u.lvl}` : t ? `trap:${t.type}` : v; });
   return JSON.stringify({ day: DAY, class: S.cls, level: level(), ranks: S.ranks, upgrades: S.picks, castOn: S.triggers, gear: S.gear, defences: S.defences, placements: place, stance: S.stance, advanceOn: S.strategy.heading, attackMode: S.strategy.mode, priority: S.prio, combatPriorities: S.gprio, combatReach: S.engage, commands: S.rules,
-    attackOrder: S.lists.hostile.map(id => (RIVALS.find(r => r.id === id) || {}).name), neutral: S.lists.neutral.map(id => (RIVALS.find(r => r.id === id) || {}).name),
+    attackOrder: S.lists.hostile.map(id => PICK_ROLES[id] || (RIVALS.find(r => r.id === id) || {}).name), neutral: S.lists.neutral.map(id => (RIVALS.find(r => r.id === id) || {}).name),
     allianceOffers: Object.fromEntries(Object.keys(S.offers).map(id => [(RIVALS.find(r => r.id === id) || {}).name, S.offers[id]])),
     allianceTerms: Object.fromEntries(RIVALS.map(r => [r.name, S.terms[r.id]])), soldierOrders: S.uorders }, null, 2);
 }
@@ -302,7 +304,7 @@ function sealSheet() {
     [S.owned.every(u => placedAt(u.id)), `Soldiers placed (${S.owned.filter(u => placedAt(u.id)).length} of ${S.owned.length})`],
     [freePts() === 0, freePts() ? `${freePts()} skill point${freePts() > 1 ? "s" : ""} unspent` : "All skill points spent"],
     [S.traps.every(t => placedAt(t.id)), "Bought traps are set"],
-    pickV1Now() ? [S.lists.hostile.length > 0, S.lists.hostile.length ? `Targets: ${S.lists.hostile.map(id => esc((RIVALS.find(r => r.id === id) || {}).name || "")).join(" → ")}` : "<b>Pick at least one lord to attack</b> (Strategy)"] :
+    pickV1Now() ? [S.lists.hostile.length > 0, S.lists.hostile.length ? `Targets: ${S.lists.hostile.map(id => esc(PICK_ROLES[id] || (RIVALS.find(r => r.id === id) || {}).name || "")).join(" → ")}` : "<b>Pick at least one lord to attack</b> (Strategy)"] :
     [S.strategy.mode !== "list" || S.lists.hostile.length > 0, S.strategy.mode !== "list" ? `Attack: ${esc(TMODES.find(x => x[0] === S.strategy.mode)[1].toLowerCase())}` : S.lists.hostile.length ? `Main attack: ${esc((RIVALS.find(r => r.id === S.lists.hostile[0]) || {}).name || "")}` : "Nobody marked hostile, so your army picks the nearest castle"],
     [opUsed() === OP_MAX, opUsed() < OP_MAX ? `${OP_MAX - opUsed()} order seal${OP_MAX - opUsed() > 1 ? "s" : ""} unused` : "All order seals used"],
   ];

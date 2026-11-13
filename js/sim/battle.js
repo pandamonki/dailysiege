@@ -23,6 +23,10 @@ let FAIR_V1_FROM = "2026-11-16", fairV1For = d => String(d) >= FAIR_V1_FROM;
 let PICK_V1_FROM = "2099-01-01"; const pickV1For = d => String(d) >= PICK_V1_FROM, PICK_MAX = 3;
 // With pick-your-targets the final day scores 1.5x like days 5 and 6, not 2x: with targets chosen daily the standings already swing a lot.
 const DAY_WEIGHT_PICK = { 5: 1.5, 6: 1.5, 7: 1.5 };
+// A pick can be a lord or a general role, worked out during the battle (and again whenever the army looks for its next goal):
+const PICK_ROLES = { "@weakcastle": "Weakest castle", "@leader": "Board leader", "@above": "Lord just above me", "@nearcastle": "Nearest to my castle", "@neararmy": "Nearest to my army" };
+// Under pick-your-targets an army also attacks any rival castle it passes on the way, within this many tiles.
+const PASSING_CASTLE = 2.5;
 const fairTie = (seed, a, b) => hash(seed, botSeed(String(a)) * 7919 + botSeed(String(b)), 17);
 const BLOC_MAX = 3, TREACHERY_PTS = 3, TREACHERY_LOOT = .25, DAY_WEIGHT = { 5: 1.5, 6: 1.5, 7: 2 };
 // A lord whose castle falls keeps their hero and soldiers on the field: they fight on to the end of the battle, but can no longer fall back, heal at the castle, teleport home or respawn. Placing is still decided by when the castle fell.
@@ -436,14 +440,27 @@ function runBattle(plans, seed, opts = {}) {
       weakcastle: q => P[q].castle.maxhp, toplevel: q => -(P[q].level || 1), weakhero: q => { const h = hero(q); return h ? h.maxhp : 1e9; }, closest: q => d(P[q].castle, p.castle) }[mode];
     if (key) p.targets = p.targets.slice().sort((a, b) => key(a) - key(b) || (FV ? fairTie(seed, p.pid, a) - fairTie(seed, p.pid, b) : 0) || order.indexOf(a) - order.indexOf(b));
   }
+  // a general role picked as a target: the lord it means right now. Equal choices are settled by a draw, never roster order.
+  function roleGoal(p, e, k, ok) {
+    const cs = order.filter(ok), best = f => cs.length ? cs.reduce((a, b) => { const x = f(a), y = f(b); return y < x || (y === x && fairTie(seed, p.pid, b) < fairTie(seed, p.pid, a)) ? b : a; }) : null;
+    const dist = (a, q) => Math.round(d(P[q].castle, a) * 1e6);
+    if (k === "@weakcastle") return best(q => Math.round(Math.max(0, P[q].castle.hp) / P[q].castle.maxhp * 1e6));
+    if (k === "@nearcastle") return best(q => dist(p.castle, q));
+    if (k === "@neararmy") return best(q => dist(e, q));
+    const ranked = cs.filter(q => P[q].rank != null); if (!ranked.length) return best(q => dist(p.castle, q)); // no board yet (day 1): the nearest castle
+    if (k === "@leader") return ranked.reduce((a, b) => (P[b].rank < P[a].rank ? b : a));
+    if (k === "@above") { if (p.rank == null) return null; const up = ranked.filter(q => P[q].rank < p.rank); return up.length ? up.reduce((a, b) => (P[b].rank > P[a].rank ? b : a)) : null; }
+    return null;
+  }
   function goalPid(e) {
     const p = P[e.pid], ok = q => !!q && !!P[q] && P[q].alive && q !== e.pid && hostile(e.pid, q);
     if (ok(e.order)) return e.order;
     const rev = [...p.revenge].find(ok); if (rev) return rev;
     if (p.helpPid && t < p.helpUntil && P[p.helpPid] && P[p.helpPid].alive && ok(P[p.helpPid].castleHitBy)) return P[p.helpPid].castleHitBy;
     if (!p.sorted) { p.sorted = true; sortTargets(p); }
-    const listed = p.targets.find(ok); if (listed) return listed;
+    const listed = !PV && p.targets.find(ok); if (listed) return listed;
     // nobody left on the hostile list: the army still has to fight, so it marches on the nearest non-allied castle
+    if (PV) for (const k of p.targets) { const q = PICK_ROLES[k] ? roleGoal(p, e, k, ok) : ok(k) ? k : null; if (q) return q; }
     if (PV && p.rank != null) { // the lord just above me on the board; the leader goes for whoever is next below
       const cs = order.filter(q => ok(q) && P[q].rank != null), up = cs.filter(q => P[q].rank < p.rank), down = cs.filter(q => P[q].rank > p.rank);
       if (up.length) return up.reduce((a, b) => (P[b].rank > P[a].rank ? b : a));
@@ -498,6 +515,7 @@ function runBattle(plans, seed, opts = {}) {
     const near = ents.filter(o => !o.dead && o.kind !== "castle" && hostile(e.pid, o.pid) && fighting(o.pid) && vis(o, e) && d(o, anchor) <= radius);
     if (near.length) return byPrio(e, near);
     if (guard || escort) return null;
+    if (PV) { const cs = ents.filter(o => !o.dead && o.kind === "castle" && hostile(e.pid, o.pid) && d(o, e) <= PASSING_CASTLE); if (cs.length) return minBy(cs, o => Math.round(d(o, e) * 1e3) + fairTie(seed, e.pid, o.pid)); } // a rival castle on the way
     { const rv = [...p.revenge].filter(q => P[q] && fighting(q) && hostile(e.pid, q)).map(q => ents.find(o => !o.dead && o.kind === "champ" && o.pid === q && vis(o, e))).filter(Boolean); if (rv.length) return minBy(rv, o => d(o, e)); }
     if (p.heading === "centre" && t < HOLD_END) { // contest the battleground: only fight what stands on the hill
       const onHill = ents.filter(o => !o.dead && o.kind !== "castle" && o.kind !== "totem" && hostile(e.pid, o.pid) && fighting(o.pid) && vis(o, e) && inCentre(o.x, o.y));

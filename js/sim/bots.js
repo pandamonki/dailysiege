@@ -68,8 +68,8 @@ function botPicks(uid, seed, near, ranks) {
   const st = BOT_STYLES[(seed >> 1) % BOT_STYLES.length].name, my = ranks && ranks[uid];
   if (!my) return near.slice(0, st === "brawler" ? 3 : 2);
   const at = r => Object.keys(ranks).find(q => ranks[q] === r && q !== uid) || null, above = k => my - k >= 1 ? at(my - k) : at(my + k), top = my === 1 ? at(2) : at(1);
-  const want = { hunter: [top, above(1), near[0]], brawler: [near[0], near[1], above(1)], sniper: [above(1), above(2), near[0]], assassin: [above(1), top, near[0]], balanced: [above(1), near[0], top] }[st] || [above(1), near[0]];
-  return want.concat(near).filter((q, k, a) => q && q !== uid && near.includes(q) && a.indexOf(q) === k).slice(0, PICK_MAX);
+  const want = { hunter: [top, above(1), near[0]], brawler: [near[0], near[1], above(1)], sniper: [above(1), above(2), near[0]], assassin: ["@weakcastle", above(1), near[0]], balanced: [above(1), near[0], top] }[st] || [above(1), near[0]];
+  return want.concat(near).filter((q, k, a) => q && q !== uid && (near.includes(q) || !!PICK_ROLES[q]) && a.indexOf(q) === k).slice(0, PICK_MAX);
 }
 function lordBotPlan({ uid, cls, i, ids, L, zone, dayNo, lvl, v2, v3, fair, pick, ranks }) {
   const seed = botSeed(uid), me = L.castles[i], c = CLASSES[cls] || CLASSES.warrior, sp = armySpots(me, L.N);
