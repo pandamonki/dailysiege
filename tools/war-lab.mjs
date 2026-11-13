@@ -5,9 +5,26 @@
 //   JSON=1 prints the numbers as JSON instead (for comparing trials)
 // Bots do not earn or spend gold (their armies are fixed by the day), so the gold lines show what the board would pay
 // a lord in each place, not what the bots do with it.
-import { loadSim, WORLD_FILES } from "./load-sim.mjs";
+//   PATCH=file.json trials a change without touching the game: a list of { file, find, replace } text swaps applied in memory as the game loads
+//   (find is plain text and must occur in the file; every occurrence is swapped)
+//   DUMP=name prints a global the patched game filled in while it ran (for probes)
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import vm from "node:vm";
+import { ROOT, SIM_FILES, WORLD_FILES } from "./load-sim.mjs";
 
-const sim = loadSim({ extraFiles: WORLD_FILES });
+const patches = process.env.PATCH ? JSON.parse(readFileSync(process.env.PATCH, "utf8")) : [];
+const sim = (() => { // the same loader as functions/lib/game.js, plus the text swaps
+  const context = vm.createContext({ console }), used = new Set();
+  for (const rel of [...SIM_FILES, ...WORLD_FILES.filter(f => !SIM_FILES.includes(f))]) {
+    let src = readFileSync(path.join(ROOT, rel), "utf8");
+    patches.forEach((p, i) => { if (p.file !== rel) return; if (!src.includes(p.find)) throw new Error(`PATCH ${i}: text not found in ${rel}: ${p.find}`); src = src.split(p.find).join(p.replace); used.add(i); });
+    vm.runInContext(src, context, { filename: rel });
+  }
+  patches.forEach((p, i) => { if (!used.has(i)) throw new Error(`PATCH ${i}: ${p.file} is not one of the game files`); });
+  return { run: code => vm.runInContext(code, context), get: name => vm.runInContext(name, context) };
+})();
+
 const wars = +process.argv[2] || 20, sizes = (process.argv[3] || "6,8,10,12").split(",").map(Number), TARGET = +process.env.TARGET || 200;
 const D1 = "2026-11-16", get = k => sim.get(k), fightDay = get("fightDay"), addDays = get("addDays"), heroes = Object.keys(get("CLASSES"));
 const J = v => JSON.parse(JSON.stringify(v));
@@ -15,7 +32,7 @@ sim.run(`globalThis.__style = uid => BOT_STYLES[(botSeed(uid) >> 1) % BOT_STYLES
 const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : NaN, pct = v => Number.isNaN(v) ? "  -" : (100 * v).toFixed(0).padStart(3) + "%";
 const out = {};
 for (const n of sizes) {
-  const TMAX = get("TMAX"), days = Array.from({ length: 7 }, () => ({ len: [], timeUp: 0, done: 0, standing: [], first: [], fallen: [], n: 0 }));
+  const TMAX = get("TMAX"), days = Array.from({ length: 7 }, () => ({ len: [], timeUp: 0, done: 0, standing: [], first: [], fallen: [], end: [], n: 0 }));
   const cls = {}, style = {}, seat = Array.from({ length: n }, () => ({ w: 0, pts: 0 })), weekRank = { cls: {}, style: {} };
   let lead3 = 0, lead5 = 0, spread = [], goldTop = [], goldBottom = [], swing = [], lastGain = [];
   for (let w = 0; w < wars; w++) {
@@ -27,7 +44,7 @@ for (const n of sizes) {
     for (let d = 1; d <= 7; d++) {
       const key = addDays(D1, d - 1), doc = J(fightDay(W, key, d)); W.battles[key] = doc;
       const R = days[d - 1], falls = doc.results.filter(r => r.fellAt != null).map(r => r.fellAt), dur = Math.max(...falls, 0), standing = doc.results.length - falls.length;
-      const len = standing > 1 ? TMAX : dur; R.n++; R.len.push(len); if (standing > 1) R.timeUp++; if (standing <= 1 && len <= TARGET) R.done++;
+      const len = standing > 1 ? TMAX : dur; if (standing <= 1) R.end.push(dur); R.n++; R.len.push(len); if (standing > 1) R.timeUp++; if (standing <= 1 && len <= TARGET) R.done++;
       R.standing.push(standing); if (falls.length) R.first.push(Math.min(...falls)); R.fallen.push(falls.filter(f => f <= TARGET).length / (n - 1));
       const before = { ...pts };
       doc.results.forEach(r => { const p = W.players[r.pid], c = p.state.cls, s = sim.run(`__style(${JSON.stringify(r.pid)})`), i = ids.indexOf(r.pid);
@@ -64,3 +81,4 @@ for (const n of sizes) {
   console.log(`  gold over the week (base pay + spoils + catch-up): winner ${o.goldTop.toFixed(0)} · last place ${o.goldBottom.toFixed(0)}`);
 }
 if (process.env.JSON) console.log(JSON.stringify(out));
+if (process.env.DUMP) console.log(JSON.stringify(sim.run(`globalThis.${process.env.DUMP}`)));
