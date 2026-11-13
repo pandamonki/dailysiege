@@ -1,6 +1,10 @@
 // Auto camera and replay controls
 
 // auto camera: stay on your hero, cut to the keep while it is under attack, then follow the hero back out
+const AUTO_ZOOM_STEP = 1.35;
+// how far the viewer has zoomed the auto camera from its own framing; it starts one step zoomed out
+function autoZoomMul() { if (replay.zmul == null) replay.zmul = 1 / AUTO_ZOOM_STEP; return replay.zmul; }
+function autoZoomBy(k) { const b = replay.zbase || 1.7; replay.zmul = Math.max(minZoom() / b, Math.min(2.4 / b, autoZoomMul() * k)); }
 function autoCam() {
   const R = replay.res, f = replayFrameAt(replay.time); if (!f) return;
   if (replay.hi == null) { replay.hi = R.meta.findIndex(m => m.pid === R.me && m.kind === "champ"); replay.ci = R.meta.findIndex(m => m.pid === R.me && m.kind === "castle"); }
@@ -9,6 +13,7 @@ function autoCam() {
   const hit = castleAlive && f0.d[cb + 2] - f.d[cb + 2] >= 1, mode = hit ? "base" : heroDown ? (castleAlive ? "base" : "field") : "hero";
   let x, y, z = 1.7;
   if (mode === "base") { x = f.d[cb]; y = f.d[cb + 1]; z = 1.35; } else if (mode === "hero") { x = f.d[hb]; y = f.d[hb + 1]; } else { x = y = 0; z = 0; }
+  if (z) { replay.zbase = z; z *= autoZoomMul(); } // the viewer's own zoom is kept on top of the camera's, so zooming does not break the auto camera
   if (mode === "field") { flyTo(W / 2, W / 2, 0); } else if (mode !== replay.camMode) { const zz = Math.max(minZoom(), Math.min(2.4, z)); camTarget = null; Object.assign(cam, { x: x * ts - vw / 2 / zz, y: (y - .3) * ts - vh / 2 / zz, z: zz }); clampCam(); }
   else flyTo(x * ts, (y - .3) * ts, z);
   replay.camMode = mode;
