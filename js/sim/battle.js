@@ -90,7 +90,7 @@ function runBattle(plans, seed, opts = {}) {
   // one soldier of a lord's, from a plan piece: used for the army at the start and for reinforcement waves
   function makeUnit(pl, pc, x, y) {
     const g = pl.gear || {}, base = UNITS[pc.type], s = UNIT_SIM[pc.type], isCart = pc.type === "cart", fixed = isCart || !!base.merc, m = fixed ? 1 : 1 + UNIT_LVL_GAIN * (pc.lvl - 1), gm = fixed ? 1 : 1 + .15 * (g.armour || 0), ga = fixed ? 1 : 1 + .15 * (g.weapon || 0);
-    const e = add({ order: pc.order || "army", pid: pl.pid, kind: "unit", key: pc.type, lvl: pc.lvl, ref: pc.id || null, x, y, maxhp: base.hp * m * gm, atk: base.atk * m * ga, cart: isCart, ram: pc.type === "ram" || !!s.rammer, merc: !!base.merc, regen: s.regen || 0, hunter: !!s.hunter, dmgRed: fixed ? 0 : [0, 0, .1, .2][g.armour || 0], lifesteal: s.lifesteal || (!fixed && (g.weapon || 0) >= 3 ? .1 : 0), range: s.range, as: s.as, spd: s.spd, armor: s.armor, shot: s.shot, siege: s.siege, splash: s.splash || 0, healer: s.heal ? s.heal * m : 0 });
+    const e = add({ order: pc.order || "army", pid: pl.pid, kind: "unit", key: pc.type, lvl: pc.lvl, ref: pc.id || null, x, y, maxhp: base.hp * m * gm, atk: base.atk * m * ga, cart: isCart, ram: pc.type === "ram" || !!s.rammer, cat: pc.type === "catapult", merc: !!base.merc, regen: s.regen || 0, hunter: !!s.hunter, dmgRed: fixed ? 0 : [0, 0, .1, .2][g.armour || 0], lifesteal: s.lifesteal || (!fixed && (g.weapon || 0) >= 3 ? .1 : 0), range: s.range, as: s.as, spd: s.spd, armor: s.armor, shot: s.shot, siege: s.siege, splash: s.splash || 0, healer: s.heal ? s.heal * m : 0 });
     e.hp = e.maxhp * (pc.hp ?? 1); [e.atype, e.armour] = UNIT_TYPES[pc.type];
     return e;
   }
@@ -425,7 +425,7 @@ function runBattle(plans, seed, opts = {}) {
       else if (rule === "Nearest enemy") return minBy(c, o => d(o, e) + (o.kind === "castle" ? 1.5 : 0));
       else if (rule === "Enemy castles") pool = c.filter(o => o.kind === "castle");
       else if (rule === "Enemies on the battleground") pool = t < HOLD_END ? c.filter(o => o.kind !== "castle" && inCentre(o.x, o.y)) : null;
-      else if (rule === "Enemy siege weapons") pool = c.filter(o => o.kind === "unit" && (o.key === "ram" || o.key === "cart"));
+      else if (rule === "Enemy siege weapons") pool = c.filter(o => o.kind === "unit" && (o.key === "ram" || o.key === "cart" || o.key === "catapult"));
       else if (PRIO_UNIT[rule]) pool = c.filter(o => o.kind === "unit" && o.key === PRIO_UNIT[rule]);
       else if (rule === "Whoever hit my castle" && p.castleHitBy && t - p.castleHitT < 15) pool = c.filter(o => o.pid === p.castleHitBy);
       else if (rule === "The leader (bounty)" && leaderPid) pool = c.filter(o => o.pid === leaderPid);
@@ -746,6 +746,12 @@ function runBattle(plans, seed, opts = {}) {
       e.rt -= DT;
       if (!live(e.tgt) || e.rt <= 0) { const g = goalPid(e), c = g && P[g] && P[g].alive ? P[g].castle : minBy(order.filter(q => q !== e.pid && P[q].alive && hostile(e.pid, q)).map(q => P[q].castle), x => d(x, e)); e.tgt = c && live(c) ? c : null; e.rt = 1; }
       if (!live(e.tgt)) return;
+      if (e.cat) { // catapult: crawls to two tiles from the castle, takes a moment to set up, then hurls a boulder every few seconds
+        if (d(e, e.tgt) <= e.range + .05) {
+          if (e.setAt == null) { e.setAt = +(t + 2).toFixed(2); log(`${poss(e.pid)} catapult sets up.`); }
+          if (t >= e.setAt) { e.atkT -= DT * (1 + fxv(e, "asbuf")); if (e.atkT <= 0) { e.atkT = e.as; atkEv(e, e.tgt, "m"); shot(e, e.tgt, "#8a8478", 1, "rock"); deal(e, e.tgt, e.atk, { big: 1 }); } }
+        } else { e.setAt = null; moveToward(e, e.tgt.x, e.tgt.y, e.range); }
+        return; }
       if (e.ram) { if (d(e, e.tgt) <= 1.1) { e.atkT -= DT * (1 + fxv(e, "asbuf")); if (e.atkT <= 0) { e.atkT = e.as; atkEv(e, e.tgt, "m"); slash(e.tgt); deal(e, e.tgt, e.atk, { big: 1 }); } } else moveToward(e, e.tgt.x, e.tgt.y, .9); return; }
       if (e.fuseAt != null) { if (t >= e.fuseAt) { e.hp = 0; kill(e, null); } return; } // lit: it sits still and ticks down
       if (d(e, e.tgt) <= 1.05) { e.fuseAt = +(t + 3).toFixed(2); ev({ ty: "fuse", x: e.x, y: e.y - .2, dur: 3, sc: .55, cart: 1 }); log(`${poss(e.pid)} powder cart is lit. Three seconds!`); } else moveToward(e, e.tgt.x, e.tgt.y, .9);

@@ -52,3 +52,10 @@ merge a pull request into `main`, don't stop at "merged":
      Offer a fix.
 3. If a push-notification tool is available, also send the result as a push notification, since
    the user may have stepped away while it ran.
+
+## Release notes pop-up
+
+The "What's new" pop-up comes from the `RELEASES` list at the top of `js/ui/sheets/news.js`. For every major release or
+deployment, add a new entry at the top (newest first) with a new id, a title, a one-line sub and 8 to 14 short dot points
+(icon, headline, one sentence), like the v1.0 entry. Players see it once, the next time they plan, and then it is remembered
+on their device. Also add the detail to `PATCHES` in `js/ui/sheets/info.js` (the Full patch notes page).

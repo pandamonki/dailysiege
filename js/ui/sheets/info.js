@@ -157,6 +157,15 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "Catapult", date: "13 Nov", fixes: [], balance: [], changes: [
+    "New tier 3 siege engine, the Catapult (220 gold). It crawls very slowly, sets up two tiles from an enemy castle, then hurls a boulder every few seconds. It cannot fight soldiers, so guard it.",
+    "Siege engines (ram, powder cart and catapult) are now ordinary soldiers: no limit on how many you own, no recharge days, they can wait in the garrison, and they stay with you from day to day. We will scale them back if they prove too strong.",
+    "Computer-played lords now follow the tier rules too: tier 1 on days 1 and 2, tier 2 on day 3 and tier 3 from day 4. That unlocks knights, snipers and siege engines for them, with one engine from day 4 and two from day 6 in place of ordinary soldiers.",
+  ] },
+  { v: "Raiders and Battle Mages move to tier 2", date: "13 Nov", fixes: [], balance: [
+    "Raiders and Battle Mages now unlock at a Fortress (tier 2) instead of a Citadel.",
+    "To balance the earlier access: Raider attack 34 to 30 and health 250 to 230. Battle Mage attack 30 to 27, health 180 to 170 and cost 150 to 140.",
+  ], changes: [] },
   { v: "Fairer targeting, no militia, castles worth 3", date: "16 Nov", fixes: [
     "When two rival castles are equally near, armies, bots and the starting attack list no longer always pick whoever signed up first. A fair draw decides.",
     "Castles left standing on equal health at nightfall are ranked by siege damage, then kills, then a draw, not by sign-up order.",
@@ -169,6 +178,10 @@ const PATCHES = [
     "The shop is one page: 12 items at a time, with the details and Buy button below, and your item slots and gold at the top.",
     "The unit strip under the map always shows something: your hero until you pick another unit. Health bars are the same width for every unit.",
     "Every page now has a small i in its top corner. Tap it for a short note on what the page is for.",
+    "The hero page has a Stats tab (health, attack, speed and more). The red number on the Abilities tab shows unspent skill points.",
+    "Pixel-art animations for every hero skill, with ground effects drawn beneath the units. The Avatar of War hero is drawn larger.",
+    "A gold coin icon on every price, new Orb of Frost and Orb of Poison art, and the Rune of Homecoming has its own icon.",
+    "Bots added to empty seats now get a spread of heroes instead of always the wizard. The unit strip shows move speed again.",
   ] },
   { v: "Free item spins on days 2 and 5", date: "13 Nov", fixes: [], balance: [], changes: [
     "On day 2 and day 5 every lord gets a spinner of three items and keeps one for free: tier 1 items on day 2, tier 2 on day 5.",
