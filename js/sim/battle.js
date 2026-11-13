@@ -17,13 +17,17 @@ const BAL_V3_FROM = "2026-11-12", balV3For = d => String(d) >= BAL_V3_FROM;
 //   - the "closest" target mode settles equal distances the same way
 //   - castles still standing with the same health are ranked by siege damage, then kills, then a draw
 const FAIR_V1_FROM = "2026-11-16", fairV1For = d => String(d) >= FAIR_V1_FROM;
+// Pick your targets (an experiment, off for the real war until PICK_V1_FROM is set to a date): every lord picks one to PICK_MAX lords to attack
+// each day, and once those have fallen the army goes for the lord just above them on the board (the leader goes for second place).
+// On day 1, with no board yet, it goes for the nearest castle. Target modes other than the lord's own list are not used.
+let PICK_V1_FROM = "2099-01-01"; const pickV1For = d => String(d) >= PICK_V1_FROM, PICK_MAX = 3;
 const fairTie = (seed, a, b) => hash(seed, botSeed(String(a)) * 7919 + botSeed(String(b)), 17);
 const BLOC_MAX = 3, TREACHERY_PTS = 3, TREACHERY_LOOT = .25, DAY_WEIGHT = { 5: 1.5, 6: 1.5, 7: 2 };
 // A lord whose castle falls keeps their hero and soldiers on the field: they fight on to the end of the battle, but can no longer fall back, heal at the castle, teleport home or respawn. Placing is still decided by when the castle fell.
 const ORPHAN_ARMIES = true;
 const dayWeight = (v2, dayNo) => (v2 && DAY_WEIGHT[dayNo]) || 1;
 function runBattle(plans, seed, opts = {}) {
-  const BV = !!opts.balV2, V3 = !!opts.balV3, FV = !!opts.fairV1, HV3 = !!opts.heroV3, maxLvl = HV3 ? MAX_HERO_LVL_V3 : MAX_HERO_LVL, hpLvX = HV3 ? hpLvV3 : hpLv, atkLvX = HV3 ? atkLvV3 : atkLv, OA = !!opts.balV2 && ORPHAN_ARMIES, UV = !!opts.ultV2, UD = UV ? .75 : 1, UR = rk => UV ? [.7, .85, 1][Math.min(3, Math.max(1, rk || 1)) - 1] : 1;
+  const BV = !!opts.balV2, V3 = !!opts.balV3, FV = !!opts.fairV1 || !!opts.pickV1, PV = !!opts.pickV1, HV3 = !!opts.heroV3, maxLvl = HV3 ? MAX_HERO_LVL_V3 : MAX_HERO_LVL, hpLvX = HV3 ? hpLvV3 : hpLv, atkLvX = HV3 ? atkLvV3 : atkLv, OA = !!opts.balV2 && ORPHAN_ARMIES, UV = !!opts.ultV2, UD = UV ? .75 : 1, UR = rk => UV ? [.7, .85, 1][Math.min(3, Math.max(1, rk || 1)) - 1] : 1;
   const rng = mulberry(seed), DT = .1, fast = !!opts.fast, leaderPid = (plans.find(p => p.leader) || {}).pid;
   let curAb = null;
   const mePid = (plans.find(p => p.me) || plans[0]).pid, NN = opts.N || N;
@@ -423,6 +427,7 @@ function runBattle(plans, seed, opts = {}) {
   }
   // target modes decide the order of the hostile list when the battle starts
   function sortTargets(p) {
+    if (PV) { p.targets = p.targets.slice(0, PICK_MAX); return; }
     const mode = p.tmode; if (!mode || mode === "list" || !p.targets.length) return;
     const rk = q => (P[q].rank != null ? P[q].rank : order.indexOf(q) + 1), my = rk(p.pid), hero = q => ents.find(o => o.kind === "champ" && o.pid === q);
     const key = { highest: q => rk(q), lowest: q => -rk(q), above: q => Math.abs(rk(q) - (my - 1)) + (rk(q) < my ? 0 : .5), below: q => Math.abs(rk(q) - (my + 1)) + (rk(q) > my ? 0 : .5),
@@ -437,6 +442,11 @@ function runBattle(plans, seed, opts = {}) {
     if (!p.sorted) { p.sorted = true; sortTargets(p); }
     const listed = p.targets.find(ok); if (listed) return listed;
     // nobody left on the hostile list: the army still has to fight, so it marches on the nearest non-allied castle
+    if (PV && p.rank != null) { // the lord just above me on the board; the leader goes for whoever is next below
+      const cs = order.filter(q => ok(q) && P[q].rank != null), up = cs.filter(q => P[q].rank < p.rank), down = cs.filter(q => P[q].rank > p.rank);
+      if (up.length) return up.reduce((a, b) => (P[b].rank > P[a].rank ? b : a));
+      if (down.length) return down.reduce((a, b) => (P[b].rank < P[a].rank ? b : a));
+    }
     if (FV) return order.filter(ok).sort((a, b) => (Math.round(d(P[a].castle, p.castle) * 1e6) - Math.round(d(P[b].castle, p.castle) * 1e6)) || (fairTie(seed, p.pid, a) - fairTie(seed, p.pid, b)))[0] || null;
     return minBy(order.filter(ok), q => d(P[q].castle, p.castle));
   }

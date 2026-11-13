@@ -62,7 +62,16 @@ const botCombat = seed => { const st = BOT_STYLES[(seed >> 1) % BOT_STYLES.lengt
 
 // One bot lord's orders for one day. uid: its seat id; cls: its hero; i: its place in the roster (its castle is L.castles[i]);
 // ids: everyone in the roster, in order; L: the seat layout; zone: the tiles it may deploy on; dayNo: 1 to 7; lvl: its hero's level that day.
-function lordBotPlan({ uid, cls, i, ids, L, zone, dayNo, lvl, v2, v3, fair }) {
+// Pick-your-targets bots (PICK_V1): up to three lords a day, chosen by the bot's fighting style from the board going into the day.
+// ranks: { uid: place } (empty on day 1); near: rivals nearest first. The same inputs always give the same picks.
+function botPicks(uid, seed, near, ranks) {
+  const st = BOT_STYLES[(seed >> 1) % BOT_STYLES.length].name, my = ranks && ranks[uid];
+  if (!my) return near.slice(0, st === "brawler" ? 3 : 2);
+  const at = r => Object.keys(ranks).find(q => ranks[q] === r && q !== uid) || null, above = k => my - k >= 1 ? at(my - k) : at(my + k), top = my === 1 ? at(2) : at(1);
+  const want = { hunter: [top, above(1), near[0]], brawler: [near[0], near[1], above(1)], sniper: [above(1), above(2), near[0]], assassin: [above(1), top, near[0]], balanced: [above(1), near[0], top] }[st] || [above(1), near[0]];
+  return want.concat(near).filter((q, k, a) => q && q !== uid && near.includes(q) && a.indexOf(q) === k).slice(0, PICK_MAX);
+}
+function lordBotPlan({ uid, cls, i, ids, L, zone, dayNo, lvl, v2, v3, fair, pick, ranks }) {
   const seed = botSeed(uid), me = L.castles[i], c = CLASSES[cls] || CLASSES.warrior, sp = armySpots(me, L.N);
   const picks = {}; c.abilities.forEach((a, j) => { picks[a.key] = a.choice[hash(seed, j, 77) > .5 ? 1 : 0][0]; });
   const rot = Math.floor(hash(seed, 5, 3) * PRIORITIES.length), tier = Math.min(3, 1 + Math.floor((dayNo - 1) / 3));
@@ -78,9 +87,9 @@ function lordBotPlan({ uid, cls, i, ids, L, zone, dayNo, lvl, v2, v3, fair }) {
     const ctr = (L.N - 1) / 2, dy = ctr - me[0], dx = ctr - me[1], len = hyp(dx, dy) || 1, r = Math.round(me[0] + dy / len * 3), q = Math.round(me[1] + dx / len * 3);
     if (zone.has(`${r},${q}`) && !pieces.some(p => p.r === r && p.c === q)) pieces.push({ kind: "wall", r, c: q, dir: Math.abs(dy) >= Math.abs(dx) ? "h" : "v" });
   }
-  const near = ids.map((id, k) => ({ id, d: id === uid ? 1e9 : hyp(L.castles[k][0] - me[0], L.castles[k][1] - me[1]) })).filter(x => x.id !== uid).sort((a, b) => fair ? (Math.round(a.d * 1e6) - Math.round(b.d * 1e6)) || (hash(seed, botSeed(a.id), dayNo) - hash(seed, botSeed(b.id), dayNo)) || (a.id < b.id ? -1 : 1) : (a.d - b.d) || (a.id < b.id ? -1 : 1)).map(x => x.id); // fair: equally near rivals are put in order by a draw for this bot and day, not by name
+  const near = ids.map((id, k) => ({ id, d: id === uid ? 1e9 : hyp(L.castles[k][0] - me[0], L.castles[k][1] - me[1]) })).filter(x => x.id !== uid).sort((a, b) => fair || pick ? (Math.round(a.d * 1e6) - Math.round(b.d * 1e6)) || (hash(seed, botSeed(a.id), dayNo) - hash(seed, botSeed(b.id), dayNo)) || (a.id < b.id ? -1 : 1) : (a.d - b.d) || (a.id < b.id ? -1 : 1)).map(x => x.id); // fair: equally near rivals are put in order by a draw for this bot and day, not by name
   return { cls, sealed: true, ...(v3 ? { ranks: { a1: 0, a2: 0, a3: 0, ult: 0 }, tree: autoTree(lvl, seed, cls) } : { ranks: autoRanks(lvl, seed) }), picks, triggers: { a1: TRIGGERS[1], a2: TRIGGERS[2], a3: TRIGGERS[0], ult: TRIGGERS[1] },
     gear: { weapon: Math.min(2, Math.floor(dayNo / 3)), armour: Math.min(2, Math.floor((dayNo + 1) / 3)), charm: dayNo >= 5 ? 1 : 0 }, defences: { walls: dayNo >= 3 ? 1 : 0, tower: dayNo >= 5 && seed % 2 ? 1 : 0 },
     items: botItems(seed).slice(0, Math.floor(dayNo / 2)), castleTier: tier, stance: BOT_STANCES[seed % BOT_STANCES.length], prio: PRIORITIES.slice(rot).concat(PRIORITIES.slice(0, rot)), rules: [{ if: IFS[0], then: THENS[0] }],
-    pieces, targets: near, tmode: "list", heading: "near", offers: {}, replies: {}, terms: {}, bids: {}, pacts: [], hostile: [], betray: {}, bot: true, ...(v2 ? { ...botCombat(seed), waves: botWaves(seed, kinds, dayNo) } : {}) };
+    pieces, targets: pick ? botPicks(uid, seed, near, ranks) : near, tmode: "list", heading: "near", offers: {}, replies: {}, terms: {}, bids: {}, pacts: [], hostile: [], betray: {}, bot: true, ...(v2 ? { ...botCombat(seed), waves: botWaves(seed, kinds, dayNo) } : {}) };
 }

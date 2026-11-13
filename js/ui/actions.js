@@ -98,7 +98,7 @@ const A = {
     enterPractice(); home(); sheet = null; render(); setTimeout(() => startWizard(true), 300); toast("A new game begins on day 1."); },
   nextday: () => { if (isLive()) return; if (DAY >= 7) { toast("Day 7 is the last day. Start a new game to begin again."); return; }
     const inc = baseIncome(DAY) + CASTLE_INCOME[ctNow() - 1] + ((LASTP && LASTP.gold && LASTP.gold.you) || 0);
-    if (LASTP) { if ((LASTP.ults || []).includes("you")) S.ultLast = DAY; if (LASTP.blessed) S.blessDone = DAY; } S.ultArm = false; S.gold += inc; S.gain = inc; if (LASTP && LASTP.mercs) { ensureDip(); S.mercHist[DAY] = LASTP.mercs; Object.values(LASTP.mercs).forEach(h => { if (h.pid === "you") S.gold -= h.gold; }); } S.bids = {}; { const g = LASTP && LASTP.gain && LASTP.gain.you != null ? LASTP.gain.you : MIN_GAIN; S.lvl = Math.min(MAX_HERO_LVL, (S.lvl || DAY) + Math.max(MIN_GAIN, g)); S.xp = (LASTP && LASTP.xp && LASTP.xp.you) || 0; } DAY++; S.locked = false; S.phase = "muster"; S.offers = Object.fromEntries(Object.entries(S.offers || {}).filter(([, o]) => o.day === DAY - 1)); S.replies = {}; S.owned.forEach(u => { u.hp = 1; });
+    if (LASTP) { if ((LASTP.ults || []).includes("you")) S.ultLast = DAY; if (LASTP.blessed) S.blessDone = DAY; } S.ultArm = false; S.gold += inc; S.gain = inc; if (LASTP && LASTP.mercs) { ensureDip(); S.mercHist[DAY] = LASTP.mercs; Object.values(LASTP.mercs).forEach(h => { if (h.pid === "you") S.gold -= h.gold; }); } S.bids = {}; { const g = LASTP && LASTP.gain && LASTP.gain.you != null ? LASTP.gain.you : MIN_GAIN; S.lvl = Math.min(MAX_HERO_LVL, (S.lvl || DAY) + Math.max(MIN_GAIN, g)); S.xp = (LASTP && LASTP.xp && LASTP.xp.you) || 0; } DAY++; pickReset(); S.locked = false; S.phase = "muster"; S.offers = Object.fromEntries(Object.entries(S.offers || {}).filter(([, o]) => o.day === DAY - 1)); S.replies = {}; S.owned.forEach(u => { u.hp = 1; });
     S.owned.forEach(u => { if (UNITS[u.type].cool) { if (placedAt(u.id)) { u.cool = UNITS[u.type].cool; delete S.place[placedAt(u.id)]; } else u.cool = Math.max(0, (u.cool || 0) - 1); } });
     { const used = new Set((LASTP && LASTP.trapsUsed) || []); S.traps = S.traps.filter(t => { const k = placedAt(t.id); if (k && used.has("you|" + k)) { delete S.place[k]; return false; } return true; }); } LASTP = null;
     try { localStorage.setItem("lastbanner.pday", String(DAY)); } catch (e) {}
@@ -160,7 +160,7 @@ const A = {
   rvopen: v => { sheet.rv = sheet.rv === v ? null : v; },
   rvset: (v, k) => { ensureDip(); if (v === "hostile" && S.lists.hostile.includes(k)) { S.lists.hostile = [k, ...S.lists.hostile.filter(x => x !== k)]; toast("Main target set."); return; } A.lmove(v, k); },
   phase: v => { S.phase = v; sel = null; sheet = null; if (v === "orders") { ensureDip(); open("orders"); } },
-  lmove: (v, k) => { ensureDip(); ["hostile", "neutral"].forEach(l => { S.lists[l] = S.lists[l].filter(x => x !== k); }); S.lists[v === "hostile" ? "hostile" : "neutral"].push(k); },
+  lmove: (v, k) => { ensureDip(); if (v === "hostile" && pickV1Now() && !S.lists.hostile.includes(k) && S.lists.hostile.length >= PICK_MAX) { toast(`You can pick up to ${PICK_MAX} targets a day.`); return; } ["hostile", "neutral"].forEach(l => { S.lists[l] = S.lists[l].filter(x => x !== k); }); S.lists[v === "hostile" ? "hostile" : "neutral"].push(k); },
   lup: (_, k) => { const L = S.lists.hostile, i = L.indexOf(k); if (i > 0) [L[i - 1], L[i]] = [L[i], L[i - 1]]; },
   ldown: (_, k) => { const L = S.lists.hostile, i = L.indexOf(k); if (i > -1 && i < L.length - 1) [L[i + 1], L[i]] = [L[i], L[i + 1]]; },
   preset: v => { ensureDip(); const pick = RIVALS.filter(r => sideOf(r) === v).sort((a, b) => Math.hypot(a.pos[0] - CASTLE[0], a.pos[1] - CASTLE[1]) - Math.hypot(b.pos[0] - CASTLE[0], b.pos[1] - CASTLE[1]))[0];
@@ -170,7 +170,7 @@ const A = {
   tmin: (v, k) => { S.terms[k].min = stepGold(S.terms[k].min, +v); },
   ogold: (v, k) => { const o = S.offers[k]; if (!o || o.day !== planDayKey()) { toast("Already sent. The dowry is locked."); return; } const next = stepGold(o.gold, +v); if (next - o.gold > avail()) { toast("Not enough free gold."); return; } o.gold = next; },
   uorder: (v, k) => { if (v === "army") delete S.uorders[k]; else S.uorders[k] = v; sheet = null; },
-  seal: () => { S.locked = true; sel = null; if (isLive()) { const snap = mySnapshot(); delete snap.sealedPlan; S.sealedSnap = JSON.parse(JSON.stringify(snap)); } }, // a copy of what was sealed: it stays in effect while new orders are drafted, until they are sealed
+  seal: () => { if (pickV1Now() && !S.lists.hostile.length) { toast("Pick at least one lord to attack first (Strategy)."); return; } S.locked = true; sel = null; if (isLive()) { const snap = mySnapshot(); delete snap.sealedPlan; S.sealedSnap = JSON.parse(JSON.stringify(snap)); } }, // a copy of what was sealed: it stays in effect while new orders are drafted, until they are sealed
   unseal: () => { S.locked = false; },
   copy: () => { const txt = planJSON(); try { navigator.clipboard.writeText(txt).then(() => toast("Plan copied."), selectPlan); } catch (e) { selectPlan(); } },
   reset: () => { if (isLive()) return; S = freshState(); ensureDip(); sel = null; sheet = null; toast("Back to the example setup."); },
