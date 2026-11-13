@@ -39,7 +39,7 @@ const standingsThrough = (week, dayKey) => standings(week, dayKey);
 function freshLiveState(ck) {
   return { week: ck.week, day: ck.planDay, gold: startGold(ck.dayNo), cls: "warrior", ranks: { a1: 0, a2: 0, a3: 0, ult: 0 }, picks: {},
     triggers: { a1: TRIGGERS[1], a2: TRIGGERS[2], a3: TRIGGERS[0], ult: TRIGGERS[1] }, owned: [], slots: SLOT_START, traps: [], place: defaultPlace([]),
-    stance: "skirmish", prio: PRIORITIES.slice(), rules: [{ if: IFS[0], then: THENS[0] }], diplo: {}, locked: false, phase: "muster",
+    stance: "skirmish", prio: PRIORITIES.slice(), rules: [], diplo: {}, locked: false, phase: "muster",
     gear: { weapon: 0, armour: 0, charm: 0 }, defences: { walls: 0, tower: 0 }, lvl: 1, xp: 0,
     castle: 1, items: [], walls: [], banner: defaultBanner(), pairs: [], pactAct: {}, pactWhen: {}, ob: 1,
     paid: (() => { const o = {}; for (let d = ck.week; d < ck.planDay; d = addDays(d, 1)) o[d] = 1; return o; })() };
