@@ -44,30 +44,30 @@ function treeDetailHTML(bi, i) {
 }
 // the two tabs at the top of a hero screen (yours or a rival's), styled like the Army and Base tabs
 function heroTabs(tab, free) {
-  return `<div class="tabs scrolltabs two">${[["abilities", "Abilities", "ultimate"], ["items", "Items", "armoury"]].map(([k, l, ic]) => `<button class="${tab === k ? "on" : ""}" data-act="ctab" data-v="${k}"><img class="tabi" alt="" src="icons/ui/${ic}.webp">${l}${k === "abilities" && free ? `<sup class="dot" title="Skill points to spend">${free}</sup>` : ""}</button>`).join("")}</div>`;
+  return `<div class="tabs scrolltabs three">${[["abilities", "Abilities", "ultimate"], ["items", "Items", "armoury"], ["stats", "Stats", "roster"]].map(([k, l, ic]) => `<button class="${tab === k ? "on" : ""}" data-act="ctab" data-v="${k}"><img class="tabi" alt="" src="icons/ui/${ic}.webp">${l}${k === "abilities" && free ? `<sup class="dot" title="Skill points to spend">${free}</sup>` : ""}</button>`).join("")}</div>`;
 }
 const gearLines = g => GEAR_SLOTS.map(([gk, gl]) => { const lv = (g || {})[gk], x = lv ? GEAR[gk][lv - 1] : null; return `<div class="gline${x ? "" : " none"}"><span>${gl}</span><b>${x ? esc(x.name) : "None"}</b>${x ? `<small>${esc(x.desc)}</small>` : ""}</div>`; }).join("");
 function champSheetV3() {
   const c = cls(), L = level(), nd = xpNeed(L), xp = Math.min(S.xp || 0, nd), free = freePts(), now = champNowV3();
-  const tab = sheet.tab === "items" ? "items" : "abilities";
+  const tab = sheet.tab === "items" || sheet.tab === "stats" ? sheet.tab : "abilities";
   const sel = treeSelection(), learned = treeHasUlt(S.tree), cool = typeof ultCooling === "function" && ultCooling();
   const slots = Array.from({ length: ITEM_SLOTS }, (_, i) => S.items[i] || null);
-  const common = `<div class="xpbar" title="Experience toward the next level"><i style="width:${Math.round(xp / nd * 100)}%"></i><span>Level ${L} · ${xp}/${nd} XP</span></div>
-    <div class="stats"><span>${IC.hp(now.hp)}</span><span>${IC.atk(now.atk)}</span><span>${typeLine(CLASS_TYPES[S.cls])}</span></div>`;
-  const abilities = `<div class="tpoints${free ? " has" : ""}" title="Skill points to spend"><span class="plus">+</span><b>${free}</b><small>skill point${free === 1 ? "" : "s"}</small></div>
-    ${common}
-    <div class="tcols">${[0, 1, 2].map(bi => treeColumnHTML(bi, sel)).join("")}</div>
+  const b = CHAMP_V3[S.cls], ty = CLASS_TYPES[S.cls];
+  const sr = (l, v) => `<div><span>${l}</span><b>${v}</b></div>`;
+  const stats = `<div class="xpbar" title="Experience toward the next level"><i style="width:${Math.round(xp / nd * 100)}%"></i><span>Level ${L} · ${xp}/${nd} XP</span></div>
+    <p class="muted xpnote">Every level is one skill point, up to level ${MAX_HERO_LVL_V3}.</p>
+    <div class="sgrid">${sr("Health", now.hp)}${sr("Attack", now.atk)}${sr("Attack type", esc(ATK_TYPES[ty[0]].name))}${sr("Armour type", esc(ARMOUR_TYPES[ty[1]] || "–"))}${sr("Damage blocked", Math.round(b.armor * 100) + "%")}${sr("Attack every", b.as + "s")}${sr("Range", b.range + " tiles")}${sr("Move speed", b.spd.toFixed(1) + " tiles/s")}</div>`;
+  const abilities = `<div class="tcols">${[0, 1, 2].map(bi => treeColumnHTML(bi, sel)).join("")}</div>
     ${treeDetailHTML(sel[0], sel[1])}
-    <p class="muted">Your hero gains a skill point at every level (15 in all, enough to max one tree and a little more), but only you spend them, here. Nothing skills itself in a battle. The ultimate needs level ${TREE_ULT_LVL}, and you can learn only one.</p>
     <div><button class="btn ${S.ultArm && learned && !cool ? "wax" : "wood"}" data-act="ultarm" ${dis(!learned || cool)}>${!learned ? "Ultimate not learned yet" : cool ? "Ultimate recharging until tomorrow" : S.ultArm ? "Ultimate planned for tonight ✓ (tap to cancel)" : "Plan the ultimate for tonight"}</button></div>`;
-  const items = `${common}
+  const items = `
     <div class="sec"><div class="spread"><h3>Items (${S.items.length}/${ITEM_SLOTS})</h3><button class="bagbtn" data-act="shop" aria-label="Shop"><img alt="" src="icons/ui/shop.webp"></button></div>
       <div class="islots tiny">${slots.map(k => k ? `<div class="islot" title="${esc(ITEMS[k].desc)}"><img alt="" src="${itemURL(k)}"><b>${esc(ITEMS[k].name)}</b></div>` : `<div class="islot empty"><span>Empty</span></div>`).join("")}</div></div>
     <div class="sec"><h3>Gear</h3>${gearLines(S.gear)}</div>
     <div><button class="btn small" data-act="open" data-v="spells">Spell book</button></div>`;
   return head(spriteURL("c-" + S.cls), `${c.name} Hero`, `Level ${L} of ${MAX_HERO_LVL_V3}`) + `<div class="body">
     ${S.ob === 2 ? `<div class="obbox"><b>Step 1 of 2 · Choose your hero</b><span>Pick a class, then spend your first skill point in a tree.</span><button class="btn wax" data-act="obnext">Next: design your banner →</button></div>` : ""}
-    ${heroTabs(tab, free)}${tab === "items" ? items : abilities}</div>`;
+    ${heroTabs(tab, free)}${tab === "items" ? items : tab === "stats" ? stats : abilities}</div>`;
 }
 // ----- a rival's hero, as it fought yesterday (read only) -----
 function rivalHeroData(r) {

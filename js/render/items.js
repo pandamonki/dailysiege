@@ -3,12 +3,12 @@
 // ----- shop item icons -----
 const ITEM_URL = {};
 const ITEM_ART = {};
-const loadItemArt = () => ["boots", "gauntlets", "ringprot", "salve", "elixir", "net", "frostdagger", "venomorb", "fang", "thornmail", "talisman", "scroll", "banner", "standard", "mender", "fireorb", "corruptorb", "evasion", "hpring", "vanguard", "antimagic", "crystalys", "rapier", "pipe", "shiva", "daedalus"].forEach(k => { const im = new Image(); im.onload = () => { Object.keys(ITEM_URL).forEach(x => delete ITEM_URL[x]); }; im.src = "items/" + k + ".webp"; ITEM_ART[k] = im; });
+const loadItemArt = () => ["boots", "gauntlets", "ringprot", "salve", "elixir", "net", "frostdagger", "venomorb", "fang", "thornmail", "talisman", "scroll", "banner", "standard", "mender", "fireorb", "corruptorb", "evasion", "hpring", "vanguard", "antimagic", "crystalys", "rapier", "pipe", "shiva", "daedalus", "whetstone", "jerkin", "sandals", "buckler", "herbs"].forEach(k => { const im = new Image(); im.onload = () => { Object.keys(ITEM_URL).forEach(x => delete ITEM_URL[x]); }; im.src = "items/" + k + ".webp"; ITEM_ART[k] = im; });
 addEventListener("load", () => setTimeout(loadItemArt, 500));
 function itemURL(k, size = 56) {
   const id = k + size; if (ITEM_URL[id]) return ITEM_URL[id];
   const art = ITEM_ART[k];
-  if (art && art.complete && art.naturalWidth && !(ITEMS[k] && (ITEMS[k].orb || k === "scroll"))) {
+  if (art && art.complete && art.naturalWidth) {
     const cv0 = document.createElement("canvas"); cv0.width = cv0.height = size; const c0 = cv0.getContext("2d"), rr = size * .14, tc = ["#9a8a6a", "#c9962f", "#e8d28a"][(ITEMS[k] ? ITEMS[k].tier : 1) - 1];
     c0.save(); c0.beginPath(); c0.roundRect ? c0.roundRect(1.5, 1.5, size - 3, size - 3, rr) : c0.rect(1.5, 1.5, size - 3, size - 3); c0.clip(); c0.drawImage(art, 0, 0, size, size); c0.restore();
     c0.beginPath(); c0.roundRect ? c0.roundRect(1.5, 1.5, size - 3, size - 3, rr) : c0.rect(1.5, 1.5, size - 3, size - 3); c0.strokeStyle = tc; c0.lineWidth = Math.max(2, size * .05); c0.stroke();

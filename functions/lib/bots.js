@@ -7,6 +7,7 @@ const { loadGame, SIM_FILES } = require("./game");
 let game;
 const g = () => game || (game = loadGame(SIM_FILES));
 const isBot = p => !!(p && p.bot);
+const seedOf = s => [...String(s)].reduce((a, ch) => a + ch.charCodeAt(0), 0); // a different starting hero in each game
 
 /**
  * Make the number of bots in a game `want`, within the seats people have not taken.
@@ -37,7 +38,7 @@ async function setBots(db, gameId, want, { now = Date.now(), removeId = null } =
       while (ids.has("bot_" + n)) n++;
       const id = "bot_" + n, nick = BOT_LORD_NAMES.find(x => !names.has(x)) || "Bot " + n, c1 = SEAT_COLORS.find(c => !colours.has(c)) || null, i = used + k;
       ids.add(id); names.add(nick); if (c1) colours.add(c1);
-      batch.set(gameRef.collection("players").doc(id), { bot: true, fromWeek: "0000-00-00", joinedAt: now + k, nick, real: "Bot", pending: false, cls: heroes[(i * 5 + 1) % heroes.length], week: null, war: cfg.war || 1, banner: JSON.parse(JSON.stringify(Object.assign({}, BOT_LORD_BANNERS[i % BOT_LORD_BANNERS.length], { c1 }))) });
+      batch.set(gameRef.collection("players").doc(id), { bot: true, fromWeek: "0000-00-00", joinedAt: now + k, nick, real: "Bot", pending: false, cls: heroes[(seedOf(gameId) + i * 3) % heroes.length], week: null, war: cfg.war || 1, banner: JSON.parse(JSON.stringify(Object.assign({}, BOT_LORD_BANNERS[i % BOT_LORD_BANNERS.length], { c1 }))) });
     }
   }
   await batch.commit();

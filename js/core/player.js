@@ -27,7 +27,7 @@ const supplyFull = () => fieldCount() >= S.slots && garrisonCount() >= GARRISON_
 function ensureGarrison() {
   const cw = cleanWaves(S.garrison), seen = new Set();
   S.garrison = cw.map((w, i) => { const old = (S.garrison && S.garrison[i] && S.garrison[i].slots) || [];
-    return { when: w.when, at: w.at, order: w.order, slots: [...Array(WAVE_SLOTS)].map((_, j) => { const id = old[j], u = id && S.owned.find(x => x.id === id); if (!u || UNITS[u.type].castleOnly || seen.has(id)) return null; seen.add(id); return id; }) }; });
+    return { when: w.when, at: w.at, order: w.order, slots: [...Array(WAVE_SLOTS)].map((_, j) => { const id = old[j], u = id && S.owned.find(x => x.id === id); if (!u || seen.has(id)) return null; seen.add(id); return id; }) }; });
 }
 function unGarrison(id) { (S.garrison || []).forEach(w => w.slots.forEach((x, j) => { if (x === id) w.slots[j] = null; })); }
 function toGarrison(id) { // first free slot, earliest wave first; the unit leaves the map
@@ -36,7 +36,6 @@ function toGarrison(id) { // first free slot, earliest wave first; the unit leav
 // put a soldier into a wave (slot optional: the first free one); false with a reason if it can't go
 function assignWave(id, w, slot) {
   const u = findUnit(id), wv = S.garrison[w]; if (!u || !wv) return "No such soldier.";
-  if (UNITS[u.type].castleOnly) return "Siege units can't wait in the garrison.";
   const j = slot != null ? slot : wv.slots.indexOf(null); if (j < 0 || j >= WAVE_SLOTS) return `Wave ${w + 1} is full.`;
   const old = wv.slots[j]; unGarrison(id); const k = placedAt(id); if (k) delete S.place[k];
   wv.slots[j] = id; if (old && old !== id) { /* the soldier it replaces goes back to reserve */ }
@@ -51,7 +50,7 @@ function autoPlace(id) {
 }
 // move a soldier onto the map / back to reserve; each returns a reason when it can't
 function deployUnit(id) {
-  const u = findUnit(id); if (!u) return "No such soldier."; if (u.cool > 0) return `${UNITS[u.type].name} is recharging for ${u.cool} more day${u.cool > 1 ? "s" : ""}.`;
+  const u = findUnit(id); if (!u) return "No such soldier."; if (UNITS[u.type].cool && u.cool > 0) return `${UNITS[u.type].name} is recharging for ${u.cool} more day${u.cool > 1 ? "s" : ""}.`;
   if (inGarrison(id) && fieldCount() >= S.slots) return "Your field supply is full.";
   if (!placedAt(id) && !autoPlace(id)) return "There is no free ground in your field.";
   unGarrison(id); return null;

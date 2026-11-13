@@ -201,7 +201,7 @@ const planUlt = () => !!S.ultArm && !ultCooling() && ultLearned();
 const planBless = () => (blessLocked() ? null : S.bless || null);
 function ritualsTab() {
   const cd = ultCooling(), learned = ultLearned(), cl = { ult: (heroV3Now() && treeUlt()) || CLASSES[S.cls].ult }, used = blessLocked();
-  return `<div class="sec tight"><h3>${ultIconHTML(cl.ult)}Ultimate · ${esc(cl.ult.name)}</h3><p class="muted">${esc(cl.ult.desc)} Your hero only uses it if you plan it here, once per battle, and it then needs one full day to recharge.</p>
+  return `<div class="sec tight"><h3>Ultimate</h3><p class="muted">Your hero only uses its ultimate if you plan it here. Once per battle, then it needs one full day to recharge.</p>
     ${!learned ? `<p class="need">Your hero hasn't learned the ultimate yet. Spend a skill point on it in the Hero sheet.</p>` : cd ? `<p class="need">Recharging. It was cast in the last battle and is ready again tomorrow.</p>` : ""}
     <button class="btn ${S.ultArm && learned && !cd ? "wax" : "wood"}" data-act="ultarm" ${dis(!learned || cd)}>${S.ultArm && learned && !cd ? "Planned for tonight ✓ (tap to cancel)" : "Plan the ultimate for tonight"}</button></div>
   <div class="sec tight"><h3>Weekly blessing</h3><p class="muted">One ritual per war, in effect for a single battle. ${used ? "You have already used yours this week." : "Choose one, or none to save it for later."}</p>

@@ -22,8 +22,18 @@ function resize(force) {
   resize.ih = innerHeight; resize.rp = rp;
   vw = cvs.clientWidth; vh = Math.round(Math.max(280, Math.min(rp ? vw * 1.3 : vw * 1.2, rp ? innerHeight - 450 : innerHeight * .585))); // a replay keeps room for the unit panel and the controls
   cvs.style.height = vh + "px";
+  if (!rp) { // on a short screen the unit strip would run under the menu buttons: take the difference off the map
+    const dock = document.getElementById("pdock"), nav = document.getElementById("commands");
+    if (dock && nav && !dock.hidden && !nav.hidden) { const over = dock.getBoundingClientRect().bottom + 6 - nav.getBoundingClientRect().top; resize.shrunk = over > 0; if (over > 0) { vh = Math.max(190, vh - Math.ceil(over)); cvs.style.height = vh + "px"; } }
+  }
   const nd = Math.min(window.devicePixelRatio || 1, 3);
   cvs.width = Math.round(vw * nd); cvs.height = Math.round(vh * nd);
   if (!bg || nd !== dpr) { dpr = nd; bg = paintBackground(); }
   clampCam();
+}
+
+// called after the planning strip is redrawn: if it now runs under the menu buttons (or did before), fit the map again
+function fitMapToStrip() {
+  const dock = document.getElementById("pdock"), nav = document.getElementById("commands"); if (!dock || !nav || dock.hidden || nav.hidden || mode === "replay") return;
+  const over = dock.getBoundingClientRect().bottom + 6 - nav.getBoundingClientRect().top; if (over > 0 || resize.shrunk) resize(true);
 }

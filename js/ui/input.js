@@ -54,7 +54,7 @@ cvs.addEventListener("pointerdown", e => {
     if (ref) { const k = placedAt(ref), [cr, cc] = k.split(",").map(Number); dragPc = { ref, active: false, sx: e.clientX, sy: e.clientY, wx, wy, off: findWall(ref) ? [r - cr, q - cc] : [0, 0] }; }
   }
   if (ptrs.size === 1) { moved = false; drag = { x: e.clientX, y: e.clientY, cx: cam.x, cy: cam.y }; }
-  else if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = { d: dist(a, b) || 1, z: cam.z }; moved = true; }
+  else if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = { d: dist(a, b) || 1, z: cam.z, zm: replay && replay.auto ? autoZoomMul() : 1 }; moved = true; }
 });
 cvs.addEventListener("pointermove", e => {
   if (!ptrs.has(e.pointerId)) return;
@@ -66,8 +66,8 @@ cvs.addEventListener("pointermove", e => {
   }
   if (ptrs.size >= 2 && pinch) {
     const [a, b] = [...ptrs.values()];
-    if (replay) replay.auto = false;
-    zoomAt((a.x + b.x) / 2 - rc.left, (a.y + b.y) / 2 - rc.top, pinch.z * dist(a, b) / pinch.d);
+    if (replay && replay.auto) { replay.zmul = pinch.zm; autoZoomBy(dist(a, b) / pinch.d); }
+    else zoomAt((a.x + b.x) / 2 - rc.left, (a.y + b.y) / 2 - rc.top, pinch.z * dist(a, b) / pinch.d);
   } else if (drag) {
     const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
     if (!moved && Math.hypot(dx, dy) > 14) moved = true;
@@ -86,7 +86,9 @@ function endPtr(e) {
 cvs.addEventListener("pointerup", endPtr);
 cvs.addEventListener("pointercancel", endPtr);
 cvs.addEventListener("wheel", e => {
-  e.preventDefault(); camTarget = null;
+  e.preventDefault();
+  if (replay && replay.auto) { autoZoomBy(Math.exp(-e.deltaY * .0015)); return; }
+  camTarget = null;
   const rc = cvs.getBoundingClientRect(); zoomAt(e.clientX - rc.left, e.clientY - rc.top, cam.z * Math.exp(-e.deltaY * .0015));
 }, { passive: false });
 cvs.addEventListener("keydown", e => {

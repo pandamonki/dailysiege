@@ -62,10 +62,12 @@ const botCombat = seed => { const st = BOT_STYLES[(seed >> 1) % BOT_STYLES.lengt
 
 // One bot lord's orders for one day. uid: its seat id; cls: its hero; i: its place in the roster (its castle is L.castles[i]);
 // ids: everyone in the roster, in order; L: the seat layout; zone: the tiles it may deploy on; dayNo: 1 to 7; lvl: its hero's level that day.
+// A bot lord's castle tier by day: tier 1 for the first two days, tier 2 on day 3, and tier 3 from day 4, so it can field tier 3 soldiers (knights, snipers, siege engines) for the rest of the week.
+const botTier = dayNo => dayNo >= 4 ? 3 : dayNo >= 3 ? 2 : 1;
 function lordBotPlan({ uid, cls, i, ids, L, zone, dayNo, lvl, v2, v3, fair }) {
   const seed = botSeed(uid), me = L.castles[i], c = CLASSES[cls] || CLASSES.warrior, sp = armySpots(me, L.N);
   const picks = {}; c.abilities.forEach((a, j) => { picks[a.key] = a.choice[hash(seed, j, 77) > .5 ? 1 : 0][0]; });
-  const rot = Math.floor(hash(seed, 5, 3) * PRIORITIES.length), tier = Math.min(3, 1 + Math.floor((dayNo - 1) / 3));
+  const rot = Math.floor(hash(seed, 5, 3) * PRIORITIES.length), tier = botTier(dayNo);
   const kinds = UTYPES.filter(k => !UNITS[k].cool && (UNIT_TIER[k] || 1) <= tier);
   // soldiers: the three spots just in front of the castle first, then whatever else of the deployment field is nearest
   const taken = new Set([`${sp.champ[0]},${sp.champ[1]}`, `${me[0]},${me[1]}`]);
@@ -73,7 +75,9 @@ function lordBotPlan({ uid, cls, i, ids, L, zone, dayNo, lvl, v2, v3, fair }) {
   const spots = sp.units.filter(([r, q]) => zone.has(`${r},${q}`) && !taken.has(`${r},${q}`)).concat(field.filter(([r, q]) => !sp.units.some(([a, b]) => a === r && b === q)));
   const n = Math.min(spots.length, 2 + dayNo + (seed % 2)), ulvl = 1 + Math.floor((dayNo - 1) / 2);
   const pieces = [{ kind: "champ", r: sp.champ[0], c: sp.champ[1] }];
-  for (let k = 0; k < n; k++) pieces.push({ kind: "unit", type: kinds[Math.floor(hash(seed, k, 11 + dayNo) * kinds.length)], lvl: ulvl, hp: 1, r: spots[k][0], c: spots[k][1] });
+  // siege engines are what bring castles down, so bots bring them on purpose: one from day 4, two from day 6 (they take the place of ordinary soldiers)
+  const pool = ENGINES.filter(k => (UNIT_TIER[k] || 1) <= tier), engines = pool.length ? Math.min(n, dayNo >= 6 ? 2 : dayNo >= 4 ? 1 : 0) : 0; // engines follow the same tier rule as any soldier
+  for (let k = 0; k < n; k++) pieces.push({ kind: "unit", type: k < engines ? pool[Math.floor(hash(seed, k, 31 + dayNo) * pool.length)] : kinds[Math.floor(hash(seed, k, 11 + dayNo) * kinds.length)], lvl: ulvl, hp: 1, r: spots[k][0], c: spots[k][1] });
   if (dayNo >= 2 && seed % 3) { // a short barrier across the way to the middle, where it fits
     const ctr = (L.N - 1) / 2, dy = ctr - me[0], dx = ctr - me[1], len = hyp(dx, dy) || 1, r = Math.round(me[0] + dy / len * 3), q = Math.round(me[1] + dx / len * 3);
     if (zone.has(`${r},${q}`) && !pieces.some(p => p.r === r && p.c === q)) pieces.push({ kind: "wall", r, c: q, dir: Math.abs(dy) >= Math.abs(dx) ? "h" : "v" });

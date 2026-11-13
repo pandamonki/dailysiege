@@ -201,17 +201,22 @@ function drawTauntFx(e, time) {
   ctx.save(); ctx.globalAlpha = .55 * Math.min(1, (e.dur - age) / .5); ctx.setLineDash([ts * .14, ts * .1]); ctx.lineDashOffset = -time * ts; ctx.strokeStyle = "#ff6a4a"; ctx.lineWidth = ts * .05; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.setLineDash([]);
   ctx.globalAlpha = 1; ctx.font = `700 ${Math.round(ts * .34)}px Alegreya, Georgia, serif`; ctx.textAlign = "center"; ctx.fillStyle = "#ff6a4a"; ctx.strokeStyle = "#1e140c"; ctx.lineWidth = 3; ctx.strokeText("!", x1, y1 - ts * .7 - Math.sin(time * 8) * 2); ctx.fillText("!", x1, y1 - ts * .7 - Math.sin(time * 8) * 2); ctx.restore();
 }
-const SHOT_DUR = { arrow: .28, bullet: .1, orb: .32, spirit: .36, heal: .42, bone: .32 };
+const SHOT_DUR = { rock: .8, arrow: .28, bullet: .1, orb: .32, spirit: .36, heal: .42, bone: .32 };
 // ranged auto-attacks: an arrow in flight, a rifle tracer, an arcane orb, a spirit wisp, healing orbs and a spinning bone shard, each with its own impact
 function drawShotFx(e, age) {
   const sk = e.sk, dur = SHOT_DUR[sk] || .25; if (age > dur + .3) return;
   const sc = e.sc || 1, u = ts * sc, x1 = e.x1 * ts, y1 = e.y1 * ts, x2 = e.x2 * ts, y2 = e.y2 * ts, p = Math.min(1, age / dur), dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy) || 1, col = e.c || "#ffffff";
-  const arcH = sk === "arrow" ? .12 * L : sk === "heal" ? .2 * L + ts * .15 : sk === "bone" ? .08 * L : 0, q = Math.max(0, (age - dur) / .3);
+  const arcH = sk === "rock" ? .7 * L + ts * .9 : sk === "arrow" ? .12 * L : sk === "heal" ? .2 * L + ts * .15 : sk === "bone" ? .08 * L : 0, q = Math.max(0, (age - dur) / .3);
   const at = pp => [x1 + dx * pp, y1 + dy * pp - arcH * 4 * pp * (1 - pp)], rr = (i, s2 = 0) => hash(Math.round(e.x1 * 40) + i, Math.round(e.y2 * 40) + s2, Math.round(e.t * 10));
   const orbAt = (x, y, r, c, a) => { const g = ctx.createRadialGradient(x, y, 0, x, y, r * 2.2); g.addColorStop(0, hexA(c, a)); g.addColorStop(1, hexA(c, 0)); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r * 2.2, 0, 7); ctx.fill(); };
   const spark = (x, y, r, c, a) => { ctx.fillStyle = hexA(c, a); ctx.fillRect(Math.round(x - r / 2), Math.round(y - r / 2), Math.max(2, Math.round(r)), Math.max(2, Math.round(r))); };
   ctx.save();
-  if (sk === "arrow") {
+  if (sk === "rock") { // a boulder lobbed in a high arc, with a shadow on the ground and a puff of dust where it lands
+    const gy = y1 + (y2 - y1) * p;
+    if (p < 1) { const [px, py] = at(p), r = u * .13; ctx.fillStyle = "rgba(0,0,0,.28)"; ctx.beginPath(); ctx.ellipse(x1 + dx * p, gy + ts * .35, u * .12, u * .05, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = "#1e1a14"; ctx.fillRect(Math.round(px - r - 1), Math.round(py - r - 1), Math.round(r * 2 + 2), Math.round(r * 2 + 2)); ctx.fillStyle = "#8a8478"; ctx.fillRect(Math.round(px - r), Math.round(py - r), Math.round(r * 2), Math.round(r * 2)); ctx.fillStyle = "#c4c0b4"; ctx.fillRect(Math.round(px - r), Math.round(py - r), Math.round(r), Math.round(r)); }
+    else { const k = Math.min(1, (age - dur) / .3); ctx.globalAlpha = 1 - k; for (let i = 0; i < 6; i++) { const a = i * 1.05 + .3; ctx.fillStyle = i % 2 ? "#b8b0a0" : "#8e8878"; ctx.fillRect(Math.round(x2 + Math.cos(a) * u * (.2 + k * .5)), Math.round(y2 + Math.sin(a) * u * (.1 + k * .25) - k * u * .2), Math.round(u * .12), Math.round(u * .12)); } ctx.globalAlpha = 1; }
+  } else if (sk === "arrow") {
     if (p < 1) { const [px, py] = at(p), [qx, qy] = at(Math.min(1, p + .03)), ang = Math.atan2(qy - py, qx - px), len = u * .26;
       ctx.translate(px, py); ctx.rotate(ang); ctx.strokeStyle = "rgba(240,230,190,.25)"; ctx.lineWidth = u * .03; ctx.beginPath(); ctx.moveTo(-len * 2, 0); ctx.lineTo(-len, 0); ctx.stroke();
       ctx.strokeStyle = "#c9a46a"; ctx.lineWidth = u * .035; ctx.beginPath(); ctx.moveTo(-len, 0); ctx.lineTo(0, 0); ctx.stroke();
