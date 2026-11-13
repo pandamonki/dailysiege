@@ -27,7 +27,7 @@ function terrainSprite(key, w, h, draw) { // draw(px(x,y,col), rect(x,y,w,h,col)
   draw(px, rect, g);
   const src = g.getImageData(0, 0, w, h), d = src.data, out = g.createImageData(w, h); out.data.set(d);
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { if (d[(y * w + x) * 4 + 3]) continue;
-    if ([[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]].some(([a, b]) => a >= 0 && b >= 0 && a < w && b < h && d[(b * w + a) * 4 + 3] > 200)) { const i = (y * w + x) * 4; out.data[i] = 22; out.data[i + 1] = 34; out.data[i + 2] = 16; out.data[i + 3] = 235; } }
+    if ([[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]].some(([a, b]) => a >= 0 && b >= 0 && a < w && b < h && d[(b * w + a) * 4 + 3] > 200)) { const i = (y * w + x) * 4; out.data[i] = 30; out.data[i + 1] = 52; out.data[i + 2] = 26; out.data[i + 3] = 170; } }
   g.putImageData(out, 0, 0); return (TERRAIN_SPR[key] = cv);
 }
 const GR = { pine: ["#16361c", "#1f4a26", "#2b6130", "#3c7a3a", "#5c9a4a"], oak: ["#235628", "#2f7234", "#43903d", "#62ae4c", "#93cc62"] };
@@ -36,7 +36,7 @@ function pineSprite(v) { // three layered tiers, lit from the top left
     const pal = GR.pine; rect(6, 16, 2, 3, "#4a2f17"); rect(6, 16, 1, 3, "#6e4824");
     [[1, 7, 4], [5, 12, 4], [9, 16, 3]].forEach(([y0, y1, hw0], t) => { const hw1 = hw0 + 2 + (v % 2);
       for (let y = y0; y <= y1; y++) { const f = (y - y0) / (y1 - y0), hw = Math.round(.5 + (hw1 - .5) * f);
-        for (let x = -hw; x <= hw; x++) { const lit = x < -hw * .2 ? 3 : x > hw * .35 ? 1 : 2, j = hash(x + t * 7, y + v * 13, 5), k = Math.max(0, Math.min(4, lit + (j > .88 ? 1 : j < .1 ? -1 : 0) + (y === y1 ? -1 : 0)));
+        for (let x = -hw; x <= hw; x++) { const lit = x < -hw * .2 ? 3 : x > hw * .35 ? 1 : 2, j = hash(x + t * 7, y + v * 13, 5), k = Math.max(0, Math.min(4, lit + (j > .96 ? 1 : j < .03 ? -1 : 0) + (y === y1 ? -1 : 0)));
           px(6 + x, y, pal[k]); } } });
   });
 }
@@ -46,7 +46,7 @@ function oakSprite(v) { // a round canopy of overlapping blobs with a highlight 
     const blobs = [[8, 7, 5.5], [5, 9, 3.8], [12, 9, 3.8], [7, 4, 3.8], [11, 5, 3.2]].map(([x, y, r]) => [x + (v ? 1 : 0), y, r]);
     for (let y = 0; y < 16; y++) for (let x = 0; x < 17; x++) { let best = 9, on = false;
       for (const [bx, by, r] of blobs) { const dx = x - bx, dy = y - by, dd = Math.hypot(dx, dy * 1.08); if (dd <= r * (.9 + .16 * hash(Math.round(Math.atan2(dy, dx) * 2), bx + by, 3 + v))) { on = true; best = Math.min(best, dd / r - (-dx - dy) * .03); } }
-      if (!on) continue; const j = hash(x, y, 9 + v), k = Math.max(0, Math.min(4, 4 - Math.floor((best + .35) * 3.2) + (j > .9 ? 1 : j < .1 ? -1 : 0))); px(x, y, pal[k]); }
+      if (!on) continue; const j = hash(x, y, 9 + v), k = Math.max(1, Math.min(4, 4 - Math.floor((best + .35) * 3.2) + (j > .96 ? 1 : j < .03 ? -1 : 0))); px(x, y, pal[k]); }
   });
 }
 const bushSprite = v => terrainSprite("bush" + v, 10, 6, px => { for (let y = 0; y < 5; y++) for (let x = 0; x < 10; x++) { const dx = (x - 4.5) / 4.6, dy = (y - 2.8) / 2.4; if (dx * dx + dy * dy > 1 + (hash(x, y, 4 + v) - .5) * .3) continue; const l = (-dx - dy) * .5 + hash(x, y, 8) * .3; px(x, y, l > .4 ? "#6fb04e" : l > 0 ? "#3f8238" : "#2a5d2c"); } if (v) { px(3, 1, "#f4f0f0"); px(6, 2, "#f2d76a"); } });
@@ -59,27 +59,23 @@ function paintBackground() {
   // ground: soft patches of lighter and darker grass instead of flat squares
   const cs = ts / 4, cells = Math.ceil(W / cs);
   for (let cy = 0; cy < cells; cy++) for (let cx = 0; cx < cells; cx++) {
-    const nx = cx / 5, ny = cy / 5, n = vnoise(nx, ny, 31) * .6 + vnoise(nx * 2.3, ny * 2.3, 32) * .3 + hash(cx, cy, 33) * .1;
-    c.fillStyle = `hsl(${94 + n * 12}, ${34 + n * 12}%, ${31 + n * 11}%)`; c.fillRect(cx * cs, cy * cs, cs + 1, cs + 1);
+    const nx = cx / 7, ny = cy / 7, n = vnoise(nx, ny, 31) * .75 + vnoise(nx * 2.1, ny * 2.1, 32) * .25;
+    c.fillStyle = `hsl(${95 + n * 8}, ${34 + n * 6}%, ${33 + n * 5}%)`; c.fillRect(cx * cs, cy * cs, cs + 1, cs + 1);
   }
   const u = ts / 16;
-  for (let i = 0; i < N * N * 7; i++) { // grass tufts, a few flowers
+  for (let i = 0; i < N * N * 2; i++) { // a few grass tufts, rare flowers
     const x = Math.round(hash(i, 1, 3) * W / u) * u, y = Math.round(hash(i, 2, 5) * W / u) * u, v = hash(i, 3, 7);
-    if (v > .985) { c.fillStyle = v > .993 ? "#f6dd78" : "#f6f2f2"; c.fillRect(x, y, u, u); c.fillStyle = "#e07a9a"; if (v > .997) c.fillRect(x + u, y, u, u); }
-    else { c.fillStyle = v > .5 ? "rgba(24,52,16,.5)" : "rgba(170,210,100,.45)"; c.fillRect(x, y, u, u * 2); c.fillRect(x + u, y + u, u, u); }
+    if (v > .995) { c.fillStyle = "#f6f2f2"; c.fillRect(x, y, u, u); }
+    else { c.fillStyle = v > .5 ? "rgba(24,52,16,.28)" : "rgba(170,210,100,.25)"; c.fillRect(x, y, u, u * 2); }
   }
   // roads: a dark edge, a dirt body, and a lighter worn middle, with pebbles
-  [["#5a4426", .56], ["#8a6f45", .46], ["#a8895a", .34], ["#b99a68", .18]].forEach(([col, w]) => {
+  [["#6a5330", .5], ["#a8895a", .4], ["#b99a68", .3]].forEach(([col, w]) => {
     c.strokeStyle = col; c.lineWidth = ts * w; c.lineCap = "round";
     castleTiles.forEach(([r, q]) => { c.beginPath(); c.moveTo((q + .5) * ts, (r + .5) * ts); c.lineTo(MID, MID); c.stroke(); });
   });
-  castleTiles.forEach(([r, q], ci) => { for (let k = 0; k < 40; k++) { const t = hash(ci, k, 61), ox = (hash(ci, k, 62) - .5) * ts * .3, oy = (hash(ci, k, 63) - .5) * ts * .3, x = Math.round(((q + .5) * ts + (MID - (q + .5) * ts) * t + ox) / u) * u, y = Math.round(((r + .5) * ts + (MID - (r + .5) * ts) * t + oy) / u) * u;
-    c.fillStyle = hash(ci, k, 64) > .5 ? "rgba(90,66,36,.55)" : "rgba(235,215,170,.5)"; c.fillRect(x, y, u, u); } });
   // the centre plaza: paved with stones
-  const pr = ts * 1.35; c.fillStyle = "#5a4a30"; c.beginPath(); c.arc(MID, MID, pr + u, 0, 7); c.fill();
-  for (let y = -pr; y < pr; y += u * 2) for (let x = -pr; x < pr; x += u * 2) { if (Math.hypot(x + u, y + u) > pr) continue; const xx = x + (Math.round(y / (u * 2)) % 2 ? u : 0), j = hash(Math.round(xx), Math.round(y), 71);
-    c.fillStyle = j > .66 ? "#cdbd96" : j > .33 ? "#b99a68" : "#a48a5c"; c.fillRect(MID + xx, MID + y, u * 2 - 1, u * 2 - 1); }
-  c.strokeStyle = "#7a6238"; c.lineWidth = ts * .06; c.beginPath(); c.arc(MID, MID, ts * .55, 0, 7); c.stroke();
+  const pr = ts * 1.3; c.fillStyle = "#6a5330"; c.beginPath(); c.arc(MID, MID, pr + u, 0, 7); c.fill(); c.fillStyle = "#b99a68"; c.beginPath(); c.arc(MID, MID, pr, 0, 7); c.fill();
+  c.strokeStyle = "rgba(106,83,48,.55)"; c.lineWidth = u; c.beginPath(); c.arc(MID, MID, ts * .7, 0, 7); c.stroke();
   for (let i = 0; i < 8; i++) {
     const a = i / 8 * Math.PI * 2 + .2, x = MID + Math.cos(a) * ts * 1.1, y = MID + Math.sin(a) * ts * 1.1, sx = Math.round(x / u) * u, sy = Math.round(y / u) * u;
     c.fillStyle = "rgba(0,0,0,.28)"; c.fillRect(sx - u * 2, sy, u * 5, u); c.fillStyle = "#3a3832"; c.fillRect(sx - u * 2, sy - u * 7, u * 4, u * 8);
@@ -98,15 +94,15 @@ function paintBackground() {
   for (let r = 0; r < N; r++) for (let q = 0; q < N; q++) {
     if (nearCastle(r, q) || isCentre(r, q) || roadTiles.has(`${r},${q}`) || inZone(r, q) || occupied.has(`${r},${q}`)) continue;
     const ring = Math.min(r, q, N - 1 - r, N - 1 - q) === 0, v = hash(r, q, 11);
-    if (v < (ring ? .8 : .36)) {
-      const n = v < .18 ? 2 : 1;
+    if (v < (ring ? .55 : .2)) {
+      const n = v < .08 ? 2 : 1;
       for (let i = 0; i < n; i++) {
         const x = (q + .3 + hash(r, q, 20 + i) * .4) * ts, y = (r + .75 + hash(r, q, 30 + i) * .2) * ts;
         scenery.push([y, () => { c.fillStyle = "rgba(0,0,0,.24)"; c.beginPath(); c.ellipse(x, y, ts * .3, ts * .1, 0, 0, 7); c.fill(); hash(r, q, 40 + i) > .45 ? pine(c, x, y, ts, hash(r, q, 50)) : oak(c, x, y, ts); }]);
       }
-    } else if (v > .93) {
+    } else if (v > .965) {
       const x = (q + .5) * ts, y = (r + .6) * ts; scenery.push([y, () => { const sp = rockSprite(v > .965 ? 1 : 0); c.fillStyle = "rgba(0,0,0,.22)"; c.beginPath(); c.ellipse(x, y + u, ts * .26, ts * .08, 0, 0, 7); c.fill(); c.drawImage(sp, Math.round(x - 5 * u), Math.round(y - 5 * u), sp.width * u, sp.height * u); }]);
-    } else if (v > .8 && v <= .86) {
+    } else if (false) {
       const x = (q + .5) * ts, y = (r + .7) * ts; scenery.push([y, () => { const sp = bushSprite(v > .83 ? 1 : 0); c.fillStyle = "rgba(0,0,0,.2)"; c.beginPath(); c.ellipse(x, y + u, ts * .24, ts * .07, 0, 0, 7); c.fill(); c.drawImage(sp, Math.round(x - 5 * u), Math.round(y - 5 * u), sp.width * u, sp.height * u); }]);
     }
   }
