@@ -15,6 +15,7 @@ const SPECS = {
   raider:      { a: "#6a4a2c", b: YOU_COLOR, hc: "#b8322a", head: "band", weapon: "axe" },
   ram:         { cart: 1, ram: 1, a: "#5a3f24", b: YOU_COLOR },
   cart:        { cart: 1, a: "#6a4a2c", b: YOU_COLOR },
+  catapult:    { cat: 1, a: "#5a3f24", b: YOU_COLOR },
   mage:        { a: "#5a3f8f", b: YOU_COLOR, hc: "#42306b", head: "wizard", weapon: "staff", f: "#9fd8ff", robe: 1 },
   sniper:      { a: "#7a5a32", b: YOU_COLOR, hc: "#8a4a22", head: "dwarf", weapon: "rifle" },
   trollw:      { a: "#5f8a3a", b: YOU_COLOR, hc: "#3f6a2a", head: "horned", weapon: "axe" },
@@ -41,6 +42,13 @@ function buildSprite(sp, pose = "") {
     R(2, 5, 12, 6, "a"); R(1, 7, 13, 10, "w");
     if (ap === 1) { R(0, 8, 12, 9, "m"); R(11, 7, 13, 10, "m"); } else { R(0, 8, 14, 9, "m"); R(13, 7, 15, 10, "m"); if (ap === 2) { P(15, 6, "fe"); P(15, 11, "fe"); } }
     DY = 0; R(2, 11, 4, 14, "bt"); R(10, 11, 12, 14, "bt"); if (wf >= 0 && odd) { P(2, 12, "m"); P(4, 13, "m"); P(10, 12, "m"); P(12, 13, "m"); } else { R(3, 12, 3, 13, "m"); R(11, 12, 11, 13, "m"); } R(4, 5, 10, 5, "b");
+  } else if (sp.cat) { // a catapult: a wheeled frame in the owner's colour with a throwing arm that cocks back and swings forward
+    if (odd) DY = -1;
+    R(1, 9, 14, 10, "w"); R(1, 10, 14, 10, "b"); R(5, 5, 6, 9, "w"); R(9, 5, 10, 9, "w"); R(5, 4, 10, 4, "bt");
+    if (ap === 1) { for (let i = 0; i < 6; i++) P(8 - i, 8 - i, "l"); R(1, 2, 3, 3, "bt"); P(2, 2, "m"); }
+    else if (ap === 2) { for (let i = 0; i < 6; i++) P(7 + i, 7 - i, "l"); R(12, 0, 14, 1, "bt"); }
+    else { for (let i = 0; i < 6; i++) P(6 + i, 7 - i, "l"); R(11, 0, 13, 1, "bt"); P(12, 0, "m"); }
+    DY = 0; R(2, 11, 4, 14, "bt"); R(11, 11, 13, 14, "bt"); if (wf >= 0 && odd) { P(2, 12, "m"); P(4, 13, "m"); P(11, 12, "m"); P(13, 13, "m"); } else { R(3, 12, 3, 13, "m"); R(12, 12, 12, 13, "m"); }
   } else if (sp.cart) { // a powder cart: wheels, a barrel in the owner's colour and a lit fuse
     if (odd) DY = -1;
     R(1, 12, 14, 13, "w"); R(2, 6, 12, 11, "a"); R(2, 8, 12, 8, "b"); R(2, 6, 12, 6, "bt"); R(2, 11, 12, 11, "bt");

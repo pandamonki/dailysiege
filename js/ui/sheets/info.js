@@ -157,6 +157,10 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "Catapult", date: "13 Nov", fixes: [], balance: [], changes: [
+    "New tier 3 siege engine, the Catapult (220 gold). It crawls very slowly, sets up two tiles from an enemy castle, then hurls a boulder every few seconds. It cannot fight soldiers, so guard it.",
+    "Like the ram and powder cart it counts toward your two siege units and needs 2 days to recharge after it fights.",
+  ] },
   { v: "Raiders and Battle Mages move to tier 2", date: "13 Nov", fixes: [], balance: [
     "Raiders and Battle Mages now unlock at a Fortress (tier 2) instead of a Citadel.",
     "To balance the earlier access: Raider attack 34 to 30 and health 250 to 230. Battle Mage attack 30 to 27, health 180 to 170 and cost 150 to 140.",
