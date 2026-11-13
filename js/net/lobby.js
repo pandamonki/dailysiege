@@ -121,7 +121,7 @@ async function watchLiveBattle(dayKey, how) {
     : liveBattlePlans(dayKey);
   if (saved && saved.feuds) plans.feuds = saved.feuds.slice();
   if (saved && LIVE.battles[dayKey].mercs) plans.mercs = LIVE.battles[dayKey].mercs;
-  const res = runBattle(plans, daySeed(dayKey), { N: size, finalDay: final, ultV2: saved ? !!saved.ultV2 : ultV2For(dayKey), balV2: saved ? !!saved.balV2 : balV2For(dayKey), balV3: saved ? !!saved.balV3 : balV3For(dayKey), heroV3: saved ? !!saved.heroV3 : heroV3For(dayKey), dayNo: saved ? saved.dayNo : weekdayOf(dayKey), ranks: (saved && saved.ranks) || rankMap(before, plans.map(p => p.pid)) });
+  const res = runBattle(plans, daySeed(dayKey), { N: size, finalDay: final, ultV2: saved ? !!saved.ultV2 : ultV2For(dayKey), balV2: saved ? !!saved.balV2 : balV2For(dayKey), balV3: saved ? !!saved.balV3 : balV3For(dayKey), fairV1: saved ? !!saved.fairV1 : fairV1For(dayKey), heroV3: saved ? !!saved.heroV3 : heroV3For(dayKey), dayNo: saved ? saved.dayNo : weekdayOf(dayKey), ranks: (saved && saved.ranks) || rankMap(before, plans.map(p => p.pid)) });
   { // the saved result is the official one; this device's replay must match it exactly, or what is shown would not be what was scored
     const want = saved && LIVE.battles[dayKey].resultHash, got = want && battleHash(res);
     if (want && got !== want) { console.warn("Daily Siege: this device replayed", dayKey, "differently", got, want); toast("This device replayed the battle differently from the official result. Scores shown are the official ones. Please tell the host."); if (window.DS && DS.reportMismatch) DS.reportMismatch(dayKey, got, want); } }
