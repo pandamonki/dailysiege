@@ -56,7 +56,7 @@ const A = {
   zhome: () => home(),
   cancel: () => { sel = null; },
   opencastle: v => { S.phase = "muster"; sel = null; sheet = { type: "castle", tab: v, grp: v === "recruit" ? "army" : "base" }; if (v === "armoury") sheet.tab = "keep"; },
-  openhero: v => { S.phase = "muster"; sel = null; open("champ", "champ"); if (v === "items" || v === "abilities") sheet.tab = v; },
+  openhero: v => { S.phase = "muster"; sel = null; open("champ", "champ"); if (v === "items" || v === "abilities" || v === "stats") sheet.tab = v; },
   rhero: (v, k) => { sheet = { type: "rhero", id: v, tab: k === "items" ? "items" : "abilities" }; },
   openorders: v => { S.phase = "orders"; sel = null; ensureDip(); sheet = { type: "orders", grp: v === "alli" ? "alli" : "ord" }; },
   wizard: () => { const at = wizStartStep(); sheet = null; render(); setTimeout(() => startWizard(true, at), 100); },

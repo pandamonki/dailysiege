@@ -10,7 +10,7 @@ const HELP = {
   armoury: ["Armoury", "Forge permanent upgrades for your hero and castle: weapon, armour and charm for the hero, plus castle walls and tower. Higher tiers need a stronger castle."],
   banner: ["Coat of arms", "Design the banner that flies over your castle and shows in replays and on the leaderboard. Banners are set on the first day and stay for the week."],
   shop: ["Shop", "Buy items for your hero. Your hero can carry a limited number, shown in the slots at the top. Tap an item to read what it does, then Buy. Tap an owned item to sell it for half its price."],
-  champ: ["Hero", "Your champion for the week. Every level earns a skill point to spend on abilities. Tap an ability to read it, then Level up. Set when each one is cast, and tap the bag to shop for items."],
+  champ: ["Hero", "Your champion for the week. Every level earns a skill point (15 in all), and only you spend them, on the Abilities tab. The red number on the tab is how many you have left. The ultimate needs level 9 and you can learn only one. Items has your gear and the shop bag, and Stats has health, attack and speed."],
   rhero: ["Rival hero", "What you know about this lord's hero from yesterday's battle: its abilities, items and gear. Use it to plan your orders."],
   strategy: ["Strategy", "Decide who your army attacks and which way it marches. These choices steer your soldiers across the map before any fighting starts."],
   tactics: ["Combat", "Rules for once your soldiers are in a fight. Set how each group behaves, and add battle commands: if something happens, do something. Each command uses one order seal."],
