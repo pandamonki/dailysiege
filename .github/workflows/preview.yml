@@ -5,6 +5,7 @@ name: Preview
 # there, so trying something out can never touch the real war.
 on:
   pull_request:
+    paths-ignore: ["**.md"]
 
 permissions:
   contents: read

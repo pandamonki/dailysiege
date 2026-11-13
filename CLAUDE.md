@@ -14,18 +14,25 @@ with text-to-speech reading Claude's responses aloud. So keep responses short an
 - Refer to files and code sparingly. When needed, say what it does rather than reading out paths
   or symbols.
 
-## Pull requests and merging: default to autonomy
+## Pull requests and merging: only when asked
 
-The goal is to reduce the user's workload. Handle pull requests end to end without asking.
+GitHub Actions minutes are limited (2,000 a month on the free plan), and every merge to `main`
+costs a deploy. So don't open pull requests or merge on your own.
 
-- **Merge straight to main, no confirmation needed:** balance changes, minor features, bug fixes,
-  and documentation. Open the pull request, merge it, and follow the deploy steps below.
-- **Confirm with the user before merging:** major features, and anything that is a prototype or a
-  parallel branch testing a whole new concept. For those, open the pull request, summarize it, and
-  ask. Never merge prototype or experimental branches on your own.
+- **Commit and push to the working branch**, then tell the user the change is ready. Open a pull
+  request only when the user asks for one. Merge only when the user asks for a merge.
+- When the user does ask, merging straight to `main` needs no further confirmation for balance
+  changes, minor features, bug fixes and documentation. Major features, prototypes and parallel
+  experiment branches still need the user's go-ahead after the pull request is open.
 - If unsure which category a change falls into, treat it as major and ask.
+- Prefer one pull request with several related changes over many small ones, so the tests and
+  the deploy run once.
+- A pull request gets a preview link (the Preview workflow). Point the user to it for testing
+  before they ask for a merge.
 - **Merge conflicts, rebases, and failing checks:** resolve them yourself. Don't report each one.
   Just tell the user the outcome once it is done.
+- **Documentation-only changes (`.md` files) run no tests and no deploy.** The CI, Preview and
+  Deploy workflows all skip them. Don't run the test suite for them either.
 - **If you can't resolve something**, say so plainly, explain what is blocking it in a sentence or
   two, and ask for the user's help troubleshooting.
 
