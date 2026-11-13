@@ -28,7 +28,7 @@ textarea{width:100%;min-height:90px;font:15px/1.4 var(--f-b);color:var(--ink);ba
 <main>
 <h1>Last Banner Prompt Pack</h1>
 <p>One Gemini image prompt for every hero skill-tree skill, upgrade, shop item, unit, building, menu and banner emblem. Each prompt already carries the shared style line, so paste it straight into Gemini. Edit the style line below to restyle every prompt at once.</p>
-<section class="base"><b>Shared style line</b><textarea id="style" aria-label="Shared style line"></textarea><div class="row"><button class="copy" id="copyall">Copy every prompt in this tab</button><span id="msg" role="status"></span></div></section>
+<section class="base"><b>Shared style line</b><textarea id="style" aria-label="Shared style line"></textarea><div class="row"><button class="copy" id="copyall">Copy every prompt in this tab (single sheet on Missing icons)</button><span id="msg" role="status"></span></div></section>
 <nav id="tabs" aria-label="Categories"></nav>
 <div class="list" id="list"></div>
 </main>
@@ -106,6 +106,13 @@ const FR_OLD="subtle gold-bronze bevelled frame",FR_NEW="a 24px bevelled frame o
  if(hs)hs.prompt="Warcraft III style fantasy game UI mock-up, mobile portrait 9:19.5, parchment and dark wood panels with bronze trim, gold highlights, crisp readable placeholder text blocks. Screen: Hero sheet. Contains: XP bar and level, unspent skill points badge, three skill-tree columns side by side (tier 1 and tier 2 nodes with rank squares, two side talents, a synergy node and a glowing ultimate at the bottom), locked nodes greyed, a DETAILS panel with requirements and a pinned Learn button.";
 })();
 DATA.style=DATA.style.split(FR_OLD).join(FR_NEW);DATA.cats.forEach(c=>c.items.forEach(i=>{i.prompt=i.prompt.split(FR_OLD).join(FR_NEW)}));
+/* Missing icons: entries with no image file in the game yet, gathered for one single-sheet generation */
+(function(){
+ const NO_FILE=["Nav: Hero (per class art exists)"].slice(1).concat(["Action: Sell","Badge: Level pips","Badge: Price","Guide: Aldric the steward"]);
+ const find=n=>{for(const c of DATA.cats){const i=c.items.find(x=>x.name===n);if(i)return i}};
+ const items=DATA.cats.find(c=>c.c==="upgrades").items.concat(NO_FILE.map(find).filter(Boolean));
+ DATA.cats.unshift({c:"missing",t:"Missing icons",sheet:true,sub:"Every icon the game still has no image file for: "+items.length+" in all (the upgrade and gear tiles, plus the sell action, level pips, price badge and steward). Copy the single-sheet prompt to get them all on one image, or copy a card for one icon.",items:items.map(i=>({name:i.name,prompt:i.prompt}))});
+})();
 const OLD=DATA.style;let tab=DATA.cats[0].c;
 const $=s=>document.querySelector(s);$("#style").value=OLD;
 const E=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;");
@@ -114,12 +121,15 @@ function text(p){const st=$("#style").value.trim();return p.split(OLD).join(st)}
 function flash(m){$("#msg").textContent=m;setTimeout(()=>{$("#msg").textContent=""},1800)}
 function copy(t){const ok=()=>flash("Copied");const fb=()=>{const a=document.createElement("textarea");a.value=t;document.body.appendChild(a);a.select();try{document.execCommand("copy");ok()}catch(e){flash("Select and copy by hand")}a.remove()};
  try{navigator.clipboard.writeText(t).then(ok,fb)}catch(e){fb()}}
+function sheetPrompt(c){const n=c.items.length,cols=5,rows=Math.ceil(n/cols);
+ return "Generate ONE image: a single icon sprite sheet containing "+n+" separate game icons in a "+cols+" column by "+rows+" row grid, read left to right then top to bottom. Every icon sits in its own equal square cell (512x512 per cell, whole sheet "+cols*512+"x"+rows*512+"), with an even gap between cells, a flat dark background between them, no labels, no numbers, no text anywhere. Leave any unused cells at the end of the last row empty.\n\nSHARED STYLE for every icon (identical on all):\n"+$("#style").value.trim()+"\n\nThe icons, in order:\n"+c.items.map((i,k)=>(k+1)+". "+i.name+": "+i.prompt.split(OLD).join("").replace(/^[\s.,]+/,"").replace(/\s+/g," ")).join("\n")}
 function draw(){
  $("#tabs").innerHTML=DATA.cats.map(c=>`<button aria-pressed="${c.c===tab}" data-t="${c.c}">${c.t} (${c.items.length})</button>`).join("");
  const c=cur();
  $("#list").innerHTML=`<p>${c.sub}</p>`+c.items.map((i,n)=>`<div class="card"><div class="t"><b>${E(i.name)}</b><button class="copy" data-i="${n}">Copy</button></div><p>${E(text(i.prompt))}</p></div>`).join("")}
 document.addEventListener("click",e=>{const t=e.target.closest("[data-t]");if(t){tab=t.dataset.t;draw();return}
  const b=e.target.closest("[data-i]");if(b)copy(text(cur().items[+b.dataset.i].prompt));
+ if(e.target.id==="copyall"&&cur().sheet)return copy(sheetPrompt(cur()));
  if(e.target.id==="copyall")copy("OVERALL STYLE GUIDE (apply to every image below):\n"+$("#style").value.trim()+"\n\nGenerate one image per prompt that follows.\n\n"+cur().items.map(i=>i.name+"\n"+i.prompt.split(OLD).join("").replace(/^[\s.,]+/,"")).join("\n\n"))});
 $("#style").addEventListener("input",draw);draw();
 </script>
