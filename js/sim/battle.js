@@ -16,11 +16,13 @@ const BAL_V3_FROM = "2026-11-12", balV3For = d => String(d) >= BAL_V3_FROM;
 //   - an army with nobody left on its list marches on the nearest castle, and an equally near pair is settled by a draw for each lord and day
 //   - the "closest" target mode settles equal distances the same way
 //   - castles still standing with the same health are ranked by siege damage, then kills, then a draw
-const FAIR_V1_FROM = "2026-11-16", fairV1For = d => String(d) >= FAIR_V1_FROM;
+let FAIR_V1_FROM = "2026-11-16", fairV1For = d => String(d) >= FAIR_V1_FROM;
 // Pick your targets (an experiment, off for the real war until PICK_V1_FROM is set to a date): every lord picks one to PICK_MAX lords to attack
 // each day, and once those have fallen the army goes for the lord just above them on the board (the leader goes for second place).
 // On day 1, with no board yet, it goes for the nearest castle. Target modes other than the lord's own list are not used.
 let PICK_V1_FROM = "2099-01-01"; const pickV1For = d => String(d) >= PICK_V1_FROM, PICK_MAX = 3;
+// With pick-your-targets the final day scores 1.5x like days 5 and 6, not 2x: with targets chosen daily the standings already swing a lot.
+const DAY_WEIGHT_PICK = { 5: 1.5, 6: 1.5, 7: 1.5 };
 const fairTie = (seed, a, b) => hash(seed, botSeed(String(a)) * 7919 + botSeed(String(b)), 17);
 const BLOC_MAX = 3, TREACHERY_PTS = 3, TREACHERY_LOOT = .25, DAY_WEIGHT = { 5: 1.5, 6: 1.5, 7: 2 };
 // A lord whose castle falls keeps their hero and soldiers on the field: they fight on to the end of the battle, but can no longer fall back, heal at the castle, teleport home or respawn. Placing is still decided by when the castle fell.
@@ -963,7 +965,7 @@ function runBattle(plans, seed, opts = {}) {
   for (let i = 0; i < 10; i++) { t = +(t + FRAME_DT).toFixed(2); record(); }
   ents.filter(e => e.kind === "champ" && e.gains < MIN_GAIN && e.heroLvl < maxLvl).forEach(e => { while (e.gains < MIN_GAIN && e.heroLvl < maxLvl) levelUp(e); }); // every hero earns at least two levels a day
   const treach = {}; treachery.forEach(([by, vic]) => { treach[by] = (treach[by] || 0) + 1; const take = Math.round(P[vic].gold * TREACHERY_LOOT); P[by].gold += take; P[vic].gold -= take; }); // the betrayer keeps a share of the victim's spoils for the day
-  const W8 = dayWeight(BV, opts.dayNo);
+  const W8 = PV ? (DAY_WEIGHT_PICK[opts.dayNo] || 1) : dayWeight(BV, opts.dayNo);
   const PTS = [10, 7, 5, 4, 3, 2, 1, 0]; // placement points; from 8th place down a lord scores only for kills and castles
   const results = order.map(pid => ({ pid, name: nm(pid), color: P[pid].color, cls: P[pid].cls, place: P[pid].place, kills: P[pid].kills, ukills: P[pid].ukills, castles: P[pid].castles,
     points: Math.round(((PTS[P[pid].place - 1] || 0) + P[pid].kills + 2 * P[pid].castles) * W8) + (treach[pid] || 0) * TREACHERY_PTS, ...(treach[pid] ? { treachery: treach[pid] } : {}), fellAt: P[pid].elimT, gold: Math.round(P[pid].gold) })).sort((a, b) => a.place - b.place);
