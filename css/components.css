@@ -47,3 +47,17 @@
 #pvbar b { color: var(--gold); letter-spacing: .06em; text-transform: uppercase; font-size: 12px; } #pvbar span { opacity: .85; } #pvbar .btn { padding: 2px 10px; font-size: 13px; }
 @media (max-width: 420px) { #pvbar span { display: none; } }
 body.pv #lobby { padding-top: calc(env(safe-area-inset-top, 0px) + 52px); }
+/* free item spinner: reels, text and buttons each sit on their own row so everything lines up */
+.spin { display: grid; gap: 6px; }
+.spinrow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; justify-items: center; align-items: start; text-align: center; }
+.spin .reel { width: 52px; height: 52px; overflow: hidden; border: 2px solid rgba(62,39,20,.55); border-radius: 8px; background: rgba(255,250,230,.55); }
+.spin .strip { display: grid; transform: translateY(-468px); }
+.spin .strip img { width: 52px; height: 52px; display: block; }
+.spinres { display: grid; gap: 3px; justify-items: center; font-size: 11px; line-height: 1.2; }
+.spinbtns .btn { width: 100%; max-width: 110px; }
+.spin.go .strip { animation: spinreel var(--d) cubic-bezier(.15,.7,.2,1) both; }
+.spin.go .spintext, .spin.go .spinbtns { animation: spinfade .4s 2.3s both; }
+@keyframes spinreel { from { transform: translateY(0); } to { transform: translateY(-468px); } }
+@keyframes spinfade { from { opacity: 0; pointer-events: none; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .spin.go .strip, .spin.go .spintext, .spin.go .spinbtns { animation: none; } }
+.islots.rep .islot b { color: #3e2714; text-shadow: none; }
