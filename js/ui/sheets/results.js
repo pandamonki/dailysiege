@@ -64,7 +64,7 @@ function resultsSheet() {
     ${pactLines.length ? `<div class="sec"><h3>Pacts</h3><ul class="pacts">${pactLines.join("")}</ul></div>` : ""}
     ${board ? `<div class="sec"><h3>${isLive() ? "This week's leaderboard" : "Test leaderboard"}</h3>${board}</div>` : ""}
     <div class="sec"><h3>Final placings</h3>${R.results.map(r => `<div class="place${r.pid === R.me ? " me" : ""}"><span class="ord">${ord(r.place)}</span><i style="background:${r.color}"></i><span><b>${esc(N(r.pid))}</b> · ${CLASSES[r.cls].name}<br><span class="muted">${r.fellAt != null ? `Castle fell at ${fmt(r.fellAt)}` : "Still standing"}</span></span><span class="pts">${r.points}<small>${r.kills} kills · ${r.castles} castles</small></span></div>`).join("")}
-    <p class="muted">Points: 10 for first down to 0 for last, plus 1 per hero slain and 2 per castle taken${wt > 1 ? `. <b>Today every point counts ×${wt}</b>: the last days of the week are worth more` : ""}${v2 ? ". A betrayer who sets off the bomb earns 3 more" : ""}.</p></div>
+    <p class="muted">Points: 10 for first down to 0 for last, plus 1 per hero slain and ${castlePts(replay.day ? fairV1For(replay.day) : true)} per castle taken${wt > 1 ? `. <b>Today every point counts ×${wt}</b>: the last days of the week are worth more` : ""}${v2 ? ". A betrayer who sets off the bomb earns 3 more" : ""}.</p></div>
     <div class="row"><button class="btn wood" data-act="rrestart">Watch full replay</button>${isLive() ? "" : `<button class="btn" data-act="lab">Battle stats</button>`}<button class="btn wax" data-act="rexit">Back to planning</button></div></div>`;
 }
 function deploySheet(key) {

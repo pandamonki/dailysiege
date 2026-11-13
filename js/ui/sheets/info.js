@@ -35,7 +35,7 @@ function boardSheet() {
   return head(null, "Leaderboard", `${isLive() ? "Week standings" : "Test standings"} · day ${DAY} of 7`) + `<div class="body bdbody">
     <div class="bdhead"><span></span><span></span><span>Lord</span><span>Lv</span><span>Pts</span></div>
     ${rows.map((r, i) => `<div class="bd2${r.me ? " me" : ""}"><span class="ord">${i + 1}</span><img class="bmini" alt="" src="${bannerURL(r.banner, r.color, 24, 32)}"><span class="bdn"><b>${esc(r.name)}</b>${r.cls ? `<small>${CLASSES[r.cls].name}</small>` : ""}${i < 3 && n > 3 ? `<i class="tag bty" title="Bounty on their head: base + board position + hero level x 5">♛ ${bountyMap()[r.id] || ""}g</i>` : ""}${i >= n - low && n > 3 ? `<i class="tag cat" title="Earns catch-up gold">◈</i>` : ""}</span><span class="lv">${r.lvl}</span><span class="pts">${r.pts}${r.last != null ? `<small>+${r.last}</small>` : ""}</span></div>`).join("")}
-    <p class="muted bdfoot"><b class="bounty">♛</b> bounty on the top three · <b class="catch">◈</b> catch-up gold for the bottom 30%${catchUp ? ` (you get +${catchUp})` : ""}. Points: 10 for first place down to 0, +1 per hero slain, +2 per castle taken.</p></div>`;
+    <p class="muted bdfoot"><b class="bounty">♛</b> bounty on the top three · <b class="catch">◈</b> catch-up gold for the bottom 30%${catchUp ? ` (you get +${catchUp})` : ""}. Points: 10 for first place down to 0, +1 per hero slain, +${castlePts(isLive() ? fairV1For(liveClock().planDay) : true)} per castle taken.</p></div>`;
 }
 function latestBattleKey() { return Object.keys(LIVE.battles || {}).sort().pop() || null; }
 let LASTP = null, reportBack = null;
@@ -157,6 +157,13 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "Fairer targeting, no militia, castles worth 3", date: "16 Nov", fixes: [
+    "When two rival castles are equally near, armies, bots and the starting attack list no longer always pick whoever signed up first. A fair draw decides.",
+    "Castles left standing on equal health at nightfall are ranked by siege damage, then kills, then a draw, not by sign-up order.",
+  ], balance: [
+    "Castles no longer send out militia. Your garrison waves do that job now.",
+    "Taking a castle scores 3 points (was 2).",
+  ], changes: [] },
   { v: "Shop bag, one-page shop and page help", date: "13 Nov", fixes: [], balance: [], changes: [
     "A bag of gold on the right edge of the map opens the shop. The Shop tab is gone from Base, and the Hero page has the same bag next to your items.",
     "The shop is one page: 12 items at a time, with the details and Buy button below, and your item slots and gold at the top.",
