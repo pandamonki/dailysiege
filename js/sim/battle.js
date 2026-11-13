@@ -16,7 +16,9 @@ const BAL_V3_FROM = "2026-11-12", balV3For = d => String(d) >= BAL_V3_FROM;
 //   - an army with nobody left on its list marches on the nearest castle, and an equally near pair is settled by a draw for each lord and day
 //   - the "closest" target mode settles equal distances the same way
 //   - castles still standing with the same health are ranked by siege damage, then kills, then a draw
+// Also from the same day: castles no longer send out militia (the garrison waves replace them), and taking a castle scores CASTLE_PTS, not 2.
 let FAIR_V1_FROM = "2026-11-16", fairV1For = d => String(d) >= FAIR_V1_FROM;
+const CASTLE_PTS = 3, castlePts = fair => (fair ? CASTLE_PTS : 2);
 // Pick your targets (an experiment, off for the real war until PICK_V1_FROM is set to a date): every lord picks one to PICK_MAX lords to attack
 // each day, and once those have fallen the army goes for the lord just above them on the board (the leader goes for second place).
 // On day 1, with no board yet, it goes for the nearest castle. Target modes other than the lord's own list are not used.
@@ -879,7 +881,7 @@ function runBattle(plans, seed, opts = {}) {
       if (i >= 0) deployWave(p, i);
     });
     // reinforcements: every living castle musters militia on a timer, so the field never empties into hero-only sieges
-    if (!opts.duel && t >= MILITIA.first && Math.abs(((t - MILITIA.first) % MILITIA.every)) < DT / 2) order.forEach(pid => {
+    if (!opts.duel && !FV && t >= MILITIA.first && Math.abs(((t - MILITIA.first) % MILITIA.every)) < DT / 2) order.forEach(pid => {
       const p = P[pid]; if (!p.alive) return;
       const c = p.castle, dx = NN / 2 - c.x, dy = NN / 2 - c.y, L = hyp(dx, dy) || 1;
       for (let i = 0; i < (nP <= 4 ? 1 : MILITIA.count); i++) {
@@ -986,7 +988,7 @@ function runBattle(plans, seed, opts = {}) {
   const W8 = PV ? (DAY_WEIGHT_PICK[opts.dayNo] || 1) : dayWeight(BV, opts.dayNo);
   const PTS = [10, 7, 5, 4, 3, 2, 1, 0]; // placement points; from 8th place down a lord scores only for kills and castles
   const results = order.map(pid => ({ pid, name: nm(pid), color: P[pid].color, cls: P[pid].cls, place: P[pid].place, kills: P[pid].kills, ukills: P[pid].ukills, castles: P[pid].castles,
-    points: Math.round(((PTS[P[pid].place - 1] || 0) + P[pid].kills + 2 * P[pid].castles) * W8) + (treach[pid] || 0) * TREACHERY_PTS, ...(treach[pid] ? { treachery: treach[pid] } : {}), fellAt: P[pid].elimT, gold: Math.round(P[pid].gold) })).sort((a, b) => a.place - b.place);
+    points: Math.round(((PTS[P[pid].place - 1] || 0) + P[pid].kills + castlePts(FV) * P[pid].castles) * W8) + (treach[pid] || 0) * TREACHERY_PTS, ...(treach[pid] ? { treachery: treach[pid] } : {}), fellAt: P[pid].elimT, gold: Math.round(P[pid].gold) })).sort((a, b) => a.place - b.place);
   const invest = (type, lvl) => { const c = UNITS[type].cost; let g = c; for (let l = 1; l < lvl; l++) g += Math.round(c * .5 * l); return g; };
   const tel = { duration: Math.min(t, TMAX),
     players: order.map(pid => ({ pid, name: nm(pid), cls: P[pid].cls, level: P[pid].level || 1, place: P[pid].place, points: results.find(r => r.pid === pid).points, elimT: P[pid].elimT, trapDmg: Math.round(P[pid].trapDmg || 0) })),
