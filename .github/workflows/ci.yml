@@ -1,31 +1,27 @@
 name: CI
 
+# Runs on pull requests only. A merge to main is not tested a second time here: the Deploy workflow
+# runs lint, the tests and the rules tests before it ships, so this saves Actions minutes.
 on:
-  push:
-    branches: [main]
   pull_request:
 
 permissions:
   contents: read
 
 # A new push to a pull request cancels that pull request's older, now-pointless run.
-# Runs on main are never cancelled.
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: true
 
 jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    strategy:
-      matrix:
-        node: [20, 22]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node }}
+          node-version: 22
           cache: npm
       - run: npm ci
       - run: npm run lint
