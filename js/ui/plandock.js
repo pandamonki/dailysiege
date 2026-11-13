@@ -24,10 +24,10 @@ function planSrc(p) {
     const r = RIVALS.find(x => x.id === p.id); if (!r) return null;
     const e = p.u != null ? RARMY[p.u] : null;
     if (e && e.champ) { // a rival's hero: only its class is known, so show the class kit without ranks
-      const cl = (e.key || "").replace("c-", "") || r.cls, c = CLASSES[cl]; if (!c) return null;
-      const v3 = heroV3Now(), b = v3 ? CHAMP_V3[cl] : CHAMP[cl], L = Math.max(1, r.lvl || DAY), seen = r.seen || {};
+      const h = rivalHeroData(r), cl = h ? h.cls : (e.key || "").replace("c-", "") || r.cls, c = CLASSES[cl]; if (!c) return null;
+      const v3 = heroV3Now(), b = v3 ? CHAMP_V3[cl] : CHAMP[cl], L = h ? h.level : Math.max(1, r.lvl || DAY), rk = h ? h.ranks : { a1: 1, a2: 1, a3: 1, ult: 1 }, tree = h && h.tree && v3 ? TREE_BKEY.map(k => (h.tree[k] || []).slice()) : null;
       return { m: { kind: "champ", key: "c-" + cl, cls: cl, lvl: L, maxhp: Math.round(b.hp * (v3 ? hpLvV3(L) : 1 + .08 * (L - 1))), hp: Math.round(b.hp * (v3 ? hpLvV3(L) : 1 + .08 * (L - 1))), atk: Math.round(b.atk * (v3 ? atkLvV3(L) : 1 + .06 * (L - 1))), atype: CLASS_TYPES[cl][0], armour: CLASS_TYPES[cl][1], armor: b.armor, as: b.as, range: b.range, spd: b.spd, evade: 0,
-        tree: null, ranks: { a1: 1, a2: 1, a3: 1, ult: 1 }, items: [], gear: seen.gear || {} }, color: r.color, who: r.name, title: c.name, role: "Rival hero", ranks: { a1: 1, a2: 1, a3: 1, ult: 1 }, cd: none, hideRanks: true, rival: true };
+        tree, ranks: rk, items: h ? h.items.filter(k => ITEMS[k]) : [], gear: h ? h.gear : {} }, color: r.color, who: r.name, title: c.name, role: "Rival hero", ranks: rk, cd: none, hideRanks: !h, scouted: !!h, rival: true };
     }
     if (e) { const b = UNITS[e.key]; if (!b) return null; const L = e.lvl || 1, sim = UNIT_SIM[e.key] || {}, ty = UNIT_TYPES[e.key] || [], mul = 1 + UNIT_LVL_GAIN * (L - 1);
       return { m: { kind: "unit", key: e.key, lvl: L, maxhp: Math.round(b.hp * mul), hp: Math.round(b.hp * mul) * (e.hp ?? 1), atk: Math.round(b.atk * mul), atype: ty[0], armour: ty[1], armor: sim.armor || 0, as: sim.as || 1, range: sim.range || 1.1, spd: sim.spd || 1.4 }, color: r.color, who: r.name, title: b.name, role: `${r.name}'s soldier · Lv${L}`, ranks: {}, cd: none, rival: true }; }
@@ -43,8 +43,10 @@ function planSrc(p) {
 // quick buttons for the picked thing: [act, v, k, icon, label, disabled, hint]
 function planActions(p, src) {
   const lk = S.locked || (isLive() && LIVE.readOnly), A4 = (act, v, k, ic, lb, dd, hint) => [act, v, k, ic, lb, !!dd, hint || lb];
-  if (src.rival) return [A4("open", "rival", p.id, UIIMG("allies"), "Details", false, "What you know about this lord")];
-  if (p.t === "champ") return [A4("openhero", null, null, UIIMG("hero_" + S.cls), "Hero", false, "Skills, items and gear"), A4("open", "uorder", "champ", UIIMG("orders"), "Orders", false, "War orders for your hero")];
+  if (src.rival) { const det = A4("open", "rival", p.id, UIIMG("allies"), "Details", false, "What you know about this lord");
+    if (src.m.kind !== "champ") return [det]; const ok = !!src.scouted, no = "You haven't seen this hero fight yet";
+    return [A4("rhero", p.id, "abilities", UIIMG("ultimate"), "Abilities", !ok, ok ? "Its skills, from yesterday's battle" : no), A4("rhero", p.id, "items", UIIMG("armoury"), "Items", !ok, ok ? "Its items and gear, from yesterday's battle" : no), det]; }
+  if (p.t === "champ") { const fp = freePts(); return [A4("openhero", "abilities", null, UIIMG("ultimate"), `Abilities${fp ? `<sup class="dot">${fp}</sup>` : ""}`, false, fp ? `Skills (${fp} point${fp === 1 ? "" : "s"} to spend)` : "Skills"), A4("openhero", "items", null, UIIMG("armoury"), "Items", false, "Items and gear"), A4("move", "champ", null, "✥", "Move", lk, "Move your hero to another tile"), A4("open", "uorder", "champ", UIIMG("orders"), "Orders", false, "War orders for your hero")]; }
   if (p.t === "unit") { const u = findUnit(p.id), maxed = u.lvl >= 3, tier = ctNow() < UNIT_LVL_TIER[u.lvl], gold = !maxed && avail() < upgradeCost(u);
     return [A4("up", p.id, null, "⬆", "Train", lk || maxed || tier || gold, maxed ? "Fully trained" : tier ? `Needs a ${tierName(UNIT_LVL_TIER[u.lvl])}` : `Train to level ${u.lvl + 1} for ${upgradeCost(u)} gold`), A4("move", p.id, null, "✥", "Move", lk, "Move to another tile"), A4("open", "uorder", p.id, UIIMG("orders"), "Orders", false, "War orders"), A4("bench", p.id, null, "⌂", "Barracks", lk, "Send back to the barracks")]; }
   if (p.t === "castle") return [A4("opencastle", "keep", null, UIIMG("base"), "Base", false, "Build and upgrade"), A4("opencastle", "recruit", null, UIIMG("army"), "Army", false, "Recruit and train")];
