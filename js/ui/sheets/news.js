@@ -14,6 +14,7 @@ const RELEASES = [
     ["🎲", "Fair ties", "When two castles are equally near, or end on equal health, a fair draw decides instead of sign-up order."],
     ["⚔", "Heroes keep fighting", "Retreating heroes return at half health, and a castle under attack only calls home a hero that is nearby."],
     ["🏹", "Steadier archers and mages", "They only step back while they are actually being hit."],
+    ["☄", "Heroes besiege castles", "Area skills like Fireball, Blizzard, Chain Lightning and Arrow Volley now hit castles, Meteor hits far harder, and magic breaks stone better than blades or arrows."],
     ["🗡", "Braver rogues", "Rogues fight through hits and only slip away when outnumbered 3 to 1."],
     ["🌲", "A fresh look", "Pixel-art walls and battleground, the original grass, and a forest round the edge of the map."],
     ["✥", "Move, don't drag", "Units are moved with the Move button, Train opens the training page, and items on the hero screen show their details."],

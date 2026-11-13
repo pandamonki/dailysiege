@@ -29,17 +29,22 @@ const DAY_WEIGHT_PICK = { 5: 1.5, 6: 1.5, 7: 1.5 };
 const PICK_ROLES = { "@weakcastle": "Weakest castle", "@leader": "Board leader", "@above": "Lord just above me", "@nearcastle": "Nearest to my castle", "@neararmy": "Nearest to my army" };
 // Under pick-your-targets an army also attacks any rival castle it passes on the way, within this many tiles.
 const PASSING_CASTLE = 2.5;
-// Also from PICK_V1_FROM, heroes keep fighting: an ordered retreat ends at 50% health (was 75%); "my castle is under attack" only calls the hero
-// home when it is within RECALL_R tiles; archers and mages only step back while they are actually being hit (a mage for at most 1s, then at least 2s of casting); rogues only slip away when
-// outnumbered 3 to 1 close by and taking damage.
-const RECALL_R = 6, RETREAT_END_V2 = .5;
+// Balance V4 (battles fought on or after BAL_V4_FROM; earlier saved battles replay as fought):
+//   - heroes keep fighting: an ordered retreat ends at 50% health (was 75%); "my castle is under attack" only calls the hero home when it is
+//     within RECALL_R tiles; archers and mages only step back while they are actually being hit (a mage for at most 1s, then at least 2s of
+//     casting); rogues only slip away when outnumbered 3 to 1 close by and taking damage
+//   - destructive hero skills hit castles too (SIEGE_SKILLS), and can be cast at a castle when no soldiers are near; Meteor Strike hits a castle
+//     for METEOR_CASTLE; Rain of Feathered Death hits a castle at half strength (it lands all 14 waves on something that cannot move)
+//   - magic does MAGIC_VS_FORT against fortified armour (castles and walls), more than blades and arrows
+let BAL_V4_FROM = "2026-11-16"; const balV4For = d => String(d) >= BAL_V4_FROM;
+const RECALL_R = 6, RETREAT_END_V2 = .5, METEOR_CASTLE = 700, MAGIC_VS_FORT = .6;
 const fairTie = (seed, a, b) => hash(seed, botSeed(String(a)) * 7919 + botSeed(String(b)), 17);
 const BLOC_MAX = 3, TREACHERY_PTS = 3, TREACHERY_LOOT = .25, DAY_WEIGHT = { 5: 1.5, 6: 1.5, 7: 2 };
 // A lord whose castle falls keeps their hero and soldiers on the field: they fight on to the end of the battle, but can no longer fall back, heal at the castle, teleport home or respawn. Placing is still decided by when the castle fell.
 const ORPHAN_ARMIES = true;
 const dayWeight = (v2, dayNo) => (v2 && DAY_WEIGHT[dayNo]) || 1;
 function runBattle(plans, seed, opts = {}) {
-  const BV = !!opts.balV2, V3 = !!opts.balV3, FV = !!opts.fairV1 || !!opts.pickV1, PV = !!opts.pickV1, HV3 = !!opts.heroV3, maxLvl = HV3 ? MAX_HERO_LVL_V3 : MAX_HERO_LVL, hpLvX = HV3 ? hpLvV3 : hpLv, atkLvX = HV3 ? atkLvV3 : atkLv, OA = !!opts.balV2 && ORPHAN_ARMIES, UV = !!opts.ultV2, UD = UV ? .75 : 1, UR = rk => UV ? [.7, .85, 1][Math.min(3, Math.max(1, rk || 1)) - 1] : 1;
+  const BV = !!opts.balV2, V3 = !!opts.balV3, FV = !!opts.fairV1 || !!opts.pickV1, PV = !!opts.pickV1, V4 = !!opts.balV4, HV3 = !!opts.heroV3, maxLvl = HV3 ? MAX_HERO_LVL_V3 : MAX_HERO_LVL, hpLvX = HV3 ? hpLvV3 : hpLv, atkLvX = HV3 ? atkLvV3 : atkLv, OA = !!opts.balV2 && ORPHAN_ARMIES, UV = !!opts.ultV2, UD = UV ? .75 : 1, UR = rk => UV ? [.7, .85, 1][Math.min(3, Math.max(1, rk || 1)) - 1] : 1;
   const rng = mulberry(seed), DT = .1, fast = !!opts.fast, leaderPid = (plans.find(p => p.leader) || {}).pid;
   let curAb = null;
   const mePid = (plans.find(p => p.me) || plans[0]).pid, NN = opts.N || N;
@@ -88,7 +93,7 @@ function runBattle(plans, seed, opts = {}) {
   const abName = (e, k) => (k === "a4" ? "Vigour" : k === "ult" ? CLASSES[e.cls].ult.name : CLASSES[e.cls].abilities.find(a => a.key === k).name);
   const DOT_AB = { burn: "Fireball", bleed: "Cleave", fire: "Volley", poison: "Poison Blade", orb: "Orb of Venom" };
   // skill-tree heroes (battles with opts.heroV3): all their skills live in sim/heroTrees.js, which reaches the battle through these hooks
-  const kit = HV3 ? makeTreeKit({ ents, DT, d, fxv, setFx, deal, heal, enemiesNear, friendsNear, minBy, ev, aoe, shot, slash, txt, add, pending, walls, traps, P, order, rng, NN, allied, hostile, log,
+  const kit = HV3 ? makeTreeKit({ v4: V4, ents, DT, d, fxv, setFx, deal, heal, enemiesNear, friendsNear, minBy, ev, aoe, shot, slash, txt, add, pending, walls, traps, P, order, rng, NN, allied, hostile, log,
     t: () => t, tickN: n => tick % n === 0, tickNo: () => tick, getAb: () => curAb, setAb: v => { curAb = v; }, abRec, atkEv, vis, fighting, kill: (e, s) => kill(e, s), cd: cdNote, blink: (e, x, y) => blink(e, x, y), wallAt: (e, x, y) => wallAt(e, x, y), addDot: (a, b, c, d2, k) => addDot(a, b, c, d2, k),
     poss: pid => poss(pid), isBounty: pid => !!RANKS[pid] && RANKS[pid] <= 3, onUlt: (e, name) => { P[e.pid].ultCast = true; anyUlt = true; if (!hl.some(h => h.kind === "ult" && h.pid === e.pid && h.t === t)) H({ kind: "ult", ab: name, gen: 1, pid: e.pid, x: e.x, y: e.y, score: 50 }); } }) : null;
   // one soldier of a lord's, from a plan piece: used for the army at the start and for reinforcement waves
@@ -258,7 +263,7 @@ function runBattle(plans, seed, opts = {}) {
   const wallAt = (e, x, y) => { for (const w of walls) { if (w.hp <= 0 || !hostile(e.pid, w.pid)) continue; const lx = w.dir === "v" ? .3 : .72, ly = w.dir === "v" ? .72 : .3; if (Math.abs(x - w.x0 - .5) < lx && Math.abs(y - w.y0 - .5) < ly) return w; } return null; };
   const nearestWall = e => minBy(walls.filter(w => w.hp > 0 && hostile(e.pid, w.pid) && hyp(w.x0 + .5 - e.x, w.y0 + .5 - e.y) <= 2), w => hyp(w.x0 + .5 - e.x, w.y0 + .5 - e.y));
   function hitWall(e, w) {
-    const wx = w.x0 + .5, wy = w.y0 + .5; w.hp -= e.atk * (1 + fxv(e, "atkbuf")) * TYPE_TABLE[e.atype || "blade"].fortified * (e.key === "raider" ? 1.4 : 1) * (HV3 ? kit.wallMul(e) : 1);
+    const wx = w.x0 + .5, wy = w.y0 + .5; w.hp -= e.atk * (1 + fxv(e, "atkbuf")) * (V4 && e.atype === "magic" ? MAGIC_VS_FORT : TYPE_TABLE[e.atype || "blade"].fortified) * (e.key === "raider" ? 1.4 : 1) * (HV3 ? kit.wallMul(e) : 1);
     ev({ ty: "slash", x: wx, y: wy, c: "#d9c9a0" });
     if (w.hp <= 0) { w.hp = 0; aoe(wx, wy, .9, "#a08050", .6); }
   }
@@ -294,7 +299,7 @@ function runBattle(plans, seed, opts = {}) {
     }
     if (t >= SUDDEN) m *= 1.25;
     // attack type against armour type (the only matchup rule)
-    m *= TYPE_TABLE[o.atype || (src && src.atype) || "pure"][tgt.armour || "medium"];
+    { const at = o.atype || (src && src.atype) || "pure", ar = tgt.armour || "medium"; m *= V4 && at === "magic" && ar === "fortified" ? MAGIC_VS_FORT : TYPE_TABLE[at][ar]; }
     if (src && (src.kind === "unit" || src.kind === "summon") && tgt.kind === "champ") m *= HERO_GUARD;
     // the Rogue's one class trait: finishing blows
     if (src && src.cls === "rogue" && tgt.kind !== "castle" && !o.noFinish && tgt.hp / tgt.maxhp < FINISH_AT) m *= FINISH_BONUS;
@@ -689,7 +694,7 @@ function runBattle(plans, seed, opts = {}) {
         }
         if (!ok) return;
         if (repeat && (p.retreat || t - p.retreatT < 10)) return;
-        if (repeat && PV && r.if === "My castle is under attack" && !(live(p.champ) && d(p.champ, p.castle) <= RECALL_R)) return; // too far away to help: keep fighting
+        if (repeat && V4 && r.if === "My castle is under attack" && !(live(p.champ) && d(p.champ, p.castle) <= RECALL_R)) return; // too far away to help: keep fighting
         p.fired.add(i);
         switch (r.then) {
           case "Retreat hero to castle": p.retreat = true; p.retreatT = t; break;
@@ -766,7 +771,7 @@ function runBattle(plans, seed, opts = {}) {
     if (e.kind === "champ" && p.retreat) {
       moveToward(e, p.castle.x, p.castle.y - .8, .3);
       if (d(e, p.castle) < 1.5) heal(e, e.maxhp * .04 * DT, true);
-      if (e.hp / e.maxhp > (PV ? RETREAT_END_V2 : .75)) p.retreat = false;
+      if (e.hp / e.maxhp > (V4 ? RETREAT_END_V2 : .75)) p.retreat = false;
       if (e.kind === "champ") tryAbilities(e);
       return;
     }
@@ -801,10 +806,10 @@ function runBattle(plans, seed, opts = {}) {
     if (e.kind === "champ") {
       const near = r => minBy(enemiesNear(e, e.x, e.y, r).filter(x => x.kind !== "totem"), x => d(x, e));
       if (e.cls === "mage") { const th = near(2.2);
-        if (PV) { if (th && th.range < 2.5 && t - e.hitT < .5 && !(e.fleeUntil > t) && (e.fleeCd || 0) <= t) { e.fleeUntil = t + 1; e.fleeCd = t + 3; } } // one short step back (1s), then at least 2s of casting before the next
+        if (V4) { if (th && th.range < 2.5 && t - e.hitT < .5 && !(e.fleeUntil > t) && (e.fleeCd || 0) <= t) { e.fleeUntil = t + 1; e.fleeCd = t + 3; } } // one short step back (1s), then at least 2s of casting before the next
         else if (th && th.range < 2.5 && (t - e.hitT < 1.5 || d(th, e) < 1.4)) e.fleeUntil = Math.max(e.fleeUntil || 0, t + .8); }
       if (e.cls === "rogue") { const crowd = enemiesNear(e, e.x, e.y, 2).length; const going = live(e.tgt) && e.tgt.hp / e.tgt.maxhp < FINISH_AT;
-        if (PV) { const mates = Math.max(1, friendsNear(e.pid, e.x, e.y, 2).filter(o => o.kind !== "totem").length); if (!going && t - e.hitT < 1 && crowd >= 3 * mates) e.fleeUntil = t + 1; } // only when outnumbered 3 to 1 and being hit
+        if (V4) { const mates = Math.max(1, friendsNear(e.pid, e.x, e.y, 2).filter(o => o.kind !== "totem").length); if (!going && t - e.hitT < 1 && crowd >= 3 * mates) e.fleeUntil = t + 1; } // only when outnumbered 3 to 1 and being hit
         else if ((e.hp / e.maxhp < .45 && crowd && !going) || crowd >= 4 || ((e.hits || 0) >= 5 && !going)) { e.fleeUntil = t + 1; e.hits = 0; } }
       if (e.fleeUntil > t) {
         const th = near(5);
@@ -851,7 +856,7 @@ function runBattle(plans, seed, opts = {}) {
       const dealt = HV3 && e.tr ? kit.basic(e, o) : deal(e, o, e.atk); if (e.itemCrit) e.icm = 0;
       if (e.splash && live(o)) enemiesNear(e, o.x, o.y, 1.3).filter(x => x !== o).forEach(x => deal(e, x, e.atk * e.splash, { aoe: 1 }));
       if (e.cls === "rogue") e.hits = (e.hits || 0) + 1;
-      if (e.cls === "archer" && (!PV || t - e.hitT < 1)) { const th = minBy(enemiesNear(e, e.x, e.y, 2.6).filter(x => x.range < 2.5), x => d(x, e)); if (th) e.fleeUntil = t + .6; } // from PICK_V1 only while being hit
+      if (e.cls === "archer" && (!V4 || t - e.hitT < 1)) { const th = minBy(enemiesNear(e, e.x, e.y, 2.6).filter(x => x.range < 2.5), x => d(x, e)); if (th) e.fleeUntil = t + .6; } // from BAL_V4 only while being hit
       if (dealt && e.itemSet && e.itemSet.size && live(o)) { if (e.itemSet.has("frostdagger")) setFx(o, "slow", 1.5, .3); if (e.itemSet.has("venomorb")) addDot(o, e, 7, 3, "orb");
         if (e.itemSet.has("corruptorb")) setFx(o, "vuln", 3, .15);
         if (e.itemSet.has("fireorb")) { const sp = enemiesNear(e, o.x, o.y, 1.3).filter(x => x !== o); if (sp.length) aoe(o.x, o.y, 1.3, "#ff7a2a", .35); sp.forEach(x => deal(e, x, dealt * .35, { aoe: 1, ab: "Orb of Fire" })); } }

@@ -176,6 +176,9 @@ const PATCHES = [
     "Heroes keep fighting: a hero told to retreat comes back at 50% health (was 75%), and \"my castle is under attack\" only calls your hero home if it is within 6 tiles.",
     "Archers and mages only step back while they are actually being hit, not just because a melee enemy is near. A mage steps back for at most a second, then casts for at least two.",
     "Rogues take hits and keep attacking. They only slip away when outnumbered 3 to 1 close by and taking damage.",
+    "Hero skills that blast an area now hit castles too: Executioner's Whirlwind, Chain Lightning, Thunderclap, Chrono-Storm, Fireball, Blizzard, Arrow Volley and Rain of Feathered Death (half strength on a castle). With no soldiers about, they can be aimed at a castle in range. Spirit Wolves can be called at a castle.",
+    "Meteor Strike hits a castle much harder (700 before armour, was 400).",
+    "Magic now does 60% against fortified castles and walls (was 35%), more than blades (50%) and arrows (35%). Battle Mages, mage and shaman heroes and healers all hit castles harder.",
     "New lords start with no orders, so your stance alone decides when your army falls back to heal. Any order you add still takes priority over the stance.",
   ], changes: [
     "Pick your targets: each day your attack list starts empty and you must pick one to three targets before you seal. A target can be a lord, or a role worked out during the battle: weakest castle, board leader, the lord just above me, nearest to my castle, or nearest to my army.",
