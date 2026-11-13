@@ -26,7 +26,7 @@ function pxShield(P, cx, cy, big) { // a small kite shield with a cross
 function pxStar(P, cx, cy, r, c1, c2) { for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4, L = k % 2 ? r * .62 : r; P.line(cx + Math.cos(a) * 2, cy + Math.sin(a) * 2, cx + Math.cos(a) * L, cy + Math.sin(a) * L, k % 2 ? c2 : c1); } P.rect(cx - 1, cy - 1, 3, 3, "#fff"); }
 function pxFlame(P, bx, by, h, f, seed, grow) {
   h = Math.round(h * grow); if (h < 2) return;
-  for (let r = 0; r < h; r++) { const t = r / h, w = Math.max(1, Math.round(4 * Math.pow(1 - t, .7)) + (r < 3 ? 1 : 0)), sway = Math.round(Math.sin(f * 1.3 + seed) * t * 2.2);
+  for (let r = 0; r < h; r++) { const t = r / h, w = Math.max(1, Math.round(5 * Math.pow(1 - t, .75)) + (r < 3 ? 1 : 0)), sway = Math.round(Math.sin(f * 1.3 + seed) * t * 2.2);
     const col = t < .3 ? "#ffd34d" : t < .6 ? "#ff8a2a" : "#d9381e"; P.rect(bx + sway - (w >> 1), by - r, w, 1, col); if (w >= 3 && t < .3) P.rect(bx + sway, by - r, 1, 1, "#fff3b0"); }
 }
 const pxHash = (a, b) => { let h = (a * 374761393 + b * 668265263) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
@@ -39,7 +39,7 @@ PIXFX.v3_warrior_b1_t2 = { dur: .7, n: 7,
     const t = f / (n - 1), rad = Math.round(R * (.25 + .75 * Math.min(1, t * 1.2)));
     if (f < 4) for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4 + .2; P.line(Math.cos(a) * (5 + f * 3), Math.sin(a) * (5 + f * 3) * .72, Math.cos(a) * (10 + f * 4), Math.sin(a) * (10 + f * 4) * .72, "#ffe29a"); }
     P.ell(rad, i => (i + f * 2) % 5 < (f < 5 ? 3 : 2) ? (f < 3 ? "#fff3c0" : "#f2a63c") : null);
-    if (f >= 2 && f < n - 1) P.ell(Math.max(4, rad - 4), i => (i + f) % 6 < 2 ? "#a8591a" : null);
+    if (f >= 2 && f < n - 1) P.ell(Math.max(4, rad - 4), i => i % 6 < 2 ? "#a8591a" : null);
     if (f >= 1 && f <= 5) { const by = -(f < 3 ? f * 2 : 5) - 22; P.rect(-3, by - 1, 7, 12, PXD); P.rect(-1, by, 3, 8, "#e0443a"); P.rect(-1, by + 9, 3, 2, "#e0443a"); P.rect(0, by + 1, 1, 5, "#ff9a8a"); }
   } };
 // Shield Bash: the shield slams in, then a star of impact and flying chips.
@@ -65,24 +65,24 @@ PIXFX.v3_warrior_b1_t4 = { dur: .9, n: 9,
   } };
 // Executioner's Whirlwind: two blades spin round the hero, trailing a crescent.
 PIXFX.v3_warrior_b2_t2 = { dur: .8, n: 8,
-  box: R => { const w = 2 * R + 12, h = Math.round(R * 1.44) + 14; return [w, h, w / 2, h / 2]; },
+  box: R => { const w = 2 * R + 14, h = Math.round(R * 1.44) + 14; return [w, h, w / 2, h / 2]; },
   draw(P, f, n, R) {
-    const Rr = Math.round(R * (f >= n - 1 ? .75 : 1)), head = f * 1.1 - .6, span = 2.3, N = Math.round(span * Rr * .9);
+    const Rr = Math.round(Math.min(R, 22) * (f >= n - 1 ? .8 : 1)), head = f * 1.2 - .6, span = 2.2, N = Math.round(span * Rr * 1.2);
     for (let b = 0; b < 2; b++) for (let k = 0; k <= N; k++) { const u = k / N, a = head + b * Math.PI - u * span; if (f >= n - 1 && u < .5) continue;
-      const x = Math.cos(a) * Rr, y = Math.sin(a) * Rr * .72, c = u < .08 ? "#ffffff" : u < .3 ? "#d9d9e0" : u < .6 ? "#8fa0b8" : "#4f5f78";
-      P.px(x, y, c); if (u < .45) P.px(x * .93, y * .93, u < .15 ? "#d9d9e0" : "#8fa0b8"); }
-    for (let b = 0; b < 2; b++) { const a = head + b * Math.PI; P.rect(Math.round(Math.cos(a) * Rr) - 1, Math.round(Math.sin(a) * Rr * .72) - 1, 3, 3, "#ffffff"); }
+      const wd = u < .15 ? 3 : u < .5 ? 2 : 1, x = Math.cos(a) * Rr, y = Math.sin(a) * Rr * .72, c = u < .1 ? "#ffffff" : u < .3 ? "#e4e8f0" : u < .6 ? "#a9b8d0" : "#6a7c98";
+      for (let t = 0; t < wd; t++) P.px(x * (1 - t * .09), y * (1 - t * .09), t ? "#8fa0b8" : c); }
+    for (let b = 0; b < 2; b++) { const a = head + b * Math.PI, x = Math.round(Math.cos(a) * Rr), y = Math.round(Math.sin(a) * Rr * .72); P.rect(x - 1, y - 1, 3, 3, "#ffffff"); P.px(x + Math.round(Math.cos(a + 1.5) * 3), y + Math.round(Math.sin(a + 1.5) * 3), "#ffe29a"); }
   } };
 // Avatar of War: flames burn around the hero, embers rise, rage chevrons pop up over the head.
 PIXFX.v3_warrior_b2_t4 = { dur: .9, n: 9,
-  box: () => [60, 64, 30, 46],
+  box: () => [60, 66, 30, 46],
   draw(P, f, n) {
     const grow = f < 3 ? (f + 1) / 3 : f >= n - 2 ? .55 : 1;
     if (f < 2) P.ell(10 + f * 9, i => i % 3 < 2 ? (f ? "#d9381e" : "#fff3c0") : null);
-    const fl = []; for (let k = 0; k < 7; k++) { const a = k * Math.PI * 2 / 7 + .4; fl.push([Math.cos(a) * 17, Math.sin(a) * 12 + 6, k]); }
-    fl.sort((a, b) => a[1] - b[1]).forEach(([x, y, k]) => pxFlame(P, Math.round(x), Math.round(y), 13 + Math.floor(pxHash(k, f) * 5), f, k * 2.1, grow));
-    for (let k = 0; k < 7; k++) { const x = (pxHash(k, 7) - .5) * 30, y = 4 - ((f * 3 + pxHash(k, 9) * 26) % 28); if (grow > .6) P.px(x, y, k % 2 ? "#ffb43a" : "#ffe29a"); }
-    if (f <= 4) { const by = -24 - f; for (let r = 0; r < 2; r++) { const y = by - r * 5; for (let i = 0; i < 4; i++) { P.px(-3 + i, y + 3 - i, PXD); P.px(3 - i, y + 3 - i, PXD); } for (let i = 0; i < 3; i++) { P.px(-2 + i, y + 3 - i, r ? "#ffd34d" : "#e0443a"); P.px(2 - i, y + 3 - i, r ? "#ffd34d" : "#e0443a"); } } }
+    const fl = []; for (let k = 0; k < 9; k++) { const a = k * Math.PI * 2 / 9 + .4; fl.push([Math.cos(a) * 11, Math.sin(a) * 8 + 7, k]); }
+    fl.sort((a, b) => a[1] - b[1]).forEach(([x, y, k]) => pxFlame(P, Math.round(x), Math.round(y), 16 + Math.floor(pxHash(k, f) * 6), f, k * 2.1, grow));
+    for (let k = 0; k < 6; k++) { const x = (pxHash(k, 7) - .5) * 26, y = 2 - ((f * 3 + pxHash(k, 9) * 26) % 30); if (grow > .6) P.rect(Math.round(x), Math.round(y), 1, 1, k % 2 ? "#ffb43a" : "#ffe29a"); }
+    if (f <= 4) { const by = -26 - f; for (let r = 0; r < 2; r++) { const y = by - r * 5; for (let i = 0; i < 4; i++) { P.px(-3 + i, y + 3 - i, PXD); P.px(3 - i, y + 3 - i, PXD); } for (let i = 0; i < 3; i++) { P.px(-2 + i, y + 3 - i, r ? "#ffd34d" : "#e0443a"); P.px(2 - i, y + 3 - i, r ? "#ffd34d" : "#e0443a"); } } }
   } };
 // Command Banner: a banner drops in and is planted, dust puffs, the cloth waves, buff chevrons rise.
 PIXFX.v3_warrior_b3_t2 = { dur: 1.0, n: 10,
@@ -108,10 +108,19 @@ PIXFX.v3_warrior_b3_t4 = { dur: .9, n: 9,
     for (let k = 0; k < 6; k++) { const x = -R + pxHash(k, 3) * 2 * R, y = (pxHash(k, 5) - .5) * 34 - ((f * 2 + k) % 6); if ((f + k) % 3) P.px(x, y, "#ffe29a"); }
   } };
 
+// A dark one-pixel edge round everything, so each effect stays readable on any ground (the classic pixel-art look)
+function pxOutline(cv) {
+  const g = cv.getContext("2d"), w = cv.width, h = cv.height, src = g.getImageData(0, 0, w, h), d = src.data, out = g.createImageData(w, h); out.data.set(d);
+  const A = (x, y) => x < 0 || y < 0 || x >= w || y >= h ? 0 : d[(y * w + x) * 4 + 3], L = (x, y) => { const i = (y * w + x) * 4; return d[i] + d[i + 1] + d[i + 2]; };
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { if (A(x, y)) continue;
+    const nb = [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]].filter(([a, b]) => A(a, b) > 200 && L(a, b) > 150); if (!nb.length) continue;
+    const i = (y * w + x) * 4; out.data[i] = 30; out.data[i + 1] = 20; out.data[i + 2] = 12; out.data[i + 3] = 210; }
+  g.putImageData(out, 0, 0);
+}
 function pxFrame(sp, d, f, R) {
   const key = sp + "|" + f + "|" + R; if (PXC[key]) return PXC[key];
   const [w, h, ax, ay] = d.box(R), cv = document.createElement("canvas"); cv.width = Math.ceil(w); cv.height = Math.ceil(h);
-  d.draw(pxPen(cv.getContext("2d"), Math.round(ax), Math.round(ay)), f, d.n, R); cv.ax = Math.round(ax); cv.ay = Math.round(ay);
+  d.draw(pxPen(cv.getContext("2d"), Math.round(ax), Math.round(ay)), f, d.n, R); if (!d.flat && f < d.n - 1) pxOutline(cv); cv.ax = Math.round(ax); cv.ay = Math.round(ay);
   return (PXC[key] = cv);
 }
 // Draw the effect for spell event e at age (seconds); x, y are in screen pixels
@@ -147,23 +156,25 @@ PIXFX.v3_mage_b2_t2 = { dur: .7, n: 7, box: R => { const w = 2 * R + 16; return 
   draw(P, f, n, R) {
     const t = Math.min(1, (f + 1) / 5), rad = Math.round(R * (.25 + .75 * t));
     if (f < 2) { for (let k = 0; k < 3; k++) { const a = k * Math.PI / 3; P.line(-Math.cos(a) * 5, -Math.sin(a) * 5, Math.cos(a) * 5, Math.sin(a) * 5, "#e8f8ff"); } P.px(0, 0, "#fff"); }
-    P.ell(rad, i => f < 6 && (i + f) % 4 < 2 ? (f < 3 ? "#ffffff" : "#8fd8ff") : null);
+    P.ell(rad, i => f < 6 && i % 4 < 2 ? (f < 3 ? "#ffffff" : "#8fd8ff") : null);
     for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4 + .2, d = f < 5 ? rad : R, x = Math.round(Math.cos(a) * d), y = Math.round(Math.sin(a) * d * .72);
       if (f < 5) pxDiamond(P, x, y - 2, 2, 4, "#8fd8ff", "#ffffff"); else P.px(x + (k % 3 - 1) * (f - 4), y + (f - 4) * 3, k % 2 ? "#ffffff" : "#8fd8ff"); }
   } };
 // Blizzard: snow and ice shards driving across the area, frost speckles on the ground, wind streaks.
-PIXFX.v3_mage_b2_t4 = { dur: 1.0, n: 9, box: R => { R = Math.min(R, 56); const w = 2 * R + 16; return [w, w * .72 + 50, w / 2, w * .36 + 40]; },
+PIXFX.v3_mage_b2_t4 = { dur: 1.0, n: 9, flat: true, box: R => { R = Math.min(R, 44); const w = 2 * R + 16; return [w, w * .72 + 50, w / 2, w * .36 + 40]; },
   draw(P, f, n, R) {
-    R = Math.min(R, 56); const ry = Math.round(R * .72);
-    P.ell(R, i => (i + f) % 6 < 2 && f < n - 1 ? "#8fd8ff" : null);
-    for (let k = 0; k < 40; k++) { const x = (pxHash(k, 1) - .5) * 2 * R * .9, y = (pxHash(k, 2) - .5) * 2 * ry * .9; if (Math.abs(x) / R + Math.abs(y) / ry < 1.2 && (f > 1 && pxHash(k, 3) < Math.min(1, f / 5))) P.px(x, y + 2, k % 3 ? "#cfeeff" : "#ffffff"); }
-    for (let k = 0; k < 16; k++) { const x0 = (pxHash(k, 4) - .5) * 2 * R, ph = (f * .35 + pxHash(k, 5)) % 1, y0 = -48 + ph * (48 + (pxHash(k, 6) - .5) * 2 * ry * .8), x = x0 - ph * 14; if (f === n - 1 && k % 2) continue;
-      if (k % 4 === 0) { pxSpot(P, x, y0, "#ffffff"); } else { P.line(x, y0, x - 4, y0 - 7, k % 2 ? "#cfeeff" : "#8fd8ff"); P.line(x + 1, y0, x - 3, y0 - 7, "#8fd8ff"); P.rect(x, y0, 2, 2, "#ffffff"); } }
+    R = Math.min(R, 44); const ry = Math.round(R * .72);
+    P.ell(R, i => f < n - 1 && i % 6 < 3 ? "#8fd8ff" : null);
+    for (let k = 0; k < 14; k++) { const x = (pxHash(k, 1) - .5) * 2 * R * .8, y = (pxHash(k, 2) - .5) * 2 * ry * .7; if (f > 1 && pxHash(k, 3) < Math.min(1, f / 5)) { P.rect(x - 1, y + 3, 3, 1, "#cfeeff"); P.rect(x, y + 2, 1, 3, "#ffffff"); } }
+    for (let k = 0; k < 11; k++) { const x0 = (pxHash(k, 4) - .5) * 2 * R * .9, ph = (f * .3 + pxHash(k, 5)) % 1, y0 = -44 + ph * (44 + (pxHash(k, 6) - .5) * 2 * ry * .7), x = Math.round(x0 - ph * 12), y = Math.round(y0); if (f === n - 1 && k % 2) continue;
+      if (k % 3 === 0) { P.rect(x - 1, y - 1, 3, 3, PXD); P.rect(x, y - 1, 1, 3, "#ffffff"); P.rect(x - 1, y, 3, 1, "#ffffff"); }
+      else { for (let i = 0; i < 6; i++) { P.rect(x - i * .6 - 1, y - i - 1, 3, 1, PXD); } for (let i = 0; i < 6; i++) P.px(x - i * .6, y - i, i < 2 ? "#ffffff" : i < 4 ? "#cfeeff" : "#8fd8ff"); } }
   } };
 // Blink & Disrupt: a column of light collapses, then a purple shock ring and sparks.
 PIXFX.v3_mage_b3_t2 = { dur: .5, n: 6, box: R => { const w = 2 * R + 16; return [w, w * .72 + 40, w / 2, w * .36 + 30]; },
   draw(P, f, n, R) {
-    if (f < 3) { const w = [6, 4, 1][f], h = 34 - f * 4; for (let y = 0; y < h; y++) P.rect(-w, -y, 2 * w + 1, 1, y % 5 === 0 ? "#ffffff" : y % 2 ? "#c9a0ff" : "#8e5fd8"); for (let k = 0; k < 6; k++) { const a = k * 1.05, d = 14 - f * 4; P.px(Math.cos(a) * d, Math.sin(a) * d * .7 - 6, "#e6d4ff"); } }
+    if (f < 3) { const w = [5, 3, 1][f], h = 32 - f * 5; for (let y = 0; y < h; y++) { const tw = Math.max(0, w - Math.floor(y / 14)); P.rect(-tw - 1, -y, 2 * tw + 3, 1, "#8e5fd8"); P.rect(-tw, -y, 2 * tw + 1, 1, y % 6 === 0 ? "#ffffff" : "#c9a0ff"); P.rect(0, -y, 1, 1, "#ffffff"); }
+      for (let k = 0; k < 6; k++) { const a = k * 1.05, d = 14 - f * 4; P.rect(Math.round(Math.cos(a) * d), Math.round(Math.sin(a) * d * .7 - 6), 2, 2, k % 2 ? "#e6d4ff" : "#8e5fd8"); } }
     if (f >= 2) { const rad = Math.round(R * (f - 1) / 4); P.ell(rad, i => i % 3 < 2 ? (f < 4 ? "#ffffff" : "#c9a0ff") : null); for (let k = 0; k < 6; k++) { const a = k * 1.05 + .4; P.rect(Math.round(Math.cos(a) * rad), Math.round(Math.sin(a) * rad * .72) - 2, 2, 2, k % 2 ? "#ffffff" : "#8e5fd8"); } }
   } };
 // Mana Shield: a hexagonal bubble flashes on and pulses with orbiting runes.
@@ -187,11 +198,12 @@ PIXFX.v3_mage_b3_t4 = { dur: 1.1, n: 10, box: R => { R = Math.min(R, 56); const 
 // ----- Archer -----
 function pxArrow(P, x, y, c) { P.rect(x, y, 1, 6, "#8a5a2b"); P.px(x, y + 6, "#e8e8f0"); P.px(x, y + 7, "#c0c4cc"); P.px(x - 1, y - 1, c); P.px(x + 1, y - 1, c); P.px(x, y, c); }
 // Arrow Volley: arrows thud into the ground around the target and stay standing for a moment.
-PIXFX.v3_archer_b1_t2 = { dur: .6, n: 6, box: R => { const w = 2 * R + 20; return [w, 70, w / 2, 56]; },
+PIXFX.v3_archer_b1_t2 = { dur: .6, n: 6, box: R => { const w = 2 * R + 24; return [w, 76, w / 2, 60]; },
   draw(P, f, n, R) {
-    for (let k = 0; k < 9; k++) { const x = Math.round((pxHash(k, 1) - .5) * 2 * R * .85), y = Math.round((pxHash(k, 2) - .5) * R * 1.0), land = Math.floor(pxHash(k, 3) * 3);
-      if (f < land) { const h = (land - f) * 14; P.line(x + 4, y - h - 8, x, y - h, "#cfc8a8"); P.px(x, y - h, "#ffffff"); }
-      else { if (f === land) { P.rect(x - 3, y, 2, 1, "#b8b0a0"); P.rect(x + 2, y, 2, 1, "#b8b0a0"); } if (f < n - 1 || k % 2) pxArrow(P, x, y - 6, "#e8e0b8"); } }
+    for (let k = 0; k < 7; k++) { const x = Math.round((pxHash(k, 1) - .5) * 2 * R * .8), y = Math.round((pxHash(k, 2) - .5) * R * .9), land = Math.floor(pxHash(k, 3) * 3);
+      if (f < land) { const h = (land - f) * 16; P.line(x + 5, y - h - 10, x, y - h, "#e8e0b8"); P.line(x + 6, y - h - 10, x + 1, y - h, "#b8b090"); P.rect(x - 1, y - h, 2, 2, "#ffffff"); }
+      else { if (f === land) { P.rect(x - 4, y, 3, 1, "#c8c0a8"); P.rect(x + 2, y, 3, 1, "#c8c0a8"); P.rect(x - 2, y + 1, 5, 1, "#a8a088"); }
+        if (f < n - 1 || k % 2) { P.rect(x, y - 11, 2, 11, "#8a5a2b"); P.rect(x, y - 11, 1, 11, "#c9955a"); P.rect(x - 1, y - 14, 4, 3, "#e0443a"); P.rect(x, y - 14, 2, 1, "#ff9a8a"); P.rect(x, y - 1, 2, 1, "#c0c4cc"); } } }
   } };
 // Spike Trap: iron spikes spring up out of the ground, glint, then sink away.
 PIXFX.v3_archer_b2_t2 = { dur: .6, n: 7, box: () => [48, 40, 24, 24],
@@ -202,11 +214,12 @@ PIXFX.v3_archer_b2_t2 = { dur: .6, n: 7, box: () => [48, 40, 24, 24],
     if (f >= 2 && f <= 4) for (let k = 0; k < 4; k++) P.rect(-12 + k * 8 + (f - 2) * (k % 2 ? 1 : -1), 6, 2, 1, "#b8b0a0");
   } };
 // Net Shot: a net is thrown over the target, weights hold the corners, then it fades.
-PIXFX.v3_archer_b2_t2b = { dur: .6, n: 7, box: () => [44, 50, 22, 34],
+PIXFX.v3_archer_b2_t2b = { dur: .6, n: 7, box: () => [52, 56, 26, 38],
   draw(P, f, n) {
-    const rx = [4, 7, 11, 11, 11, 11, 11][f], ry = Math.round(rx * .72), oy = f < 2 ? -22 + f * 12 : -2;
-    for (let y = -ry; y <= ry; y++) for (let x = -rx; x <= rx; x++) { if ((x / rx) ** 2 + (y / ry) ** 2 > 1) continue; if (f === n - 1 && (x + y) % 2) continue; const edge = (x / rx) ** 2 + (y / ry) ** 2 > .78; if (edge) P.px(x, y + oy, "#8a6a3a"); else if ((x + y) % 4 === 0 || (x - y) % 4 === 0) P.px(x, y + oy, "#d9bf86"); }
-    if (f >= 2 && f < n - 1) [[-rx, 0], [rx, 0], [0, -ry], [0, ry]].forEach(([x, y]) => { P.rect(x - 1, y + oy - 1, 3, 3, PXD); P.rect(x, y + oy, 1, 1, "#9a9aa8"); });
+    const rx = [4, 7, 11, 11, 11, 11, 11][f], ry = Math.round(rx * .7), oy = f < 2 ? -24 + f * 14 : -2;
+    for (let y = -ry; y <= ry; y++) for (let x = -rx; x <= rx; x++) { const e = (x / rx) ** 2 + (y / ry) ** 2; if (e > 1) continue; if (f === n - 1 && (x + y) % 2) continue;
+      if (e > .72) P.px(x, y + oy, e > .88 ? "#8a6a3a" : "#c9a46a"); else if (((x + 20) % 4 === 0 && (y + 20) % 2 === 0) || ((y + 20) % 4 === 0 && (x + 20) % 2 === 0) || (x + y + 40) % 5 === 0 || (x - y + 40) % 5 === 0) P.px(x, y + oy, "#d9bf86"); }
+    if (f >= 2 && f < n - 1) [[-rx, 1], [rx, 1], [-rx * .6, ry], [rx * .6, ry]].forEach(([x, y]) => { P.rect(Math.round(x) - 2, y + oy - 1, 5, 5, PXD); P.rect(Math.round(x) - 1, y + oy, 3, 3, "#9a9aa8"); P.px(Math.round(x) - 1, y + oy, "#d8d8e0"); });
   } };
 // Barricade & Minefield: sharpened stakes drive into the ground in an arc, mines scatter and blink.
 PIXFX.v3_archer_b2_t4 = { dur: .9, n: 9, box: R => { R = Math.min(R, 44); const w = 2 * R + 20; return [w, R * 1.44 + 40, w / 2, R * .72 + 28]; },
@@ -214,12 +227,12 @@ PIXFX.v3_archer_b2_t4 = { dur: .9, n: 9, box: R => { R = Math.min(R, 44); const 
     R = Math.min(R, 44);
     for (let k = 0; k < 7; k++) { const a = Math.PI * (.15 + .7 * k / 6), x = Math.round(Math.cos(a) * R * .7), y = Math.round(Math.sin(a) * R * .55), h = Math.min(10, Math.max(0, (f + 1 - k * .35) * 4)); if (h < 1 || (f === n - 1 && k % 2)) continue;
       P.rect(x - 2, y - h, 5, h + 1, PXD); P.rect(x - 1, y - h + 1, 3, h - 1, "#8a5a2b"); P.rect(x + 1, y - h + 1, 1, h - 1, "#5a3a1c"); P.rect(x, y - h - 1, 1, 1, "#d9bf86"); P.rect(x - 1, y - h, 3, 1, "#c9955a"); }
-    for (let k = 0; k < 6; k++) { if (f < 3 + (k % 3) || (f === n - 1 && k % 2)) continue; const a = k * 1.1 + 2.3, x = Math.round(Math.cos(a) * R * .55), y = Math.round(Math.sin(a) * R * .4) - 8; P.rect(x - 3, y - 1, 7, 4, PXD); P.rect(x - 2, y, 5, 2, "#6e6a76"); P.px(x, y, (f + k) % 3 ? "#e0443a" : "#ffb0a0"); }
+    for (let k = 0; k < 6; k++) { if (f < 3 + (k % 3) || (f === n - 1 && k % 2)) continue; const a = k * 1.1 + 2.3, x = Math.round(Math.cos(a) * R * .55), y = Math.round(Math.sin(a) * R * .4) - 8; P.rect(x - 4, y - 1, 9, 6, PXD); P.rect(x - 3, y, 7, 4, "#5e5a68"); P.rect(x - 2, y - 1, 5, 1, "#8a8698"); P.rect(x - 3, y + 3, 7, 1, "#3e3a48"); P.rect(x - 1, y + 1, 3, 2, (f + k) % 3 ? "#e0443a" : "#ffb0a0"); P.px(x - 4, y + 1, "#8a8698"); P.px(x + 4, y + 1, "#8a8698"); }
   } };
 // Headshot: a reticle locks on, a tracer streaks in, a pop of light at the impact.
 PIXFX.v3_archer_b3_t2 = { dur: .5, n: 6, box: () => [64, 64, 32, 36],
   draw(P, f) {
-    if (f < 3) { const r = [13, 10, 7][f], c = f === 2 ? "#ff5a4a" : "#ffd0c0"; P.ell(r, () => c, 0, Math.PI * 2, 1); [[-1, 0], [1, 0], [0, -1], [0, 1]].forEach(([dx, dy]) => P.line(dx * (r - 3), dy * (r - 3), dx * (r + 4), dy * (r + 4), c)); P.px(0, 0, c); }
+    if (f < 3) { const r = [13, 10, 7][f], c = f === 2 ? "#ff5a4a" : "#ffd0c0"; P.ell(r, () => c, 0, Math.PI * 2, 1); P.ell(r - 1, i => i % 2 ? c : null, 0, Math.PI * 2, 1); [[-1, 0], [1, 0], [0, -1], [0, 1]].forEach(([dx, dy]) => { P.line(dx * (r - 3), dy * (r - 3), dx * (r + 5), dy * (r + 5), c); P.line(dx * (r - 3) + dy, dy * (r - 3) + dx, dx * (r + 5) + dy, dy * (r + 5) + dx, c); }); P.rect(-1, -1, 2, 2, c); }
     if (f >= 2 && f <= 3) { P.line(-30, -26 + f * 2, -2, -1, "#ffffff"); P.line(-30, -25 + f * 2, -2, 0, "#ff8a6a"); }
     if (f === 3) pxStar(P, 0, 0, 9, "#ffffff", "#ff8a6a");
     if (f >= 4) for (let k = 0; k < 6; k++) { const a = k * 1.05, d = 5 + (f - 3) * 4; P.rect(Math.round(Math.cos(a) * d), Math.round(Math.sin(a) * d), 2, 2, k % 2 ? "#ffffff" : "#ff8a6a"); }
@@ -255,13 +268,13 @@ PIXFX.v3_shaman_b1_t2b = { dur: .7, n: 7, box: R => { const w = 2 * R + 14; retu
     if (f < 2) pxBolt(P, 2, -44, 0, 0, f, 3, "#ffffff", "#9fd0ff");
     const t = Math.min(1, (f + 1) / 4), rad = Math.round(R * t);
     for (let k = 0; k < 5; k++) { const a = k * 1.26 + .3, L = rad * .9; let x = 0, y = 0; for (let s = 1; s <= 5; s++) { const nx = Math.cos(a) * L * s / 5 + (pxHash(k, s) - .5) * 4, ny = Math.sin(a) * L * s / 5 * .72 + (pxHash(k, s + 9) - .5) * 2; if (f < n - 1 || s < 3) { P.line(x, y + 1, nx, ny + 1, "#3a2414"); P.line(x, y, nx, ny, f < 4 ? "#9fd0ff" : "#5a4028"); } x = nx; y = ny; } }
-    P.ell(rad, i => f < 6 && (i + f) % 4 < 3 ? (f < 3 ? "#ffffff" : "#cfe8ff") : null);
+    P.ell(rad, i => f < 6 && i % 4 < 3 ? (f < 3 ? "#ffffff" : "#cfe8ff") : null);
   } };
 // Chrono-Storm: a dark storm cloud rolls in over the area and forks of lightning strike the ground beneath it.
 PIXFX.v3_shaman_b1_t4 = { dur: 1.1, n: 10, box: R => { R = Math.min(R, 48); const w = 2 * R + 20; return [w, R * 1.44 + 74, w / 2, R * .72 + 62]; },
   draw(P, f, n, R) {
     R = Math.min(R, 48); const fade = f === n - 1 ? 2 : 1;
-    P.ell(R, i => f < n - 1 && (i + f) % 6 < 2 ? "#9fd0ff" : null);
+    P.ell(R, i => f < n - 1 && i % 6 < 2 ? "#9fd0ff" : null);
     const grow = Math.min(1, (f + 1) / 3); [[-14, 0, 9], [0, -3, 12], [14, 0, 9], [-6, 3, 7], [8, 3, 7]].forEach(([x, y, r], k) => pxBlob(P, Math.round(x * grow), -52 + y, Math.round(r * grow), ["#8a96b0", "#5e6a88", "#3e4866"], "#262c42", k));
     if (f >= 2 && f < n - 1) for (let k = 0; k < 3; k++) { if ((f + k) % 2) continue; const tx = (pxHash(k, f) - .5) * R * 1.4, ty = (pxHash(k, f + 20) - .5) * R * .9; pxBolt(P, tx * .3, -46, tx, ty, f, k * 7, "#ffffff", "#9fd0ff"); pxSpot(P, Math.round(tx), Math.round(ty), "#ffffff"); }
   } };
@@ -270,7 +283,7 @@ PIXFX.v3_shaman_b2_t1 = { dur: .9, n: 8, box: R => { R = Math.min(R, 40); const 
   draw(P, f, n, R) {
     R = Math.min(R, 40); const h = Math.min(14, (f + 1) * 5);
     pxTotem(P, 0, 4, h, "#8a5a2b", "#c9862f", "#7fe08a");
-    if (f >= 1 && f < n - 1) P.ell(Math.round(R * Math.min(1, f / 4)), i => (i + f * 2) % 6 < 2 ? "#7fe08a" : null);
+    if (f >= 1 && f < n - 1) P.ell(Math.round(R * Math.min(1, f / 4)), i => i % 6 < 2 ? "#7fe08a" : null);
     for (let k = 0; k < 7; k++) { if (f < 2 || (f === n - 1)) continue; const a = k * .9, x = Math.cos(a) * R * .7 * pxHash(k, 1), y = Math.sin(a) * R * .5 * pxHash(k, 1) - ((f * 3 + k * 4) % 20); pxSpot(P, Math.round(x), Math.round(y), k % 2 ? "#7fe08a" : "#d4ffd8"); }
   } };
 // Earthgrab Totem: roots burst out of the ground in a ring and twist.
@@ -280,13 +293,13 @@ PIXFX.v3_shaman_b2_t2 = { dur: .9, n: 8, box: R => { R = Math.min(R, 40); const 
     for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4 + .3, bx = Math.round(Math.cos(a) * R * .75), by = Math.round(Math.sin(a) * R * .55), h = Math.round(Math.min(14, Math.max(0, (f + 1 - (k % 3) * .4) * 4.5))); if (f === n - 1 && k % 2) continue;
       let x = bx, y = by; for (let s = 0; s < h; s++) { x = bx + Math.round(Math.sin(s * .5 + k + f * .5) * (s / h) * 3); y = by - s; P.rect(x - 2, y, 5, 1, PXD); } x = bx; for (let s = 0; s < h; s++) { x = bx + Math.round(Math.sin(s * .5 + k + f * .5) * (s / h) * 3); y = by - s; P.rect(x - 1, y, 3, 1, s % 3 ? "#7a5a2b" : "#9a7a3a"); } if (h > 6) P.px(x + 1, by - h, "#7fe08a");
       if (f <= 3) P.rect(bx - 3 + (k % 2) * 6, by + 1, 2, 2, "#6a4a2a"); }
-    P.ell(R, i => f < 6 && (i + f) % 8 < 1 ? "#6a4a2a" : null);
+    P.ell(R, i => f < 6 && i % 8 < 1 ? "#6a4a2a" : null);
   } };
 // Totem of the Titan: a tall gold-faced totem rises, a shock ring runs out, green motes pour upward.
 PIXFX.v3_shaman_b2_t4 = { dur: 1.0, n: 10, box: R => { R = Math.min(R, 48); const w = 2 * R + 14; return [w, R * 1.44 + 66, w / 2, R * .72 + 54]; },
   draw(P, f, n, R) {
     R = Math.min(R, 48); const h = Math.min(30, (f + 1) * 8);
-    if (f >= 1 && f < n - 1) P.ell(Math.round(R * Math.min(1, f / 4)), i => (i + f * 2) % 5 < 3 ? (f < 4 ? "#fff3c0" : "#7fe08a") : null);
+    if (f >= 1 && f < n - 1) P.ell(Math.round(R * Math.min(1, f / 4)), i => i % 5 < 3 ? (f < 4 ? "#fff3c0" : "#7fe08a") : null);
     pxTotem(P, 0, 6, h, "#7a4e2a", "#ffd34d", "#7fe08a"); if (f >= 3 && f < n - 1) P.rect(-6, 6 - h + 4, 13, 1, "#ffd34d");
     if (f >= 3 && f < n - 1) for (let k = 0; k < 8; k++) { const a = k * .8, x = Math.cos(a) * R * .6 * pxHash(k, 2), y = Math.sin(a) * R * .4 * pxHash(k, 2) - ((f * 3 + k * 5) % 30); pxSpot(P, Math.round(x), Math.round(y), k % 2 ? "#7fe08a" : "#ffe29a"); }
   } };
@@ -310,7 +323,7 @@ PIXFX.v3_shaman_b3_t2b = { dur: .7, n: 7, box: () => [52, 62, 26, 46],
   draw(P, f, n) {
     const cy = -20 - (f < 3 ? f : 3), rot = f * .45, r = f === 0 ? 5 : f === n - 1 ? 7 : 10;
     for (let t = 0; t < 2; t++) for (let k = 0; k < 3; k++) { const a0 = rot + t * Math.PI / 3 + k * 2 * Math.PI / 3, a1 = rot + t * Math.PI / 3 + (k + 1) * 2 * Math.PI / 3; P.line(Math.cos(a0) * r, cy + Math.sin(a0) * r, Math.cos(a1) * r, cy + Math.sin(a1) * r, t ? "#c9a0ff" : "#8e5fd8"); }
-    P.ell(r + 2, i => (i + f * 2) % 4 < 2 && f < n - 1 ? "#6e48b8" : null, 0, Math.PI * 2, 1); for (let k = 0; k < 6; k++) P.px(Math.cos(k * 1.05 + rot) * (r + 2), cy + Math.sin(k * 1.05 + rot) * (r + 2), "#ffffff");
+    P.ell(r + 2, i => i % 4 < 2 && f < n - 1 ? "#6e48b8" : null, 0, Math.PI * 2, 1); for (let k = 0; k < 6; k++) P.px(Math.cos(k * 1.05 + rot) * (r + 2), cy + Math.sin(k * 1.05 + rot) * (r + 2), "#ffffff");
     if (f >= 2) for (let k = 0; k < 6; k++) { const a = k * 1.05 + f, d = 6 + (k % 3) * 3; P.px(Math.cos(a) * d, -4 - ((f * 3 + k * 4) % 14) + Math.sin(a) * 2, k % 2 ? "#c9a0ff" : "#6e48b8"); }
   } };
 
@@ -342,10 +355,10 @@ PIXFX.v3_rogue_b2_t2 = { dur: .6, n: 7, box: R => { const w = 2 * R + 24; return
     if (f >= 4) for (let k = 0; k < 6; k++) P.px((pxHash(k, 1) - .5) * R * 1.6, (pxHash(k, 2) - .5) * R * 1.0 + 2, k % 2 ? "#7ad84a" : "#4a9a2a");
   } };
 // Deadly Cloud: a green poison cloud billows with rising bubbles and a drifting skull.
-PIXFX.v3_rogue_b2_t4 = { dur: 1.2, n: 10, box: R => { R = Math.min(R, 36); const w = 2 * R + 28; return [w, R * 1.44 + 56, w / 2, R * .72 + 42]; },
+PIXFX.v3_rogue_b2_t4 = { dur: 1.2, n: 10, box: R => { R = Math.min(R, 30); const w = 2 * R + 28; return [w, R * 1.44 + 56, w / 2, R * .72 + 42]; },
   draw(P, f, n, R) {
-    R = Math.min(R, 36); const t = Math.min(1, (f + 1) / 4), thin = f > 7 ? (f - 7) * .25 : 0;
-    for (let k = 0; k < 8; k++) { const a = k * .8 + .1, d = R * .8 * t * (k % 3 ? 1 : .4), r = Math.round((6 + pxHash(k, 2) * 4) * (1 - thin)); if (r < 2) continue;
+    R = Math.min(R, 30); const t = Math.min(1, (f + 1) / 4), thin = f > 7 ? (f - 7) * .25 : 0;
+    for (let k = 0; k < 6; k++) { const a = k * 1.05 + .1, d = R * .8 * t * (k % 3 ? 1 : .4), r = Math.round((5 + pxHash(k, 2) * 3) * (1 - thin)); if (r < 2) continue;
       pxBlob(P, Math.round(Math.cos(a) * d), Math.round(Math.sin(a) * d * .7) - 6 - Math.round(Math.sin(f * .6 + k) * 1.5), r, ["#b8f08a", "#7ad84a", "#4a9a2a"], "#2a6a1a", k + f * 0); }
     for (let k = 0; k < 6; k++) { const x = (pxHash(k, 1) - .5) * R * 1.2, y = -((f * 3 + k * 5) % 24); if (f > 1) P.rect(Math.round(x), Math.round(y), 2, 2, "#d4ffb8"); }
     if (f >= 3 && f <= 8) { const y = -16 - (f - 3) * 2; P.rect(-4, y - 1, 9, 8, PXD); P.rect(-3, y, 7, 5, "#e8f4d8"); P.rect(-3, y + 5, 7, 2, "#e8f4d8"); P.rect(-2, y + 2, 2, 2, PXD); P.rect(2, y + 2, 2, 2, PXD); P.rect(0, y + 5, 1, 1, PXD); }
