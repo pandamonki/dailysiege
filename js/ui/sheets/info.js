@@ -160,6 +160,7 @@ const PATCHES = [
   { v: "Catapult", date: "13 Nov", fixes: [], balance: [], changes: [
     "New tier 3 siege engine, the Catapult (220 gold). It crawls very slowly, sets up two tiles from an enemy castle, then hurls a boulder every few seconds. It cannot fight soldiers, so guard it.",
     "Siege engines (ram, powder cart and catapult) are now ordinary soldiers: no limit on how many you own, no recharge days, they can wait in the garrison, and they stay with you from day to day. We will scale them back if they prove too strong.",
+    "Computer-played lords now bring siege engines too: one from day 4 and two from day 6, in place of ordinary soldiers.",
   ] },
   { v: "Raiders and Battle Mages move to tier 2", date: "13 Nov", fixes: [], balance: [
     "Raiders and Battle Mages now unlock at a Fortress (tier 2) instead of a Citadel.",

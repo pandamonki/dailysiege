@@ -73,7 +73,9 @@ function lordBotPlan({ uid, cls, i, ids, L, zone, dayNo, lvl, v2, v3 }) {
   const spots = sp.units.filter(([r, q]) => zone.has(`${r},${q}`) && !taken.has(`${r},${q}`)).concat(field.filter(([r, q]) => !sp.units.some(([a, b]) => a === r && b === q)));
   const n = Math.min(spots.length, 2 + dayNo + (seed % 2)), ulvl = 1 + Math.floor((dayNo - 1) / 2);
   const pieces = [{ kind: "champ", r: sp.champ[0], c: sp.champ[1] }];
-  for (let k = 0; k < n; k++) pieces.push({ kind: "unit", type: kinds[Math.floor(hash(seed, k, 11 + dayNo) * kinds.length)], lvl: ulvl, hp: 1, r: spots[k][0], c: spots[k][1] });
+  // siege engines are what bring castles down, so bots bring them on purpose: one from day 4, two from day 6 (they take the place of ordinary soldiers)
+  const engines = Math.min(n, dayNo >= 6 ? 2 : dayNo >= 4 ? 1 : 0);
+  for (let k = 0; k < n; k++) pieces.push({ kind: "unit", type: k < engines ? ENGINES[Math.floor(hash(seed, k, 31 + dayNo) * ENGINES.length)] : kinds[Math.floor(hash(seed, k, 11 + dayNo) * kinds.length)], lvl: ulvl, hp: 1, r: spots[k][0], c: spots[k][1] });
   if (dayNo >= 2 && seed % 3) { // a short barrier across the way to the middle, where it fits
     const ctr = (L.N - 1) / 2, dy = ctr - me[0], dx = ctr - me[1], len = hyp(dx, dy) || 1, r = Math.round(me[0] + dy / len * 3), q = Math.round(me[1] + dx / len * 3);
     if (zone.has(`${r},${q}`) && !pieces.some(p => p.r === r && p.c === q)) pieces.push({ kind: "wall", r, c: q, dir: Math.abs(dy) >= Math.abs(dx) ? "h" : "v" });
