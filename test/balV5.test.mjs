@@ -1,4 +1,4 @@
-// Balance V5 (battles from 16 Nov 2026): slower and weaker siege engines, catch-up gold for the whole bottom half,
+// Balance V5 (battles from 16 Nov 2026): soldiers attack castles next to them, slower and weaker siege engines, catch-up gold for the whole bottom half,
 // and bounties only for lords ranked below. Battles before that day must replay exactly as fought (the golden tests cover that).
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -41,4 +41,11 @@ test("bounties from 16 Nov go only to lords ranked below the victim", () => {
   assert.equal(paid("x", "a", true), true, "an unranked lord: paid");
   assert.equal(paid("a", "d", true), false, "4th carries no bounty");
   assert.equal(paid("a", "b", false), true, "before 16 Nov anyone collects it");
+});
+
+test("soldiers next to an enemy castle attack it", () => {
+  const plain = new Set(["footman", "bowman", "knight", "mage", "sniper"]); let before = 0, after = 0;
+  for (let i = 0; i < 16; i++) for (const [v5, add] of [[false, x => { before += x; }], [true, x => { after += x; }]])
+    fight(i, v5).tel.ents.filter(e => e.kind === "unit" && plain.has(e.type)).forEach(e => add(e.toCastle || 0));
+  assert.ok(after > before * 1.5, `ordinary soldiers deal more castle damage: ${Math.round(before)} before, ${Math.round(after)} after`);
 });

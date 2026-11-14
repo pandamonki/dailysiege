@@ -4,6 +4,7 @@
 // the id is remembered on their device, so changing the id is all it takes to show it again. Keep about 8 to 14 items.
 const RELEASES = [
   { id: "1.2", title: "What's new in v1.2", sub: "From the battles of Monday 16 November", items: [
+    ["🏰", "Soldiers storm castles", "A soldier who gets within 2.5 tiles of an enemy castle attacks it, whoever else is about."],
     ["🐏", "Slower battering rams", "Rams crawl and hit castles about half as hard. A tier 1 castle takes about 10 seconds to break."],
     ["🪨", "Gentler catapults", "Catapults move slower and their boulders do about half the damage."],
     ["💥", "Slower powder carts", "Carts roll slower, so there is more time to stop them. The blast is as big as ever."],

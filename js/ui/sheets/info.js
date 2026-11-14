@@ -167,7 +167,9 @@ const PATCHES = [
     "Powder Cart: speed 0.45 to 0.32. Its blast is unchanged.",
     "Catch-up gold now goes to the whole bottom half of the board instead of the bottom 30%, in even steps: 450 gold for last place down to 210 for the top of the bottom half.",
     "The bounty on a top-three lord is now only paid to a lord ranked below them.",
-  ], changes: [] },
+  ], changes: [
+    "Soldiers within 2.5 tiles of an enemy castle now attack the castle before anything else. Clerics, castle guards and escorts are not affected.",
+  ] },
   { v: "Catapult", date: "13 Nov", fixes: [], balance: [], changes: [
     "New tier 3 siege engine, the Catapult (220 gold). It crawls very slowly, sets up two tiles from an enemy castle, then hurls a boulder every few seconds. It cannot fight soldiers, so guard it.",
     "Siege engines (ram, powder cart and catapult) are now ordinary soldiers: no limit on how many you own, no recharge days, they can wait in the garrison, and they stay with you from day to day. We will scale them back if they prove too strong.",

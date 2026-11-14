@@ -288,3 +288,17 @@ they still turn on a melee attacker who hits them.
 - Sudden death and soldiers on castles within 2.5 tiles: limit finishes 6%, castles down 99%. Days 1 to 3 average 168
   seconds, days 4 to 7 average 90. First castle on days 4 to 7 at 20 seconds.
 - Sudden death and soldiers on castles within 4 tiles: limit finishes 1%. Days 4 to 7 average 66 seconds, too fast.
+
+## Stage 4, part 2: soldiers storm castles (implemented)
+
+From 16 November, a soldier within 2.5 tiles of an enemy castle attacks it before anything else. Clerics, castle
+guards and escorts are not affected. Equally near castles are settled by a fair draw.
+
+All changes on the branch together, against the rules before them, 16 wars each:
+
+- **8 lords:** castles down by 200 seconds 60% to 81%. Battles reaching the limit 58% to 46%. Days 1 to 3 still
+  reach the limit 96% of the time, but the first castle falls at 66 seconds instead of 147. Days 4 to 7 reach the
+  limit 9% of the time (27% before). The first castle on those days falls at 19 seconds (15 before).
+- **10 lords:** castles down by 200 seconds 63% to 82%. Battles reaching the limit 53% to 51%. Days 4 to 7: 16%, the
+  same as before.
+- Hero and bot style win rates unchanged.

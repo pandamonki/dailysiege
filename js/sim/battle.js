@@ -41,8 +41,9 @@ const RECALL_R = 6, RETREAT_END_V2 = .5, METEOR_CASTLE = 700, MAGIC_VS_FORT = .6
 // Balance V5 (battles fought on or after BAL_V5_FROM; earlier saved battles replay as fought):
 //   - siege engines are slower, and rams and catapults hit castles less hard (UNITS and UNIT_SIM hold the new numbers; SIEGE_PRE_V5 the old ones)
 //   - the bounty on a top-three lord is only paid to a lord ranked below them
+//   - soldiers attack any enemy castle within CASTLE_REACH tiles before anything else (not healers, guards or escorts)
 //   - catch-up gold goes to the whole bottom half of the board, in even steps (catchUpGold in config/balance.js), paid after battles from this day
-let BAL_V5_FROM = "2026-11-16"; const balV5For = d => String(d) >= BAL_V5_FROM;
+let BAL_V5_FROM = "2026-11-16"; const balV5For = d => String(d) >= BAL_V5_FROM, CASTLE_REACH = 2.5;
 const fairTie = (seed, a, b) => hash(seed, botSeed(String(a)) * 7919 + botSeed(String(b)), 17);
 const BLOC_MAX = 3, TREACHERY_PTS = 3, TREACHERY_LOOT = .25, DAY_WEIGHT = { 5: 1.5, 6: 1.5, 7: 2 };
 // A lord whose castle falls keeps their hero and soldiers on the field: they fight on to the end of the battle, but can no longer fall back, heal at the castle, teleport home or respawn. Placing is still decided by when the castle fell.
@@ -516,6 +517,8 @@ function runBattle(plans, seed, opts = {}) {
     if (e.hunter) { const hs = ents.filter(x => !x.dead && x.kind === "champ" && hostile(e.pid, x.pid) && vis(x, e)); if (hs.length) return minBy(hs, x => d(x, e)); }
     const p = P[e.pid], guard = e.order === "guard", escort = e.order === "escort" && live(p.champ);
     if (!e.cart && !e.ram && ((UNIT_TYPES[e.key] || [])[0] !== "siege" || e.order === "guard")) { const carts = ents.filter(o => o.cart && !o.dead && hostile(e.pid, o.pid) && ents.some(c => c.kind === "castle" && !c.dead && !hostile(e.pid, c.pid) && d(c, o) <= 4) && d(o, e) <= 9); if (carts.length) return minBy(carts, o => d(o, e)); } // a powder cart within 4 tiles of a friendly castle: stop it
+    // from 16 Nov 2026 a soldier next to an enemy castle attacks it, whatever else is about (equally near castles: a fair draw)
+    if (V5 && e.kind === "unit" && !guard && !escort && !e.healer) { const cs = ents.filter(o => !o.dead && o.kind === "castle" && hostile(e.pid, o.pid) && d(o, e) <= CASTLE_REACH); if (cs.length) return minBy(cs, o => Math.round(d(o, e) * 1e3) + fairTie(seed, e.pid, o.pid)); }
     // raiders (from 12 Nov 2026) make for a castle: struck by a melee fighter they turn and fight it, struck from range they keep going
     if (V3 && (e.key === "raider" || e.purpose === "castle") && !guard && !escort) { const ag = e.aggro; if (ag && ag.until > t && live(ag.src) && hostile(e.pid, ag.src.pid) && vis(ag.src, e) && (ag.src.range || 1.1) <= 1.5 && d(ag.src, e) <= 6) return ag.src;
       const g = goalPid(e), c = g && ents.find(o => !o.dead && o.kind === "castle" && o.pid === g); if (c) return c; }
