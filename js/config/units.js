@@ -7,7 +7,7 @@ const UNITS = {
   healer:  { name: "Cleric",  cost: 100, hp: 200,  atk: 10,  note: "Heals nearby units." },
   raider:  { name: "Raider",  cost: 110, hp: 320, atk: 42, note: "Fast. Hits castles hard." },
   mage:    { name: "Battle Mage", cost: 140, hp: 280, atk: 44, note: "Casts from a distance. Each bolt also splashes half its damage on enemies next to the target." },
-  sniper:  { name: "Dwarven Sniper", cost: 210, hp: 300, atk: 58, note: "Slow, deadly shots from very far away. Great against light targets and heroes, poor against heavy armour." },
+  sniper:  { name: "Dwarven Sniper", cost: 160, hp: 300, atk: 58, note: "Slow, deadly shots from very far away. Great against light targets and heroes, poor against heavy armour." },
   ram:     { name: "Battering Ram", cost: 240, hp: 750, atk: 125, note: "Pushes slowly at castles and ignores soldiers. Hits castles hard, taking about 5 seconds to bring down a tier 1 castle, then moves on to the next one. Very tough.", engine: true },
   cart:    { name: "Powder Cart", cost: 200, hp: 240, atk: 0, note: "Rolls very slowly at a castle and blows up, enough to flatten a tier 1 castle. The blast hurts every soldier nearby, friend or foe, and also goes off if the cart is destroyed. Can't be trained.", noUpgrade: true, engine: true },
   catapult: { name: "Catapult", cost: 220, hp: 450, atk: 110, note: "Very slow. Sets up two tiles from a castle, then hurls boulders at it. Hits castles hard from a distance, but cannot fight soldiers, so guard it.", engine: true },
