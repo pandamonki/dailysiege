@@ -1,4 +1,4 @@
-// Balance V5 (battles from 16 Nov 2026): 300-second battles, slower and weaker siege engines, catch-up gold for the whole bottom half,
+// Balance V5 (battles from 16 Nov 2026): slower and weaker siege engines, catch-up gold for the whole bottom half,
 // and bounties only for lords ranked below. Battles before that day must replay exactly as fought (the golden tests cover that).
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -12,17 +12,6 @@ const fight = (i, v5, edit) => { const c = sim.run(`goldenCase(${i})`), plans = 
 test("the rules switch over on 16 Nov 2026", () => {
   assert.equal(sim.run('balV5For("2026-11-15")'), false);
   assert.equal(sim.run('balV5For("2026-11-16")'), true);
-});
-
-test("battles last up to 300 seconds from 16 Nov, 200 before", () => {
-  let long = 0;
-  for (let i = 0; i < 20; i++) {
-    const a = fight(i, false), b = fight(i, true);
-    assert.equal(a.tmax, 200); assert.equal(b.tmax, 300);
-    assert.ok(a.tel.duration <= 200 && b.tel.duration <= 300);
-    if (b.tel.duration > 200) long++;
-  }
-  assert.ok(long > 0, "some battle runs past the old limit");
 });
 
 test("siege engines take longer to bring a castle down", () => {

@@ -39,7 +39,6 @@ const PASSING_CASTLE = 2.5;
 let BAL_V4_FROM = "2026-11-16"; const balV4For = d => String(d) >= BAL_V4_FROM;
 const RECALL_R = 6, RETREAT_END_V2 = .5, METEOR_CASTLE = 700, MAGIC_VS_FORT = .6;
 // Balance V5 (battles fought on or after BAL_V5_FROM; earlier saved battles replay as fought):
-//   - battles last up to TMAX_V5 seconds (was TMAX)
 //   - siege engines are slower, and rams and catapults hit castles less hard (UNITS and UNIT_SIM hold the new numbers; SIEGE_PRE_V5 the old ones)
 //   - the bounty on a top-three lord is only paid to a lord ranked below them
 //   - catch-up gold goes to the whole bottom half of the board, in even steps (catchUpGold in config/balance.js), paid after battles from this day
@@ -50,7 +49,7 @@ const BLOC_MAX = 3, TREACHERY_PTS = 3, TREACHERY_LOOT = .25, DAY_WEIGHT = { 5: 1
 const ORPHAN_ARMIES = true;
 const dayWeight = (v2, dayNo) => (v2 && DAY_WEIGHT[dayNo]) || 1;
 function runBattle(plans, seed, opts = {}) {
-  const BV = !!opts.balV2, V3 = !!opts.balV3, FV = !!opts.fairV1 || !!opts.pickV1, PV = !!opts.pickV1, V4 = !!opts.balV4, V5 = !!opts.balV5, TM = V5 ? TMAX_V5 : TMAX, HV3 = !!opts.heroV3, maxLvl = HV3 ? MAX_HERO_LVL_V3 : MAX_HERO_LVL, hpLvX = HV3 ? hpLvV3 : hpLv, atkLvX = HV3 ? atkLvV3 : atkLv, OA = !!opts.balV2 && ORPHAN_ARMIES, UV = !!opts.ultV2, UD = UV ? .75 : 1, UR = rk => UV ? [.7, .85, 1][Math.min(3, Math.max(1, rk || 1)) - 1] : 1;
+  const BV = !!opts.balV2, V3 = !!opts.balV3, FV = !!opts.fairV1 || !!opts.pickV1, PV = !!opts.pickV1, V4 = !!opts.balV4, V5 = !!opts.balV5, TM = TMAX, HV3 = !!opts.heroV3, maxLvl = HV3 ? MAX_HERO_LVL_V3 : MAX_HERO_LVL, hpLvX = HV3 ? hpLvV3 : hpLv, atkLvX = HV3 ? atkLvV3 : atkLv, OA = !!opts.balV2 && ORPHAN_ARMIES, UV = !!opts.ultV2, UD = UV ? .75 : 1, UR = rk => UV ? [.7, .85, 1][Math.min(3, Math.max(1, rk || 1)) - 1] : 1;
   const rng = mulberry(seed), DT = .1, fast = !!opts.fast, leaderPid = (plans.find(p => p.leader) || {}).pid;
   let curAb = null;
   const mePid = (plans.find(p => p.me) || plans[0]).pid, NN = opts.N || N;

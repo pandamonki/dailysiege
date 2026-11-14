@@ -157,12 +157,11 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
-  { v: "Longer battles, slower siege, fairer gold", date: "16 Nov", fixes: [
+  { v: "Slower siege, fairer gold", date: "16 Nov", fixes: [
     "Computer-played lords no longer field armies they could never afford. They now earn gold like any lord (daily pay, castle income, spoils, bounties and catch-up gold) and buy at shop prices.",
     "Computer-played lords no longer get level 4 soldiers, trained Powder Carts or more than 8 soldiers on the field.",
     "Computer-played lords' soldiers now look further for targets (2 to 4 tiles instead of 1 to 3), so their bowmen and mages follow their orders.",
   ], balance: [
-    "Battles last up to 5 minutes instead of 3 minutes 20 seconds.",
     "Battering Ram: attack 125 to 70 and speed 0.8 to 0.5. It now takes about 10 seconds to bring down a tier 1 castle.",
     "Catapult: attack 110 to 60 and speed 0.5 to 0.35.",
     "Powder Cart: speed 0.45 to 0.32. Its blast is unchanged.",

@@ -210,11 +210,11 @@ Hero classes, bot styles, base income and points.
 
 ## Stage 4: what was implemented
 
-Approved: changes 1, 3 (lower damage for rams and catapults only), 4 (reshaped) and 7. Change 2, the stronger
+Approved: changes 3 (lower damage for rams and catapults only), 4 (reshaped) and 7. Change 1 was implemented, then
+withdrawn: the limit stays at 200 seconds (300 seconds is 5 minutes, too long). Change 2, the stronger
 sudden death, was not approved and is not in. All rules apply to battles from 16 November 2026 (`BAL_V5_FROM`).
 Earlier saved battles replay exactly as fought: the golden files did not change.
 
-- **Battle limit:** 300 seconds (was 200).
 - **Battering Ram:** attack 125 to 70, speed 0.8 to 0.5.
 - **Catapult:** attack 110 to 60, speed 0.5 to 0.35.
 - **Powder Cart:** speed 0.45 to 0.32. The blast is unchanged at 540.
@@ -238,3 +238,53 @@ Measured with 16 wars each at 6, 8, 10 and 12 lords.
 - **Gold:** the bottom half now ends the week with about as much gold as the winner. With 8 lords the winner earns
   5,800 and last place 5,480, against 4,370 and 4,280 before.
 - **Board movement:** similar. With 8 lords a lord moves 1.36 places a day (1.32 before).
+
+## Third pass: gold by place, what is left on the field, soldiers on castles, hero retreats
+
+The battle limit is back at 200 seconds. Trials below: 8 lords, 12 wars each, against today's branch (slower siege,
+new catch-up gold and bounties, 200 seconds).
+
+### Gold by final place
+
+Gold a lord can spend in the week (pay after days 1 to 6), 8 lords, 16 wars, by final place from 1st to 8th:
+4,256 · 4,387 · 3,944 · 3,991 · 3,639 · 3,911 · 4,242 · 4,093. Under the old rules: 3,582 · 3,629 · 3,545 · 3,359 ·
+3,138 · 3,114 · 3,359 · 3,458. Both are close to flat, with a dip in the middle. Leaders earn spoils, the bottom earns
+catch-up gold, and the middle earns least. The winner's advantage is points and a strong army, not gold.
+
+### What is left on the field
+
+Counted only in battles still running at that moment, 8 lords.
+
+- Days 1 to 3, at 1:40: all 8 castles, 6.3 heroes, 8 soldiers (1 per lord). At 2:30: 7.6 castles, 5.4 heroes, 2
+  soldiers. At 3:20: 7 castles, 4.5 heroes, under 2 soldiers.
+- Days 4 to 7, at 1:40: 3.6 castles, 2.9 heroes, 6 soldiers. At 2:30 and later: about 3 castles, 2.5 heroes, 2
+  soldiers.
+- So a late fight to the death in the middle would be almost all heroes, with at most one soldier in every four lords.
+
+### Soldiers go for nearby castles
+
+Soldiers (not healers, guards or escorts) attack an enemy castle within reach before anything else. Within 4 tiles
+they still turn on a melee attacker who hits them.
+
+- Within 2.5 tiles: limit finishes 55% to 46%, castles down by 200 seconds 60% to 82%. Days 1 to 3 still reach the
+  limit 94% of the time, but the first castle falls at 64 seconds instead of 151.
+- Within 3 tiles: almost the same as 2.5.
+- Within 4 tiles: limit finishes 24%, castles down 93%. Days 4 to 7 average 75 seconds, too fast.
+- Within 6 tiles: battles average 78 seconds. Far too fast.
+
+### Hero retreats
+
+- Bots drop their "retreat at 30% health" rule: limit finishes rise to 62%. Heroes die sooner and stop besieging.
+- Heroes fall back only after losing 20% of their health within one second: the first castle on days 1 to 3 falls
+  at 128 seconds instead of 151. Limit finishes 60%.
+- Both together: limit finishes 50%. Hero win rates spread to 8% to 20%.
+- Archers, mages and rogues never step back: limit finishes 61%.
+- All of it together: no change, 57%.
+- Hero retreats barely affect when castles fall. They change how fights feel, not how they end.
+
+### Combined with sudden death (castle damage doubles every 15 seconds from 1:40)
+
+- Sudden death alone: limit finishes 24%, castles down 93%. Days 1 to 3 average 191 seconds, days 4 to 7 119.
+- Sudden death and soldiers on castles within 2.5 tiles: limit finishes 6%, castles down 99%. Days 1 to 3 average 168
+  seconds, days 4 to 7 average 90. First castle on days 4 to 7 at 20 seconds.
+- Sudden death and soldiers on castles within 4 tiles: limit finishes 1%. Days 4 to 7 average 66 seconds, too fast.

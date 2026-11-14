@@ -75,7 +75,7 @@ sim.run(`globalThis.__lab = (function () {
     },
   };
 })()`);
-const TMAX = sim.get(V2 ? "TMAX_V5" : "TMAX"), rows = Array.from({ length: 7 }, (_, i) => ({ day: i + 1, len: [], first: [], standing: [], siege: [], units: [], tier3: [], timeUp: 0, n: 0, noDmg: [], armyLeft: [], heroLeft: [] }));
+const TMAX = sim.get("TMAX"), rows = Array.from({ length: 7 }, (_, i) => ({ day: i + 1, len: [], first: [], standing: [], siege: [], units: [], tier3: [], timeUp: 0, n: 0, noDmg: [], armyLeft: [], heroLeft: [] }));
 for (let w = 0; w < wars; w++) {
   const days = sim.run(`__lab.play(${5000 + w * 131}, ${nLords}, ${V2}, "${DOCTRINE}", ${+process.env.ENGAGE || 0}, ${!!process.env.WAVES})`);
   days.forEach((d, i) => { const r = rows[i]; r.n++; r.len.push(d.len); if (d.first != null) r.first.push(d.first); r.standing.push(d.standing); r.siege.push(d.siege); r.units.push(d.units); r.tier3.push(d.tier3); if (d.len >= TMAX) r.timeUp++; r.noDmg.push(d.noCastleDmg); r.armyLeft.push(d.armyLeft); r.heroLeft.push(d.heroLeft); });
