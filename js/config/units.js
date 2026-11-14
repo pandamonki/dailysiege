@@ -1,7 +1,7 @@
 // Soldiers and traps: shop data, battle stats, body sizes
 
 const UNITS = {
-  footman: { name: "Footman", cost: 60, hp: 240, atk: 10, note: "Tough blocker. Slows whatever it fights, and is hard to push past." },
+  footman: { name: "Footman", cost: 70, hp: 240, atk: 10, note: "Tough blocker. Slows whatever it fights, and is hard to push past." },
   bowman:  { name: "Bowman",  cost: 75, hp: 200,  atk: 24, note: "Ranged hero-hunter: +30% damage to heroes." },
   knight:  { name: "Knight",  cost: 170, hp: 540, atk: 40, note: "Heavy armour. Slow." },
   healer:  { name: "Cleric",  cost: 100, hp: 200,  atk: 10,  note: "Heals nearby units." },
@@ -22,7 +22,7 @@ const TRAPS = {
 };
 
 const UNIT_SIM = {
-  footman: { range: 1.1, as: 1.0, spd: 1.4, armor: .25 },
+  footman: { range: 1.1, as: 1.0, spd: 1.4, armor: .1 },
   bowman:  { range: 2.5, as: 1.1, spd: 1.4, armor: 0, shot: "#f1e6c0" },
   knight:  { range: 1.1, as: 1.2, spd: 1.05, armor: .25 },
   healer:  { range: 2, as: 1.2, spd: 1.3, armor: .05, heal: 30, shot: "#9cf09c" },

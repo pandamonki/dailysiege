@@ -158,7 +158,7 @@ function abilLines(k, r) {
 
 const PATCHES = [
   { v: "Unit tiers, kill gold and damage items", date: "14 Nov", fixes: [], balance: [
-    "Each soldier tier is now better value than the one before, and costs more. Footman cost 50 to 60, health 380 to 240, attack 13 to 10. Bowman cost 70 to 75, health 150 to 200, attack 16 to 24. Raider health 230 to 320, attack 30 to 42. Battle Mage health 170 to 280, attack 27 to 44. Knight cost 120 to 170, health 420 to 540, attack 30 to 40. Dwarven Sniper health 170 to 300 and attack 48 to 58. It stays a glass cannon: it hits hard from far away and dies fast.",
+    "Each soldier tier is now better value than the one before, and costs more. Footman cost 50 to 70, health 380 to 240, attack 13 to 10, armour 25% to 10% (it no longer matches the knight). Bowman cost 70 to 75, health 150 to 200, attack 16 to 24. Raider health 230 to 320, attack 30 to 42. Battle Mage health 170 to 280, attack 27 to 44. Knight cost 120 to 170, health 420 to 540, attack 30 to 40. Dwarven Sniper health 170 to 300 and attack 48 to 58. It stays a glass cannon: it hits hard from far away and dies fast.",
     "Kill gold is lower and simpler: 5, 7 or 9 gold for a tier 1, 2 or 3 soldier (no bonus for its level), a flat 30 for a hero and 50 for a castle. Top three bounties are unchanged.",
     "Damage items are stronger. Whetstone +7% to +10%. Gauntlets +15% to +22%. Crystalys crits 25% of the time for 1.8x. Daedalus +20% attack and 30% crits. Banner of Might +12% to +16%. Elixir of Fury +35% attack speed for 10s. Orb of Poison 10 a second, Orb of Fire splashes 50%, Orb of Corruption +20% damage taken.",
   ], changes: [] },
