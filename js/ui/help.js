@@ -3,7 +3,7 @@
 
 const HELP = {
   recruit: ["Recruit", "Buy new soldiers with gold. Pick a type to see its stats, then tap Buy. Better soldiers unlock as your castle grows. You can only field as many as your supply allows, and the rest wait in reserve."],
-  garrison: ["Garrison", "Every soldier you own, in one list. Tap one to see its level and where it is. Train it up to level 3 with gold, or sell soldiers you no longer want for part of their cost back."],
+  garrison: ["Train", "Every soldier you own, in one short list. Tap one to see its stats now and after training. Train it up to level 3 with gold, or sell soldiers you no longer want for part of their cost. The soldier you picked stays pinned at the bottom."],
   deployment: ["Deployment", "Choose who stands on the field tonight and who waits in reserve. Tap a soldier to place it on a glowing tile, or send it back to the barracks. Units on the field fight in the battle."],
   keep: ["Castle", "Upgrade your castle for more gold each day, tougher walls and access to stronger soldiers. Supply adds more field slots, so you can bring more soldiers to each battle."],
   traps: ["Defences", "Buy walls and traps. Walls block or slow enemies and rebuild free each day. Traps are single-use and only last tonight's battle. Buy one, then tap a glowing tile near your castle to place it."],
