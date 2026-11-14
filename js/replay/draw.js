@@ -66,6 +66,8 @@ function drawReplay(t) {
         if (m.champ) {
           glow(cx, by - ts * .5, ts * 1.0, ts * 1.05, color, .8 + Math.sin(t * 3 + k) * .12);
           ctx.strokeStyle = color; ctx.lineWidth = ts * .06; ctx.beginPath(); ctx.ellipse(cx, by - ts * .05, ts * .36, ts * .13, 0, 0, 7); ctx.stroke();
+        } else { // soldiers: a ring in the army's colour on the ground, so rival armies stay apart in a crowd
+          ctx.fillStyle = hexA(color, .28); ctx.strokeStyle = hexA(color, .95); ctx.lineWidth = Math.max(1.5, ts * .07); ctx.beginPath(); ctx.ellipse(cx, by - ts * .03, ts * .3, ts * .11, 0, 0, 7); ctx.fill(); ctx.stroke();
         }
         if (m.champ && m.items) { drawHeroAuras(ctx, cx, by, ts, t, m.items, k); drawHeroOrbs(ctx, cx, by, ts, t, m.items, k, true); }
         if (fl & 4) glow(cx, by - ts * .5, ts * .7, ts * .8, "#ffe082", .7);
