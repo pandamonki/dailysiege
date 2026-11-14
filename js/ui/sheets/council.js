@@ -292,9 +292,10 @@ function sealWarnings() { // loud reminders at the top of the seal screen: unspe
   if (oth) w.push(`<b>${oth} wall${oth > 1 ? "s or traps" : " or trap"} not set</b> on the field.`);
   return w.length ? `<div class="warnbox"><b class="wt">⚠ Before you seal</b><ul>${w.map(x => `<li>${x}</li>`).join("")}</ul></div>` : "";
 }
+const sealInitials = () => { const w = String(typeof MY_NAME === "string" ? MY_NAME : "").replace(/^(ser|lord|lady|baron|dame|count|sir)\s+/i, "").split(/\s+/).filter(Boolean); return (w.length > 1 ? w[0][0] + w[w.length - 1][0] : (w[0] || "You").slice(0, 2)).toUpperCase(); }; // the wax seal carries your initials
 function sealSheet() {
   if (S.locked) return head(null, "Orders Sealed", "The battle plays out at dusk") + `<div class="body">
-    ${sealWarnings()}<div class="waxseal">✓</div><p class="muted" style="text-align:center">These orders will be fought at the lock. You can draft new orders until then: the sealed ones stay in effect until you seal the new ones.</p>
+    ${sealWarnings()}<div class="waxseal">${esc(sealInitials())}</div><p class="muted" style="text-align:center">These orders will be fought at the lock. You can draft new orders until then: the sealed ones stay in effect until you seal the new ones.</p>
     <p class="muted" style="text-align:center">Ultimate: ${planUlt() ? "<b>will be used</b>" : "not planned"} · Ritual: ${planBless() ? `<b>${esc(BLESSINGS[S.bless][0])}</b>` : "none"}${mercOpen() ? ` · Mercenaries: ${bidSummary() ? `<b>${esc(bidSummary())}</b>` : "no bids"}` : ""}</p>
     <div class="row" style="justify-content:center">${isLive() ? "" : `<button class="btn wax" data-act="battle">Watch tonight's battle</button>`}<button class="btn" data-act="unseal">Draft new orders</button>${isLive() ? "" : `<button class="btn wood" data-act="copy">Copy plan</button>`}</div>
     <p class="muted" style="text-align:center">${isLive() ? `The real battle is fought at ${lockLabel(LIVE.config)}. Watch it afterwards from the Battle report.` : "In this prototype the battle runs now on your phone against the example players."}</p>
