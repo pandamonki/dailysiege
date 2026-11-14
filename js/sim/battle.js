@@ -916,7 +916,15 @@ function runBattle(plans, seed, opts = {}) {
     fighters = ents.filter(e => mobile(e) && !e.cart && !e.ram && !e.cat);
     ents.forEach(e => { if (e.dead) { e.respawnAt = null; return; } if (e.cart || e.ram || e.cat || e.kind === "totem") { e.dead = true; ev({ ty: "die", id: e.id, x: e.x, y: e.y, fx: 0, ex: 1 }); } });
     const cx = NN / 2, cy = NN / 2, R = 3 + pids.length * .4;
-    pids.forEach((pid, i) => { const a = -Math.PI / 2 + 2 * Math.PI * i / pids.length, ux = dcos(a), uy = dsin(a), vx = -uy, vy = ux;
+    // seating: the board's 1st and 2nd face each other, 3rd and 4th face each other, and the weakest lords sit beside the top two so they don't just trade blows and leave the day to the bottom half
+    const rk = q => RANKS[q] != null ? RANKS[q] : ((plans.find(p => p.pid === q) || {}).rank || idx[q] + 1), n = pids.length, byRank = pids.slice().sort((a, b) => rk(a) - rk(b) || idx[a] - idx[b]), seat = Array(n).fill(null), h = Math.floor(n / 2);
+    const put = (q, s) => { if (q != null && s != null && seat[s] == null) { seat[s] = q; return true; } return false; };
+    put(byRank[0], 0); put(byRank[1], h);
+    if (n >= 4) { const qd = Math.round(n / 4); put(byRank[2], qd); put(byRank[3], (qd + h) % n); }
+    const placed = new Set(seat.filter(q => q != null)), rest = byRank.filter(q => !placed.has(q)).reverse(); // weakest first
+    const near = s => Math.min(Math.abs(s - 0), n - Math.abs(s - 0), Math.abs(s - h), n - Math.abs(s - h));
+    seat.map((q, s) => [q, s]).filter(([q]) => q == null).sort((x, y) => near(x[1]) - near(y[1]) || x[1] - y[1]).forEach(([, s]) => { seat[s] = rest.shift(); });
+    pids.forEach(pid => { const i = seat.indexOf(pid), a = -Math.PI / 2 + 2 * Math.PI * i / n, ux = dcos(a), uy = dsin(a), vx = -uy, vy = ux;
       fighters.filter(e => e.pid === pid).sort((x, y) => (y.kind === "champ") - (x.kind === "champ") || x.id - y.id).forEach((e, k) => {
         const row = Math.floor(k / 4), col = (k % 4) - 1.5;
         e.x = Math.max(.5, Math.min(NN - .5, cx + ux * R + vx * col * .75 + ux * row * .75)); e.y = Math.max(.5, Math.min(NN - .5, cy + uy * R + vy * col * .75 + uy * row * .75));

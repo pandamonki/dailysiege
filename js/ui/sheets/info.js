@@ -159,7 +159,7 @@ function abilLines(k, r) {
 const PATCHES = [
   { v: "Sudden death", date: "15 Nov", fixes: [], balance: [], changes: [
     "If two or more sides are still fighting at the 3 minute mark, the battle cuts to the centre arena with a SUDDEN DEATH announcement and a 5 second countdown.",
-    "Every surviving hero and soldier is carried to the arena, one camp per lord around the ring. Siege engines and totems are removed, and nobody can fall back or be reinforced. A hero still waiting to respawn joins the fight at once, with health by how far through the wait it was (at least 25%).",
+    "Every surviving hero and soldier is carried to the arena, one camp per lord around the ring. The board's 1st and 2nd face each other with the weakest lords beside them, and 3rd and 4th face each other. Siege engines and totems are removed, and nobody can fall back or be reinforced. A hero still waiting to respawn joins the fight at once, with health by how far through the wait it was (at least 25%).",
     "Castles are out of the fight. It is a fight to the death: the last side standing wins the day. If a minute passes with no winner, the side with the most health left wins.",
   ] },
   { v: "Items, gifts, fights and highlights", date: "14 Nov", fixes: [
