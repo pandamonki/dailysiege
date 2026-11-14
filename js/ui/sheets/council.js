@@ -292,7 +292,7 @@ function sealWarnings() { // loud reminders at the top of the seal screen: unspe
   if (oth) w.push(`<b>${oth} wall${oth > 1 ? "s or traps" : " or trap"} not set</b> on the field.`);
   return w.length ? `<div class="warnbox"><b class="wt">⚠ Before you seal</b><ul>${w.map(x => `<li>${x}</li>`).join("")}</ul></div>` : "";
 }
-const sealInitials = () => { const w = String(typeof MY_NAME === "string" ? MY_NAME : "").replace(/^(ser|lord|lady|baron|dame|count|sir)\s+/i, "").split(/\s+/).filter(Boolean); return (w.length > 1 ? w[0][0] + w[w.length - 1][0] : (w[0] || "You").slice(0, 2)).toUpperCase(); }; // the wax seal carries your initials
+const sealInitials = () => { const w = String(typeof MY_NAME === "string" ? MY_NAME : "").replace(/^(ser|lord|lady|baron|dame|count|sir)\s+/i, "").split(/\s+/).filter(Boolean); return (w.length > 1 ? w[0][0] + w[w.length - 1][0] : (w[0] || "Y")[0]).toUpperCase(); }; // the wax seal carries your initials
 function sealSheet() {
   if (S.locked) return head(null, "Orders Sealed", "The battle plays out at dusk") + `<div class="body">
     ${sealWarnings()}<div class="waxseal">${esc(sealInitials())}</div><p class="muted" style="text-align:center">These orders will be fought at the lock. You can draft new orders until then: the sealed ones stay in effect until you seal the new ones.</p>
