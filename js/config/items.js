@@ -55,6 +55,8 @@ const ITEM_DESC_V4 = {
   hpring: "+16% health, and you regenerate 1.2% of your health every second.", vanguard: "+30% health, and blocks 12 damage from every normal hit you take. Soldiers' blows barely scratch you.",
   shiva: "Take 12% less damage. When 2 or more foes are within 3 tiles: a freezing blast hits them for 140 damage and slows them 40% for 4s.",
   daedalus: "+30% attack damage. Your attacks have a 25% chance to crit for 2.4x damage.",
+  banner: "Aura: allies within 3 tiles deal 24% more damage.", standard: "Aura: allies within 3 tiles take 24% less damage.",
+  mender: "Aura: heals allies within 3 tiles for 8 health per second.", pipe: "Aura: you and allies within 3 tiles take 50% less damage from enemy hero abilities and ultimates.",
 };
 // day: a replayed battle is described as it was fought
 const itemDesc = (k, day) => { const it = ITEMS[k]; if (!it) return ""; const v4 = day ? balV4For(day) : typeof isLive === "function" && isLive() ? balV4For(liveClock().planDay) : true; return v4 && ITEM_DESC_V4[k] ? ITEM_DESC_V4[k] : it.desc; };

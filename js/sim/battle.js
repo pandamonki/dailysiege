@@ -42,7 +42,7 @@ let BAL_V4_FROM = "2026-11-16"; const balV4For = d => String(d) >= BAL_V4_FROM;
 //     fight at BACK_AT health (was 80%); an explicit command (all units fall back) still sends everyone home
 //   - items are the hero's: the stat items are ITEM_BOOST times as strong for the hero only. The area-buff items (Banner, Standard, Pipe, Mender) are the ones
 //     that reach soldiers, and are AURA_BOOST times as strong
-let ITEM_BOOST = 2, AURA_BOOST = 1;
+let ITEM_BOOST = 2, AURA_BOOST = 2;
 const ITEM_STATS = { whetstone: { atk: .07 }, gauntlets: { atk: .15 }, daedalus: { atk: .15 }, jerkin: { hp: .06 }, hpring: { hp: .08 }, vanguard: { hp: .15 }, sandals: { spd: .06 }, boots: { spd: .10 }, buckler: { dr: .04 }, ringprot: { dr: .08 }, shiva: { dr: .06 } };
 const AGGRO_R = 4, RECALL_R = 6, RETREAT_END_V2 = .5, METEOR_CASTLE = 700, MAGIC_VS_FORT = .6, HIT_WINDOW = 2.5, BACK_AT = .6;
 const fairTie = (seed, a, b) => hash(seed, botSeed(String(a)) * 7919 + botSeed(String(b)), 17);

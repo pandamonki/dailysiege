@@ -4,7 +4,7 @@
 // the id is remembered on their device, so changing the id is all it takes to show it again. Keep about 8 to 14 items.
 const RELEASES = [
   { id: "1.2", title: "What's new in v1.2", sub: "Items, gifts, fights and highlights", items: [
-    ["🎒", "Items matter more", "Stat items are twice as strong and now equip your soldiers as well as your hero, so gold in items can rival gold in an army."],
+    ["🎒", "Items matter more", "Stat items are twice as strong for your hero, and the area-buff items (Banner, Standard, Mender, Pipe) are twice as strong for everyone near it."],
     ["🎁", "A proper free gift", "The reels spin like a slot machine. Close it and it waits behind a 🎁 button on the map until you take it."],
     ["⚔", "Fights stay fights", "Hurt units only fall back while they are being hit, return to the fight sooner, and no longer get pulled off an enemy they are already fighting."],
     ["🎬", "Better highlights", "The camera sits one step further out, and the reel ends on the moment the last rival castle falls."],
