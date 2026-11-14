@@ -50,6 +50,24 @@ hash. Every other phone re-fights it and checks the hash, exactly as replays are
 - Results appear when the host next opens the app after the lock. A named deputy can be given the same
   power so one flat battery does not hold up the war.
 
+**Better, if a trial proves it: no referee, first phone to open fights (time-locked orders).** Because
+battles are deterministic, it does not matter which phone fights: given the same orders, every phone gets
+the same result, and all of them can fight it and compare hashes. The only real job of the referee is to
+keep orders secret until the lock. A free public time-lock service (the drand network, with its "tlock"
+library) can do that instead: each phone encrypts its orders so that nobody at all, including the sender's
+friends and the host, can open them until the lock time, and after it anybody can. Orders are posted
+through the transport as soon as they are sealed. The first phone opened after the lock fetches the public
+unlock value, opens every lord's orders, fights the battle and posts the result; every later phone does
+the same and checks the hash.
+
+- No host trust, no waiting on one person, and a lord who never opens the app again cannot hold up a battle.
+- It adds one outside dependency (the time-lock network, free and run by a group of organisations), and
+  needs a connection at the moment of fighting, which fetching the orders needs anyway.
+- One loophole to close: after the lock a lord could read the others' orders and then post "late" orders
+  of their own. Phones must only count orders that were posted before the lock; the relay trial in Phase 5
+  must show that phones can agree on that. Where they disagree the hashes differ and the war shows a warning.
+- If the trial fails, fall back to the host's phone as referee, above.
+
 **Alternative: no referee (commit and reveal).** Each phone publishes a fingerprint of its orders before
 the lock and the real orders after it. Nobody has to be trusted, but a battle waits for every lord to
 open the app after the lock, and a lord who dislikes what they see can simply not reveal. It needs
