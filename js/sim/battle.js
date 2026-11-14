@@ -399,7 +399,7 @@ function runBattle(plans, seed, opts = {}) {
         let ti = STREAKS.length - 1; while (ti >= 0 && sum < STREAKS[ti][0]) ti--;
         if (ti > kp.tier) { kp.tier = ti; const nmS = STREAKS[ti][1]; sp.marks.push({ t, name: nmS, n: Math.round(sum) }); sp.streak = nmS; log(`${nm(kc.pid)}: ${nmS.toUpperCase()}! ${Math.round(sum)} kills in a row.`, "big"); } } }
     if (e.kind === "champ" && e.rapier) { e.rapier = false; rapierDrop = { x: e.x, y: e.y, ev: null }; H({ kind: "rapierdrop", pid: e.pid, other: src ? (src.owner || src).pid : null, x: e.x, y: e.y, score: 54 }); ev({ ty: "rapier", x: e.x, y: e.y, until: null }); if (!fast) rapierDrop.ev = events[events.length - 1]; txt(e, "Rapier dropped!", "#ffd34d"); log(`${poss(e.pid)} hero drops the Divine Rapier.`, "big"); }
-    if (e.kind === "champ" && P[e.pid].alive && e.respawns > 0) { e.respawns--; const rt = respawnTime(e.heroLvl) * (e.phoenix ? .5 : 1); e.respawnAt = t + rt; const c = P[e.pid].castle; ev({ ty: "respawn", pid: e.pid, id: e.id, x: c.x, y: c.y, t0: t, t1: t + rt }); }
+    if (e.kind === "champ" && P[e.pid].alive && e.respawns > 0) { e.respawns--; const rt = respawnTime(e.heroLvl) * (e.phoenix ? .5 : 1); e.respawnAt = t + rt; e.respawnLen = rt; const c = P[e.pid].castle; const rv = { ty: "respawn", pid: e.pid, id: e.id, x: c.x, y: c.y, t0: t, t1: t + rt }; ev(rv); e.respawnEv = rv; }
     if (e.kind === "castle") eliminate(e.pid, src ? src.pid : e.lastBy);
   }
   function eliminate(pid, by) {
@@ -905,9 +905,15 @@ function runBattle(plans, seed, opts = {}) {
   // sudden death: carry every surviving hero and soldier to the middle of the map, one camp per lord around the ring, then fight to the death
   function startSudden() {
     const mobile = e => !e.dead && (e.kind === "champ" || e.kind === "unit" || e.kind === "summon") && P[e.pid].alive;
-    const fighters = ents.filter(e => mobile(e) && !e.cart && !e.ram && !e.cat), pids = order.filter(q => fighters.some(e => e.pid === q));
+    const returning = ents.filter(e => e.dead && e.kind === "champ" && e.respawnAt && P[e.pid].alive); // heroes still waiting to respawn
+    let fighters = ents.filter(e => mobile(e) && !e.cart && !e.ram && !e.cat);
+    const pids = order.filter(q => fighters.some(e => e.pid === q) || returning.some(e => e.pid === q));
     if (pids.every(a => pids.every(b => allied(a, b)))) { sd = { skip: true }; return; } // one side only: the day ends as before
     sd = { t0: t, go: +(t + SD_COUNT).toFixed(2), winners: null };
+    returning.forEach(e => { // a hero on its way back joins the fight at once, with health by how far through the wait it was (never below a quarter)
+      const prog = Math.max(0, Math.min(1, e.respawnLen ? 1 - (e.respawnAt - t) / e.respawnLen : 0)); e.dead = false; e.respawnAt = null; e.hp = Math.max(1, e.maxhp * (.25 + .75 * prog)); e.fx = {}; e.dots = []; e.tgt = null;
+      if (e.respawnEv) e.respawnEv.t1 = t; if (HV3) kit.onRespawn(e); });
+    fighters = ents.filter(e => mobile(e) && !e.cart && !e.ram && !e.cat);
     ents.forEach(e => { if (e.dead) { e.respawnAt = null; return; } if (e.cart || e.ram || e.cat || e.kind === "totem") { e.dead = true; ev({ ty: "die", id: e.id, x: e.x, y: e.y, fx: 0, ex: 1 }); } });
     const cx = NN / 2, cy = NN / 2, R = 3 + pids.length * .4;
     pids.forEach((pid, i) => { const a = -Math.PI / 2 + 2 * Math.PI * i / pids.length, ux = dcos(a), uy = dsin(a), vx = -uy, vy = ux;
