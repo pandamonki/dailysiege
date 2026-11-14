@@ -21,7 +21,8 @@ const XP_CAP = 3, xpNeed = L => 90 + 45 * (L - 1), hpLv = L => 1 + .08 * (L - 1)
 const HOLD_END = 120; // orders to hold the battleground dissolve after 2 minutes, then armies march on castles
 const CTR_BONUS = 1.25; // any hero standing on the battleground earns 25% more gold and XP, held or contested
 const CTR_R = 2.0; // the centre: bonus XP and gold for whoever holds it
-const GOLD_KILL = { unit: 2, militia: 1, summon: 1, guard: 2 };
+const GOLD_KILL = { unit: [5, 7, 9], hero: 30, castle: 50, militia: 1, summon: 1, guard: 2 }; // gold for a kill: a soldier pays by its tier (1, 2, 3; mercenaries count as tier 2), a hero a flat 30, a castle 50
+const killGold = v => v.kind === "champ" ? GOLD_KILL.hero : v.kind === "castle" ? GOLD_KILL.castle : v.militia ? GOLD_KILL.militia : v.kind === "summon" ? GOLD_KILL.summon : v.key === "guard" ? GOLD_KILL.guard : GOLD_KILL.unit[(UNIT_TIER[v.key] || 2) - 1];
 const BASE_INCOME = 225, INCOME_RAMP = 30; // pay after battle 1, and how much it grows with each day of the week
 const baseIncome = d => BASE_INCOME + INCOME_RAMP * (Math.max(1, d) - 1); // base pay earned after the battle of day d
 const startGold = dayNo => { let g = 300; for (let d = 1; d < dayNo; d++) g += baseIncome(d); return g; }; // what a lord who joins on day dayNo starts with

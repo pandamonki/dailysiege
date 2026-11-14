@@ -1,13 +1,13 @@
 // Soldiers and traps: shop data, battle stats, body sizes
 
 const UNITS = {
-  footman: { name: "Footman", cost: 50, hp: 380, atk: 13, note: "Tough blocker. Slows whatever it fights, and is hard to push past." },
-  bowman:  { name: "Bowman",  cost: 70, hp: 150,  atk: 16, note: "Ranged hero-hunter: +30% damage to heroes." },
-  knight:  { name: "Knight",  cost: 120, hp: 420, atk: 30, note: "Heavy armour. Slow." },
+  footman: { name: "Footman", cost: 60, hp: 240, atk: 10, note: "Tough blocker. Slows whatever it fights, and is hard to push past." },
+  bowman:  { name: "Bowman",  cost: 75, hp: 200,  atk: 24, note: "Ranged hero-hunter: +30% damage to heroes." },
+  knight:  { name: "Knight",  cost: 170, hp: 540, atk: 40, note: "Heavy armour. Slow." },
   healer:  { name: "Cleric",  cost: 100, hp: 200,  atk: 10,  note: "Heals nearby units." },
-  raider:  { name: "Raider",  cost: 110, hp: 230, atk: 30, note: "Fast. Hits castles hard." },
-  mage:    { name: "Battle Mage", cost: 140, hp: 170, atk: 27, note: "Casts from a distance. Each bolt also splashes half its damage on enemies next to the target." },
-  sniper:  { name: "Dwarven Sniper", cost: 160, hp: 170, atk: 48, note: "Slow, deadly shots from very far away. Great against light targets and heroes, poor against heavy armour." },
+  raider:  { name: "Raider",  cost: 110, hp: 320, atk: 42, note: "Fast. Hits castles hard." },
+  mage:    { name: "Battle Mage", cost: 140, hp: 280, atk: 44, note: "Casts from a distance. Each bolt also splashes half its damage on enemies next to the target." },
+  sniper:  { name: "Dwarven Sniper", cost: 210, hp: 360, atk: 100, note: "Slow, deadly shots from very far away. Great against light targets and heroes, poor against heavy armour." },
   ram:     { name: "Battering Ram", cost: 240, hp: 750, atk: 125, note: "Pushes slowly at castles and ignores soldiers. Hits castles hard, taking about 5 seconds to bring down a tier 1 castle, then moves on to the next one. Very tough.", engine: true },
   cart:    { name: "Powder Cart", cost: 200, hp: 240, atk: 0, note: "Rolls very slowly at a castle and blows up, enough to flatten a tier 1 castle. The blast hurts every soldier nearby, friend or foe, and also goes off if the cart is destroyed. Can't be trained.", noUpgrade: true, engine: true },
   catapult: { name: "Catapult", cost: 220, hp: 450, atk: 110, note: "Very slow. Sets up two tiles from a castle, then hurls boulders at it. Hits castles hard from a distance, but cannot fight soldiers, so guard it.", engine: true },
@@ -28,7 +28,7 @@ const UNIT_SIM = {
   healer:  { range: 2, as: 1.2, spd: 1.3, armor: .05, heal: 30, shot: "#9cf09c" },
   raider:  { range: 1.1, as: .9, spd: 2.2, armor: .05 },
   mage:    { range: 3, as: 1.7, spd: 1.3, armor: 0, shot: "#9fd8ff", splash: .5 },
-  sniper:  { range: 4.5, as: 2.4, spd: 1.0, armor: .1, shot: "#ffd27a" },
+  sniper:  { range: 4.5, as: 2.0, spd: 1.0, armor: .1, shot: "#ffd27a" },
   ram:     { range: 1.1, as: 1.25, spd: .8, armor: .1 },
   cart:    { range: 1.0, as: 1, spd: .45, armor: 0 },
   catapult: { range: 2, as: 3.5, spd: .5, armor: .05, rammer: 1 }, // sets up two tiles from a castle, then lobs a boulder every 3.5 seconds

@@ -135,17 +135,17 @@ function runBattle(plans, seed, opts = {}) {
         e.hp = e.maxhp; if (!HV3) { ["a1", "a2", "a3"].forEach(k => e.cds[k] = 2 + rng() * 3); e.cds.ult = 10 + rng() * 8; }
         e.ultArm = pl.ultArm !== false; e.heroLvl = lvl; e.lvl0 = lvl; e.xp = pl.xp0 || 0; e.xp0 = e.xp; e.gains = 0;
         const its = new Set(pl.items || []); e.itemSet = its; if (its.has("rapier")) { e.rapier = true; rapierOwner = rapierHolder = pl.pid; }
-        if (its.has("boots")) e.spd *= 1.1; if (its.has("gauntlets")) e.atk *= 1.15; if (its.has("ringprot")) e.dmgRed = (e.dmgRed || 0) + .08;
+        if (its.has("boots")) e.spd *= 1.1; if (its.has("gauntlets")) e.atk *= 1.22; if (its.has("ringprot")) e.dmgRed = (e.dmgRed || 0) + .08;
         if (its.has("fang")) e.lifesteal = (e.lifesteal || 0) + .12; if (its.has("thornmail")) e.thorns = .15; if (its.has("talisman")) e.will = true;
         if (its.has("vanguard")) { e.maxhp *= 1.15; e.hp = e.maxhp; e.block = 12; }
         if (its.has("antimagic")) e.shellAt = Math.max(1, Math.min(10, Math.round(+pl.shellAt || 2)));
         if (its.has("hpring")) { e.maxhp *= 1.08; e.hp = e.maxhp; }
-        if (its.has("whetstone")) e.atk *= 1.07; if (its.has("sandals")) e.spd *= 1.06; if (its.has("buckler")) e.dmgRed = (e.dmgRed || 0) + .04;
+        if (its.has("whetstone")) e.atk *= 1.10; if (its.has("sandals")) e.spd *= 1.06; if (its.has("buckler")) e.dmgRed = (e.dmgRed || 0) + .04;
         if (its.has("jerkin")) { e.maxhp *= 1.06; e.hp = e.maxhp; }
         { const oc = ["frostdagger", "fireorb", "venomorb", "corruptorb"].filter(k => its.has(k)); if (oc.length) e.orbCols = oc.map(k => ITEMS[k].col); }
         if (its.has("shiva")) e.dmgRed = (e.dmgRed || 0) + .06;
-        if (its.has("daedalus")) e.atk *= 1.15;
-        if (its.has("crystalys")) e.itemCrit = [.2, 1.6]; if (its.has("daedalus")) e.itemCrit = [.25, 2.4];
+        if (its.has("daedalus")) e.atk *= 1.20;
+        if (its.has("crystalys")) e.itemCrit = [.25, 1.8]; if (its.has("daedalus")) e.itemCrit = [.3, 2.4];
         e.cons = ["salve", "elixir", "net", "scroll", "shiva", "antimagic"].filter(k => its.has(k)).map(k => ({ k, ready: 0 }));
         if (!HV3 && pl.cls === "archer" && pl.ranks.a3) { e.evade = ext([.1, .18, .25], pl.ranks.a3); e.counter = pl.picks.a3 === "Counter"; e.kite = pl.picks.a3 === "Kite"; }
         if (!HV3 && pl.cls === "rogue" && pl.ranks.a3) e.poison = { dps: ext([7, 10, 13], pl.ranks.a3), venom: pl.picks.a3 === "Venom", weaken: pl.picks.a3 === "Weaken" };
@@ -220,7 +220,7 @@ function runBattle(plans, seed, opts = {}) {
   }
   function awardGold(v, kc) {
     if (!kc || !P[kc.pid] || kc.pid === v.pid || v.kind === "totem" || !hostile(kc.pid, v.pid)) return;
-    let g = v.kind === "champ" ? Math.round((20 + 7 * v.heroLvl) * (1 + .08 * Math.max(0, v.heroLvl - (champOf(kc.pid) ? champOf(kc.pid).heroLvl : v.heroLvl)))) : v.kind === "castle" ? 60 : v.militia ? GOLD_KILL.militia : v.kind === "summon" ? GOLD_KILL.summon : v.key === "guard" ? GOLD_KILL.guard : GOLD_KILL.unit + 2 * ((v.lvl || 1) - 1);
+    let g = killGold(v);
     const rk = RANKS[v.pid]; if ((v.kind === "champ" || v.kind === "castle") && rk && rk <= 3) g += bountyGold(rk, v.kind === "champ" ? v.heroLvl : (champOf(v.pid) || {}).heroLvl); // dynamic leader bounty
     if (HV3) g *= kit.goldMul(kc, v);
     if (inCentre(v.x, v.y)) g *= 1.5;
@@ -237,7 +237,7 @@ function runBattle(plans, seed, opts = {}) {
   function itemTick(e) {
     const s = e.itemSet; if (!s || !s.size) return; const p = P[e.pid];
     if (tick % 10 === 0) {
-      if (s.has("banner")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => setFx(o, "atkbuf", 1.3, .12));
+      if (s.has("banner")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => setFx(o, "atkbuf", 1.3, .16));
       if (s.has("standard")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => setFx(o, "guard", 1.3, .12));
       if (s.has("hpring") && e.hp < e.maxhp) heal(e, e.maxhp * .012, true, e, "Ring of Health");
       if (s.has("herbs") && e.hp < e.maxhp) heal(e, e.maxhp * .006, true, e, "Mending Herbs");
@@ -248,7 +248,7 @@ function runBattle(plans, seed, opts = {}) {
     (e.cons || []).forEach(c => {
       if (t < c.ready) return;
       if (c.k === "salve" && e.hp / e.maxhp < .5) { c.ready = t + ITEMS[c.k].cd; heal(e, e.maxhp * .35, false, e, "Healing Salve"); txt(e, "Salve", "#9cf09c"); }
-      else if (c.k === "elixir" && live(e.tgt) && d(e, e.tgt) <= e.range + 1) { c.ready = t + ITEMS[c.k].cd; setFx(e, "asbuf", 8, .25); txt(e, "Fury!", "#ff8a7a"); }
+      else if (c.k === "elixir" && live(e.tgt) && d(e, e.tgt) <= e.range + 1) { c.ready = t + ITEMS[c.k].cd; setFx(e, "asbuf", 10, .35); txt(e, "Fury!", "#ff8a7a"); }
       else if (c.k === "net") { const v = minBy(enemiesNear(e, e.x, e.y, 4).filter(x => x.kind === "champ"), x => d(x, e)); if (v) { c.ready = t + ITEMS[c.k].cd; setFx(v, "root", 2.5); shot(e, v, "#c9a46a", 2); txt(v, "Netted", "#e8cf9a"); } }
       else if (c.k === "shiva") { const vs = enemiesNear(e, e.x, e.y, 3); if (vs.length >= 2) { c.ready = t + ITEMS[c.k].cd; aoe(e.x, e.y, 3, "#9fe4ff", .6); vs.forEach(x => { deal(e, x, 140, { aoe: 1, ab: "Shiva's Guard" }); if (live(x)) setFx(x, "slow", 4, .4); }); txt(e, "Shiva's Guard", "#bdeeff"); } }
       else if (c.k === "antimagic" && e.engT != null && t - e.engT >= e.shellAt - 1e-6) { c.ready = t + ITEMS[c.k].cd; setFx(e, "shell", 5, .7); ev({ ty: "shell", id: e.id, dur: 5 }); txt(e, "Anti-Magic Shell", "#9ff0e0"); }
@@ -857,9 +857,9 @@ function runBattle(plans, seed, opts = {}) {
       if (e.splash && live(o)) enemiesNear(e, o.x, o.y, 1.3).filter(x => x !== o).forEach(x => deal(e, x, e.atk * e.splash, { aoe: 1 }));
       if (e.cls === "rogue") e.hits = (e.hits || 0) + 1;
       if (e.cls === "archer" && (!V4 || t - e.hitT < 1)) { const th = minBy(enemiesNear(e, e.x, e.y, 2.6).filter(x => x.range < 2.5), x => d(x, e)); if (th) e.fleeUntil = t + .6; } // from BAL_V4 only while being hit
-      if (dealt && e.itemSet && e.itemSet.size && live(o)) { if (e.itemSet.has("frostdagger")) setFx(o, "slow", 1.5, .3); if (e.itemSet.has("venomorb")) addDot(o, e, 7, 3, "orb");
-        if (e.itemSet.has("corruptorb")) setFx(o, "vuln", 3, .15);
-        if (e.itemSet.has("fireorb")) { const sp = enemiesNear(e, o.x, o.y, 1.3).filter(x => x !== o); if (sp.length) aoe(o.x, o.y, 1.3, "#ff7a2a", .35); sp.forEach(x => deal(e, x, dealt * .35, { aoe: 1, ab: "Orb of Fire" })); } }
+      if (dealt && e.itemSet && e.itemSet.size && live(o)) { if (e.itemSet.has("frostdagger")) setFx(o, "slow", 1.5, .3); if (e.itemSet.has("venomorb")) addDot(o, e, 10, 3, "orb");
+        if (e.itemSet.has("corruptorb")) setFx(o, "vuln", 3, .2);
+        if (e.itemSet.has("fireorb")) { const sp = enemiesNear(e, o.x, o.y, 1.3).filter(x => x !== o); if (sp.length) aoe(o.x, o.y, 1.3, "#ff7a2a", .5); sp.forEach(x => deal(e, x, dealt * .5, { aoe: 1, ab: "Orb of Fire" })); } }
       if (dealt && e.poison) { addDot(o, e, e.poison.dps, 4, "poison"); if (e.poison.weaken) setFx(o, "weaken", 4); }
     }
   }
