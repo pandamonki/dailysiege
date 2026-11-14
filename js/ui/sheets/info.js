@@ -162,6 +162,7 @@ const PATCHES = [
     "The unit strip shows the wall's own pixel sprite when you pick a wall.",
     "Highlights reel: the camera sits one zoom step further out, and it now ends on the moment the last rival castle is destroyed instead of the winner's castle standing alone.",
   ], balance: [
+    "These balance changes start with the battle of 14 Nov, and so do the hero and castle changes listed under 16 Nov below (heroes keep fighting, skills that hit castles, the stronger Meteor and magic against castles). Targeting, fair ties, no militia and 3-point castles still start on 16 Nov.",
     "Items are worth more. Stat items are twice as strong, and they stay your hero's: Whetstone +14% attack, Leather Jerkin +12% health, Swift Sandals +12% speed, Iron Buckler 8% less damage, Boots of Speed +20% speed, Gauntlets of Power +30% attack, Ring of Protection 16% less damage, Ring of Health +16% health, Vanguard +30% health, Shiva's Guard 12% less damage and Daedalus +30% attack. The area-buff items are twice as strong too, and they are the ones that reach your soldiers: Banner +24% damage, Standard 24% less damage taken, Mender's Charm heals 8 a second and Pipe of Insight blocks 50% of enemy hero abilities. Crystalys, Fang and the orbs are unchanged.",
     "Fights: a hurt hero or soldier only falls back to heal while it is actually being hit, and goes back to the fight at 60% health (was 80%). A unit already fighting an enemy in reach is not pulled away by a provoker, and answers provokers only within 4 tiles (was 6).",
   ], changes: [] },

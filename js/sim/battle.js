@@ -36,7 +36,8 @@ const PASSING_CASTLE = 2.5;
 //   - destructive hero skills hit castles too (SIEGE_SKILLS), and can be cast at a castle when no soldiers are near; Meteor Strike hits a castle
 //     for METEOR_CASTLE; Rain of Feathered Death hits a castle at half strength (it lands all 14 waves on something that cannot move)
 //   - magic does MAGIC_VS_FORT against fortified armour (castles and walls), more than blades and arrows
-let BAL_V4_FROM = "2026-11-16"; const balV4For = d => String(d) >= BAL_V4_FROM;
+// starts with the battle of 14 Nov 2026 (the fair-ties, pick-your-targets, militia and castle-points rules still start on 16 Nov)
+let BAL_V4_FROM = "2026-11-14"; const balV4For = d => String(d) >= BAL_V4_FROM;
 //   - a unit already fighting an enemy in reach is not pulled away by a provoker, and answers provokers only within AGGRO_R tiles (was 6)
 //   - a hurt hero or soldier only falls back to heal while it is actually being hit (hit in the last HIT_WINDOW seconds), and goes back to the
 //     fight at BACK_AT health (was 80%); an explicit command (all units fall back) still sends everyone home
