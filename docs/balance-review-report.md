@@ -207,3 +207,34 @@ Measured with 8 lords over 30 wars.
 ## Not changed
 
 Hero classes, bot styles, base income and points.
+
+## Stage 4: what was implemented
+
+Approved: changes 1, 3 (lower damage for rams and catapults only), 4 (reshaped) and 7. Change 2, the stronger
+sudden death, was not approved and is not in. All rules apply to battles from 16 November 2026 (`BAL_V5_FROM`).
+Earlier saved battles replay exactly as fought: the golden files did not change.
+
+- **Battle limit:** 300 seconds (was 200).
+- **Battering Ram:** attack 125 to 70, speed 0.8 to 0.5.
+- **Catapult:** attack 110 to 60, speed 0.5 to 0.35.
+- **Powder Cart:** speed 0.45 to 0.32. The blast is unchanged at 540.
+- **Catch-up gold:** the whole bottom half of the board, in even steps from 450 for last place down to 210 for the top
+  of the bottom half. With 8 lords: 450, 370, 290, 210. On an odd board the middle lord gets none.
+- **Bounties:** only paid, in gold and in the matching hero experience, to a lord ranked below the victim.
+- Release notes (v1.2) and full patch notes added. New tests in `test/balV5.test.mjs`.
+
+### Before and after
+
+Measured with 16 wars each at 6, 8, 10 and 12 lords.
+
+- **Days 1 to 3 still run to the limit:** 94% to 100% of battles, now at 300 seconds instead of 200. This is the gap
+  change 2 was meant to close.
+- **Days 4 to 7 are slower:** they average 133 to 194 seconds (was 78 to 116). The first castle falls at 19 to 24
+  seconds (was 13 to 15).
+- **Days 4 to 7, battles reaching the limit:** 8% to 20%, against 14% to 27% before.
+- **Over the week:** 45% to 54% of battles reach the limit (51% to 58% before). About 60% of castles are down by 200
+  seconds, the same as before.
+- **Hero and bot style win rates:** unchanged.
+- **Gold:** the bottom half now ends the week with about as much gold as the winner. With 8 lords the winner earns
+  5,800 and last place 5,480, against 4,370 and 4,280 before.
+- **Board movement:** similar. With 8 lords a lord moves 1.36 places a day (1.32 before).

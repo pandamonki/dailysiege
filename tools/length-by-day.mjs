@@ -58,7 +58,7 @@ sim.run(`globalThis.__lab = (function () {
             formation: true, stance: l.stance, prio: PRIORITY_OPTS.slice(rot).concat(PRIORITY_OPTS.slice(0, rot)).slice(0, 5), rules: [], pieces, targets, tmode: l.tmode, waves: WAVES ? [0, 1, 2].map(k => ({ when: l.wh[k], at: [30, 60, 90][k], units: l.units.filter(u => u.g).slice(k * 3, k * 3 + 3).map(u => ({ type: u.type, lvl: u.lvl, id: u.id })) })) : undefined, heading: doctrine === "two" || doctrine === "twomix" ? "castle" : l.heading, rank: 1, leader: false, offers: {}, replies: {}, terms: {}, bids: {}, engage: engage || 0, gprio: doctrine === "two" ? { hero: ["hero", "ranged", "melee"], melee: ["melee", "ranged", "hero"], ranged: ["hero", "ranged", "melee"] } : doctrine === "twomix" ? DOC2[l.doc] : doctrine === "raider" ? DOC.raider : doctrine === "march" ? { hero: ["castle"], melee: ["castle"], ranged: ["castle"] } : doctrine === "marchhero" ? { hero: ["hero", "castle"], melee: ["castle"], ranged: ["castle"] } : doctrine === "mixed" ? DOC[l.doc] : null, breaks: [], pbetray: {}, pacts: [], hostile: [], betray: {} };
         });
         const order = lords.slice().sort((a, b) => b.pts - a.pts), ranks = {}; order.forEach((l, i) => { ranks[l.pid] = i + 1; });
-        const res = runBattle(plans, 7919 * day + seed, { fast: true, N: L.N, finalDay: day === 7, ultV2: true, balV2: V2, balV3: V2, fairV1: V2, pickV1: V2, balV4: V2, dayNo: day, ranks: day > 1 ? ranks : undefined });
+        const res = runBattle(plans, 7919 * day + seed, { fast: true, N: L.N, finalDay: day === 7, ultV2: true, balV2: V2, balV3: V2, fairV1: V2, pickV1: V2, balV4: V2, balV5: V2, dayNo: day, ranks: day > 1 ? ranks : undefined });
         const siege = lords.reduce((a, l) => a + l.units.filter(u => UNITS[u.type].engine && !u.cool).length, 0), units = lords.reduce((a, l) => a + l.units.filter(u => !u.cool).length, 0);
         const spent = lords.reduce((a, l) => a + l.units.reduce((s, u) => s + UNITS[u.type].cost, 0), 0);
         const falls = res.results.filter(r => r.fellAt != null).map(r => r.fellAt).sort((a, b) => a - b);
@@ -68,14 +68,14 @@ sim.run(`globalThis.__lab = (function () {
         const byPts = res.results.slice().sort((a, b) => b.points - a.points);
         lords.forEach(l => { const r = res.results.find(x => x.pid === l.pid); l.pts += r.points; });
         const board = lords.slice().sort((a, b) => a.pts - b.pts), k = Math.max(1, Math.round(n * .3));
-        lords.forEach(l => { const r = res.results.find(x => x.pid === l.pid), idx = board.indexOf(l); l.gold += BASE_INCOME + CASTLE_INCOME[l.tier - 1] + r.gold + catchUpGold(n, idx);
+        lords.forEach(l => { const r = res.results.find(x => x.pid === l.pid), idx = board.indexOf(l); l.gold += BASE_INCOME + CASTLE_INCOME[l.tier - 1] + r.gold + catchUpGold(n, idx, V2);
           l.units.forEach(u => { const used = res.tel.ents.some(e => e.pid === l.pid && e.ref === u.id); if (UNITS[u.type].cool) { if (used) u.cool = UNITS[u.type].cool; else u.cool = Math.max(0, (u.cool || 0) - 1); } }); });
       }
       return days;
     },
   };
 })()`);
-const TMAX = sim.get("TMAX"), rows = Array.from({ length: 7 }, (_, i) => ({ day: i + 1, len: [], first: [], standing: [], siege: [], units: [], tier3: [], timeUp: 0, n: 0, noDmg: [], armyLeft: [], heroLeft: [] }));
+const TMAX = sim.get(V2 ? "TMAX_V5" : "TMAX"), rows = Array.from({ length: 7 }, (_, i) => ({ day: i + 1, len: [], first: [], standing: [], siege: [], units: [], tier3: [], timeUp: 0, n: 0, noDmg: [], armyLeft: [], heroLeft: [] }));
 for (let w = 0; w < wars; w++) {
   const days = sim.run(`__lab.play(${5000 + w * 131}, ${nLords}, ${V2}, "${DOCTRINE}", ${+process.env.ENGAGE || 0}, ${!!process.env.WAVES})`);
   days.forEach((d, i) => { const r = rows[i]; r.n++; r.len.push(d.len); if (d.first != null) r.first.push(d.first); r.standing.push(d.standing); r.siege.push(d.siege); r.units.push(d.units); r.tier3.push(d.tier3); if (d.len >= TMAX) r.timeUp++; r.noDmg.push(d.noCastleDmg); r.armyLeft.push(d.armyLeft); r.heroLeft.push(d.heroLeft); });

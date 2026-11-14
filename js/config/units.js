@@ -8,9 +8,9 @@ const UNITS = {
   raider:  { name: "Raider",  cost: 110, hp: 230, atk: 30, note: "Fast. Hits castles hard." },
   mage:    { name: "Battle Mage", cost: 140, hp: 170, atk: 27, note: "Casts from a distance. Each bolt also splashes half its damage on enemies next to the target." },
   sniper:  { name: "Dwarven Sniper", cost: 160, hp: 170, atk: 48, note: "Slow, deadly shots from very far away. Great against light targets and heroes, poor against heavy armour." },
-  ram:     { name: "Battering Ram", cost: 240, hp: 750, atk: 125, note: "Pushes slowly at castles and ignores soldiers. Hits castles hard, taking about 5 seconds to bring down a tier 1 castle, then moves on to the next one. Very tough.", engine: true },
+  ram:     { name: "Battering Ram", cost: 240, hp: 750, atk: 70, note: "Crawls at castles and ignores soldiers. Hits castles hard, taking about 10 seconds to bring down a tier 1 castle, then moves on to the next one. Very tough.", engine: true },
   cart:    { name: "Powder Cart", cost: 200, hp: 240, atk: 0, note: "Rolls very slowly at a castle and blows up, enough to flatten a tier 1 castle. The blast hurts every soldier nearby, friend or foe, and also goes off if the cart is destroyed. Can't be trained.", noUpgrade: true, engine: true },
-  catapult: { name: "Catapult", cost: 220, hp: 450, atk: 110, note: "Very slow. Sets up two tiles from a castle, then hurls boulders at it. Hits castles hard from a distance, but cannot fight soldiers, so guard it.", engine: true },
+  catapult: { name: "Catapult", cost: 220, hp: 450, atk: 60, note: "Very slow. Sets up two tiles from a castle, then hurls boulders at it. Hits castles hard from a distance, but cannot fight soldiers, so guard it.", engine: true },
 };
 const UNIT_LVL_GAIN = .3; // each soldier level adds this share of base health and attack
 const UNIT_TIER = { footman: 1, bowman: 1, knight: 3, raider: 2, healer: 2, mage: 2, sniper: 3, ram: 3, cart: 3, catapult: 3 }; // castle tier that unlocks each soldier
@@ -29,10 +29,13 @@ const UNIT_SIM = {
   raider:  { range: 1.1, as: .9, spd: 2.2, armor: .05 },
   mage:    { range: 3, as: 1.7, spd: 1.3, armor: 0, shot: "#9fd8ff", splash: .5 },
   sniper:  { range: 4.5, as: 2.4, spd: 1.0, armor: .1, shot: "#ffd27a" },
-  ram:     { range: 1.1, as: 1.25, spd: .8, armor: .1 },
-  cart:    { range: 1.0, as: 1, spd: .45, armor: 0 },
-  catapult: { range: 2, as: 3.5, spd: .5, armor: .05, rammer: 1 }, // sets up two tiles from a castle, then lobs a boulder every 3.5 seconds
+  ram:     { range: 1.1, as: 1.25, spd: .5, armor: .1 },
+  cart:    { range: 1.0, as: 1, spd: .32, armor: 0 },
+  catapult: { range: 2, as: 3.5, spd: .35, armor: .05, rammer: 1 }, // sets up two tiles from a castle, then lobs a boulder every 3.5 seconds
 };
+
+// Siege engines in battles before BAL_V5_FROM (16 Nov 2026): faster, and rams and catapults hit harder. Saved battles from before replay with these.
+const SIEGE_PRE_V5 = { ram: { atk: 125, spd: .8 }, catapult: { atk: 110, spd: .5 }, cart: { spd: .45 } };
 
 const UNIT_TYPES = { catapult: ["siege", "heavy"], footman: ["blade", "medium"], bowman: ["pierce", "light"], knight: ["blade", "heavy"], healer: ["magic", "light"], raider: ["siege", "medium"], mage: ["magic", "light"], sniper: ["precision", "medium"], ram: ["siege", "heavy"], cart: ["siege", "heavy"] };
 

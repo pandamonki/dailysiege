@@ -27,12 +27,12 @@ const sim = (() => { // the same loader as functions/lib/game.js, plus the text 
 const wars = +process.argv[2] || 20, sizes = (process.argv[3] || "6,8,10,12").split(",").map(Number), TARGET = +process.env.TARGET || 200;
 const D1 = "2026-11-16", get = k => sim.get(k), fightDay = get("fightDay"), addDays = get("addDays"), heroes = Object.keys(get("CLASSES"));
 const J = v => JSON.parse(JSON.stringify(v));
-sim.run(`globalThis.__style = uid => BOT_STYLES[(botSeed(uid) >> 1) % BOT_STYLES.length].name; globalThis.__catch = (n, i) => catchUpGold(n, i); globalThis.__base = d => baseIncome(d);`);
+sim.run(`globalThis.__style = uid => BOT_STYLES[(botSeed(uid) >> 1) % BOT_STYLES.length].name; globalThis.__catch = (n, i, d) => catchUpGold(n, i, balV5For(addDays("2026-11-16", d - 1))); globalThis.__base = d => baseIncome(d);`);
 const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : NaN, pct = v => Number.isNaN(v) ? "  -" : (100 * v).toFixed(0).padStart(3) + "%";
 const board0 = (id, ids, pts) => ids.slice().sort((a, b) => pts[a] - pts[b]).indexOf(id) + 1; // place counted from the bottom
 const out = {};
 for (const n of sizes) {
-  const TMAX = get("TMAX"), days = Array.from({ length: 7 }, () => ({ len: [], timeUp: 0, done: 0, standing: [], first: [], fallen: [], end: [], n: 0 }));
+  const TMAX = sim.run(`balV5For("${D1}") ? TMAX_V5 : TMAX`), days = Array.from({ length: 7 }, () => ({ len: [], timeUp: 0, done: 0, standing: [], first: [], fallen: [], end: [], n: 0 }));
   const cls = {}, style = {}, seat = Array.from({ length: n }, () => ({ w: 0, pts: 0 })), weekRank = { cls: {}, style: {} };
   let lead3 = 0, lead5 = 0, spread = [], goldTop = [], goldBottom = [], swing = [], lastGain = []; const moved = [], leadChanges = [], climb = [];
   for (let w = 0; w < wars; w++) {
@@ -51,7 +51,7 @@ for (const n of sizes) {
         for (const [o, k] of [[cls, c], [style, s]]) { const q = o[k] = o[k] || { n: 0, w: 0, pts: 0 }; q.n++; q.pts += r.points; if (r.place === 1) q.w++; }
         seat[i].pts += r.points; if (r.place === 1) seat[i].w++; pts[r.pid] += r.points; gold[r.pid] += doc.gold[r.pid] || 0; });
       const board = ids.slice().sort((a, b) => pts[a] - pts[b]); // bottom first
-      board.forEach((id, i) => { gold[id] += sim.run(`__base(${d}) + __catch(${n}, ${i})`); });
+      board.forEach((id, i) => { gold[id] += sim.run(`__base(${d}) + __catch(${n}, ${i}, ${d})`); });
       { const nb = board.slice().reverse(); if (prevBoard) { moved.push(avg(ids.map(id => Math.abs(prevBoard.indexOf(id) - nb.indexOf(id))))); if (prevBoard[0] !== nb[0]) lc++; } prevBoard = nb; if (d === 3) d3Bottom = board.slice(0, Math.max(1, Math.round(n * .3))); }
       if (d === 3) Object.assign(at3, { lead: board[n - 1] }); if (d === 5) Object.assign(at5, { lead: board[n - 1] });
       if (d === 7) { const ob = ids.slice().sort((a, b) => before[b] - before[a]), nb = board.slice().reverse(); swing.push(avg(ids.map(id => Math.abs(ob.indexOf(id) - nb.indexOf(id))))); lastGain.push((pts[nb[0]] - before[nb[0]]) / Math.max(1, pts[nb[0]])); }

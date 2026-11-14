@@ -28,10 +28,10 @@ for (const n of sizes) {
   const N = sim.run(`seatLayout(${n}).N`), cls = {}, byTree = {}, fired = {}, seatWins = Array(n).fill(0), seatPts = Array(n).fill(0); let dur = 0, timeUp = 0, alive = 0, ms = 0, firstFall = 0;
   for (let i = 0; i < battles; i++) {
     const info = HV3 ? sim.run(`labInfo(${9000 + i * 31}, ${n})`) : null;
-    const t0 = performance.now(), res = sim.run(`runBattle(labPlans(${9000 + i * 31}, ${n}), ${777 + i * 977}, { fast: true, N: ${N}, balV2: ${V2}, balV3: ${V2}, fairV1: ${V2}, pickV1: ${V2}, balV4: ${V2}${HV3 ? ", heroV3: true" : ""} })`); ms += performance.now() - t0;
+    const t0 = performance.now(), res = sim.run(`runBattle(labPlans(${9000 + i * 31}, ${n}), ${777 + i * 977}, { fast: true, N: ${N}, balV2: ${V2}, balV3: ${V2}, fairV1: ${V2}, pickV1: ${V2}, balV4: ${V2}, balV5: ${V2}${HV3 ? ", heroV3: true" : ""} })`); ms += performance.now() - t0;
     if (info) { res.results.forEach(r => { const f = info[+r.pid.slice(1)], k = f.cls + " " + ["1st", "2nd", "3rd"][f.main] + " tree"; const t = byTree[k] = byTree[k] || { n: 0, w: 0 }; t.n++; if (r.place === 1) t.w++; f.skills.forEach(sk => { const q = fired[sk] = fired[sk] || { heroes: 0, casts: 0 }; q.heroes++; }); });
       res.tel.ents.filter(e => e.kind === "champ").forEach(e => Object.entries(e.ab || {}).forEach(([k, v]) => { const q = fired[e.cls + ":" + k]; if (q) q.casts += v.casts; })); }
-    dur += res.duration; if (res.duration >= sim.get("TMAX")) timeUp++; alive += res.results.filter(r => r.fellAt == null).length;
+    dur += res.duration; if (res.duration >= res.tmax) timeUp++; alive += res.results.filter(r => r.fellAt == null).length;
     firstFall += Math.min(...res.results.map(r => r.fellAt ?? res.duration));
     res.results.forEach(r => { const c = cls[r.cls] = cls[r.cls] || { n: 0, w: 0 }; c.n++; if (r.place === 1) c.w++; const s = +r.pid.slice(1); seatPts[s] += r.points; if (r.place === 1) seatWins[s]++; });
   }

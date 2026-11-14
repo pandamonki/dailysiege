@@ -40,7 +40,7 @@ function resultsSheet() {
   { const lv = R.lvl && R.lvl[R.me]; if (lv) goldLine += `<div class="stat"><b>${lv.gain ? "+" + lv.gain : "0"}</b><span>hero level${lv.gain === 1 ? "" : "s"} gained${lv.gain ? ` (now ${lv.from + lv.gain})` : ""}</span></div>`; }
   if (isLive() && replay.day && R.board) {
     const after = { ...R.board }; R.results.forEach(r => after[r.pid] = (after[r.pid] || 0) + r.points);
-    const sorted = R.order.slice().sort((a, b) => (after[a] || 0) - (after[b] || 0)), cu = catchUpGold(sorted.length, sorted.indexOf(R.me));
+    const sorted = R.order.slice().sort((a, b) => (after[a] || 0) - (after[b] || 0)), cu = catchUpGold(sorted.length, sorted.indexOf(R.me), balV5For(replay.day));
     const dow = (R.transfers || []).reduce((g, t) => g + (t.to === R.me ? t.gold : 0) - (t.from === R.me ? t.gold : 0), 0), cb = CASTLE_INCOME[((R.meta.find(m => m.kind === "castle" && m.pid === R.me) || {}).ctier || 1) - 1], bi = baseIncome(dayNo), tot = bi + cb + (me.gold || 0) + cu + dow;
     goldLine += `<div class="stat"><b>${tot >= 0 ? "+" : ""}${tot}</b><span>gold tomorrow (${bi} base${cb ? `, ${cb} from your castle` : ""}${cu ? `, ${cu} catch-up` : ""}${dow ? `, ${dow > 0 ? "+" : ""}${dow} dowries` : ""} and spoils)</span></div>`;
   }
@@ -48,7 +48,7 @@ function resultsSheet() {
   const board = R.board ? (() => { const after = { ...R.board }; R.results.forEach(r => after[r.pid] = (after[r.pid] || 0) + r.points);
     return R.order.slice().sort((a, b) => after[b] - after[a]).map((pid, i) => { const r = R.results.find(x => x.pid === pid), was = rankMap(R.board, R.order)[pid], move = was ? was - (i + 1) : 0;
       return `<div class="place${pid === R.me ? " me" : ""}"><span class="ord">${i + 1}</span><i style="background:${r.color}"></i><span><b>${esc(N(pid))}</b>${move ? ` <span class="${move > 0 ? "up" : "down"}">${move > 0 ? "▲" : "▼"}${Math.abs(move)}</span>` : ""}<br><span class="muted">+${r.points} today</span></span><span class="pts">${after[pid]}<small>points</small></span></div>`; }).join(""); })() : "";
-  return head(null, `Day ${dayNo} Recap`, `The fighting lasted ${fmt(Math.min(R.duration, TMAX))}`) + `<div class="body">
+  return head(null, `Day ${dayNo} Recap`, `The fighting lasted ${fmt(Math.min(R.duration, R.tmax || TMAX))}`) + `<div class="body">
     <div class="verdict"><b>${me.place === 1 ? (R.team ? "Victory, together" : "Victory") : ord(me.place) + " of " + R.results.length}</b><span class="muted">${R.team ? "Allies won the Daily Siege together. " : ""}${me.points} point${me.points === 1 ? "" : "s"} toward this week's leaderboard</span></div>
     <div class="row"><button class="btn wax" data-act="reel">▶ Play highlights</button>${canRecord() && window.claude ? `<button class="btn wood" data-act="reelrec">Save highlights video</button>` : ""}</div>
     <div class="stats">

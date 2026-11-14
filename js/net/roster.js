@@ -30,7 +30,7 @@ const feudsBefore = (dayKey, week) => wFeudsBefore(LIVE, dayKey, week);
 function incomeFor(uid, week, dayKey) {
   const b = LIVE.battles[dayKey], pts = standingsThrough(week, dayKey), ids = rosterFor(week).map(p => p.uid);
   const order = ids.slice().sort((x, y) => (pts[x] || 0) - (pts[y] || 0)), idx = order.indexOf(uid);
-  const spoils = (b && b.gold && b.gold[uid]) || 0, catchUp = idx > -1 ? catchUpGold(order.length, idx) : 0;
+  const spoils = (b && b.gold && b.gold[uid]) || 0, catchUp = idx > -1 ? catchUpGold(order.length, idx, balV5For(dayKey)) : 0;
   const pl = LIVE.players[uid], plan = pl && latestPlan(pl, dayKey, true), castle = CASTLE_INCOME[Math.max(0, Math.min(2, ((plan && plan.castleTier) || 1) - 1))];
   const base = baseIncome(weekdayOf(dayKey));
   return { base, castle, spoils, catchUp, total: base + castle + spoils + catchUp };

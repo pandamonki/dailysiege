@@ -116,7 +116,7 @@ function drawReel() {
   if (r.phase === "intro") {
     shade(.72); const day = replay.day ? `Day ${weekdayOf(replay.day)}` : `Day ${DAY}`;
     center("Daily Siege", H2 * .36, 22 * s, "#c9962f"); center(`${day} Highlights`, H2 * .47, 36 * s, "#fff4d6");
-    center(`${r.clips.length} moment${r.clips.length === 1 ? "" : "s"} · ${fmt(Math.min(R.duration, TMAX))} of fighting`, H2 * .58, 16 * s, "#e8dcc0", 500);
+    center(`${r.clips.length} moment${r.clips.length === 1 ? "" : "s"} · ${fmt(Math.min(R.duration, R.tmax || TMAX))} of fighting`, H2 * .58, 16 * s, "#e8dcc0", 500);
   } else if (r.phase === "card" || r.phase === "clip") {
     const c = r.clips[r.i];
     if (r.phase === "card") { const a = Math.min(1, r.pt / .25, (REEL_CARD - r.pt) / .25 + .35); shade(.55 * a);

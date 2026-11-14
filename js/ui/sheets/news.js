@@ -3,6 +3,16 @@
 // Each item is [icon, headline, one short sentence]. Players who have not seen the newest id get the pop-up the next time they plan;
 // the id is remembered on their device, so changing the id is all it takes to show it again. Keep about 8 to 14 items.
 const RELEASES = [
+  { id: "1.2", title: "What's new in v1.2", sub: "From the battles of Monday 16 November", items: [
+    ["⏳", "Longer battles", "Battles can last up to 5 minutes, so there is time for every castle to fall."],
+    ["🐏", "Slower battering rams", "Rams crawl and hit castles about half as hard. A tier 1 castle takes about 10 seconds to break."],
+    ["🪨", "Gentler catapults", "Catapults move slower and their boulders do about half the damage."],
+    ["💥", "Slower powder carts", "Carts roll slower, so there is more time to stop them. The blast is as big as ever."],
+    ["⚖", "Catch-up for the bottom half", "Everyone in the bottom half of the board earns catch-up gold, from 210 up to 450 for last place."],
+    ["♛", "Bounties for the underdog", "Only a lord ranked below a top-three lord collects the bounty on them."],
+    ["🤖", "Honest bots", "Bot lords now earn and spend gold like you do, so their armies are ones you could afford too."],
+    ["🎯", "Sharper bots", "Bot soldiers look further for targets, so their bowmen and mages follow their orders."],
+  ] },
   { id: "1.1", title: "What's new in v1.1", sub: "From the battles of Monday 16 November", items: [
     ["🎯", "Pick your targets", "Each day your attack list starts empty. Pick one to three targets before you seal."],
     ["🧭", "Targets can be roles", "Pick a lord, or a role worked out in battle: weakest castle, board leader, the lord above you, nearest castle or nearest to your army."],

@@ -11,8 +11,8 @@ function countdown() { if (isLive()) { const m = liveClock().minsToLock; return 
 
 function underdogChip() {
   if (!isLive()) return `<span class="under"></span>`;
-  const ck = liveClock(), pts = standings(ck.week), ids = rosterFor(ck.week).map(p => p.uid), order = ids.slice().sort((a, b) => (pts[a] || 0) - (pts[b] || 0)), i = order.indexOf(LIVE.uid), g = i > -1 ? catchUpGold(ids.length, i) : 0;
-  return g ? `<span class="under" title="The bottom 30% earn extra gold every day to catch up">Catch-up gold +${g}</span>` : `<span class="under"></span>`;
+  const ck = liveClock(), pts = standings(ck.week), ids = rosterFor(ck.week).map(p => p.uid), order = ids.slice().sort((a, b) => (pts[a] || 0) - (pts[b] || 0)), i = order.indexOf(LIVE.uid), g = i > -1 ? catchUpGold(ids.length, i, balV5For(ck.planDay)) : 0;
+  return g ? `<span class="under" title="${balV5For(ck.planDay) ? "The bottom half of the board earn" : "The bottom 30% earn"} extra gold every day to catch up: the lower, the more">Catch-up gold +${g}</span>` : `<span class="under"></span>`;
 }
 function ultChip() {
   if (!ultLearned()) return ["⚡", "–", "off", "Ultimate not learned yet"];

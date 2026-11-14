@@ -26,10 +26,21 @@ const BASE_INCOME = 225, INCOME_RAMP = 30; // pay after battle 1, and how much i
 const baseIncome = d => BASE_INCOME + INCOME_RAMP * (Math.max(1, d) - 1); // base pay earned after the battle of day d
 const startGold = dayNo => { let g = 300; for (let d = 1; d < dayNo; d++) g += baseIncome(d); return g; }; // what a lord who joins on day dayNo starts with
 const curDayNo = () => (typeof isLive === "function" && isLive()) ? liveClock().dayNo : DAY; // the day being planned
-function catchUpGold(n, idxFromBottom) { const k = Math.max(1, Math.round(n * .3)); return idxFromBottom < k ? Math.round(140 + 160 * (1 - idxFromBottom / k)) : 0; }
+// Catch-up gold after each battle, by place counted from the bottom (0 = last). v5: the battle was fought on or after BAL_V5_FROM.
+// Before: the bottom 30%, 300 gold for last place down to about 140. From then: the whole bottom half, in even steps from CATCH_UP.most for last place
+// down to CATCH_UP.least for the top of the bottom half (8 lords: 450, 370, 290, 210).
+const CATCH_UP = { most: 450, least: 210 };
+const catchUpBand = (n, v5) => v5 ? Math.floor(n / 2) : Math.max(1, Math.round(n * .3)); // how many lords at the bottom are paid
+function catchUpGold(n, idxFromBottom, v5) {
+  const k = catchUpBand(n, v5); if (idxFromBottom < 0 || idxFromBottom >= k) return 0;
+  if (!v5) return Math.round(140 + 160 * (1 - idxFromBottom / k));
+  return k === 1 ? CATCH_UP.most : Math.round((CATCH_UP.most - (CATCH_UP.most - CATCH_UP.least) * idxFromBottom / (k - 1)) / 5) * 5;
+}
 
-const BOUNTY = { base: 15, rank: [40, 25, 15], perLvl: 5 }; // gold on the heads of the top three: base + board position + hero level x 5
+const BOUNTY = { base: 15, rank: [40, 25, 15], perLvl: 5 }; // gold on the heads of the top three: base + board position + hero level x 5 (from 16 Nov 2026 only a lord ranked below collects it)
 const bountyGold = (rank, lvl) => rank && rank <= 3 ? BOUNTY.base + BOUNTY.rank[rank - 1] + BOUNTY.perLvl * (lvl || 1) : 0;
+// is the bounty on `victim` paid to `killer`? ranks: { pid: place } going into the day. From 16 Nov 2026 (v5) only a lord ranked below the victim, or unranked, collects it.
+const bountyPaid = (ranks, killer, victim, v5) => !!(ranks[victim] && ranks[victim] <= 3) && (!v5 || !(ranks[killer] && ranks[killer] < ranks[victim]));
 const LEADER = "p1"; // top of last week's board: carries the bounty
 // damage types: every attack has a type, every body has an armour class
 const ATK_TYPES = {
@@ -56,7 +67,7 @@ const FINISH_AT = .5, FINISH_BONUS = 1.6; // Rogue: +60% against anything below 
 const MILITIA = { first: 35, every: 25, count: 2, hp: 150, atk: 11 };
 // global balance knobs: movement speed, time between attacks, ability cooldowns, castle health
 const BAL = { move: .85, swing: 1.15, cd: 1.1, castleHp: 600 };
-const SUDDEN = 100, TMAX = 200, FRAME_DT = .2, BURST_MIN = 560;
+const SUDDEN = 100, TMAX = 200, TMAX_V5 = 300, FRAME_DT = .2, BURST_MIN = 560;
 
 // kill streaks: the battle sim names a streak as it happens, so the table lives with the balance numbers
 const STREAKS = [[4, "Quad Squad"], [6, "Mowing the Lawn"], [8, "Pitchfork Panic"], [11, "Heads Will Roll"], [15, "Butcher of the Realm"], [20, "Daily Siege Legend"]]; // [kill weight in a chain, name]
