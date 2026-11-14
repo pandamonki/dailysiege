@@ -19,6 +19,8 @@ function renderSheet() {
   const html = { castle: castleSheet, champ: champSheet, unit: () => unitSheet(sheet.id), trap: () => trapSheet(sheet.id), rival: () => rivalSheet(sheet.id),
     title: titleSheet, patch: patchSheet, gold: goldSheet, day: daySheet, board: boardSheet, report: () => reportSheet(sheet.id), invites: inviteSheet, whatsnew: newsSheet, camp: campSheet, spin: spinSheet, rhero: () => rivalHeroSheet(sheet.id), guide: guideSheet, spells: spellsSheet, wall: () => wallSheet(sheet.id),
     council: councilSheet, uorder: () => uorderSheet(sheet.id), game: gameSheet, install: installSheet, orders: ordersSheet, seal: sealSheet, results: resultsSheet, lab: labSheet, deploy: () => deploySheet(sheet.id) }[sheet.type]();
+  if (sheet.type === "spin" && p.dataset.spin === html && !sh.hidden) return; // the reels are mid-spin: a redraw with the same markup must not restart them
+  p.dataset.spin = sheet.type === "spin" ? html : "";
   p.innerHTML = html; sh.hidden = veil.hidden = false; sh.classList.toggle("splash", sheet.type === "title" && sheet.tab !== "test");
   decorateHelp(p);
   const b = p.querySelector(".body"); if (b && sheet.keep) b.scrollTop = scroll;

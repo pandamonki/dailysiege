@@ -37,7 +37,14 @@ const PASSING_CASTLE = 2.5;
 //     for METEOR_CASTLE; Rain of Feathered Death hits a castle at half strength (it lands all 14 waves on something that cannot move)
 //   - magic does MAGIC_VS_FORT against fortified armour (castles and walls), more than blades and arrows
 let BAL_V4_FROM = "2026-11-16"; const balV4For = d => String(d) >= BAL_V4_FROM;
-const RECALL_R = 6, RETREAT_END_V2 = .5, METEOR_CASTLE = 700, MAGIC_VS_FORT = .6;
+//   - a unit already fighting an enemy in reach is not pulled away by a provoker, and answers provokers only within AGGRO_R tiles (was 6)
+//   - a hurt hero or soldier only falls back to heal while it is actually being hit (hit in the last HIT_WINDOW seconds), and goes back to the
+//     fight at BACK_AT health (was 80%); an explicit command (all units fall back) still sends everyone home
+//   - stat items also equip the army: ARMY_SHARE of each attack, health, speed and damage-reduction bonus goes to every ordinary soldier the lord fields
+//     (siege engines and mercenaries are unchanged), so gold spent on items grows with the size of the army instead of helping one hero
+let ARMY_SHARE = .5, ITEM_BOOST = 1; // ITEM_BOOST: the stat items' own bonuses are this many times as strong (for the hero as well as the army)
+const ITEM_STATS = { whetstone: { atk: .07 }, gauntlets: { atk: .15 }, daedalus: { atk: .15 }, jerkin: { hp: .06 }, hpring: { hp: .08 }, vanguard: { hp: .15 }, sandals: { spd: .06 }, boots: { spd: .10 }, buckler: { dr: .04 }, ringprot: { dr: .08 }, shiva: { dr: .06 } };
+const AGGRO_R = 4, RECALL_R = 6, RETREAT_END_V2 = .5, METEOR_CASTLE = 700, MAGIC_VS_FORT = .6, HIT_WINDOW = 2.5, BACK_AT = .6;
 const fairTie = (seed, a, b) => hash(seed, botSeed(String(a)) * 7919 + botSeed(String(b)), 17);
 const BLOC_MAX = 3, TREACHERY_PTS = 3, TREACHERY_LOOT = .25, DAY_WEIGHT = { 5: 1.5, 6: 1.5, 7: 2 };
 // A lord whose castle falls keeps their hero and soldiers on the field: they fight on to the end of the battle, but can no longer fall back, heal at the castle, teleport home or respawn. Placing is still decided by when the castle fell.
@@ -100,6 +107,8 @@ function runBattle(plans, seed, opts = {}) {
   function makeUnit(pl, pc, x, y) {
     const g = pl.gear || {}, base = UNITS[pc.type], s = UNIT_SIM[pc.type], isCart = pc.type === "cart", fixed = isCart || !!base.merc, m = fixed ? 1 : 1 + UNIT_LVL_GAIN * (pc.lvl - 1), gm = fixed ? 1 : 1 + .15 * (g.armour || 0), ga = fixed ? 1 : 1 + .15 * (g.weapon || 0);
     const e = add({ order: pc.order || "army", pid: pl.pid, kind: "unit", key: pc.type, lvl: pc.lvl, ref: pc.id || null, x, y, maxhp: base.hp * m * gm, atk: base.atk * m * ga, cart: isCart, ram: pc.type === "ram" || !!s.rammer, cat: pc.type === "catapult", merc: !!base.merc, regen: s.regen || 0, hunter: !!s.hunter, dmgRed: fixed ? 0 : [0, 0, .1, .2][g.armour || 0], lifesteal: s.lifesteal || (!fixed && (g.weapon || 0) >= 3 ? .1 : 0), range: s.range, as: s.as, spd: s.spd, armor: s.armor, shot: s.shot, siege: s.siege, splash: s.splash || 0, healer: s.heal ? s.heal * m : 0 });
+    if (V4 && !fixed && pl.items && pl.items.length) { const ab = { atk: 0, hp: 0, spd: 0, dr: 0 }; pl.items.forEach(k => { const st = ITEM_STATS[k]; if (st) for (const q in st) ab[q] += st[q]; });
+      const k = ARMY_SHARE * ITEM_BOOST; e.atk *= 1 + k * ab.atk; e.maxhp *= 1 + k * ab.hp; e.spd *= 1 + k * ab.spd; e.dmgRed = (e.dmgRed || 0) + k * ab.dr; }
     e.hp = e.maxhp * (pc.hp ?? 1); [e.atype, e.armour] = UNIT_TYPES[pc.type];
     return e;
   }
@@ -146,6 +155,8 @@ function runBattle(plans, seed, opts = {}) {
         if (its.has("shiva")) e.dmgRed = (e.dmgRed || 0) + .06;
         if (its.has("daedalus")) e.atk *= 1.15;
         if (its.has("crystalys")) e.itemCrit = [.2, 1.6]; if (its.has("daedalus")) e.itemCrit = [.25, 2.4];
+        if (V4 && ITEM_BOOST !== 1) { const ab = { atk: 0, hp: 0, spd: 0, dr: 0 }; its.forEach(k => { const st = ITEM_STATS[k]; if (st) for (const q in st) ab[q] += st[q]; });
+          e.atk *= 1 + (ITEM_BOOST - 1) * ab.atk; e.maxhp *= 1 + (ITEM_BOOST - 1) * ab.hp; e.hp = e.maxhp; e.spd *= 1 + (ITEM_BOOST - 1) * ab.spd; e.dmgRed = (e.dmgRed || 0) + (ITEM_BOOST - 1) * ab.dr; }
         e.cons = ["salve", "elixir", "net", "scroll", "shiva", "antimagic"].filter(k => its.has(k)).map(k => ({ k, ready: 0 }));
         if (!HV3 && pl.cls === "archer" && pl.ranks.a3) { e.evade = ext([.1, .18, .25], pl.ranks.a3); e.counter = pl.picks.a3 === "Counter"; e.kite = pl.picks.a3 === "Kite"; }
         if (!HV3 && pl.cls === "rogue" && pl.ranks.a3) e.poison = { dps: ext([7, 10, 13], pl.ranks.a3), venom: pl.picks.a3 === "Venom", weaken: pl.picks.a3 === "Weaken" };
@@ -515,7 +526,11 @@ function runBattle(plans, seed, opts = {}) {
     // a wave sent at the nearest enemies: whoever is closest, anywhere on the field; with nobody left it marches as usual
     if (V3 && e.purpose === "nearest" && !guard && !escort) { const pool = ents.filter(o => !o.dead && o.kind !== "castle" && o.kind !== "totem" && hostile(e.pid, o.pid) && fighting(o.pid) && vis(o, e)); if (pool.length) return minBy(pool, o => d(o, e)); }
     // aggression: answer whoever just struck you or a friend nearby
-    if (e.aggro && e.aggro.until > t && live(e.aggro.src) && hostile(e.pid, e.aggro.src.pid) && vis(e.aggro.src, e) && d(e.aggro.src, e) <= 6 && (!guard || d(e.aggro.src, p.castle) <= 8)) return e.aggro.src;
+    // V4: a unit that already has an enemy in reach finishes that fight instead of being pulled across the field by a provoker, and a provoker is only
+    // answered when it is within AGGRO_R tiles (was 6). Heroes and soldiers used to drop a fight to chase a distant archer, then walk back.
+    const hasFoe = V4 && live(e.tgt) && e.tgt.kind !== "castle" && hostile(e.pid, e.tgt.pid) && vis(e.tgt, e) && d(e.tgt, e) <= e.range + .3;
+    if (e.aggro && e.aggro.until > t && live(e.aggro.src) && hostile(e.pid, e.aggro.src.pid) && vis(e.aggro.src, e) && d(e.aggro.src, e) <= (V4 ? AGGRO_R : 6) && !hasFoe && (!guard || d(e.aggro.src, p.castle) <= 8)) return e.aggro.src;
+    if (hasFoe && e.aggro && e.aggro.until > t) return e.tgt;
     // pursuit: stay on a target that is fleeing or badly hurt, unless it has escaped far away
     const cur = e.tgt;
     if (live(cur) && cur.kind !== "castle" && hostile(e.pid, cur.pid) && vis(cur, e) && (cur.retreating || cur.hp / cur.maxhp < .35) && d(cur, e) <= (guard ? 4.5 : 7)) return cur;
@@ -779,9 +794,9 @@ function runBattle(plans, seed, opts = {}) {
     if ((e.kind === "champ" || e.kind === "unit") && !e.noRetreat) {
       const thr = RETREAT_AT[p.stance] ?? .45;
       const left = e.kind === "champ" ? 2 : 1; // soldiers fall back once, champions twice; after that they fight to the end
-      if (!e.retreating && (e.retreats || 0) < left && (e.hp / e.maxhp < thr || p.fallbackUntil > t)) { e.retreating = true; e.retreats = (e.retreats || 0) + 1; e.tgt = null; }
+      if (!e.retreating && (e.retreats || 0) < left && ((e.hp / e.maxhp < thr && (!V4 || t - e.hitT < HIT_WINDOW)) || p.fallbackUntil > t)) { e.retreating = true; e.retreats = (e.retreats || 0) + 1; e.tgt = null; }
       if (e.retreating) {
-        if (e.hp / e.maxhp >= .8 && !(p.fallbackUntil > t)) e.retreating = false;
+        if (e.hp / e.maxhp >= (V4 ? BACK_AT : .8) && !(p.fallbackUntil > t)) e.retreating = false;
         else {
           const atHome = d(e, p.castle) < 1.8;
           if (atHome) heal(e, e.maxhp * .1 * DT, true); else { setFx(e, "slow", .2, .45); moveToward(e, p.castle.x, p.castle.y - .9, 1); }

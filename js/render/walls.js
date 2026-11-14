@@ -37,6 +37,13 @@ function drawWallTile(c, r, q, tier, frac, color, t, dir) {
   if (frac < 1) { const bw = ts * .8; c.fillStyle = "rgba(20,12,6,.85)"; c.fillRect(x + ts * .1 - 1, y + ts * .9 - 1, bw + 2, ts * .07 + 2); c.fillStyle = frac > .5 ? "#47b04b" : "#d4402f"; c.fillRect(x + ts * .1, y + ts * .9, bw * frac, ts * .07); }
   c.restore();
 }
+// the wall's pixel sprite as a small picture for the unit strip (the grey square it used to show was a placeholder)
+const WALL_PORTRAIT = {};
+function wallPortrait(tier) {
+  tier = Math.max(1, Math.min(3, tier || 1)); if (WALL_PORTRAIT[tier]) return WALL_PORTRAIT[tier];
+  const sp = wallSprite(tier, "h"), cv = document.createElement("canvas"); cv.width = cv.height = 64; const c = cv.getContext("2d"); c.imageSmoothingEnabled = false; c.drawImage(sp, 0, 4, 64, 64);
+  return (WALL_PORTRAIT[tier] = cv.toDataURL());
+}
 const WALL_URL = {};
 function wallURL(tier) {
   tier = Math.max(1, Math.min(3, tier)); if (WALL_URL[tier]) return WALL_URL[tier];

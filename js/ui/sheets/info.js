@@ -179,6 +179,7 @@ const PATCHES = [
     "Hero skills that blast an area now hit castles too: Executioner's Whirlwind, Chain Lightning, Thunderclap, Chrono-Storm, Fireball, Blizzard, Arrow Volley and Rain of Feathered Death (half strength on a castle). With no soldiers about, they can be aimed at a castle in range. Spirit Wolves can be called at a castle.",
     "Meteor Strike hits a castle much harder (700 before armour, was 400).",
     "Magic now does 60% against fortified castles and walls (was 35%), more than blades (50%) and arrows (35%). Battle Mages, mage and shaman heroes and healers all hit castles harder.",
+    "Fights: a hurt hero or soldier only falls back to heal while it is actually being hit, and goes back to the fight at 60% health (was 80%). A unit already fighting an enemy in reach is not pulled away by a provoker, and answers provokers only within 4 tiles (was 6).",
     "New lords start with no orders, so your stance alone decides when your army falls back to heal. Any order you add still takes priority over the stance.",
   ], changes: [
     "Pick your targets: each day your attack list starts empty and you must pick one to three targets before you seal. A target can be a lord, or a role worked out during the battle: weakest castle, board leader, the lord just above me, nearest to my castle, or nearest to my army.",
@@ -188,6 +189,9 @@ const PATCHES = [
     "The Train button on a soldier opens its training page instead of training it straight away.",
     "Soldiers and your hero are moved with the Move button. Dragging them on the map is gone, so panning the map never moves a unit by mistake.",
     "Tap an item on the hero screen to see its details, sell it or open the shop. The shop bubble shows the full shop art.",
+    "Free item gifts: the reels now spin like a slot machine and keep spinning when the game updates behind them. Closing the gift no longer makes it pop straight back up: it waits behind a 🎁 button on the map until you take it. If your item slots are full, the choice of which item to swap comes first. A gift you never claimed is dropped when the week ends.",
+    "The unit strip shows the wall's own pixel sprite when you pick a wall.",
+    "Highlights reel: the camera sits one zoom step further out, and it now ends on the moment the last rival castle is destroyed instead of the winner's castle standing alone.",
   ] },
   { v: "Shop bag, one-page shop and page help", date: "13 Nov", fixes: [], balance: [], changes: [
     "A bag of gold on the right edge of the map opens the shop. The Shop tab is gone from Base, and the Hero page has the same bag next to your items.",

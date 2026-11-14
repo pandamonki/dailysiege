@@ -23,7 +23,8 @@ function hlText(h, R) {
     case "rapierget": return ["Rapier seized!", `${V(h.pid, "snatch", "snatches")} up the Divine Rapier`];
     case "frenzy": return ["Desperation Frenzy", `${poss(h.pid)} keep is nearly lost and its defenders fight like demons`];
     case "ult": if (h.gen) return [h.ab + "!", `${poss(h.pid)} ultimate: ${h.ab}`]; return h.ab === "Meteor" ? ["Meteor!", `${poss(h.pid)} Meteor crashes into ${h.n} foes`] : ["Assassinated", `${poss(h.pid)} Rogue executes ${you(h.other) ? "your" : N(h.other) + "'s"} hero`];
-    case "winner": return [`${V(h.pid, "win", "wins")} the Daily Siege`, h.timeout ? "Night falls with the strongest castle standing" : h.clutch ? `Clutch! The castle held on at ${Math.max(1, Math.round(h.hpFrac * 100))}%` : "Last castle standing"];
+    case "winner": if (h.last) return [`${V(h.pid, "win", "wins")} the Daily Siege`, `${h.last.other ? (you(h.last.other) ? "You bring" : N(h.last.other) + " brings") + " down " : ""}${you(h.last.pid) ? "your" : N(h.last.pid) + "'s"} castle${h.last.other ? "" : " falls"}: the last rival is gone`];
+      return [`${V(h.pid, "win", "wins")} the Daily Siege`, h.timeout ? "Night falls with the strongest castle standing" : h.clutch ? `Clutch! The castle held on at ${Math.max(1, Math.round(h.hpFrac * 100))}%` : "Last castle standing"];
   }
   return ["", ""];
 }
@@ -39,15 +40,20 @@ function buildReel(R) {
     if (picked.filter(p => p.kind !== "ult").length >= 6 || picked.filter(p => p.kind === h.kind).length >= 2) return; const [a, b] = hlWindow(h);
     if (picked.some(p => { const [c, d] = hlWindow(p); return a < d + .5 && c < b + .5; })) return; picked.push(h);
   });
+  // The reel used to end on the winner's castle standing alone. It now ends on the moment the last rival castle is destroyed (nothing at all if the
+  // battle ran to nightfall, since no castle fell last). The clip carries the winner's name; the camera is on the castle that fell.
   const win = (R.hl || []).find(h => h.kind === "winner");
+  const falls = (R.hl || []).filter(h => h.kind === "fall" || h.kind === "upset" || h.kind === "revenge"), last = falls.reduce((a, b) => (!a || b.t > a.t ? b : a), null);
+  const finale = win && last && !win.timeout ? { ...win, t: last.t, x: last.x, y: last.y, last } : null;
   picked.sort((a, b) => a.t - b.t);
-  if (win) { const [a] = hlWindow(win); for (let i = picked.length - 1; i >= 0; i--) if (hlWindow(picked[i])[1] > a - .5) picked.splice(i, 1); picked.push(win); }
+  if (finale) { const [a] = hlWindow(finale); for (let i = picked.length - 1; i >= 0; i--) if (hlWindow(picked[i])[1] > a - .5) picked.splice(i, 1); picked.push(finale); }
   const champIdx = pid => R.meta.findIndex(m => m.pid === pid && m.kind === "champ");
   return picked.map(h => { const [a, b, key] = hlWindow(h), [title, sub] = hlText(h, R);
     const follow = ["spree", "burst", "betray", "firstblood", "giantslayer", "rapierdrop", "rapierget"].includes(h.kind) || (h.kind === "ult" && h.ab !== "Meteor") ? champIdx(h.kind === "giantslayer" || h.kind === "firstblood" ? h.other : h.pid) : -1;
     return { h, a: Math.max(0, a), b: Math.min(R.duration, b), key, title, sub, follow, color: R.colors[h.kind === "fall" || h.kind === "upset" ? (h.other || h.pid) : h.kind === "revenge" ? h.other : h.pid] || "#ffe082" }; });
 }
 const REEL_CARD = 1.3, REEL_INTRO = 2.2, REEL_OUTRO = 4;
+const REEL_ZOOM_OUT = 1.35; // the reel's camera sits one zoom step (the zoom buttons' x1.35) further out than it used to, so more of the action is in view
 function startReel(record) {
   if (!replay) return; const clips = buildReel(replay.res);
   if (!clips.length) { toast("Nothing big happened in this battle."); return; }
@@ -71,7 +77,7 @@ function tickReel(dt) {
   else if (r.phase === "card" && r.pt >= REEL_CARD) { r.phase = "clip"; r.pt = 0; }
   else if (r.phase === "clip") {
     const c = r.clips[r.i]; replay.time = Math.min(c.b, replay.time + dt * reelSpeed(c, replay.time));
-    const [x, y] = reelFocus(c, replay.time); flyTo(x * ts, (y - .3) * ts, c.h.kind === "winner" || c.h.kind === "fall" || c.h.kind === "upset" || c.h.kind === "revenge" || c.h.kind === "bomb" ? 1.45 : 1.75);
+    const [x, y] = reelFocus(c, replay.time); flyTo(x * ts, (y - .3) * ts, (c.h.kind === "winner" || c.h.kind === "fall" || c.h.kind === "upset" || c.h.kind === "revenge" || c.h.kind === "bomb" ? 1.45 : 1.75) / REEL_ZOOM_OUT);
     if (replay.time >= c.b) nextClip(r);
   } else if (r.phase === "outro" && r.pt >= REEL_OUTRO) { const rec = r.rec; stopReel(!rec); }
 }
@@ -79,7 +85,7 @@ function nextClip(r) {
   r.i++; r.pt = 0;
   if (r.i >= r.clips.length) { r.phase = "outro"; flyTo(W / 2, W / 2, 0); return; }
   const c = r.clips[r.i]; r.phase = "card"; replay.time = c.a;
-  const [x, y] = reelFocus(c, c.a), z = Math.max(minZoom(), Math.min(2.4, 1.6)); camTarget = null; Object.assign(cam, { x: x * ts - vw / 2 / z, y: (y - .3) * ts - vh / 2 / z, z }); clampCam();
+  const [x, y] = reelFocus(c, c.a), z = Math.max(minZoom(), Math.min(2.4, 1.6 / REEL_ZOOM_OUT)); camTarget = null; Object.assign(cam, { x: x * ts - vw / 2 / z, y: (y - .3) * ts - vh / 2 / z, z }); clampCam();
   const el = document.getElementById("reelstep"); if (el) el.textContent = `${r.i + 1} / ${r.clips.length}`;
 }
 function buildReelUI() {
