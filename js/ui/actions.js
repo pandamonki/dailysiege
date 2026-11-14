@@ -108,6 +108,7 @@ const A = {
   spinpick: k => { const sp = S.spin; if (!sp || !sp.offer.includes(k)) return; if (S.items.length >= ITEM_SLOTS) { sheet.pend = k; return; } S.items.push(k); toast(`${ITEMS[k].name} added to your hero.`); endSpin(); },
   spinrep: j => { const sp = S.spin, k = sheet && sheet.pend; if (!sp || !k || !S.items.includes(j)) return; S.items = S.items.filter(x => x !== j); S.gold += Math.floor(itemCost(j) / 2); S.items.push(k); toast(`${ITEMS[k].name} replaces ${ITEMS[j].name}.`); endSpin(); },
   spinno: () => { if (sheet) sheet.pend = null; },
+  spinopen: () => spinOpen(),
   spingold: () => { if (!S.spin || S.items.length < ITEM_SLOTS) return; S.gold += SPIN_GOLD; toast(`+${SPIN_GOLD} gold.`); endSpin(); },
   wallbuy: () => { if (S.walls.length >= wallLimit(ctNow()) || avail() < WALL_COST) return; S.gold -= WALL_COST; const id = "w" + idc++; S.walls.push({ id, dir: "h" }); sel = id; sheet = null; toast("Wall built. Tap a glowing tile to place it. Tap it afterwards to turn it."); },
   wrot: id => { const w = findWall(id), k = placedAt(id), nd = w.dir === "h" ? "v" : "h"; if (k) { const [r, c] = k.split(",").map(Number); if (!wallFree(r, c, nd, id)) { toast("It doesn't fit that way round."); return; } } w.dir = nd; },

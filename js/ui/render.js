@@ -14,11 +14,14 @@ function renderSheet() {
   { const ae = document.activeElement; if (ae && (ae.id === "mynick" || ae.id === "myreal") && !document.getElementById("lobby")?.contains(ae)) return; } // don't wipe a name being typed
   if (heldSelect && sheet && document.contains(heldSelect)) { sheetBehind = true; return; } // don't close a dropdown that's open
   const sh = document.getElementById("sheet"), veil = document.getElementById("veil");
+  if (sheet && sheet.type === "spin" && !(S && S.spin)) sheet = null; // the gift was claimed, dropped or belongs to another save (a live update can arrive after the game state changes): nothing to show
   if (!sheet) { sh.hidden = veil.hidden = true; return; }
   const p = document.getElementById("paper"), scroll = p.querySelector(".body")?.scrollTop || 0;
   const html = { castle: castleSheet, champ: champSheet, unit: () => unitSheet(sheet.id), trap: () => trapSheet(sheet.id), rival: () => rivalSheet(sheet.id),
     title: titleSheet, patch: patchSheet, gold: goldSheet, day: daySheet, board: boardSheet, report: () => reportSheet(sheet.id), invites: inviteSheet, whatsnew: newsSheet, camp: campSheet, spin: spinSheet, rhero: () => rivalHeroSheet(sheet.id), guide: guideSheet, spells: spellsSheet, wall: () => wallSheet(sheet.id),
     council: councilSheet, uorder: () => uorderSheet(sheet.id), game: gameSheet, install: installSheet, orders: ordersSheet, seal: sealSheet, results: resultsSheet, lab: labSheet, deploy: () => deploySheet(sheet.id) }[sheet.type]();
+  if (sheet.type === "spin" && p.dataset.spin === html && !sh.hidden) return; // the reels are mid-spin: a redraw with the same markup must not restart them
+  p.dataset.spin = sheet.type === "spin" ? html : "";
   p.innerHTML = html; sh.hidden = veil.hidden = false; sh.classList.toggle("splash", sheet.type === "title" && sheet.tab !== "test");
   decorateHelp(p);
   const b = p.querySelector(".body"); if (b && sheet.keep) b.scrollTop = scroll;

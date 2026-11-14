@@ -99,8 +99,8 @@ function rivalHeroSheet(id) {
     abil = list.map(([k, n, d]) => { const rr = h.ranks[k] || 0, mx = rankMax(k); return `<div class="det rrow${rr ? "" : " off"}"><img class="tdico" alt="" src="${spellURL(h.cls + "_" + k, 96)}"><h3><span>${esc(n)}</span><em>Rank ${rr}/${mx}</em></h3><p>${esc(d)}</p></div>`; }).join("");
   }
   const slots = Array.from({ length: ITEM_SLOTS }, (_, i) => h.items[i] || null);
-  const items = `<div class="sec"><h3>Items (${h.items.length}/${ITEM_SLOTS})</h3><div class="islots tiny">${slots.map(k => k && ITEMS[k] ? `<div class="islot" title="${esc(ITEMS[k].desc)}"><img alt="" src="${itemURL(k)}"><b>${esc(ITEMS[k].name)}</b></div>` : `<div class="islot empty"><span>Empty</span></div>`).join("")}</div>
-    ${h.items.length ? `<div class="islist">${h.items.filter(k => ITEMS[k]).map(k => `<div class="gline"><b>${esc(ITEMS[k].name)}</b><small>${esc(ITEMS[k].desc)}</small></div>`).join("")}</div>` : `<p class="muted">No items bought.</p>`}</div>
+  const items = `<div class="sec"><h3>Items (${h.items.length}/${ITEM_SLOTS})</h3><div class="islots tiny">${slots.map(k => k && ITEMS[k] ? `<div class="islot" title="${esc(itemDesc(k))}"><img alt="" src="${itemURL(k)}"><b>${esc(ITEMS[k].name)}</b></div>` : `<div class="islot empty"><span>Empty</span></div>`).join("")}</div>
+    ${h.items.length ? `<div class="islist">${h.items.filter(k => ITEMS[k]).map(k => `<div class="gline"><b>${esc(ITEMS[k].name)}</b><small>${esc(itemDesc(k))}</small></div>`).join("")}</div>` : `<p class="muted">No items bought.</p>`}</div>
     <div class="sec"><h3>Gear</h3>${gearLines(h.gear)}</div>`;
   return head(spriteURL("c-" + h.cls, r.color), `${esc(r.name)}'s ${c.name}`, `Level ${L} · as it fought yesterday`) + `<div class="body">${heroTabs(tab, 0)}${stats}${tab === "items" ? items : abil}
     <div class="row"><button class="btn small" data-act="open" data-v="rival" data-k="${esc(r.id)}">About ${esc(r.name)}</button></div></div>`;

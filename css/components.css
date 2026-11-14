@@ -51,13 +51,16 @@ body.pv #lobby { padding-top: calc(env(safe-area-inset-top, 0px) + 52px); }
 .spin { display: grid; gap: 6px; }
 .spinrow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; justify-items: center; align-items: start; text-align: center; }
 .spin .reel { width: 52px; height: 52px; overflow: hidden; border: 2px solid rgba(62,39,20,.55); border-radius: 8px; background: rgba(255,250,230,.55); }
-.spin .strip { display: grid; transform: translateY(-468px); }
+.spin .strip { display: grid; transform: translateY(var(--end, -1196px)); }
 .spin .strip img { width: 52px; height: 52px; display: block; }
 .spinres { display: grid; gap: 3px; justify-items: center; font-size: 11px; line-height: 1.2; }
 .spinbtns .btn { width: 100%; max-width: 110px; }
-.spin.go .strip { animation: spinreel var(--d) cubic-bezier(.15,.7,.2,1) both; }
-.spin.go .spintext, .spin.go .spinbtns { animation: spinfade .4s 2.3s both; }
-@keyframes spinreel { from { transform: translateY(0); } to { transform: translateY(-468px); } }
+.spin.go .strip { animation: spinreel var(--d) linear both; }
+.spin.go .strip img { animation: spinblur var(--d) linear both; }
+.spin.go .spintext, .spin.go .spinbtns { animation: spinfade .4s 3.1s both; }
+/* a slot machine reel: fast at the start, slowing, a small overshoot, then settling on the prize */
+@keyframes spinreel { 0% { transform: translateY(0); animation-timing-function: cubic-bezier(.3,.05,.35,1); } 86% { transform: translateY(calc(var(--end) - 9px)); animation-timing-function: ease-in-out; } 100% { transform: translateY(var(--end)); } }
+@keyframes spinblur { 0%, 70% { filter: blur(2.2px); } 100% { filter: none; } }
 @keyframes spinfade { from { opacity: 0; pointer-events: none; } to { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .spin.go .strip, .spin.go .spintext, .spin.go .spinbtns { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .spin.go .strip, .spin.go .strip img, .spin.go .spintext, .spin.go .spinbtns { animation: none; } }
 .islots.rep .islot b { color: #3e2714; text-shadow: none; }

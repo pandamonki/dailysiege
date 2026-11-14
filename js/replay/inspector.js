@@ -18,9 +18,9 @@ function pickInReplay(x, y) {
 }
 const portraitURL = {};
 function portraitFor(m, color) {
+  if (m.kind === "castle" || !SPECS[m.key]) return null; // castles have their own art; a summon or totem with no sprite of its own shows a letter, not a stand-in figure
   const id = m.key + "|" + color;
   if (portraitURL[id]) return portraitURL[id];
-  if (m.kind === "castle" || m.kind === "summon" || m.kind === "totem") return null;
   const s = spr(m.key, color), cv = document.createElement("canvas"); cv.width = SW * 4; cv.height = SH * 4;
   const cx = cv.getContext("2d"); cx.imageSmoothingEnabled = false; cx.drawImage(s, 0, 0, cv.width, cv.height);
   return (portraitURL[id] = cv.toDataURL());
@@ -108,7 +108,7 @@ function dockTip(src, key) {
   const { m } = src, [kind, id] = [key.slice(0, 1), key.slice(2)];
   if (kind === "s") { const s = UD_STATS[id]; return s ? { title: s[0], body: s[1], meta: "" } : null; }
   if (kind === "i") { const it = ITEMS[id]; if (!it) return null; const c = it.kind === "use" ? src.cd("i:" + id) : null;
-    return { img: itemURL(id, 96), title: it.name, sub: `Tier ${it.tier}`, body: it.desc, meta: it.kind === "use" ? `<span>Cooldown <b>${it.cd}s</b></span><span>${c.used ? "Used" : c.left ? `Ready in <b>${Math.ceil(c.left)}s</b>` : "<b>Ready</b>"}</span>` : `<span>Always active</span>` }; }
+    return { img: itemURL(id, 96), title: it.name, sub: `Tier ${it.tier}`, body: itemDesc(id, replay && replay.day), meta: it.kind === "use" ? `<span>Cooldown <b>${it.cd}s</b></span><span>${c.used ? "Used" : c.left ? `Ready in <b>${Math.ceil(c.left)}s</b>` : "<b>Ready</b>"}</span>` : `<span>Always active</span>` }; }
   if (kind === "g") { const lv = (m.gear || {})[id], x = lv ? GEAR[id][lv - 1] : null; return { title: x ? x.name : "No " + id, sub: GEAR_SLOTS.find(g => g[0] === id)[1], body: x ? x.desc : "Nothing equipped.", meta: "" }; }
   if (kind === "p") { const sk = heroSkills(m, src.ranks); return { title: "Passive skills", body: sk.pas.map(a => `${a.name}${a.max > 1 ? " " + a.rank + "/" + a.max : ""}`).join(" · "), meta: "<span>Always active</span>" }; }
   if (kind === "a") { const sk = heroSkills(m, src.ranks), a = [...sk.act, ...sk.pas].find(x => x.key === id); if (!a) return null;
