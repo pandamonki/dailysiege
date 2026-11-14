@@ -13,7 +13,7 @@ const WAIT = { timeout: 30000 };
 // Sign in the way a player does: ask for an emailed link, then open it. (The emulator hands the link over directly.)
 async function signIn(email, startUrl = BASE + "?emulator=1", ctxOptions = {}) {
   const ctx = await browser.newContext(ctxOptions), p = await ctx.newPage();
-  p.errors = []; p.on("pageerror", e => p.errors.push(String(e)));
+  p.errors = []; p.on("pageerror", e => p.errors.push(String(e) + (e.stack ? "\n" + e.stack.split("\n").slice(1, 5).join("\n") : "")));
   await p.goto(startUrl);
   await p.waitForFunction(() => window.DS && DS.available === true, null, WAIT);
   await p.evaluate(e => DS.signInEmail(e), email);
