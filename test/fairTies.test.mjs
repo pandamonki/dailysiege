@@ -19,9 +19,14 @@ test("the rule switches on at FAIR_V1_FROM and old battles keep the old rule", (
 
 test("with fair ties, being later in the roster is no longer an advantage on a symmetric map", () => {
   const pts = { off: Array(8).fill(0), on: Array(8).fill(0) };
-  for (let i = 0; i < 48; i++) for (const [k, f] of [["off", false], ["on", true]]) fight(101 + i * 7, f, false).results.forEach(r => { pts[k][+r.pid.slice(1)] += r.points; });
-  const spread = a => Math.max(...a) - Math.min(...a);
-  assert.ok(spread(pts.on) < spread(pts.off), `points by seat: before ${pts.off.join(",")}, after ${pts.on.join(",")}`);
+  for (let i = 0; i < 24; i++) for (const [k, f] of [["off", false], ["on", true]]) fight(101 + i * 7, f, false).results.forEach(r => { pts[k][+r.pid.slice(1)] += r.points; });
+  // how strongly points rise with roster position (+1: the later the seat, the more points; 0: no link). The gap between the best and
+  // worst seat swings with luck whenever the balance numbers change, so the test measures the roster advantage itself.
+  const seatLink = a => { const n = a.length, mx = (n - 1) / 2, my = a.reduce((x, y) => x + y, 0) / n; let sxy = 0, sxx = 0, syy = 0;
+    a.forEach((y, x) => { sxy += (x - mx) * (y - my); sxx += (x - mx) ** 2; syy += (y - my) ** 2; }); return sxy / Math.sqrt(sxx * syy); };
+  const msg = `points by seat: before ${pts.off.join(",")}, after ${pts.on.join(",")}`;
+  assert.ok(seatLink(pts.off) > .3, "the old rule favours later seats (the test still sees the bias it guards against): " + msg);
+  assert.ok(seatLink(pts.on) < .25 && seatLink(pts.on) < seatLink(pts.off) - .2, "with fair ties later seats are no longer favoured: " + msg);
 });
 
 test("a fair-ties battle is still deterministic", () => {

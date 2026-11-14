@@ -46,7 +46,7 @@ const TYPE_TABLE = {
   blade:     { light: 1.15, medium: 1.25, heavy: .9,  fortified: .5 },
   pierce:    { light: 1.5,  medium: .75,  heavy: .9,  fortified: .35 },
   magic:     { light: 1.25, medium: 1,    heavy: 1.25, fortified: .35 },
-  precision: { light: 1.5,  medium: .75,  heavy: .5,  fortified: .45 },
+  precision: { light: 1.5,  medium: 1,    heavy: .5,  fortified: .45 },
   siege:     { light: .9,   medium: .75,  heavy: 1,   fortified: 1.6 },
   pure:      { light: 1,    medium: 1,    heavy: 1,   fortified: 1 },
 };
