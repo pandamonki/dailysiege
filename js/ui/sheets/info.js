@@ -157,6 +157,11 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "Sudden death", date: "15 Nov", fixes: [], balance: [], changes: [
+    "If two or more sides are still fighting at the 3 minute mark, the battle cuts to the centre arena with a SUDDEN DEATH announcement and a 5 second countdown.",
+    "Every surviving hero and soldier is carried to the arena, one camp per lord around the ring. Siege engines and totems are removed, and nobody can fall back, respawn or be reinforced.",
+    "Castles are out of the fight. It is a fight to the death: the last side standing wins the day. If a minute passes with no winner, the side with the most health left wins.",
+  ] },
   { v: "Items, gifts, fights and highlights", date: "14 Nov", fixes: [
     "Free item gifts: the reels now spin like a slot machine and keep spinning when the game updates behind them. Closing the gift no longer makes it pop straight back up: it waits behind a 🎁 button on the map until you take it. If your item slots are full, the choice of which item to swap comes first. A gift you never claimed is dropped when the week ends.",
     "The unit strip shows the wall's own pixel sprite when you pick a wall.",

@@ -10,9 +10,9 @@ function autoCam() {
   if (replay.hi == null) { replay.hi = R.meta.findIndex(m => m.pid === R.me && m.kind === "champ"); replay.ci = R.meta.findIndex(m => m.pid === R.me && m.kind === "castle"); }
   const hb = replay.hi * 4, cb = replay.ci * 4, f0 = replayFrameAt(Math.max(0, replay.time - 3));
   const castleAlive = replay.ci >= 0 && f.d[cb + 2] > 0, heroDown = replay.hi < 0 || (f.d[hb + 3] & 1);
-  const hit = castleAlive && f0.d[cb + 2] - f.d[cb + 2] >= 1, mode = hit ? "base" : heroDown ? (castleAlive ? "base" : "field") : "hero";
+  const hit = castleAlive && f0.d[cb + 2] - f.d[cb + 2] >= 1, arena = !!(R.sudden && replay.time >= R.sudden.t0), mode = arena ? "arena" : hit ? "base" : heroDown ? (castleAlive ? "base" : "field") : "hero";
   let x, y, z = 1.7;
-  if (mode === "base") { x = f.d[cb]; y = f.d[cb + 1]; z = 1.35; } else if (mode === "hero") { x = f.d[hb]; y = f.d[hb + 1]; } else { x = y = 0; z = 0; }
+  if (mode === "arena") { x = y = N / 2; z = Math.min(1.7, Math.max(minZoom(), vw / (15 * ts))); } else if (mode === "base") { x = f.d[cb]; y = f.d[cb + 1]; z = 1.35; } else if (mode === "hero") { x = f.d[hb]; y = f.d[hb + 1]; } else { x = y = 0; z = 0; }
   if (z) { replay.zbase = z; z *= autoZoomMul(); } // the viewer's own zoom is kept on top of the camera's, so zooming does not break the auto camera
   if (mode === "field") { flyTo(W / 2, W / 2, 0); } else if (mode !== replay.camMode) { const zz = Math.max(minZoom(), Math.min(2.4, z)); camTarget = null; Object.assign(cam, { x: x * ts - vw / 2 / zz, y: (y - .3) * ts - vh / 2 / zz, z: zz }); clampCam(); }
   else flyTo(x * ts, (y - .3) * ts, z);

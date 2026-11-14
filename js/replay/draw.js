@@ -41,6 +41,7 @@ function drawReplay(t) {
   const f0 = fr[i], f1 = fr[i + 1], a = Math.max(0, Math.min(1, (time - f0.t) / ((f1.t - f0.t) || 1)));
   const friendly = pid => pid === R.me || !!((f0.al >> R.order.indexOf(pid)) & 1);
   { const hc = f0.c != null && f0.c >= 0 ? R.colors[R.order[f0.c]] : null; drawCentreRing(t, hc); }
+  if (R.sudden && time >= R.sudden.t0) { const rr = (3 + R.order.length * .4 + 2.4) * ts, pu = .5 + .5 * Math.sin(t * 4); ctx.save(); ctx.strokeStyle = `rgba(214,60,40,${.55 + .25 * pu})`; ctx.fillStyle = "rgba(120,20,10,.14)"; ctx.lineWidth = ts * .1; ctx.setLineDash([ts * .35, ts * .22]); ctx.lineDashOffset = -t * ts * .6; ctx.beginPath(); ctx.arc(MID, MID, rr, 0, 7); ctx.fill(); ctx.stroke(); ctx.restore(); } // the sudden-death arena
   // your traps until sprung
   R.traps.forEach(tr => { if (tr.pid === R.me && !(tr.t0 != null && time < tr.t0) && !(tr.usedT && time >= tr.usedT)) drawTrap(ctx, tr.type, tr.x * ts, (tr.y + .05) * ts, ts * .9); });
   const items = [];
@@ -343,5 +344,21 @@ function drawShellFx(e, time) {
   const g = ctx.createRadialGradient(x, y, R * .3, x, y, R); g.addColorStop(0, "rgba(120,240,220,.04)"); g.addColorStop(1, `rgba(120,240,220,${.32 + .12 * pu})`); ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(x, y, R, R * 1.1, 0, 0, 7); ctx.fill();
   ctx.strokeStyle = "rgba(170,255,240,.9)"; ctx.lineWidth = ts * .045; ctx.stroke();
   for (let s = 0; s < 6; s++) { const a = time * 1.5 + s * 1.047; ctx.fillStyle = "rgba(200,255,245,.9)"; ctx.beginPath(); ctx.arc(x + Math.cos(a) * R, y + Math.sin(a) * R * 1.1, ts * .035, 0, 7); ctx.fill(); }
+  ctx.restore();
+}
+
+// Sudden death announcement and countdown, drawn over the screen: "SUDDEN DEATH" and the count while the armies stand ready, then a short "FIGHT!"
+function drawSuddenOverlay() {
+  const sdn = replay.res && replay.res.sudden; if (!sdn) return; const time = replay.time, age = time - sdn.t0; if (age < 0) return;
+  const serif = "Alegreya, Georgia, serif", s = Math.min(1, vw / 420), cx = vw / 2;
+  ctx.save(); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  const say = (txt, y, size, col, a = 1) => { ctx.globalAlpha = a; ctx.font = `800 ${size}px ${serif}`; ctx.lineWidth = Math.max(4, size / 6); ctx.strokeStyle = "rgba(20,8,4,.9)"; ctx.strokeText(txt, cx, y, vw - 24); ctx.fillStyle = col; ctx.fillText(txt, cx, y, vw - 24); ctx.globalAlpha = 1; };
+  if (time < sdn.go) {
+    const n = Math.max(1, Math.ceil(sdn.go - time)), ph = (sdn.go - time) % 1, pop = 1 + .35 * (1 - ph);
+    ctx.fillStyle = `rgba(40,6,4,${Math.min(.5, age * 1.2)})`; ctx.fillRect(0, 0, vw, vh * .3);
+    say("SUDDEN DEATH", vh * .09, 38 * s, "#ff5a3a", Math.min(1, age * 2.5)); say("Fight to the last. No retreat.", vh * .15, 16 * s, "#f6e4b8", Math.min(1, age * 2));
+    say(String(n), vh * .24, 64 * s * pop, "#ffd34d");
+  } else if (time - sdn.go < 1.4) { const k = (time - sdn.go) / 1.4; say("FIGHT!", vh * .16, 52 * s * (1 + .25 * (1 - k)), "#ff5a3a", 1 - k * k); }
+  else { say("SUDDEN DEATH", vh * .05, 15 * s, "#ff8a6a", .8); }
   ctx.restore();
 }

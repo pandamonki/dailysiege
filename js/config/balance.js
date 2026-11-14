@@ -56,6 +56,9 @@ const FINISH_AT = .5, FINISH_BONUS = 1.6; // Rogue: +60% against anything below 
 const MILITIA = { first: 35, every: 25, count: 2, hp: 150, atk: 11 };
 // global balance knobs: movement speed, time between attacks, ability cooldowns, castle health
 const BAL = { move: .85, swing: 1.15, cd: 1.1, castleHp: 600 };
+// Sudden death (battles on or after SUDDEN_V1_FROM): at SD_AT every surviving hero and soldier is carried to the centre arena, a SD_COUNT second countdown runs, then it is a fight to the death for up to SD_LEN seconds
+const SD_AT = 180, SD_COUNT = 5, SD_LEN = 60;
+let SUDDEN_V1_FROM = "2026-11-15"; const suddenV1For = d => String(d) >= SUDDEN_V1_FROM;
 const SUDDEN = 100, TMAX = 200, FRAME_DT = .2, BURST_MIN = 560;
 
 // kill streaks: the battle sim names a streak as it happens, so the table lives with the balance numbers
