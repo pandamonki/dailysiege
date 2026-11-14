@@ -40,9 +40,9 @@ let BAL_V4_FROM = "2026-11-16"; const balV4For = d => String(d) >= BAL_V4_FROM;
 //   - a unit already fighting an enemy in reach is not pulled away by a provoker, and answers provokers only within AGGRO_R tiles (was 6)
 //   - a hurt hero or soldier only falls back to heal while it is actually being hit (hit in the last HIT_WINDOW seconds), and goes back to the
 //     fight at BACK_AT health (was 80%); an explicit command (all units fall back) still sends everyone home
-//   - stat items also equip the army: ARMY_SHARE of each attack, health, speed and damage-reduction bonus goes to every ordinary soldier the lord fields
-//     (siege engines and mercenaries are unchanged), so gold spent on items grows with the size of the army instead of helping one hero
-let ARMY_SHARE = 1, ITEM_BOOST = 2; // ITEM_BOOST: the stat items' own bonuses are this many times as strong (for the hero as well as the army). Measured: about 500g of these items now earns 60-70% of what 500g of soldiers does (it was about 20%)
+//   - items are the hero's: the stat items are ITEM_BOOST times as strong for the hero only. The area-buff items (Banner, Standard, Pipe, Mender) are the ones
+//     that reach soldiers, and are AURA_BOOST times as strong
+let ITEM_BOOST = 2, AURA_BOOST = 1;
 const ITEM_STATS = { whetstone: { atk: .07 }, gauntlets: { atk: .15 }, daedalus: { atk: .15 }, jerkin: { hp: .06 }, hpring: { hp: .08 }, vanguard: { hp: .15 }, sandals: { spd: .06 }, boots: { spd: .10 }, buckler: { dr: .04 }, ringprot: { dr: .08 }, shiva: { dr: .06 } };
 const AGGRO_R = 4, RECALL_R = 6, RETREAT_END_V2 = .5, METEOR_CASTLE = 700, MAGIC_VS_FORT = .6, HIT_WINDOW = 2.5, BACK_AT = .6;
 const fairTie = (seed, a, b) => hash(seed, botSeed(String(a)) * 7919 + botSeed(String(b)), 17);
@@ -107,8 +107,6 @@ function runBattle(plans, seed, opts = {}) {
   function makeUnit(pl, pc, x, y) {
     const g = pl.gear || {}, base = UNITS[pc.type], s = UNIT_SIM[pc.type], isCart = pc.type === "cart", fixed = isCart || !!base.merc, m = fixed ? 1 : 1 + UNIT_LVL_GAIN * (pc.lvl - 1), gm = fixed ? 1 : 1 + .15 * (g.armour || 0), ga = fixed ? 1 : 1 + .15 * (g.weapon || 0);
     const e = add({ order: pc.order || "army", pid: pl.pid, kind: "unit", key: pc.type, lvl: pc.lvl, ref: pc.id || null, x, y, maxhp: base.hp * m * gm, atk: base.atk * m * ga, cart: isCart, ram: pc.type === "ram" || !!s.rammer, cat: pc.type === "catapult", merc: !!base.merc, regen: s.regen || 0, hunter: !!s.hunter, dmgRed: fixed ? 0 : [0, 0, .1, .2][g.armour || 0], lifesteal: s.lifesteal || (!fixed && (g.weapon || 0) >= 3 ? .1 : 0), range: s.range, as: s.as, spd: s.spd, armor: s.armor, shot: s.shot, siege: s.siege, splash: s.splash || 0, healer: s.heal ? s.heal * m : 0 });
-    if (V4 && !fixed && pl.items && pl.items.length) { const ab = { atk: 0, hp: 0, spd: 0, dr: 0 }; pl.items.forEach(k => { const st = ITEM_STATS[k]; if (st) for (const q in st) ab[q] += st[q]; });
-      const k = ARMY_SHARE * ITEM_BOOST; e.atk *= 1 + k * ab.atk; e.maxhp *= 1 + k * ab.hp; e.spd *= 1 + k * ab.spd; e.dmgRed = (e.dmgRed || 0) + k * ab.dr; }
     e.hp = e.maxhp * (pc.hp ?? 1); [e.atype, e.armour] = UNIT_TYPES[pc.type];
     return e;
   }
@@ -248,12 +246,13 @@ function runBattle(plans, seed, opts = {}) {
   function itemTick(e) {
     const s = e.itemSet; if (!s || !s.size) return; const p = P[e.pid];
     if (tick % 10 === 0) {
-      if (s.has("banner")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => setFx(o, "atkbuf", 1.3, .12));
-      if (s.has("standard")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => setFx(o, "guard", 1.3, .12));
+      const AB = V4 ? AURA_BOOST : 1;
+      if (s.has("banner")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => setFx(o, "atkbuf", 1.3, .12 * AB));
+      if (s.has("standard")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => setFx(o, "guard", 1.3, Math.min(.6, .12 * AB)));
       if (s.has("hpring") && e.hp < e.maxhp) heal(e, e.maxhp * .012, true, e, "Ring of Health");
       if (s.has("herbs") && e.hp < e.maxhp) heal(e, e.maxhp * .006, true, e, "Mending Herbs");
-      if (s.has("pipe")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => setFx(o, "spellward", 1.3, .25));
-      if (s.has("mender")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => { if (o.hp < o.maxhp) heal(o, 4, true, e, "Mender's Charm"); });
+      if (s.has("pipe")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => setFx(o, "spellward", 1.3, Math.min(.6, .25 * AB)));
+      if (s.has("mender")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => { if (o.hp < o.maxhp) heal(o, 4 * AB, true, e, "Mender's Charm"); });
     }
     if (s.has("antimagic")) { if (enemiesNear(e, e.x, e.y, 7).some(x => x.kind === "champ")) { if (e.engT == null) e.engT = t; } else e.engT = null; } // the clock on the Shell starts when an enemy hero comes into view
     (e.cons || []).forEach(c => {

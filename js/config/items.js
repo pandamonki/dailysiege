@@ -48,15 +48,13 @@ const ITEMS = {
   shiva:       { name: "Shiva's Guard",      g: "❅", col: "#9fe4ff", cost: 190, tier: 3, kind: "use", cd: 40, desc: "Take 6% less damage. When 2 or more foes are within 3 tiles: a freezing blast hits them for 140 damage and slows them 40% for 4s." },
   daedalus:    { name: "Daedalus",           g: "✠", col: "#ff7a3a", cost: 200, tier: 3, kind: "passive", desc: "+15% attack damage. Your attacks have a 25% chance to crit for 2.4x damage." },
 };
-// From BAL_V4_FROM the stat items are twice as strong and also equip your soldiers (ARMY_SHARE and ITEM_BOOST in sim/battle.js). These are the texts shown then.
+// From BAL_V4_FROM the stat items are twice as strong for the hero (ITEM_BOOST in sim/battle.js) and the area-buff items are stronger (AURA_BOOST). These are the texts shown then.
 const ITEM_DESC_V4 = {
-  whetstone: "+14% attack damage, for your hero and your soldiers.", jerkin: "+12% health, for your hero and your soldiers.", sandals: "+12% move speed, for your hero and your soldiers.",
-  buckler: "Your hero and your soldiers take 8% less damage from everything.", boots: "+20% move speed for your hero and your soldiers. Catch the fleeing, or run from the strong.",
-  gauntlets: "+30% attack damage, for your hero and your soldiers.", ringprot: "Your hero and your soldiers take 16% less damage from everything.",
-  hpring: "+16% health for your hero and your soldiers, and your hero regenerates 1.2% of its health every second.",
-  vanguard: "+30% health for your hero and your soldiers, and your hero blocks 12 damage from every normal hit it takes. Soldiers' blows barely scratch it.",
-  shiva: "Your hero and your soldiers take 12% less damage. When 2 or more foes are within 3 tiles: a freezing blast hits them for 140 damage and slows them 40% for 4s.",
-  daedalus: "+30% attack damage for your hero and your soldiers. Your hero's attacks have a 25% chance to crit for 2.4x damage.",
+  whetstone: "+14% attack damage.", jerkin: "+12% health.", sandals: "+12% move speed.", buckler: "Take 8% less damage from everything.",
+  boots: "+20% move speed. Catch the fleeing, or run from the strong.", gauntlets: "+30% attack damage.", ringprot: "Take 16% less damage from everything.",
+  hpring: "+16% health, and you regenerate 1.2% of your health every second.", vanguard: "+30% health, and blocks 12 damage from every normal hit you take. Soldiers' blows barely scratch you.",
+  shiva: "Take 12% less damage. When 2 or more foes are within 3 tiles: a freezing blast hits them for 140 damage and slows them 40% for 4s.",
+  daedalus: "+30% attack damage. Your attacks have a 25% chance to crit for 2.4x damage.",
 };
 // day: a replayed battle is described as it was fought
 const itemDesc = (k, day) => { const it = ITEMS[k]; if (!it) return ""; const v4 = day ? balV4For(day) : typeof isLive === "function" && isLive() ? balV4For(liveClock().planDay) : true; return v4 && ITEM_DESC_V4[k] ? ITEM_DESC_V4[k] : it.desc; };

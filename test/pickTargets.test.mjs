@@ -51,12 +51,12 @@ test("balance V4: magic beats blades and arrows against fortified armour, and de
   assert.ok(fights(true) >= fights(false), "castles fall at least as often under V4");
 });
 
-test("balance V4: stat items also equip the army", () => {
+test("balance V4: stat items are the hero's, and make the hero hit harder", () => {
   sim.run(`globalThis.armyFight = (items, v4, seed) => { const L = seatLayout(4), ps = L.castles.map((pos, k) => { const sp = armySpots(pos, L.N); return { pid: "s" + k, name: "S" + k, color: SEAT_COLORS[k], cls: "warrior", level: 3, castle: pos, ranks: autoRanks(3, k + 1), picks: {}, triggers: {}, gear: {}, defences: {}, stance: "aggressive", prio: PRIORITIES.slice(), rules: [], items: k === 0 ? items : [],
     pieces: [{ kind: "champ", r: sp.champ[0], c: sp.champ[1] }, ...sp.units.map(([r, c]) => ({ kind: "unit", type: "footman", lvl: 1, hp: 1, r, c }))], targets: [], pacts: [], hostile: [], betray: {} }; });
     return runBattle(ps, seed, { fast: true, N: L.N, balV2: true, balV3: true, heroV3: true, fairV1: true, balV4: v4, dayNo: 3 }); }`);
-  const dealt = (items, v4) => { let n = 0; for (let seed = 1; seed <= 8; seed++) J(sim.run(`armyFight(${JSON.stringify(items)}, ${v4}, ${seed})`).tel.ents).filter(e => e.kind === "unit" && e.pid === "s0").forEach(e => { n += e.dealt || 0; }); return n; };
+  const heroDealt = (items, v4) => { let n = 0; for (let seed = 1; seed <= 8; seed++) J(sim.run(`armyFight(${JSON.stringify(items)}, ${v4}, ${seed})`).tel.ents).filter(e => e.kind === "champ" && e.pid === "s0").forEach(e => { n += e.dealt || 0; }); return n; };
   const kit = ["gauntlets", "daedalus", "whetstone"];
-  assert.ok(dealt(kit, true) > dealt([], true), "with V4, items make the lord's soldiers hit harder");
-  assert.ok(sim.get("ARMY_SHARE") > 0 && sim.get("ITEM_STATS").gauntlets.atk > 0);
+  assert.ok(heroDealt(kit, true) > heroDealt([], true), "with V4, stat items make the hero hit harder");
+  assert.ok(sim.get("ITEM_BOOST") >= 1 && sim.get("ITEM_STATS").gauntlets.atk > 0);
 });
