@@ -14,8 +14,8 @@ function garrisonWaveHTML(w, i) {
     return u ? `<div class="gr-s fill" data-drop="w:${i}:${j}" data-drag="${u.id}" data-act="wslot" data-k="${i}" data-v="${j}" role="button" aria-label="${UNITS[u.type].name} level ${u.lvl}, wave ${i + 1}"><span class="gr-x" data-act="wunslot" data-k="${i}" data-v="${j}" role="button" aria-label="Send back to reserve">✕</span><img alt="" src="${spriteURL(u.type)}"><b>${UNITS[u.type].name}</b><small>Lv ${u.lvl}</small></div>`
       : `<div class="gr-s" data-drop="w:${i}:${j}" data-act="wslot" data-k="${i}" data-v="${j}" role="button" aria-label="Empty slot, wave ${i + 1}"><span>${sheet.tsel && findUnit(sheet.tsel) && !UNITS[findUnit(sheet.tsel).type].castleOnly ? "tap to place" : "empty"}</span></div>`; };
   return `<div class="gr-wrow" data-drop="w:${i}"><div class="gr-wh"><span class="gr-wn" aria-hidden="true"><i></i></span><b>Wave ${i + 1}</b>
-      <button class="gr-chip" data-act="wpop" data-k="${i}" data-v="${w.when === "timer" && sheet.wpop && sheet.wpop.w === i && sheet.wpop.kind === "time" ? "time" : "when"}">${whenLabel(w)}</button>
-      <button class="gr-chip w" data-act="wpop" data-k="${i}" data-v="order">${WAVE_ORDERS.find(o => o[0] === w.order)[1]}</button></div>
+      <button class="gr-chip" data-act="wpop" data-k="${i}" data-v="${w.when === "timer" && sheet.wpop && sheet.wpop.w === i && sheet.wpop.kind === "time" ? "time" : "when"}" ${dis()}>${whenLabel(w)}</button>
+      <button class="gr-chip w" data-act="wpop" data-k="${i}" data-v="order" ${dis()}>${WAVE_ORDERS.find(o => o[0] === w.order)[1]}</button></div>
     ${garrisonPopHTML(i)}
     <div class="gr-r4"><div class="gr-s free"><img alt="" src="${spriteURL("footman")}"><b>Footman</b><small>free</small></div>${w.slots.map(slot).join("")}</div></div>`;
 }
@@ -40,7 +40,7 @@ Object.assign(A, {
   wback: v => { if (S.locked) return; const err = reserveUnit(v); if (err) toast(err); },
   wdep: () => { if (S.locked) { toast("Draft new orders to change your garrison."); return; } if (!sheet.tsel) { toast("Tap a soldier first."); return; } const err = deployUnit(sheet.tsel); if (err) toast(err); },
   wres: () => { if (S.locked) { toast("Draft new orders to change your garrison."); return; } if (!sheet.tsel) { toast("Tap a soldier first."); return; } const err = reserveUnit(sheet.tsel); if (err) toast(err); },
-  wpop: (v, k) => { const w = +k; sheet.wpop = sheet.wpop && sheet.wpop.w === w && sheet.wpop.kind === v ? null : { w, kind: v }; },
+  wpop: (v, k) => { if (S.locked) return; const w = +k; sheet.wpop = sheet.wpop && sheet.wpop.w === w && sheet.wpop.kind === v ? null : { w, kind: v }; },
   wopt: (v, k) => { if (S.locked) return; const w = S.garrison[+k], [kind, val] = v.split(":");
     if (kind === "when") { w.when = val; sheet.wpop = val === "timer" ? { w: +k, kind: "time" } : null; }
     else if (kind === "time") { w.when = "timer"; w.at = +val; sheet.wpop = null; }
