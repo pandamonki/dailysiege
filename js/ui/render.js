@@ -14,6 +14,7 @@ function renderSheet() {
   { const ae = document.activeElement; if (ae && (ae.id === "mynick" || ae.id === "myreal") && !document.getElementById("lobby")?.contains(ae)) return; } // don't wipe a name being typed
   if (heldSelect && sheet && document.contains(heldSelect)) { sheetBehind = true; return; } // don't close a dropdown that's open
   const sh = document.getElementById("sheet"), veil = document.getElementById("veil");
+  if (sheet && sheet.type === "spin" && !(S && S.spin)) sheet = null; // the gift was claimed, dropped or belongs to another save (a live update can arrive after the game state changes): nothing to show
   if (!sheet) { sh.hidden = veil.hidden = true; return; }
   const p = document.getElementById("paper"), scroll = p.querySelector(".body")?.scrollTop || 0;
   const html = { castle: castleSheet, champ: champSheet, unit: () => unitSheet(sheet.id), trap: () => trapSheet(sheet.id), rival: () => rivalSheet(sheet.id),
