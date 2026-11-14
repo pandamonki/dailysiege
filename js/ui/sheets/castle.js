@@ -32,7 +32,7 @@ function heroItemsHTML(slots) {
   const k = S.items.includes(sheet.hit) ? sheet.hit : null, it = k && ITEMS[k];
   return `<div class="sec"><div class="spread"><h3>Items (${S.items.length}/${ITEM_SLOTS})</h3><button class="bagbtn" data-act="shop" aria-label="Shop"><img alt="" src="icons/ui/shop.webp"></button></div>
       <div class="islots tiny">${slots.map(x => x ? `<button class="islot${x === k ? " sel" : ""}" data-act="hitem" data-v="${x}" aria-label="${esc(ITEMS[x].name)}: details"><img alt="" src="${itemURL(x)}"><b>${esc(ITEMS[x].name)}</b></button>` : `<div class="islot empty"><span>Empty</span></div>`).join("")}</div>
-      ${it ? `${udet(esc(it.name), null, `<p>${itemKindTag(it)} ${esc(it.desc)}</p>`)}<div class="row"><button class="btn" data-act="isell" data-v="${k}" ${dis()}>Sell +${Math.floor(itemCost(k) / 2)}g</button><button class="btn small" data-act="shop">Shop</button></div>` : S.items.length ? `<p class="muted">Tap an item for its details.</p>` : ""}</div>`;
+      ${it ? `${udet(esc(it.name), null, `<p>${itemKindTag(it)} ${esc(itemDesc(k))}</p>`)}<div class="row"><button class="btn" data-act="isell" data-v="${k}" ${dis()}>Sell +${Math.floor(itemCost(k) / 2)}g</button><button class="btn small" data-act="shop">Shop</button></div>` : S.items.length ? `<p class="muted">Tap an item for its details.</p>` : ""}</div>`;
 }
 function castleSheet() {
   const tab = sheet.lobby ? "banner" : (sheet.tab || "recruit"), full = supplyFull(), ct = ctNow();
@@ -91,7 +91,7 @@ function castleSheet() {
       <div class="toprow"><div class="islots tiny">${Array.from({ length: ITEM_SLOTS }, (_, i) => S.items[i] || null).map(k => k ? `<button class="islot${k === ik ? " sel" : ""}" data-act="ish" data-v="${k}"><img alt="" src="${itemURL(k)}"></button>` : `<div class="islot empty"><span>·</span></div>`).join("")}</div>
         <div class="pg"><button class="btn small" data-act="ipg" data-v="${pg - 1}" ${dis(pg <= 0)}>‹</button><span>${pg + 1}/${pages}</span><button class="btn small" data-act="ipg" data-v="${pg + 1}" ${dis(pg >= pages - 1)}>›</button></div></div>
       <div class="ugrid shopg">${keys.slice(pg * ISH_PAGE, pg * ISH_PAGE + ISH_PAGE).map(k => tile("ish", k, k === ik, itemURL(k), esc(ITEMS[k].name), S.items.includes(k) ? { own: 1 } : { price: itemCost(k) })).join("")}</div>
-      ${udet(esc(it.name), itemCost(ik), `<p>${itemKindTag(it)} ${esc(it.desc)}</p>`)}
+      ${udet(esc(it.name), itemCost(ik), `<p>${itemKindTag(it)} ${esc(itemDesc(ik))}</p>`)}
       ${own && ik === "antimagic" ? `<div class="sec tight"><h3>Shell timing</h3><div class="reach"><span class="stepper"><button class="btn small" data-act="shellat" data-v="-1" ${dis((S.shellAt || 2) <= 1 || S.locked)}>−</button><b>${S.shellAt || 2}s</b><button class="btn small" data-act="shellat" data-v="1" ${dis((S.shellAt || 2) >= 10 || S.locked)}>+</button></span><span class="muted">after you meet an enemy hero</span></div></div>` : ""}
       ${abar(own ? `<button class="btn wax" data-act="isell" data-v="${ik}">Sell +${Math.floor(itemCost(ik) / 2)}g</button>` : `<button class="btn wax" data-act="ibuy" data-v="${ik}" ${dis(lk || fullI || avail() < itemCost(ik))}>${lk ? "Held by a rival" : fullI ? "Slots full" : `Buy · ${itemCost(ik)}g`}</button>`)}</div>`;
   }

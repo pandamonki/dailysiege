@@ -3,6 +3,13 @@
 // Each item is [icon, headline, one short sentence]. Players who have not seen the newest id get the pop-up the next time they plan;
 // the id is remembered on their device, so changing the id is all it takes to show it again. Keep about 8 to 14 items.
 const RELEASES = [
+  { id: "1.2", title: "What's new in v1.2", sub: "Items, gifts, fights and highlights", items: [
+    ["🎒", "Items matter more", "Stat items are twice as strong and now equip your soldiers as well as your hero, so gold in items can rival gold in an army."],
+    ["🎁", "A proper free gift", "The reels spin like a slot machine. Close it and it waits behind a 🎁 button on the map until you take it."],
+    ["⚔", "Fights stay fights", "Hurt units only fall back while they are being hit, return to the fight sooner, and no longer get pulled off an enemy they are already fighting."],
+    ["🎬", "Better highlights", "The camera sits one step further out, and the reel ends on the moment the last rival castle falls."],
+    ["🧱", "Walls in the unit strip", "Pick a wall and the strip shows its pixel sprite."],
+  ] },
   { id: "1.1", title: "What's new in v1.1", sub: "From the battles of Monday 16 November", items: [
     ["🎯", "Pick your targets", "Each day your attack list starts empty. Pick one to three targets before you seal."],
     ["🧭", "Targets can be roles", "Pick a lord, or a role worked out in battle: weakest castle, board leader, the lord above you, nearest castle or nearest to your army."],

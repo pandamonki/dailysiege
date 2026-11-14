@@ -42,7 +42,7 @@ let BAL_V4_FROM = "2026-11-16"; const balV4For = d => String(d) >= BAL_V4_FROM;
 //     fight at BACK_AT health (was 80%); an explicit command (all units fall back) still sends everyone home
 //   - stat items also equip the army: ARMY_SHARE of each attack, health, speed and damage-reduction bonus goes to every ordinary soldier the lord fields
 //     (siege engines and mercenaries are unchanged), so gold spent on items grows with the size of the army instead of helping one hero
-let ARMY_SHARE = .5, ITEM_BOOST = 1; // ITEM_BOOST: the stat items' own bonuses are this many times as strong (for the hero as well as the army)
+let ARMY_SHARE = 1, ITEM_BOOST = 2; // ITEM_BOOST: the stat items' own bonuses are this many times as strong (for the hero as well as the army). Measured: about 500g of these items now earns 60-70% of what 500g of soldiers does (it was about 20%)
 const ITEM_STATS = { whetstone: { atk: .07 }, gauntlets: { atk: .15 }, daedalus: { atk: .15 }, jerkin: { hp: .06 }, hpring: { hp: .08 }, vanguard: { hp: .15 }, sandals: { spd: .06 }, boots: { spd: .10 }, buckler: { dr: .04 }, ringprot: { dr: .08 }, shiva: { dr: .06 } };
 const AGGRO_R = 4, RECALL_R = 6, RETREAT_END_V2 = .5, METEOR_CASTLE = 700, MAGIC_VS_FORT = .6, HIT_WINDOW = 2.5, BACK_AT = .6;
 const fairTie = (seed, a, b) => hash(seed, botSeed(String(a)) * 7919 + botSeed(String(b)), 17);

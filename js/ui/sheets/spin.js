@@ -54,7 +54,7 @@ function spinSheet() {
   // time from the moment the sheet opened, and renderSheet leaves the sheet alone while its markup is unchanged (see spinKeep), so redraws do not touch the animation.
   const go = Date.now() - sheet.t0 < REEL_SETTLE * 1000;
   const reel = (k, i) => `<div class="strip" style="--d:${(1.5 + .55 * i).toFixed(2)}s;--end:-${(REEL_N - 1) * REEL_PX}px">${Array.from({ length: REEL_N }, (_, j) => `<img alt="" src="${itemURL(j === REEL_N - 1 ? k : pool[(j * 7 + i * 3 + j * j) % pool.length], REEL_PX)}">`).join("")}</div>`;
-  const text = k => `<div class="spinres"><b>${esc(ITEMS[k].name)}</b><span class="muted">${esc(ITEMS[k].desc)}</span></div>`;
+  const text = k => `<div class="spinres"><b>${esc(ITEMS[k].name)}</b><span class="muted">${esc(itemDesc(k))}</span></div>`;
   const btn = k => `<button class="btn wax" data-act="spinpick" data-v="${k}">Take it</button>`;
   // slots full: the choice of what to replace comes first, so it is never hidden below the three items
   if (pend) return `<header><div><h2>Day ${sp.day} gift</h2><div class="sub">Your item slots are full</div></div><button class="x" data-act="close" aria-label="Close">✕</button></header><div class="body">
