@@ -19,7 +19,7 @@ test("the rule switches on at FAIR_V1_FROM and old battles keep the old rule", (
 
 test("with fair ties, being later in the roster is no longer an advantage on a symmetric map", () => {
   const pts = { off: Array(8).fill(0), on: Array(8).fill(0) };
-  for (let i = 0; i < 24; i++) for (const [k, f] of [["off", false], ["on", true]]) fight(101 + i * 7, f, false).results.forEach(r => { pts[k][+r.pid.slice(1)] += r.points; });
+  for (let i = 0; i < 48; i++) for (const [k, f] of [["off", false], ["on", true]]) fight(101 + i * 7, f, false).results.forEach(r => { pts[k][+r.pid.slice(1)] += r.points; });
   const spread = a => Math.max(...a) - Math.min(...a);
   assert.ok(spread(pts.on) < spread(pts.off), `points by seat: before ${pts.off.join(",")}, after ${pts.on.join(",")}`);
 });

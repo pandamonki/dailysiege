@@ -128,7 +128,7 @@ test("the last days of the week score more", () => {
 
 test("a betrayer who sets off the bomb is paid: points and a share of the victim's spoils", () => {
   const run = balV2 => { const b = buildBattleInputs(world(ids), D1), [a, c] = b.plans; a.pacts = [c.pid]; c.pacts = [a.pid]; a.betray = { [c.pid]: "At the 2-minute mark" };
-    return sim.get("runBattle")(b.plans, 1, { fast: true, N: b.N, balV2, dayNo: 1 }); }; // seed 1: a's hero reaches b's keep and the bomb goes off
+    return sim.get("runBattle")(b.plans, 5, { fast: true, N: b.N, balV2, dayNo: 1 }); }; // seed 5: a's hero reaches b's keep and the bomb goes off (seed 1 did before the 14 Nov unit rebalance)
   const on = run(true), off = run(false), r = on.results.find(x => x.pid === "a"), r0 = off.results.find(x => x.pid === "a");
   assert.equal(r.treachery, 1, "the bomb went off and was counted");
   assert.ok(!off.results.some(x => x.treachery), "the old rules pay nothing");
