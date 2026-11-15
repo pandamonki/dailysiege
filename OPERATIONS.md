@@ -68,6 +68,14 @@ A deploy never touches the data (wars, orders, results), so rolling back does no
   every pull request (the green ticks). It never uses the real project.
 - The second Firebase project (`-dev`) is not needed for any of this and can be left as it is or deleted.
 
+## Several wars at once
+
+A player can be in several games. `users/{uid}.games` lists them and `users/{uid}.gameId` is the one
+open on that device. Opening a new invite link adds that game and opens it. The **Your wars** screen
+(main menu) switches between them, joins another by pasting an invite link, and lets hosts set up a
+new game while their others keep running. Each game is fought by the server on its own schedule.
+Battle alerts carry `?war=<game id>`, so tapping one opens that game.
+
 ## Testing mode
 
 `TEST_MODE` in `js/config/balance.js` is on while the game is being tested. With it on, the host sees

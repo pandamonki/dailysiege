@@ -10,6 +10,7 @@ const RELEASES = [
     ["🏰", "Cheaper castles", "The Fortress costs 100 and the Citadel 200."],
     ["🛡", "Four on the map", "Supply beds are gone: everyone fields 4 soldiers, and beds you bought are refunded."],
     ["🔓", "Unlock your waves", "Buy reinforcement waves in order (60, 100, 150 gold). Each holds 3 more soldiers who join the battle later."],
+    ["🏰", "Several wars at once", "Join more than one war and switch between them from Your wars in the main menu. Alerts open the right war."],
     ["⭐", "A headliner every day", "From day 4 a new, stronger mercenary group tops the camp each day, and you hear about it when you plan."],
     ["👹", "The Troll War Host", "Day 7's headliner: the Troll Warlord leading two Orc Berserkers. The Bone Crew is tougher and the Ogre Breaker softer, so no single group decides a battle."],
     ["🗂", "A tidier camp", "The headliner sits in a wide card, three regular groups below it, and the details and bid underneath."],

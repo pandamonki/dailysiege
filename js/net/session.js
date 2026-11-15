@@ -146,7 +146,7 @@ function liveChanged() {
     else { const before = S.day; resolveBattles(); const rolled = rollover(); if (!rolled && S.day === liveClock().planDay && payDays(liveClock())) { const hs = heroState(LIVE.uid, liveClock().week, liveClock().planDay); queueSave(true); }
       if (S.day === liveClock().planDay) { const hs2 = heroState(LIVE.uid, liveClock().week, liveClock().planDay); if (S.lvl !== hs2.lvl || S.xp !== hs2.xp) { S.lvl = hs2.lvl; S.xp = hs2.xp; queueSave(true); } } refreshLiveWorld(); sanitizePlace(); if (S.day !== before) queueSave(true); }
     const ck = liveClock(), newest = Object.keys(LIVE.battles).filter(k => LIVE.battles[k].week === ck.week).sort().pop();
-    let seen = null; try { seen = localStorage.getItem("lastbanner.seen"); } catch (e) {}
+    let seen = null; try { seen = localStorage.getItem(seenKey()); } catch (e) {}
     if (newest && newest !== seen && mode === "plan" && !sheet && LIVE.stateLoaded && LIVE.namesLoaded) { openReportFor(newest); return; }
   }
   render();

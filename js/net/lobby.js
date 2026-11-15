@@ -1,5 +1,7 @@
 // Connecting, creating and joining games, the lobby and game sheet
 
+// the last battle report seen on this device, kept per war so two wars on the same day don't hide each other's reports
+const seenKey = () => "lastbanner.seen" + (typeof window !== "undefined" && window.DS && DS.gameId ? "." + DS.gameId : "");
 async function connectLive() {
   if (!window.claude || typeof window.claude.use !== "function") return;
   const [db, user] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
@@ -131,13 +133,13 @@ async function watchLiveBattle(dayKey, how) {
   DAY_FOR_INTRO = weekdayOf(dayKey);
   res.names = Object.fromEntries(plans.map(p => [p.pid, p.pid === LIVE.uid ? (MY_NAME || "You") : p.name]));
   res.transfers = transfers; res.board = before; res.week = week;
-  try { localStorage.setItem("lastbanner.seen", dayKey); } catch (e) {}
+  try { localStorage.setItem(seenKey(), dayKey); } catch (e) {}
   replay = { res, time: 0, playing: false, speed: 1, done: true, logN: -1, sel: null, day: dayKey, auto: true };
   mode = "replay"; sheet = null; sel = null; flyTo(W / 2, W / 2, 0); render(); buildReplayUI();
   res.dip = diplomacyReport(plans, carriedPairs(dayKey), res.hl, res.me);
   if (how === "play") { replay.done = false; render(); showIntro(introData(plans, carriedPairs(dayKey), liveYesterdayBets(dayKey), res.names, final), () => { if (replay) replay.playing = true; }); } else if (how === "reel") startReel(false); else open("results");
 }
-function openReportFor(k) { try { localStorage.setItem("lastbanner.seen", k); } catch (e) {} reportBack = k; sheet = { type: "report", id: k }; render(); }
+function openReportFor(k) { try { localStorage.setItem(seenKey(), k); } catch (e) {} reportBack = k; sheet = { type: "report", id: k }; render(); }
 const GAME_URL = () => { if (window.DS && DS.inviteUrl) return DS.inviteUrl(); let u = "https://claude.ai/artifact/7WwWgy4irntRjE6ep653Am"; try { if (/claude\.ai/.test(location.href)) u = location.href.split("#")[0]; } catch (e) {} return u; };
 function invitePanel(open) {
   return `<div class="sec lbox"><h3>Invite friends${open ? ` · ${open} seat${open === 1 ? "" : "s"} open` : ""}</h3>
@@ -161,6 +163,7 @@ function gameSheet() {
       <div><button class="btn wax" data-act="startgame">Open registration</button></div>
       <p class="muted">You'll register first, then you can invite friends from the Muster Hall.</p>`
       : window.DS ? `<p>You're signed in, but this account isn't in a game yet.</p><p class="muted">Open the invite link your host sent you on this device and you'll be taken straight to the war.</p>` : `<p>The host hasn't started a game on this page yet.</p>`}
+    ${window.DS && DS.user ? `<div class="row"><button class="btn wood" data-act="open" data-v="wars">🏰 Your wars${(DS.wars || []).length ? ` (${DS.wars.length})` : ""}</button></div>` : ""}
     <div class="row"><button class="btn" data-act="open" data-v="title">← Back</button></div>${accountLine()}</div>`;
   if (lobbyOpen(LIVE.config)) { const mineL = LIVE.players[LIVE.uid], n = lobbyLords().length, open = Math.max(0, seatCap() - n), hl = hostLabel();
     return head(null, "You're summoned to war", hl === "you" ? "You called the banners" : `${esc(hl)} has called the banners`) + `<div class="body">
@@ -230,6 +233,17 @@ function installSheet() { // how to put the game on the home screen
     <p>Added to your Home Screen, the game opens full-screen, starts instantly and can send battle alerts.</p>
     ${ios ? `<ol><li>Open this page in <b>Safari</b> (not inside another app).</li><li>Tap the <b>Share</b> button (the square with an arrow).</li><li>Choose <b>Add to Home Screen</b>, then <b>Add</b>.</li><li>Open <b>Daily Siege</b> from your Home Screen and sign in there.</li></ol><p class="muted">On iPhone the Home Screen app keeps its own sign-in. Signing in with Google is the simplest there; an emailed link opens in Safari instead.</p>`
       : `<ol><li>If this page opened inside another app (a bar with an ✕ at the top), tap <b>⋮</b> and choose <b>Open in Chrome</b> first.</li><li>In Chrome, tap the menu <b>⋮</b> at the top right.</li><li>Choose <b>Add to Home screen</b>, then <b>Install</b>.</li><li>Open <b>Daily Siege</b> from your Home Screen. You stay signed in.</li></ol>`}
+    <div class="row"><button class="btn" data-act="open" data-v="title">← Back</button></div></div>`;
+}
+// the war switcher: every war this account is in, a way to join another by its invite link, and (for hosts) to start another
+function warsSheet() {
+  const W = (window.DS && DS.wars) || [], draft = esc(LIVE.warLink || "");
+  return head(null, "Your wars", W.length > 1 ? `${W.length} wars at once` : "Join or start another war") + `<div class="body">
+    ${W.length ? `<div class="wlist">${W.map(w => `<div class="wcard${w.current ? " on" : ""}"><div><b>${w.host === "you" ? "Your war" : `${esc(w.host)}'s war`}${w.war > 1 ? ` · war ${w.war}` : ""}</b><small>${esc(w.status)}</small></div>
+      ${w.current ? `<span class="chip">Playing</span>` : `<button class="btn small wood" data-act="warswitch" data-v="${esc(w.id)}">Open</button>`}</div>`).join("")}</div>` : `<p class="muted">You're not in a war yet.</p>`}
+    <div class="sec"><h3>Join another war</h3><p class="muted">Paste the invite link your host sent you. Your other wars carry on; switch between them here.</p>
+      <div class="lrow"><input id="warlink" autocomplete="off" placeholder="https://…/join/…" value="${draft}"><button class="btn wax small" data-act="warjoin">Join</button></div></div>
+    ${window.DS && DS.canHost ? `<div class="sec"><h3>Host another war</h3><p class="muted">Set up a new war with its own invite link. Your current wars keep running.</p><button class="btn wood" data-act="warnew">Set up a new war</button></div>` : ""}
     <div class="row"><button class="btn" data-act="open" data-v="title">← Back</button></div></div>`;
 }
 function accountLine() { return window.DS && DS.user ? `<p class="muted">Signed in as ${esc(DS.accountLabel())} · <button class="btn small" data-act="dssignout">Sign out</button></p>` : ""; }

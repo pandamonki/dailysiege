@@ -121,7 +121,7 @@ function titleSheet() {
     <div class="menu3">
       <button class="btn wax big" data-act="playgo">⚔ Play with friends<small>${lobbyOpen(LIVE.config) ? (inGame ? (LIVE.players[LIVE.uid].pending ? "Finish registering for the war" : "Muster hall · registration open") : "Registration is open. Join the war") : inGame ? "Friends game · day " + (live ? DAY : liveClock().dayNo) + " of 7" : LIVE.config ? "Join your friends' next war" : can ? "Host a war and invite friends" : "Daily siege with friends"}</small></button>
       <button class="btn wood big" data-act="testmenu">🧪 Test<small>Practice against bots</small></button>
-      ${inGame ? `<button class="btn small" data-act="open" data-v="game">⚙ Game settings</button>` : ""}${typeof PWA !== "undefined" && PWA.canOffer() ? `<button class="btn small" data-act="pwainstall">📲 Install app</button>` : ""}<button class="btn small" data-act="open" data-v="patch">📜 Patch notes</button><button class="btn small" data-act="wizard">🧙 How to play (tour)</button><button class="btn small" data-act="open" data-v="guide">📖 Full rules</button>
+      ${inGame ? `<button class="btn small" data-act="open" data-v="game">⚙ Game settings</button>` : ""}${window.DS && DS.user ? `<button class="btn small" data-act="open" data-v="wars">🏰 Your wars${(DS.wars || []).length > 1 ? ` (${DS.wars.length})` : ""}</button>` : ""}${typeof PWA !== "undefined" && PWA.canOffer() ? `<button class="btn small" data-act="pwainstall">📲 Install app</button>` : ""}<button class="btn small" data-act="open" data-v="patch">📜 Patch notes</button><button class="btn small" data-act="wizard">🧙 How to play (tour)</button><button class="btn small" data-act="open" data-v="guide">📖 Full rules</button>
     </div></div>`;
 }
 function guideSheet() {
@@ -158,6 +158,11 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "Several wars at once", date: "15 Nov", fixes: [], balance: [], changes: [
+    "You can now be in several wars at once, each with its own castle, army and gold. Open Your wars from the main menu to switch between them; the others carry on and fight on their own schedule.",
+    "Join another war by opening its invite link, or by pasting the link into Your wars. Hosts can set up a new war from there while their others keep running.",
+    "Battle alerts and reminders now open the war they are about, and alerts from different wars no longer replace each other.",
+  ] },
   { v: "Reinforcement waves replace supply", date: "15 Nov", fixes: [], balance: [
     "From the week of 16 Nov, supply beds are gone. Every lord can field 4 soldiers on the map at the start of a battle.",
     "Reinforcement waves now have to be unlocked, in order: Wave 1 for 60 gold, Wave 2 for 100 and Wave 3 for 150. Each opens 3 slots for soldiers who march out later in the battle. Every wave still sends its free footman, unlocked or not.",

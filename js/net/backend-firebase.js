@@ -52,6 +52,11 @@
     try { const r = await fetch("/__/firebase/init.json", { cache: "no-store" }); if (r.ok) { const c = await r.json(); if (c && c.projectId && c.apiKey) return c; } } catch (e) {} // provided by Firebase Hosting
     return null;
   }
+  function rememberWar() { // /?war=<game id>, from a battle alert: open that war (if this account is in it)
+    const m = location.search.match(/[?&]war=([A-Za-z0-9_-]{6,64})/); if (!m) return;
+    LS.set("ds.war", m[1]); try { history.replaceState(null, "", location.pathname + (DS.emulator ? "?emulator=1" : "")); } catch (e) {}
+  }
+  try { navigator.serviceWorker && navigator.serviceWorker.addEventListener("message", e => { const d = e.data || {}, m = d.type === "open-link" && String(d.link || "").match(/[?&]war=([A-Za-z0-9_-]{6,64})/); if (m && DS.user && m[1] !== DS.gameId) DS.switchWar(m[1]); }); } catch (e) {}
   function rememberInvite() { // /join/<code> (or ?join=<code>): keep the code through sign-in, and tidy the address bar
     const m = location.pathname.match(/\/join\/([A-Za-z0-9_-]{8,64})\/?$/) || location.search.match(/[?&]join=([A-Za-z0-9_-]{8,64})/);
     if (!m) return;
@@ -66,7 +71,7 @@
         // Sign-in works best when the page and the sign-in helper share one address, so send the
         // project's .web.app address to its twin .firebaseapp.com address (same site, same files).
         if (cfg.authDomain && location.hostname === cfg.projectId + ".web.app" && cfg.authDomain === cfg.projectId + ".firebaseapp.com") { location.replace("https://" + cfg.authDomain + location.pathname + location.search + location.hash); return false; }
-        rememberInvite();
+        rememberInvite(); rememberWar();
         for (const s of SDK) await loadScript(s);
         fb = window.firebase; fb.initializeApp(cfg); auth = fb.auth(); fs = fb.firestore();
         if (DS.emulator) { auth.useEmulator("http://" + location.hostname + ":9099", { disableWarnings: true }); fs.useEmulator(location.hostname, 8080); }
@@ -157,17 +162,24 @@
         else { const gid = inv.get("gameId"), mem = fs.collection("games").doc(gid).collection("members").doc(uid);
           let ok = false; try { ok = (await mem.get()).exists; } catch (e) {}
           if (!ok) await mem.set({ invite: code, at: Date.now() });
-          await users.set({ gameId: gid }, { merge: true }); return { gid, seat: (await mem.get()).get("seat") || uid }; }
+          await users.set({ gameId: gid, games: fb.firestore.FieldValue.arrayUnion(gid) }, { merge: true }); return { gid, seat: (await mem.get()).get("seat") || uid }; }
       } catch (e) { console.warn("invite", e); say(legacyErr(e).code === "permission_denied" ? "The host has removed this account from the game." : "Couldn't open the invite. Check your connection and try the link again."); }
     }
-    try { const u = await users.get(), gid = u.exists && u.get("gameId");
-      if (gid) { const m = await fs.collection("games").doc(gid).collection("members").doc(uid).get(); if (m.exists) return { gid, seat: m.get("seat") || uid }; } } catch (e) {}
+    if (DS.wantNew) return null; // the host asked for a fresh war: show the set-up screen
+    const want = LS.get("ds.war"); LS.set("ds.war", null);
+    try { const u = await users.get(), cur0 = u.exists && u.get("gameId"), list = (u.exists && u.get("games")) || [], cur = want && list.includes(want) ? want : cur0;
+      const order = [cur, ...list.filter(x => x !== cur)].filter(Boolean), gone = [];
+      for (const gid of order) { let m = null; try { m = await fs.collection("games").doc(gid).collection("members").doc(uid).get(); } catch (e) {}
+        if (m && m.exists) { const patch = { gameId: gid }; if (!list.includes(gid) || gone.length) patch.games = [...new Set([...list.filter(x => !gone.includes(x)), gid])]; if (gid !== cur0 || patch.games) await users.set(patch, { merge: true }); return { gid, seat: m.get("seat") || uid }; }
+        gone.push(gid); }
+      if (gone.length) await users.set({ games: list.filter(x => !gone.includes(x)) }, { merge: true }).catch(() => {});
+    } catch (e) {}
     return null;
   }
   async function startGame() { // called once per connection, after sign-in
     const my = ++epoch, g = G;
     await measureClock(); refreshPush();
-    const found = await findGame(); if (my !== epoch) return;
+    const found = await findGame(); if (my !== epoch) return; listWars();
     const gid = found && found.gid; g.seat = found ? found.seat : DS.user.uid; DS.seat = g.seat;
     if (!gid) { try { g.owner = await mayHost(); LIVE.isOwner = g.owner; } catch (e) {} if (my !== epoch) return; g.game = null; g.pubs = {}; g.state = null; g.orders = {}; g.battles = {}; emit(g, true); return; }
     attach(g, gid);
@@ -219,7 +231,8 @@
       try { LIVE.isOwner = g.game ? g.game.host === DS.user.uid : LIVE.isOwner; } catch (e) {}
       g.started = true;
       const cfg = snapDoc(configView(g)), bt = snapCol(battlesView(g)), pl = snapCol(playersView(g));
-      g.cfgCbs.forEach(f => f(cfg)); g.btCbs.forEach(f => f(bt)); g.plCbs.forEach(f => f(pl)); };
+      g.cfgCbs.forEach(f => f(cfg)); g.btCbs.forEach(f => f(bt)); g.plCbs.forEach(f => f(pl));
+      if (DS.autoEnter && cfg) { DS.autoEnter = false; setTimeout(() => { try { if (typeof A === "object" && A.playgo) { A.playgo(); render(); } } catch (e) {} }, 60); } };
     if (now) run(); else if (!emitT) emitT = setTimeout(run, 0);
   }
 
@@ -261,8 +274,8 @@
     const uid = DS.user.uid, gid = randomId(20), code = randomId(12), gr = fs.collection("games").doc(gid), b = fs.batch(), doc = { war: 1, inviteCode: code, maxPlayers: DEFAULT_LORDS, host: uid };
     CONFIG_KEYS.forEach(k => { if (cfg[k] !== undefined && cfg[k] !== null) doc[k] = cfg[k]; });
     b.set(gr, doc); b.set(fs.collection("invites").doc(code), { gameId: gid, createdAt: Date.now() }); b.set(gr.collection("members").doc(uid), { invite: code, at: Date.now() });
-    b.set(fs.collection("users").doc(uid), { gameId: gid }, { merge: true });
-    await b.commit();
+    b.set(fs.collection("users").doc(uid), { gameId: gid, games: fb.firestore.FieldValue.arrayUnion(gid) }, { merge: true });
+    await b.commit(); DS.wantNew = false; listWars();
     const g = G; g.game = doc; g.seat = uid; attach(g, gid); // the game goes on to register the host straight away
   }
   async function restartWar(next, patch) { // a new war in the same game: same invite link, same lords, a fresh start
@@ -324,7 +337,7 @@
   };
   // ---------- buttons ----------
   DS.emailDraft = "";
-  document.addEventListener("input", e => { if (e.target && e.target.id === "dsemail") DS.emailDraft = e.target.value; });
+  document.addEventListener("input", e => { if (e.target && e.target.id === "dsemail") DS.emailDraft = e.target.value; if (e.target && e.target.id === "warlink") LIVE.warLink = e.target.value; });
   if (typeof A === "object") Object.assign(A, {
     dsgoogle: () => { DS.signInGoogle(); },
     dsemail: () => { DS.signInEmail((document.getElementById("dsemail") || {}).value || DS.emailDraft); },
@@ -332,6 +345,9 @@
     dskick: uid => { if (LIVE.kick !== uid) { LIVE.kick = uid; } else { LIVE.kick = null; DS.removeLord(uid); } if (typeof renderLobby === "function") renderLobby(); },
     dsnewinvite: () => { DS.newInvite(); },
     dsresolve: () => { DS.resolveNow(); },
+    warswitch: v => { DS.switchWar(v); },
+    warjoin: () => { DS.joinWar((document.getElementById("warlink") || {}).value); },
+    warnew: () => { DS.newWar(); },
     testskip: () => { const day = liveClock().planDay; if (LIVE.testArm !== day) { LIVE.testArm = day; return; } LIVE.testArm = null; DS.testSkip(); },
     dsbots: v => { DS.setBots(v); },
     dspush: () => { DS.enablePush(); },
@@ -405,5 +421,36 @@
   };
   const refreshPush = () => { try { if (DS.pushState() !== "off" && DS.pushState() !== "install" && "Notification" in window && Notification.permission === "granted") savePushToken().catch(() => {}); } catch (e) {} };
 
-  DS.leaveGame = async () => { stopGame(); try { await fs.collection("users").doc(DS.user.uid).set({ gameId: fb.firestore.FieldValue.delete() }, { merge: true }); } catch (e) {} onAuthChange(); };
+  DS.leaveGame = async () => { const gid = DS.gameId; stopGame(); try { await fs.collection("users").doc(DS.user.uid).set({ gameId: fb.firestore.FieldValue.delete(), ...(gid ? { games: fb.firestore.FieldValue.arrayRemove(gid) } : {}) }, { merge: true }); } catch (e) {} onAuthChange(); };
+
+  // ---------- several wars at once ----------
+  // An account can be in several games. users/{uid}.games lists them and gameId is the one open on this device.
+  // DS.wars: [{ id, host, day, status, current }] for the war switcher, refreshed when a war is opened.
+  DS.wars = [];
+  async function listWars() {
+    if (!DS.user) return; const uid = DS.user.uid;
+    try { const u = await fs.collection("users").doc(uid).get(), list = (u.exists && u.get("games")) || [];
+      DS.wars = (await Promise.all(list.map(async gid => { try {
+        const gr = fs.collection("games").doc(gid), gs = await gr.get(); if (!gs.exists) return null; const g = gs.data(), m = await gr.collection("members").doc(uid).get(); if (!m.exists) return null;
+        const hs = g.host ? await gr.collection("players").doc(g.host).get().catch(() => null) : null, host = g.host === uid ? "you" : (hs && hs.exists && (hs.get("nick") || hs.get("real"))) || "a friend";
+        const start = g.startDate || null, day = start && g.planDay ? ((Math.round((Date.parse(g.planDay) - Date.parse(start)) / 864e5) % 7) + 7) % 7 + 1 : null;
+        return { id: gid, host, war: g.war || 1, status: g.lobby && !start ? "Registration open" : day ? `Day ${day} of 7` : "Starting", current: gid === DS.gameId };
+      } catch (e) { return null; } }))).filter(Boolean);
+    } catch (e) { DS.wars = []; }
+    try { DS.canHost = await mayHost(); } catch (e) {}
+    redraw();
+  }
+  DS.listWars = listWars;
+  const reopen = () => { DS.autoEnter = true; onAuthChange(); };
+  DS.switchWar = async gid => { // open another of my wars on this device
+    if (!DS.user || !gid || gid === DS.gameId) return; DS.wantNew = false;
+    try { await fs.collection("users").doc(DS.user.uid).set({ gameId: gid }, { merge: true }); } catch (e) { say("Couldn't switch wars. Check your connection."); return; }
+    reopen();
+  };
+  DS.joinWar = link => { // paste an invite link (or its code) to join another war
+    const m = String(link || "").trim().match(/(?:\/join\/|[?&]join=|^)([A-Za-z0-9_-]{8,64})\/?$/);
+    if (!m) { say("That doesn't look like an invite link. It looks like …/join/abc123."); return; }
+    LS.set("ds.invite", m[1]); DS.wantNew = false; reopen();
+  };
+  DS.newWar = () => { DS.wantNew = true; DS.autoEnter = false; onAuthChange(); }; // hosts: set up another war; the others carry on
 })();

@@ -35,7 +35,7 @@ async function tokensFor(db, gameRef, seats) {
 async function deliver(db, gameRef, messages, send) {
   const tokens = await tokensFor(db, gameRef, Object.keys(messages)); let sent = 0;
   await Promise.all(Object.entries(messages).flatMap(([seat, msg]) => (tokens[seat] || []).map(async ({ uid, token }) => {
-    try { await send(token, msg); sent++; }
+    try { await send(token, Object.assign({}, msg, { link: "/?war=" + gameRef.id, war: gameRef.id })); sent++; } // the link opens this war, for lords in several
     catch (e) { const code = String((e && e.code) || ""); if (/registration-token-not-registered|invalid-registration-token|invalid-argument/.test(code)) await db.collection("users").doc(uid).update({ fcmTokens: FieldValue.arrayRemove(token) }).catch(() => {}); }
   })));
   return sent;

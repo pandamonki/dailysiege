@@ -23,6 +23,7 @@ const HELP = {
   unit: ["Soldier", "Stats and options for this soldier. Train it with gold, move it on the map, or send it back to the barracks."],
   trap: ["Trap", "A single-use trap. It only lasts tonight's battle. Tap a glowing tile to place it, or pick it up again before you seal your orders."],
   wall: ["Wall", "Enemies stop and chop at walls that block their path, or walk around them. Rotate or move a wall, or dismantle it for gold back. Walls rebuild free each day."],
+  wars: ["Your wars", "You can be in several wars at once, each with its own friends, castle, army and gold. Tap Open to switch to another war; the others carry on and are fought on their own schedule. To join another war, paste its invite link. Hosts can set up a new war here too. Battle alerts open the war they are about."],
   camp: ["Mercenary camp", "From day 4 each week, mercenaries are for hire. Each day a new, stronger headline group arrives, shown at the top, with three regular groups below it. Tap a group to see it, then bid. Bids are sealed and you can bid on one group a day. The highest bidder fights with that group for one battle and pays their own bid. A hired group then rests for 2 days for everyone."],
   invites: ["Invitations", "Lords who want to ally with you. Accept or decline, or decide later in Allies. If you accept, the alliance starts at the next battle and any dowry is paid to you."],
   gold: ["Treasury", "Your gold, your daily income and what is set aside for alliance offers. Kill spoils and dowries are added after each battle."],

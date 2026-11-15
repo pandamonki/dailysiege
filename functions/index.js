@@ -41,7 +41,7 @@ exports.keepGameClock = onDocumentWritten({ document: "games/{gameId}", region: 
 });
 
 // One push notification to one device. The message is data only; the game's service worker turns it into a notification.
-const send = (token, msg) => getMessaging().send({ token, data: { title: msg.title, body: msg.body, tag: msg.tag, link: msg.link }, webpush: { headers: { Urgency: "high", TTL: "43200" } } });
+const send = (token, msg) => getMessaging().send({ token, data: { title: msg.title, body: msg.body, tag: msg.war ? msg.tag + "-" + msg.war : msg.tag, link: msg.link }, webpush: { headers: { Urgency: "high", TTL: "43200" } } });
 
 // The one scheduled job: a battle is fought within five minutes of its lock time, and an hour before a lock
 // the lords who have not sealed get a reminder.
