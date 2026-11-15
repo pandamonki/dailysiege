@@ -13,7 +13,7 @@ const UNITS = {
   catapult: { name: "Catapult", cost: 220, hp: 450, atk: 110, note: "Very slow. Sets up two tiles from a castle, then hurls boulders at it. Hits castles hard from a distance, but cannot fight soldiers, so guard it.", engine: true },
 };
 const UNIT_LVL_GAIN = .3; // each soldier level adds this share of base health and attack
-const UNIT_TRAIN_COST = [.4, .6]; // training to level 2 and to level 3 costs this share of the soldier's price
+const UNIT_TRAIN_COST = [.3, .4]; // training to level 2 and to level 3 costs this share of the soldier's price
 const trainCost = (type, lvl) => Math.round(UNITS[type].cost * (UNIT_TRAIN_COST[lvl - 1] || 0)); // gold to train a level-lvl soldier one level up
 const UNIT_TIER = { footman: 1, bowman: 1, knight: 3, raider: 2, healer: 2, mage: 2, sniper: 3, ram: 3, cart: 3, catapult: 3 }; // castle tier that unlocks each soldier
 const UNIT_LVL_TIER = [1, 1, 1]; // soldiers can be trained to any level at any castle tier; only weapon and armour upgrades are gated

@@ -158,7 +158,7 @@ function abilLines(k, r) {
 
 const PATCHES = [
   { v: "Cheaper training", date: "15 Nov", fixes: [], balance: [
-    "Training a soldier is cheaper: level 2 now costs 40% of the soldier's price (was 50%) and level 3 costs 60% (was 100%). A fully trained soldier now costs twice its price in all, the same as buying two, but fights better and needs only one bed.",
+    "Training a soldier is cheaper: level 2 now costs 30% of the soldier's price (was 50%) and level 3 costs 40% (was 100%). A fully trained soldier now costs 1.7 times its price in all, less than buying two, and needs only one bed.",
     "Selling a trained soldier still returns a quarter of what you spent on it, so it is a little less than before.",
   ], changes: [] },
   { v: "Solid forest and tree blockades", date: "15 Nov", fixes: [], balance: [], changes: [
