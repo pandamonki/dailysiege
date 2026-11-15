@@ -168,10 +168,11 @@ function poseOf(k, time, x, y, f0, f1) {
   return o;
 }
 function drawLongFx(time) { // effects that outlast the 2-second window: respawn countdowns and a dropped Rapier
-  const E = replay.res.events; if (!replay.longFx) replay.longFx = E.filter(e => e.ty === "respawn" || e.ty === "rapier" || e.ty === "zone" || e.ty === "taunt" || e.ty === "shell");
+  const E = replay.res.events; if (!replay.longFx) replay.longFx = E.filter(e => e.ty === "respawn" || e.ty === "rapier" || e.ty === "zone" || e.ty === "taunt" || e.ty === "shell" || (e.ty === "quip" && tauntOf(replay.res, e.pid, e.k)));
   replay.longFx.forEach(e => {
     if (e.ty === "zone") { drawZoneFx(e, time); return; }
     if (e.ty === "taunt") { drawTauntFx(e, time); return; }
+    if (e.ty === "quip") { drawQuipFx(e, time); return; }
     if (e.ty === "shell") { drawShellFx(e, time); return; }
     if (e.ty === "respawn") {
       if (time < e.t0 || time >= e.t1) return; const left = Math.ceil(e.t1 - time), px = e.x * ts, py = (e.y - 1.25) * ts, col = (replay.res.colors || {})[e.pid] || "#fff";
@@ -361,5 +362,21 @@ function drawSuddenOverlay() {
     say(String(n), vh * .24, 64 * s * pop, "#ffd34d");
   } else if (time - sdn.go < 1.4) { const k = (time - sdn.go) / 1.4; say("FIGHT!", vh * .16, 52 * s * (1 + .25 * (1 - k)), "#ff5a3a", 1 - k * k); }
   else { say("SUDDEN DEATH", vh * .05, 15 * s, "#ff8a6a", .8); }
+  ctx.restore();
+}
+
+// Taunts: a lord's chosen words, kept on their banner. tv = victory, te = elimination (a castle destroyed, or a hero killed in sudden death)
+function tauntOf(R, pid, k) { const m = (R.meta || []).find(x => x.kind === "castle" && x.pid === pid); return cleanTaunt(m && m.banner && m.banner[k]); }
+function wrapWords(txt, n) { const out = []; let cur = ""; txt.split(" ").forEach(w => { if (cur && (cur + " " + w).length > n) { out.push(cur); cur = w; } else cur = cur ? cur + " " + w : w; }); if (cur) out.push(cur); return out.slice(0, 3); }
+function drawQuipFx(e, time) { // a speech bubble over whoever struck the blow, for three seconds
+  const age = time - e.t; if (age < 0 || age > 3.2) return; const fr = replayFrameAt(time), b = e.id * 4; if (!fr || !fr.d || fr.d.length <= b + 3) return;
+  const txt = tauntOf(replay.res, e.pid, e.k); if (!txt) return;
+  const x = fr.d[b] * ts, y = (fr.d[b + 1] - 1.15) * ts, a = Math.min(1, age / .2, (3.2 - age) / .5), pop = 1 + .15 * Math.max(0, 1 - age / .25), fs = Math.max(11, Math.round(ts * .3));
+  ctx.save(); ctx.globalAlpha = a; ctx.font = `700 ${fs}px Alegreya, Georgia, serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  const lines = wrapWords(txt, 16), w = Math.max(...lines.map(l => ctx.measureText(l).width)) + fs * 1.1, h = lines.length * fs * 1.2 + fs * .8, col = (replay.res.colors || {})[e.pid] || "#8a6418";
+  ctx.translate(x, y); ctx.scale(pop, pop);
+  ctx.fillStyle = "#f6ecd0"; ctx.strokeStyle = col; ctx.lineWidth = Math.max(2, ts * .06); ctx.beginPath(); ctx.roundRect(-w / 2, -h, w, h, fs * .5); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-fs * .35, -1); ctx.lineTo(0, fs * .6); ctx.lineTo(fs * .35, -1); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.fillStyle = "#f6ecd0"; ctx.fillRect(-fs * .33, -ctx.lineWidth - 1, fs * .66, ctx.lineWidth + 2);
+  ctx.fillStyle = "#2b1b0c"; lines.forEach((l, i) => ctx.fillText(l, 0, -h + fs * .4 + fs * 1.2 * (i + .5)));
   ctx.restore();
 }

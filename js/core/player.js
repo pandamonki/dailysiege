@@ -83,6 +83,7 @@ function canRank(k) {
 }
 
 // ----- banner, walls, carried alliances -----
+const TAUNT_MAX = 40, cleanTaunt = s => String(s == null ? "" : s).replace(/[\u0000-\u001f<>]/g, " ").replace(/\s+/g, " ").trim().slice(0, TAUNT_MAX); // victory (tv) and elimination (te) taunts live on the banner, so they travel with the lord everywhere the banner goes
 function defaultBanner() { return { pat: "solid", c1: null, c2: "#ecdcb4", em: "none" }; }
 function dedupePlace(place) { // a piece can only stand on one tile; if an old tile survived a merged save, the later (newer) one wins
   const seen = new Set(); Object.keys(place || {}).reverse().forEach(k => { const ref = place[k]; if (seen.has(ref)) delete place[k]; else seen.add(ref); }); return place;

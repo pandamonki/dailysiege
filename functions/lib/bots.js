@@ -24,7 +24,7 @@ async function setBots(db, gameId, want, { now = Date.now(), removeId = null } =
     if (!d.exists || !isBot(d.data())) throw new Error("That seat is not a bot.");
     await ref.delete(); return { removed: removeId };
   }
-  const { MAX_LORDS, SEAT_COLORS, CLASSES, BOT_LORD_NAMES, BOT_LORD_BANNERS } = Object.fromEntries(["MAX_LORDS", "SEAT_COLORS", "CLASSES", "BOT_LORD_NAMES", "BOT_LORD_BANNERS"].map(k => [k, g().get(k)]));
+  const { MAX_LORDS, SEAT_COLORS, CLASSES, BOT_LORD_NAMES, BOT_LORD_BANNERS, BOT_TAUNTS_TV, BOT_TAUNTS_TE } = Object.fromEntries(["MAX_LORDS", "SEAT_COLORS", "CLASSES", "BOT_LORD_NAMES", "BOT_LORD_BANNERS", "BOT_TAUNTS_TV", "BOT_TAUNTS_TE"].map(k => [k, g().get(k)]));
   const seats = Math.min(MAX_LORDS, cfg.maxPlayers || 8), pubs = await gameRef.collection("players").get();
   const live = pubs.docs.filter(d => !d.get("left")), humans = live.filter(d => !isBot(d.data()) && !d.get("pending")).length;
   const bots = live.filter(d => isBot(d.data())).sort((a, b) => (b.get("joinedAt") || 0) - (a.get("joinedAt") || 0) || (a.id < b.id ? -1 : 1)); // newest first
@@ -42,7 +42,7 @@ async function setBots(db, gameId, want, { now = Date.now(), removeId = null } =
       // the hero nobody in this game plays yet (ties broken by a rotation that differs per game), so bots show every class before any repeats
       const start = seedOf(gameId) + i * 3, cls = heroes.map((h, j) => [h, taken[h] || 0, (j - start % heroes.length + heroes.length) % heroes.length]).sort((a, b) => a[1] - b[1] || a[2] - b[2])[0][0];
       taken[cls] = (taken[cls] || 0) + 1;
-      batch.set(gameRef.collection("players").doc(id), { bot: true, fromWeek: "0000-00-00", joinedAt: now + k, nick, real: "Bot", pending: false, cls, week: null, war: cfg.war || 1, banner: JSON.parse(JSON.stringify(Object.assign({}, BOT_LORD_BANNERS[i % BOT_LORD_BANNERS.length], { c1 }))) });
+      batch.set(gameRef.collection("players").doc(id), { bot: true, fromWeek: "0000-00-00", joinedAt: now + k, nick, real: "Bot", pending: false, cls, week: null, war: cfg.war || 1, banner: JSON.parse(JSON.stringify(Object.assign({}, BOT_LORD_BANNERS[i % BOT_LORD_BANNERS.length], { c1, tv: BOT_TAUNTS_TV[(seedOf(gameId) + i * 3) % BOT_TAUNTS_TV.length], te: BOT_TAUNTS_TE[(seedOf(gameId) + i * 5) % BOT_TAUNTS_TE.length] }))) });
     }
   }
   await batch.commit();
