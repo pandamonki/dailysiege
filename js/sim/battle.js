@@ -82,6 +82,8 @@ function runBattle(plans, seed, opts = {}) {
   const under = pid => RANKS[pid] != null && RANKS[pid] > Math.max(3, Math.ceil(nP / 2));
   const H = o => { if (!fast) hl.push({ t, ...o }); return o; };
   const champOf = pid => ents.find(e => e.pid === pid && e.kind === "champ");
+  // a taunt moment: who is speaking (their hero if it lives, else the fighter that did it) and why; at most one every 4 seconds per lord
+  const quip = (pid, k, who) => { if (fast || !P[pid]) return; if (t - (P[pid].quipT ?? -9) < 4) return; const sp = (who && !who.dead && who.pid === pid ? who : null) || (champOf(pid) && !champOf(pid).dead ? champOf(pid) : null) || who; if (!sp) return; P[pid].quipT = t; ev({ ty: "quip", pid, k, id: sp.id }); };
   let firstBlood = false;
   let rapierOwner = null, rapierHolder = null, rapierDrop = null; // the Divine Rapier: who started with it, who carries it now, and where it lies when its bearer falls
   const respawnTime = lv => Math.min(60, 10 + 2.5 * lv); // a fallen hero is gone longer the higher their level
@@ -384,6 +386,7 @@ function runBattle(plans, seed, opts = {}) {
     e.tel.deaths++; if (e.tel.diedAt == null) e.tel.diedAt = t;
     if (HV3) kit.onKill(e, src);
     if (e.kind === "champ" && V3) order.forEach(q => { if (q === e.pid) P[q].heroDied = true; else if (hostile(q, e.pid)) P[q].enemyHeroDied = true; });
+    if (sdOn() && e.kind === "champ" && src && (src.owner || src).pid !== e.pid) quip((src.owner || src).pid, "te", src.owner || src);
     const kc = src && (src.owner || src); if (kc && kc.pid !== e.pid && e.kind !== "totem" && e.kind !== "castle") { kc.tel.kills++; if (e.kind !== "champ" && P[kc.pid]) P[kc.pid].ukills++; }
     if (!opts.duel) { awardXp(e); awardGold(e, kc); if ((e.kind === "champ" || e.kind === "castle") && kc && kc.pid !== e.pid && RANKS[e.pid] && RANKS[e.pid] <= 3 && hostile(kc.pid, e.pid)) { const kh = champOf(kc.pid); if (kh) giveXp(kh, bountyGold(RANKS[e.pid], e.kind === "champ" ? e.heroLvl : (champOf(e.pid) || {}).heroLvl) * .8); } }
     if (src && src.pid !== e.pid && e.kind === "champ") { P[src.pid].kills++; log(`${nm(src.pid)} slew ${lposs(e.pid)} hero.`);
@@ -413,7 +416,7 @@ function runBattle(plans, seed, opts = {}) {
       log(`${poss(pid)} army fights on without a castle.`);
     } else ents.forEach(e => { if (e.pid === pid && !e.dead) { e.dead = true; e.hp = 0; e.respawnAt = null; ev({ ty: "die", id: e.id, x: e.x, y: e.y, fx: 0 }); } });
     if (by && (by === pid || !P[by] || !P[by].alive)) by = null;
-    if (by) P[by].castles++;
+    if (by) { P[by].castles++; quip(by, "te", null); }
     order.forEach(o => { P[o].pacts.delete(pid); });
     log(`${poss(pid)} castle has fallen${by ? ` to ${nm(by)}` : ""}.`, "big");
     { const revenge = by && hl.some(h => (h.kind === "betray" || h.kind === "bomb") && h.pid === pid && h.other === by);

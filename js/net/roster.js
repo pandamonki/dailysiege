@@ -8,6 +8,7 @@ const nameOf = uid => (uid === LIVE.uid ? "You" : (LIVE.names[uid] && LIVE.names
 function applyNicks() { for (const [uid, p] of Object.entries(LIVE.players)) { const l = lordLabel(p); if (l) LIVE.names[uid] = Object.assign({}, LIVE.names[uid], { name: l }); }
   if (LIVE.names[LIVE.uid] && LIVE.names[LIVE.uid].name && (isLive() || inLobby())) MY_NAME = LIVE.names[LIVE.uid].name; }
 const NAME_DRAFT = {};
+document.addEventListener("input", e => { const id = e.target && e.target.id; if ((id === "taunt-tv" || id === "taunt-te") && S) S.banner = { ...(S.banner || defaultBanner()), [id.slice(6)]: cleanTaunt(e.target.value) }; }); // the taunts are saved with the rest of your registration
 document.addEventListener("input", e => { if (e.target && (e.target.id === "mynick" || e.target.id === "myreal")) NAME_DRAFT[e.target.id] = e.target.value; });
 function nameForm(note, withSave = true) { const p = LIVE.players[LIVE.uid] || {}, v = (id, k) => esc(NAME_DRAFT[id] ?? p[k] ?? "");
   return `<div class="lrow nmrow"><label>Nickname<input id="mynick" maxlength="${NICK_MAX}" autocomplete="off" placeholder="e.g. The Iron Duke" value="${v("mynick", "nick")}"></label>

@@ -171,7 +171,7 @@ function victoryCeremony(R, done) {
   const N = p => (R.names && R.names[p]) || (R.results.find(r => r.pid === p) || {}).name || "Someone", you = win.pid === R.me;
   const el = document.createElement("div"); el.className = "victory";
   const A = R.awards, aw = A ? [["🏆", "MVP", A.mvp.pid, `${A.mvp.pts} points`], ["⚔", "Most Kills", A.kills.pid, `${A.kills.n} kills`], ["☠", "Highest K/D", A.kd.pid, `${A.kd.v} per death`], ["🥉", "Bronze Spoils", A.spoils.pid, `${A.spoils.g}g looted`]] : [];
-  el.innerHTML = `<canvas class="confetti"></canvas><div class="vbox"><div class="vt">${R.team ? "Victory, together!" : you ? "VICTORY!" : esc(N(win.pid)) + " wins!"}</div><img class="vhero" alt="" src="${spriteURL("c-" + win.cls)}"><div class="vs">${esc(N(win.pid))} · ${esc(clsName(win.cls))}</div>
+  el.innerHTML = `<canvas class="confetti"></canvas><div class="vbox"><div class="vt">${R.team ? "Victory, together!" : you ? "VICTORY!" : esc(N(win.pid)) + " wins!"}</div>${(() => { const tv = tauntOf(R, win.pid, "tv"); return tv ? `<div class="vbubble">${esc(tv)}</div>` : ""; })()}<img class="vhero dance" alt="" src="${spriteURL("c-" + win.cls)}"><div class="vs">${esc(N(win.pid))} · ${esc(clsName(win.cls))}</div>
     <div class="vawards">${aw.map(([g, t, p, d]) => `<div><span>${g}</span><b>${t}</b><small>${esc(N(p))}<br>${d}</small></div>`).join("")}</div><button class="btn wax" id="vgo">Continue →</button></div>`;
   document.body.appendChild(el); sting("win");
   const cv = el.querySelector("canvas"), c = cv.getContext && cv.getContext("2d"); let alive = true;
