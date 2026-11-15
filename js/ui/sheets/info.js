@@ -157,11 +157,11 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
-  { v: "Twists, contracts, rehearsal and battle reports", date: "17 Nov", fixes: [], balance: [
+  { v: "Twists, contracts, rehearsal and battle reports", date: "16 Nov", fixes: [], balance: [
     "Contracts pay 2 points and 60 gold (easy), 3 points and 100 gold (hard) or 5 points and 150 gold (rival). Contract points are not multiplied on the late days of the week.",
     "Twists: Iron Walls +30% castle health; Siege Weather +30% soldier damage to castles; Blood Moon doubles gold for slaying heroes; Golden Hill pays 2.5 times the battleground's gold and experience; Market Day takes 25% off items; Gold Rush doubles contract gold; Day of Glory doubles contract points.",
   ], changes: [
-    "From the battle of 17 Nov, every day from day 2 has a twist, drawn for each war week so none repeats. Day 1 has none. The Today panel shows today's twist and tomorrow's.",
+    "From the battle of 16 Nov, every day from day 2 has a twist, drawn for each war week so none repeats. Day 1 has none. The Today panel shows today's twist and tomorrow's.",
     "Each lord is offered three contracts a day: one easy (Butcher, Stand Firm or Sapper), one hard (Headhunter, Raze, Deathless, Podium, Unbroken or King of the Hill) and one rival contract (Hunt, Sack, Revenge or Topple the Leader) naming another lord.",
     "Take a contract on the Today panel before you seal. It is saved with your orders. Bots take one too.",
     "Revenge names whoever took your castle, or slew your hero most often, in the last battle. Topple the Leader names the lord at the top of the board.",

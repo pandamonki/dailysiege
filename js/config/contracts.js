@@ -8,7 +8,7 @@
 // orders. After the battle the server checks it against what happened and pays bonus points and gold on top of the day's result.
 // Contract points are not multiplied by the late-week day weight. Everything here is pure: the server and every phone get the same answer.
 
-let CONTRACTS_FROM = "2026-11-17"; const contractsFor = d => String(d) >= CONTRACTS_FROM;
+let CONTRACTS_FROM = "2026-11-16"; const contractsFor = d => String(d) >= CONTRACTS_FROM;
 
 const TWIST_SIEGE = 1.3, TWIST_IRON = 1.3, TWIST_BLOODMOON = 2, TWIST_HILL = 2.5, TWIST_MARKET = .75;
 const TWISTS = {

@@ -24,9 +24,9 @@ test("a week has no twist on day 1 and six different twists on days 2 to 7, the 
 test("battles before CONTRACTS_FROM carry no twist and pay no contracts", () => {
   const W = war(); sim.context.__W = W; W.config.startDate = "2026-11-16"; Object.values(W.players).forEach(p => { p.state.week = "2026-11-16"; });
   W.battles["2026-11-16"] = sim.run(`fightDay(__W, "2026-11-16", 1)`);
-  const doc = J(sim.run(`fightDay(__W, "2026-11-17", 1)`)); // CONTRACTS_FROM is the 17th: pin it later to check the gate
-  assert.ok(doc.contracts, "the 17th is the first contract day");
-  sim.run(`CONTRACTS_FROM = "2026-11-18"`); const old = J(sim.run(`fightDay(__W, "2026-11-17", 1)`)); sim.run(`CONTRACTS_FROM = "2026-11-17"`);
+  const doc = J(sim.run(`fightDay(__W, "2026-11-17", 1)`)); // on or after CONTRACTS_FROM: pin it later to check the gate
+  assert.ok(doc.contracts, "the 17th is a contract day");
+  sim.run(`CONTRACTS_FROM = "2026-11-18"`); const old = J(sim.run(`fightDay(__W, "2026-11-17", 1)`)); sim.run(`CONTRACTS_FROM = "2026-11-16"`);
   assert.equal(old.inputs.twist, undefined); assert.equal(old.contracts, undefined);
 });
 

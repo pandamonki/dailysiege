@@ -3,7 +3,7 @@
 // Each item is [icon, headline, one short sentence]. Players who have not seen the newest id get the pop-up the next time they plan;
 // the id is remembered on their device, so changing the id is all it takes to show it again. Keep about 8 to 14 items.
 const RELEASES = [
-  { id: "1.3", title: "What's new in v1.3", sub: "Daily twists, contracts, rehearsals and your own battle report (from the battle of 17 Nov)", items: [
+  { id: "1.3", title: "What's new in v1.3", sub: "Daily twists, contracts, rehearsals and your own battle report (from the battle of 16 Nov)", items: [
     ["📜", "A Today button", "The scroll on the left of the map shows today's twist, your contracts and the rehearsal."],
     ["🌕", "A twist every day", "From day 2 each day brings one rule change, like Blood Moon, Siege Weather or Market Day. You see tomorrow's a day ahead."],
     ["🛒", "Market Day", "Items in the shop cost 25% less."],
