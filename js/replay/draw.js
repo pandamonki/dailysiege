@@ -168,7 +168,7 @@ function poseOf(k, time, x, y, f0, f1) {
   return o;
 }
 function drawLongFx(time) { // effects that outlast the 2-second window: respawn countdowns and a dropped Rapier
-  const E = replay.res.events; if (!replay.longFx) replay.longFx = E.filter(e => e.ty === "respawn" || e.ty === "rapier" || e.ty === "zone" || e.ty === "taunt" || e.ty === "shell" || (e.ty === "quip" && tauntOf(replay.res, e.pid, e.k)));
+  const E = replay.res.events; if (!replay.longFx) replay.longFx = E.filter(e => e.ty === "respawn" || e.ty === "rapier" || e.ty === "zone" || e.ty === "taunt" || e.ty === "shell" || e.ty === "quip");
   replay.longFx.forEach(e => {
     if (e.ty === "zone") { drawZoneFx(e, time); return; }
     if (e.ty === "taunt") { drawTauntFx(e, time); return; }
@@ -366,11 +366,13 @@ function drawSuddenOverlay() {
 }
 
 // Taunts: a lord's chosen words, kept on their banner. tv = victory, te = elimination (a castle destroyed, or a hero killed in sudden death)
-function tauntOf(R, pid, k) { const m = (R.meta || []).find(x => x.kind === "castle" && x.pid === pid); return cleanTaunt(m && m.banner && m.banner[k]); }
+// A lord who wrote nothing gets a stock taunt, picked from the same lists the bots use. The pick is fixed by the lord (and, for eliminations, the moment), so every phone shows the same words.
+function tauntOf(R, pid, k, salt = 0) { const m = (R.meta || []).find(x => x.kind === "castle" && x.pid === pid), own = cleanTaunt(m && m.banner && m.banner[k]); if (own) return own;
+  const L = k === "tv" ? BOT_TAUNTS_TV : BOT_TAUNTS_TE; return L[Math.floor(hash(botSeed(String(pid)), salt, k === "tv" ? 11 : 13) * L.length)]; }
 function wrapWords(txt, n) { const out = []; let cur = ""; txt.split(" ").forEach(w => { if (cur && (cur + " " + w).length > n) { out.push(cur); cur = w; } else cur = cur ? cur + " " + w : w; }); if (cur) out.push(cur); return out.slice(0, 3); }
 function drawQuipFx(e, time) { // a speech bubble over whoever struck the blow, for three seconds
   const age = time - e.t; if (age < 0 || age > 3.2) return; const fr = replayFrameAt(time), b = e.id * 4; if (!fr || !fr.d || fr.d.length <= b + 3) return;
-  const txt = tauntOf(replay.res, e.pid, e.k); if (!txt) return;
+  const txt = tauntOf(replay.res, e.pid, e.k, Math.floor(e.t)); if (!txt) return;
   const x = fr.d[b] * ts, y = (fr.d[b + 1] - 1.15) * ts, a = Math.min(1, age / .2, (3.2 - age) / .5), pop = 1 + .15 * Math.max(0, 1 - age / .25), fs = Math.max(11, Math.round(ts * .3));
   ctx.save(); ctx.globalAlpha = a; ctx.font = `700 ${fs}px Alegreya, Georgia, serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
   const lines = wrapWords(txt, 16), w = Math.max(...lines.map(l => ctx.measureText(l).width)) + fs * 1.1, h = lines.length * fs * 1.2 + fs * .8, col = (replay.res.colors || {})[e.pid] || "#8a6418";
