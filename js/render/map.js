@@ -105,21 +105,24 @@ function paintBackground() {
       if (zoneSet.has(`${r + dr},${q + dc}`) || (r + dr === CASTLE[0] && q + dc === CASTLE[1])) return;
       c.beginPath(); c.moveTo((q + x0) * ts, (r + y0) * ts); c.lineTo((q + x1) * ts, (r + y1) * ts); c.stroke(); });
     c.setLineDash([]); });
+  // The forest comes from treeGeom (js/core/layout.js), the same shape the battle rules use: a rim of forest outside a smooth boundary, a little bulge in between each pair of bases,
+  // and a small blockade of three trees between each pair. One slice is generated and turned once per base, so it is identical everywhere, whatever the number of lords.
+  // From TREES_V1_FROM the trees are solid. (Your own deployment field is kept clear of rim trees so you can see where to place soldiers.)
   const scenery = []; // drawn back to front so nearer trees overlap the ones behind
-  for (let r = 0; r < N; r++) for (let q = 0; q < N; q++) {
-    const ring = Math.min(r, q, N - 1 - r, N - 1 - q) === 0, v = hash(r, q, 11); // the outer edge of the map is a solid tree line
-    if ((!ring && nearCastle(r, q)) || isCentre(r, q) || roadTiles.has(`${r},${q}`) || inZone(r, q) || occupied.has(`${r},${q}`) || (ring && CASTLE && r === CASTLE[0] && q === CASTLE[1])) continue;
-    if (ring || v < .2) {
-      const n = ring ? 2 : v < .08 ? 2 : 1;
-      for (let i = 0; i < n; i++) {
-        const x = (q + .3 + hash(r, q, 20 + i) * .4) * ts, y = (r + .75 + hash(r, q, 30 + i) * .2) * ts;
-        scenery.push([y, () => { c.fillStyle = "rgba(0,0,0,.24)"; c.beginPath(); c.ellipse(x, y, ts * .3, ts * .1, 0, 0, 7); c.fill(); hash(r, q, 40 + i) > .45 ? pine(c, x, y, ts, hash(r, q, 50)) : oak(c, x, y, ts); }]);
-      }
-    } else if (v > .965) {
-      const x = (q + .5) * ts, y = (r + .6) * ts; scenery.push([y, () => { const sp = rockSprite(v > .965 ? 1 : 0); c.fillStyle = "rgba(0,0,0,.22)"; c.beginPath(); c.ellipse(x, y + u, ts * .26, ts * .08, 0, 0, 7); c.fill(); c.drawImage(sp, Math.round(x - 5 * u), Math.round(y - 5 * u), sp.width * u, sp.height * u); }]);
-    } else if (false) {
-      const x = (q + .5) * ts, y = (r + .7) * ts; scenery.push([y, () => { const sp = bushSprite(v > .83 ? 1 : 0); c.fillStyle = "rgba(0,0,0,.2)"; c.beginPath(); c.ellipse(x, y + u, ts * .24, ts * .07, 0, 0, 7); c.fill(); c.drawImage(sp, Math.round(x - 5 * u), Math.round(y - 5 * u), sp.width * u, sp.height * u); }]);
-    }
+  { const TG = treeGeom(castleTiles.length || 8, N), cc = TG.cc, n = TG.n, sec = TG.sec, ref = TG.ref, rMax = TG.half * 1.45 + 1;
+    const free = (x, y) => { const tr = Math.floor(y / ts), tq = Math.floor(x / ts), k = `${tr},${tq}`; return !(isCentre(tr, tq) || roadTiles.has(k) || inZone(tr, tq) || occupied.has(k) || nearCastle(tr, tq)); };
+    const shadow = (x, y) => { c.fillStyle = "rgba(0,0,0,.24)"; c.beginPath(); c.ellipse(x, y, ts * .3, ts * .1, 0, 0, 7); c.fill(); };
+    let k = 0; for (let r = 1.6; r <= rMax; r += .62, k++) { const m = Math.max(1, Math.round(r * sec / .62));
+      for (let j = 0; j < m; j++) { const ph = (j + .2 + hash(k, j, 61) * .6) / m * sec, rr = r + (hash(k, j, 62) - .5) * .37;
+        for (let sI = 0; sI < n; sI++) { const th = ref + sI * sec + ph, x = MID + rr * Math.cos(th) * ts, y = MID + rr * Math.sin(th) * ts; // the forest: everything beyond the boundary
+          if (rr < TG.rim(th) || x < ts * .3 || y < ts * .3 || x > W - ts * .3 || y > W - ts * .3 || !free(x, y)) continue;
+          scenery.push([y, () => { shadow(x, y); hash(k, j, 63) > .45 ? pine(c, x, y, ts, hash(k, j, 64)) : oak(c, x, y, ts); }]); } } }
+    for (let r = 0; r < N; r++) for (let q = 0; q < N; q++) { // a thin line of trees along the very edge, so the whole map is ringed
+      if (Math.min(r, q, N - 1 - r, N - 1 - q) > 0 || !free((q + .5) * ts, (r + .5) * ts)) continue;
+      for (let i = 0; i < 2; i++) { const x = (q + .3 + hash(r, q, 72 + i) * .4) * ts, y = (r + .75 + hash(r, q, 74 + i) * .2) * ts;
+        scenery.push([y, () => { shadow(x, y); hash(r, q, 76 + i) > .45 ? pine(c, x, y, ts, hash(r, q, 78)) : oak(c, x, y, ts); }]); } }
+    TG.clumps.forEach(cl => { const x = cl.x * ts, y = (cl.y + .3) * ts, o = cl.k + 1; // the blockades: every one drawn the same way
+      [[-.16, -.05, 0], [.17, .12, 1]].forEach(([dx, dy, w]) => { const tx = x + dx * ts, ty = y + dy * ts; scenery.push([ty, () => { shadow(tx, ty); (o + w) % 2 ? pine(c, tx, ty, ts, .3 + .2 * o) : oak(c, tx, ty, ts); }]); }); });
   }
   scenery.sort((p, q) => p[0] - q[0]).forEach(([, fn]) => fn());
   return b;

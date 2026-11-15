@@ -225,9 +225,9 @@ const planUlt = () => !!S.ultArm && !ultCooling() && ultLearned();
 const planBless = () => (blessLocked() ? null : S.bless || null);
 function ritualsTab() {
   const cd = ultCooling(), learned = ultLearned(), cl = { ult: (heroV3Now() && treeUlt()) || CLASSES[S.cls].ult }, used = blessLocked();
-  return `<div class="sec tight"><h3>Ultimate</h3><p class="muted">Your hero only uses its ultimate if you plan it here. Once per battle, then it needs one full day to recharge.</p>
+  return `<div class="sec tight"><h3>${ultBolt()}Ultimate</h3><p class="muted">Your hero only uses its ultimate if you plan it here. Once per battle, then it needs one full day to recharge.</p>
     ${!learned ? `<p class="need">Your hero hasn't learned the ultimate yet. Spend a skill point on it in the Hero sheet.</p>` : cd ? `<p class="need">Recharging. It was cast in the last battle and is ready again tomorrow.</p>` : ""}
-    <button class="btn ${S.ultArm && learned && !cd ? "wax" : "wood"}" data-act="ultarm" ${dis(!learned || cd)}>${S.ultArm && learned && !cd ? "Planned for tonight ✓ (tap to cancel)" : "Plan the ultimate for tonight"}</button></div>
+    <button class="btn ${S.ultArm && learned && !cd ? "wax" : "wood"}" data-act="ultarm" ${dis(!learned || cd)}>${ultBolt()}${S.ultArm && learned && !cd ? "Planned for tonight ✓ (tap to cancel)" : "Plan the ultimate for tonight"}</button></div>
   <div class="sec tight"><h3>Weekly blessing</h3><p class="muted">One ritual per war, in effect for a single battle. ${used ? "You have already used yours this week." : "Choose one, or none to save it for later."}</p>
     ${Object.entries(BLESSINGS).map(([k, [n, ds]]) => `<button class="btn ${S.bless === k && !used ? "wax" : ""}" style="display:block;width:100%;text-align:left;margin:4px 0" data-act="bless" data-v="${k}" ${dis(used)}><b>${n}</b><br><small>${esc(ds)}</small></button>`).join("")}
     ${S.bless && !used ? `<button class="btn small" data-act="bless" data-v="">Save it for later</button>` : ""}</div>`;
@@ -279,8 +279,8 @@ function sealMerc() {
 function sealPowers() { // ultimate and weekly ritual can be switched on right where you seal
   const cl = { ult: (heroV3Now() && treeUlt()) || CLASSES[S.cls].ult }, learned = ultLearned(), cd = ultCooling(), armed = planUlt(), used = blessLocked();
   const ult = !learned ? `<p class="muted">Learn the ultimate in the Hero sheet to use it.</p>` : cd ? `<p class="need">Recharging. It was cast in the last battle and is ready again tomorrow.</p>` : `<p class="muted">Cast once this battle. It then needs a full day to recharge.</p>`;
-  return `<div class="sec tight"><h3>${ultIconHTML(cl.ult)}Ultimate · ${esc(cl.ult.name)}</h3>${ult}
-      <button class="btn ${armed ? "wax" : "wood"}" data-act="ultarm" ${dis(!learned || cd)}>${armed ? "Using it this battle ✓ (tap to cancel)" : "Use ultimate this battle"}</button></div>
+  return `<div class="sec tight"><h3>${ultBolt()}${ultIconHTML(cl.ult)}Ultimate · ${esc(cl.ult.name)}</h3>${ult}
+      <button class="btn ${armed ? "wax" : "wood"}" data-act="ultarm" ${dis(!learned || cd)}>${ultBolt()}${armed ? "Using it this battle ✓ (tap to cancel)" : "Use ultimate this battle"}</button></div>
     <div class="sec tight"><h3>Weekly ritual</h3><p class="muted">${used ? "Already used this week. Your next one is a new war." : "One ritual per week, for a single battle. Once spent it is gone until next week."}</p>
       <div class="row">${Object.entries(BLESSINGS).map(([k, [n]]) => `<button class="btn ${S.bless === k && !used ? "wax" : "wood"}" data-act="bless" data-v="${S.bless === k ? "" : k}" ${dis(used)}>${S.bless === k && !used ? `${n} ✓` : n}</button>`).join("")}</div>
       ${!used && S.bless ? `<p class="muted">${esc(BLESSINGS[S.bless][1])} Tap again to cancel.</p>` : ""}</div>` + sealMerc();
@@ -296,7 +296,7 @@ const sealInitials = () => { const w = String(typeof MY_NAME === "string" ? MY_N
 function sealSheet() {
   if (S.locked) return head(null, "Orders Sealed", "The battle plays out at dusk") + `<div class="body">
     ${sealWarnings()}<div class="waxseal">${esc(sealInitials())}</div><p class="muted" style="text-align:center">These orders will be fought at the lock. You can draft new orders until then: the sealed ones stay in effect until you seal the new ones.</p>
-    <p class="muted" style="text-align:center">Ultimate: ${planUlt() ? "<b>will be used</b>" : "not planned"} · Ritual: ${planBless() ? `<b>${esc(BLESSINGS[S.bless][0])}</b>` : "none"}${mercOpen() ? ` · Mercenaries: ${bidSummary() ? `<b>${esc(bidSummary())}</b>` : "no bids"}` : ""}</p>
+    <p class="muted" style="text-align:center">${ultBolt()}Ultimate: ${planUlt() ? "<b>will be used</b>" : "not planned"} · Ritual: ${planBless() ? `<b>${esc(BLESSINGS[S.bless][0])}</b>` : "none"}${mercOpen() ? ` · Mercenaries: ${bidSummary() ? `<b>${esc(bidSummary())}</b>` : "no bids"}` : ""}</p>
     <div class="row" style="justify-content:center">${isLive() ? "" : `<button class="btn wax" data-act="battle">Watch tonight's battle</button>`}<button class="btn" data-act="unseal">Draft new orders</button>${isLive() ? "" : `<button class="btn wood" data-act="copy">Copy plan</button>`}</div>
     <p class="muted" style="text-align:center">${isLive() ? `The real battle is fought at ${lockLabel(LIVE.config)}. Watch it afterwards from the Battle report.` : "In this prototype the battle runs now on your phone against the example players."}</p>
     ${isLive() ? "" : `<div class="sec"><h3>Your sealed plan</h3><p class="muted">This is what the battle will read.</p><div class="plan" id="plan">${esc(planJSON())}</div></div>`}</div>`;
