@@ -157,6 +157,18 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "Twists, contracts, rehearsal and battle reports", date: "17 Nov", fixes: [], balance: [
+    "Contracts pay 2 points and 60 gold (easy), 3 points and 100 gold (hard) or 5 points and 150 gold (rival). Contract points are not multiplied on the late days of the week.",
+    "Twists: Iron Walls +30% castle health; Siege Weather +30% soldier damage to castles; Blood Moon doubles gold for slaying heroes; Golden Hill pays 2.5 times the battleground's gold and experience; Market Day takes 25% off items; Gold Rush doubles contract gold; Day of Glory doubles contract points.",
+  ], changes: [
+    "From the battle of 17 Nov, every day from day 2 has a twist, drawn for each war week so none repeats. Day 1 has none. The Today panel shows today's twist and tomorrow's.",
+    "Each lord is offered three contracts a day: one easy (Butcher, Stand Firm or Sapper), one hard (Headhunter, Raze, Deathless, Podium, Unbroken or King of the Hill) and one rival contract (Hunt, Sack, Revenge or Topple the Leader) naming another lord.",
+    "Take a contract on the Today panel before you seal. It is saved with your orders. Bots take one too.",
+    "Revenge names whoever took your castle, or slew your hero most often, in the last battle. Topple the Leader names the lord at the top of the board.",
+    "The server checks contracts after the battle and adds the bonus to that day's points and spoils. The replay and every report show the official result.",
+    "Rehearsal: in the friends game the Today panel can fight your current, unsealed orders against your rivals' orders from the last battle. It runs on your phone, as often as you like, and never counts.",
+    "Every recap (and every rehearsal) has a Your battle section: share of damage by your hero and each soldier type, your best skill, damage to and from castles and who hit yours, damage your fences soaked up, when your waves marched out, time on the battleground, and up to three tips for tomorrow.",
+  ] },
   { v: "Solid forest and tree blockades", date: "15 Nov", fixes: [], balance: [], changes: [
     "The forest around the map is now a solid wall in battles from 16 Nov: soldiers and heroes can no longer walk into the trees at the edge and corners, and slide round them instead.",
     "The old random trees and rocks scattered across the middle of the map are gone. In their place is a small blockade of trees between each pair of bases. Every blockade is the same, and the design is the same around every base whatever the number of lords.",
