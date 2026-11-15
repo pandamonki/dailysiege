@@ -24,7 +24,7 @@
   const SDK = ["app", "auth", "firestore"].map(n => `js/vendor/firebase/firebase-${n}-compat.js`);
   const FUNCTIONS_REGION = "australia-southeast1"; // must match REGION in functions/region.js
   const DEMO = { apiKey: "demo-key", authDomain: "demo-dailysiege.firebaseapp.com", projectId: "demo-dailysiege", appId: "demo" };
-  const SERVER_KEYS = ["planDay", "nextPlanDay", "nextLockAt", "lockAfter", "clockWar", "startDate", "resolvedAt", "remindedFor"]; // only the server writes these
+  const SERVER_KEYS = ["planDay", "nextPlanDay", "nextLockAt", "lockAfter", "clockWar", "startDate", "resolvedAt", "remindedFor", "testSkew"]; // only the server writes these
   const HIDDEN_KEYS = ["nextLockAt", "lockAfter", "resolvedAt", "remindedFor"];                                       // timestamps the game has no use for
   const CONFIG_KEYS = ["tz", "lockHour", "lobby", "lobbyEnds", "createdAt", "maxPlayers", "capFrom", "capPrev"]; // what the host's settings screen may change
   const copy = v => (v === undefined ? undefined : JSON.parse(JSON.stringify(v)));
@@ -332,6 +332,7 @@
     dskick: uid => { if (LIVE.kick !== uid) { LIVE.kick = uid; } else { LIVE.kick = null; DS.removeLord(uid); } if (typeof renderLobby === "function") renderLobby(); },
     dsnewinvite: () => { DS.newInvite(); },
     dsresolve: () => { DS.resolveNow(); },
+    testskip: () => { const day = liveClock().planDay; if (LIVE.testArm !== day) { LIVE.testArm = day; return; } LIVE.testArm = null; DS.testSkip(); },
     dsbots: v => { DS.setBots(v); },
     dspush: () => { DS.enablePush(); },
     dsreassign: () => { const from = (document.getElementById("dsfrom") || {}).value, to = (document.getElementById("dsto") || {}).value; if (!from || !to) return; if (!LIVE.moveSeat) { LIVE.moveSeat = true; return; } LIVE.moveSeat = false; DS.reassignSeat(from, to); },
@@ -347,6 +348,12 @@
     if (!DS.isHost() || DS.busy) return; DS.busy = "resolve"; say("Fighting the battle…");
     try { const r = await callServer("resolveNow", { gameId: G.id }); say(r.days && r.days.length ? "Done. Results are in." : "Nothing is due yet. " + (r.note || "")); }
     catch (e) { say("Couldn't resolve: " + ((e && e.message) || "error")); }
+    DS.busy = null; redraw();
+  };
+  DS.testSkip = async () => { // testing mode: the host fights today's battle now, and the game moves on a day
+    if (typeof TEST_MODE === "undefined" || !TEST_MODE || !DS.isHost() || DS.busy) return; DS.busy = "skip"; redraw();
+    try { const r = await callServer("testSkipDay", { gameId: G.id }); const d = r.days && r.days[0]; toast(d ? (d.fought ? "Battle fought. On to the next day." : "Day skipped (fewer than two lords).") : "Nothing was fought."); }
+    catch (e) { toast("Couldn't begin the battle: " + ((e && e.message) || "error")); }
     DS.busy = null; redraw();
   };
   DS.setBots = async how => { // the host fills or empties seats with bot lords: "+1" (one more), "fill" (every empty seat), "rm:<seat id>" (take that bot out)

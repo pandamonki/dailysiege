@@ -5,6 +5,11 @@ const SLOT_COSTS = [0, 0, 0, 60, 100, 160, 240, 340]; // gold for bed n+1 is SLO
 const slotCost = n => SLOT_COSTS[Math.min(n, SLOT_COSTS.length - 1)];
 // From SUPPLY_V2_FROM (the week of 16 Nov 2026): no more beds. Every lord can field FIELD_MAX soldiers on the map, and buys the three
 // reinforcement waves instead, in order, each opening that wave's soldier slots. Beds already bought are refunded.
+// Testing mode. On: once the host has sealed, a "Begin battle now" button fights the day's battle at once and moves the war on a
+// day (the game's clock runs testSkew days ahead of the calendar; the normal schedule carries on from there). Off: the button is
+// hidden and the server refuses it.
+const TEST_MODE = true;
+const DAY_MS = 864e5;
 let SUPPLY_V2_FROM = "2026-11-16"; const supplyV2For = d => String(d) >= SUPPLY_V2_FROM;
 const FIELD_MAX = 4, WAVE_UNLOCK_COSTS = [60, 100, 150];
 
