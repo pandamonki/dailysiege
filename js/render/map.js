@@ -105,31 +105,27 @@ function paintBackground() {
       if (zoneSet.has(`${r + dr},${q + dc}`) || (r + dr === CASTLE[0] && q + dc === CASTLE[1])) return;
       c.beginPath(); c.moveTo((q + x0) * ts, (r + y0) * ts); c.lineTo((q + x1) * ts, (r + y1) * ts); c.stroke(); });
     c.setLineDash([]); });
-  // between each pair of neighbouring castles the edge forest bulges in a little: one or two trees deep, thinning to a point (scenery only: nothing blocks movement)
-  const belt = new Set(); { const cc = (N - 1) / 2, ang = ([r, q]) => Math.atan2(r - cc, q - cc), cs = castleTiles.map(p => [p, ang(p)]).sort((a, b) => a[1] - b[1]);
-    if (cs.length > 2) cs.forEach(([, a0], i) => { const a1 = cs[(i + 1) % cs.length][1], span = ((a1 - a0) + 2 * Math.PI) % (2 * Math.PI) || 2 * Math.PI, am = a0 + span / 2, dr = Math.sin(am), dq = Math.cos(am), t = (cc - .5) / Math.max(Math.abs(dr), Math.abs(dq));
-      for (let s = 0; s <= 2; s += .5) { const pr = cc + dr * t - dr * s, pq = cc + dq * t - dq * s, w = 1.6 - .5 * s;
-        for (let r = Math.floor(pr - 2); r <= Math.ceil(pr + 2); r++) for (let q = Math.floor(pq - 2); q <= Math.ceil(pq + 2); q++) if (hyp(r - pr, q - pq) <= w) belt.add(`${r},${q}`); } }); }
-  // The scenery is laid out the same way around every base: each tile is keyed by where it sits relative to its nearest castle (turned so "towards the centre" is always the same way), not by its place on the map, So the forest and the bulges repeat identically from base to base. (Only your own deployment field is kept clear, so you can see where to place soldiers.)
-  const localKey = (r, q) => { let best = null, bd = 1e9; castleTiles.forEach(c => { const dd = hyp(r - c[0], q - c[1]); if (dd < bd - 1e-9) { bd = dd; best = c; } }); if (!best) return [r, q];
-    const cc = (N - 1) / 2, ir = cc - best[0], iq = cc - best[1], L = hyp(ir, iq) || 1, ur = ir / L, uq = iq / L, dr = r - best[0], dq = q - best[1];
-    return [Math.round((dr * ur + dq * uq) * 2), Math.round((dr * -uq + dq * ur) * 2)]; };
+  // The forest is laid out in polar form around the map centre: one slice of it is generated and turned once for every base, so it is exactly the same between every pair of
+  // neighbouring bases, whatever the number of lords. The forest starts just behind the castles and bulges a little way in between each pair; the square's corners are solid forest.
+  // Scenery only: nothing blocks movement. (Your own deployment field is kept clear of trees so you can see where to place soldiers.)
   const scenery = []; // drawn back to front so nearer trees overlap the ones behind
-  for (let r = 0; r < N; r++) for (let q = 0; q < N; q++) {
-    const [ka, kb] = localKey(r, q), ring = Math.min(r, q, N - 1 - r, N - 1 - q) === 0, v = hash(ka, kb, 11); // the outer edge of the map is a solid tree line
-    if ((!ring && nearCastle(r, q)) || isCentre(r, q) || roadTiles.has(`${r},${q}`) || inZone(r, q) || occupied.has(`${r},${q}`) || (ring && CASTLE && r === CASTLE[0] && q === CASTLE[1])) continue;
-    const bt = !ring && belt.has(`${r},${q}`) && v < .85, deep = !ring && Math.min(r, q, N - 1 - r, N - 1 - q) === 1 && v < .55; // a second, thinner row behind the edge line, so the rim reads as a forest
-    if (ring || bt || deep || v < .2) {
-      const n = ring || bt ? 2 : v < .08 ? 2 : 1;
-      for (let i = 0; i < n; i++) {
-        const x = (q + .3 + hash(ka, kb, 20 + i) * .4) * ts, y = (r + .75 + hash(ka, kb, 30 + i) * .2) * ts;
-        scenery.push([y, () => { c.fillStyle = "rgba(0,0,0,.24)"; c.beginPath(); c.ellipse(x, y, ts * .3, ts * .1, 0, 0, 7); c.fill(); hash(ka, kb, 40 + i) > .45 ? pine(c, x, y, ts, hash(ka, kb, 50)) : oak(c, x, y, ts); }]);
-      }
-    } else if (v > .965) {
-      const x = (q + .5) * ts, y = (r + .6) * ts; scenery.push([y, () => { const sp = rockSprite(v > .965 ? 1 : 0); c.fillStyle = "rgba(0,0,0,.22)"; c.beginPath(); c.ellipse(x, y + u, ts * .26, ts * .08, 0, 0, 7); c.fill(); c.drawImage(sp, Math.round(x - 5 * u), Math.round(y - 5 * u), sp.width * u, sp.height * u); }]);
-    } else if (false) {
-      const x = (q + .5) * ts, y = (r + .7) * ts; scenery.push([y, () => { const sp = bushSprite(v > .83 ? 1 : 0); c.fillStyle = "rgba(0,0,0,.2)"; c.beginPath(); c.ellipse(x, y + u, ts * .24, ts * .07, 0, 0, 7); c.fill(); c.drawImage(sp, Math.round(x - 5 * u), Math.round(y - 5 * u), sp.width * u, sp.height * u); }]);
-    }
+  { const cc = CENTRE, n = Math.max(2, castleTiles.length), sec = 2 * Math.PI / n, ref = castleTiles[0] ? Math.atan2(castleTiles[0][0] - cc, castleTiles[0][1] - cc) : Math.PI / 2;
+    const f = th => (1 - Math.cos(n * (th - ref))) / 2, Rf = th => cc - .3 - 1.5 * Math.pow(f(th), 1.4), rMax = cc * 1.45 + 1;
+    const free = (x, y) => { const tr = Math.floor(y / ts), tq = Math.floor(x / ts), k = `${tr},${tq}`; return !(isCentre(tr, tq) || roadTiles.has(k) || inZone(tr, tq) || occupied.has(k) || nearCastle(tr, tq)); };
+    const each = (step, fn) => { let k = 0; for (let r = 1.6; r <= rMax; r += step, k++) { const m = Math.max(1, Math.round(r * sec / step));
+      for (let j = 0; j < m; j++) { const ph = (j + .2 + hash(k, j, 61) * .6) / m * sec, rr = r + (hash(k, j, 62) - .5) * step * .6;
+        for (let sI = 0; sI < n; sI++) { const th = ref + sI * sec + ph; fn(th, rr, k, j, MID + rr * Math.cos(th) * ts, MID + rr * Math.sin(th) * ts); } } } };
+    each(.62, (th, rr, k, j, x, y) => { // the forest: everything beyond the boundary
+      if (rr < Rf(th) || x < ts * .3 || y < ts * .3 || x > W - ts * .3 || y > W - ts * .3 || !free(x, y)) return;
+      scenery.push([y, () => { c.fillStyle = "rgba(0,0,0,.24)"; c.beginPath(); c.ellipse(x, y, ts * .3, ts * .1, 0, 0, 7); c.fill(); hash(k, j, 63) > .45 ? pine(c, x, y, ts, hash(k, j, 64)) : oak(c, x, y, ts); }]); });
+    for (let r = 0; r < N; r++) for (let q = 0; q < N; q++) { // a thin line of trees along the very edge, so the whole map is ringed
+      const e = Math.min(r, q, N - 1 - r, N - 1 - q); if (e > 1 || (e === 1 && hash(r, q, 71) > .5) || !free((q + .5) * ts, (r + .5) * ts)) continue;
+      for (let i = 0; i < (e === 0 ? 2 : 1); i++) { const x = (q + .3 + hash(r, q, 72 + i) * .4) * ts, y = (r + .75 + hash(r, q, 74 + i) * .2) * ts;
+        scenery.push([y, () => { c.fillStyle = "rgba(0,0,0,.24)"; c.beginPath(); c.ellipse(x, y, ts * .3, ts * .1, 0, 0, 7); c.fill(); hash(r, q, 76 + i) > .45 ? pine(c, x, y, ts, hash(r, q, 78)) : oak(c, x, y, ts); }]); } }
+    each(.9, (th, rr, k, j, x, y) => { // a few trees and rocks scattered inside
+      const v = hash(k, j, 65); if (rr >= Rf(th) - .5 || v < .88 || !free(x, y)) return;
+      if (v > .985) scenery.push([y, () => { const sp = rockSprite(1); c.fillStyle = "rgba(0,0,0,.22)"; c.beginPath(); c.ellipse(x, y + u, ts * .26, ts * .08, 0, 0, 7); c.fill(); c.drawImage(sp, Math.round(x - 5 * u), Math.round(y - 5 * u), sp.width * u, sp.height * u); }]);
+      else scenery.push([y, () => { c.fillStyle = "rgba(0,0,0,.24)"; c.beginPath(); c.ellipse(x, y, ts * .3, ts * .1, 0, 0, 7); c.fill(); v > .94 ? pine(c, x, y, ts, hash(k, j, 66)) : oak(c, x, y, ts); }]); });
   }
   scenery.sort((p, q) => p[0] - q[0]).forEach(([, fn]) => fn());
   return b;
