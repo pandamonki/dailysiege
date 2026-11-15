@@ -159,6 +159,7 @@ function abilLines(k, r) {
 const PATCHES = [
   { v: "Contracts move to Orders", date: "15 Nov", fixes: [
     "Replays that follow your hero start at the regular zoom again, not one step zoomed out.",
+    "The seal screen has a Rehearse the battle button again, sealed or not.",
   ], balance: [], changes: [
     "The Today button is gone. Contracts, the twist and rehearsal now live in a Contracts tab under Orders.",
     "At the start of each planning phase the contracts for the next battle pop up until you take one. Close them and they wait under Orders › Contracts. The Orders button shows a mark while no contract is taken.",

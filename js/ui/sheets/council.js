@@ -298,8 +298,8 @@ function sealSheet() {
   if (S.locked) return head(null, "Orders Sealed", "The battle plays out at dusk") + `<div class="body">
     ${sealWarnings()}<div class="waxseal">${esc(sealInitials())}</div><p class="muted" style="text-align:center">These orders will be fought at the lock. You can draft new orders until then: the sealed ones stay in effect until you seal the new ones.</p>
     <p class="muted" style="text-align:center">${ultBolt()}Ultimate: ${planUlt() ? "<b>will be used</b>" : "not planned"} · Ritual: ${planBless() ? `<b>${esc(BLESSINGS[S.bless][0])}</b>` : "none"}${mercOpen() ? ` · Mercenaries: ${bidSummary() ? `<b>${esc(bidSummary())}</b>` : "no bids"}` : ""}</p>
-    <div class="row" style="justify-content:center">${isLive() ? "" : `<button class="btn wax" data-act="battle">Watch tonight's battle</button>`}<button class="btn" data-act="unseal">Draft new orders</button>${isLive() ? "" : `<button class="btn wood" data-act="copy">Copy plan</button>`}</div>
-    <p class="muted" style="text-align:center">${isLive() ? `The real battle is fought at ${lockLabel(LIVE.config)}. Watch it afterwards from the Battle report.` : "In this prototype the battle runs now on your phone against the example players."}</p>
+    <div class="row" style="justify-content:center">${isLive() ? (LIVE.readOnly ? "" : `<button class="btn wax" data-act="battle">⚔ Rehearse the battle</button>`) : `<button class="btn wax" data-act="battle">Watch tonight's battle</button>`}<button class="btn" data-act="unseal">Draft new orders</button>${isLive() ? "" : `<button class="btn wood" data-act="copy">Copy plan</button>`}</div>
+    <p class="muted" style="text-align:center">${isLive() ? `The real battle is fought at ${lockLabel(LIVE.config)}. Watch it afterwards from the Battle report. A rehearsal fights your orders now against your rivals' last known orders, and never counts.` : "In this prototype the battle runs now on your phone against the example players."}</p>
     ${isLive() ? "" : `<div class="sec"><h3>Your sealed plan</h3><p class="muted">This is what the battle will read.</p><div class="plan" id="plan">${esc(planJSON())}</div></div>`}</div>`;
   const checks = [
     [!!placedAt("champ"), "Hero is on the field"],
@@ -315,6 +315,6 @@ function sealSheet() {
     ${sealPowers()}
     <p class="muted">${checks[0][0] ? "Unticked items are only reminders." : "Your hero must be on the field before you can seal."}${pickV1Now() && !S.lists.hostile.length ? " Pick at least one target before you seal." : ""}</p>
     <button class="btn wax" data-act="seal" ${checks[0][0] && (!pickV1Now() || S.lists.hostile.length) ? "" : "disabled"}>Press the seal</button>
-    ${isLive() ? "" : `<div class="row"><button class="btn wood" data-act="battle">Run a test battle</button><button class="btn" data-act="lab">Balance lab</button></div>`}
+    ${isLive() ? (LIVE.readOnly ? "" : `<div class="row"><button class="btn wood" data-act="battle">⚔ Rehearse the battle</button></div>`) : `<div class="row"><button class="btn wood" data-act="battle">Run a test battle</button><button class="btn" data-act="lab">Balance lab</button></div>`}
     ${isLive() ? `<p class="muted">Orders save to the shared game as you go. If you never seal, your latest draft is used. Once you have sealed, those orders stay in effect until you seal new ones.</p>` : `<button class="btn" data-act="reset">Reset to the example setup</button>`}</div>`;
 }
