@@ -38,10 +38,10 @@ function castleSheet() {
   const tab = sheet.lobby ? "banner" : (sheet.tab || "recruit"), full = supplyFull(), ct = ctNow();
   let body = "";
   if (tab === "recruit") { const pk = sheet.pick || "footman", pu = UNITS[pk], need = UNIT_TIER[pk], lk = ct < need, sCap = false;
-    body = `<p class="muted">Field <b>${fieldCount()}/${S.slots}</b> · ${S.owned.filter(u => placedAt(u.id)).length} placed · Garrison <b>${garrisonCount()}/${GARRISON_SOLDIERS}</b>. Soldiers beyond your field supply wait in the garrison and march out in waves.</p>
+    body = `<p class="muted">Field <b>${fieldCount()}/${S.slots}</b> · ${S.owned.filter(u => placedAt(u.id)).length} placed · Garrison <b>${garrisonCount()}/${garrisonCap()}</b>. ${supplyV2Now() ? `You can field ${FIELD_MAX} soldiers. More wait in the reinforcement waves you have unlocked and march out later.` : "Soldiers beyond your field supply wait in the garrison and march out in waves."}</p>
     <div class="ugrid shopg">${Object.entries(UNITS).filter(([, u]) => !u.merc).map(([k, u]) => tile("upick", k, pk === k, spriteURL(k), u.name, { price: u.cost, lk: ct < UNIT_TIER[k] })).join("")}</div>
     ${udet(pu.name, pu.cost, `<p>${pu.note}</p><p>${IC.hp(pu.hp)} ${IC.atk(pu.atk)} · ${typeLine(UNIT_TYPES[pk])}</p>${lk ? `<p class="muted">Needs a ${tierName(need)}.</p>` : ""}`)}
-    ${abar(`<button class="btn wax" data-act="buy" data-v="${pk}" ${dis(lk || full || sCap || avail() < pu.cost)}>${lk ? `Needs a ${tierName(need)}` : full ? "Barracks and garrison full" : sCap ? `Siege limit ${SIEGE_MAX}` : `Recruit · ${pu.cost}g`}</button>`)}`; }
+    ${abar(`<button class="btn wax" data-act="buy" data-v="${pk}" ${dis(lk || full || sCap || avail() < pu.cost)}>${lk ? `Needs a ${tierName(need)}` : full ? (supplyV2Now() ? (wavesOpen() < WAVE_COUNT ? "Field full: unlock a wave" : "Field and waves full") : "Barracks and garrison full") : sCap ? `Siege limit ${SIEGE_MAX}` : `Recruit · ${pu.cost}g`}</button>`)}`; }
   if (tab === "garrison") { // the Train tab: pick a soldier, see its stats now and after training, then train or sell. The picked soldier's panel is always pinned at the bottom.
     const ts = sheet.tsel && findUnit(sheet.tsel) ? sheet.tsel : (S.owned[0] || {}).id || null, u = ts ? findUnit(ts) : null;
     let det = "", bar = "";
@@ -77,9 +77,12 @@ function castleSheet() {
     let det, bar;
     if (ck === "castle") { det = udet(`${cur.name} · tier ${ct}/3`, nx ? nx.cost : null, `<div class="lvrow">${pipRow(ct, 3)}</div>${cmpBox([["Castle HP", hp(cur)], ["Income a day", baseIncome(curDayNo()) + CASTLE_INCOME[ct - 1] + "g"]], nx && [["Castle HP", hp(nx)], ["Income a day", baseIncome(curDayNo()) + CASTLE_INCOME[ct] + "g"]], nx ? nx.name : "")}${nx ? `<p class="muted">${esc(nx.note)}</p>` : ""}`);
       bar = nx ? `<button class="btn wax" data-act="castleup" ${dis(avail() < nx.cost)}>Upgrade to ${nx.name} · ${nx.cost}g</button>` : `<button class="btn wax" disabled>Fully upgraded</button>`; }
+    else if (supplyV2Now()) { const wo = wavesOpen(), wc = waveUnlockCost();
+      det = udet(`Reinforcements · ${wo}/${WAVE_COUNT} waves`, wc ?? null, `<div class="lvrow">${pipRow(wo, WAVE_COUNT)}<span class="muted">${FIELD_MAX} soldiers start on the map</span></div><p>Each wave you unlock holds ${WAVE_SLOTS} more soldiers, who march out later in the battle alongside the wave's free footman. Waves unlock in order.</p>`);
+      bar = wc != null ? `<button class="btn wax" data-act="wunlock" ${dis(avail() < wc)}>Unlock Wave ${wo + 1} · ${wc}g</button>` : `<button class="btn wax" disabled>All waves unlocked</button>`; }
     else { det = udet(`Supply · ${S.slots}/${SLOT_MAX}`, bedsFull ? null : slotCost(S.slots), `<div class="lvrow">${pipRow(S.slots, SLOT_MAX)}<span class="muted">Each point of supply lets you field one more soldier</span></div>${cmpBox([["Supply", S.slots]], bedsFull ? null : [["Supply", S.slots + 1]])}`);
       bar = `<button class="btn wax" data-act="slot" ${dis(bedsFull || avail() < slotCost(S.slots))}>${bedsFull ? `Supply maxed (${SLOT_MAX})` : `Raise supply to ${S.slots + 1} · ${slotCost(S.slots)}g`}</button>`; }
-    body = `<div class="ugrid two shopg">${tile("csel", "castle", ck === "castle", `icons/ui/castle${ct}.webp`, cur.name, { price: nx ? nx.cost : null, pips: [ct, 3] })}${tile("csel", "supply", ck === "supply", "icons/ui/supply.webp", "Supply", { price: bedsFull ? null : slotCost(S.slots), pips: [S.slots, SLOT_MAX] })}</div>${det}${abar(bar)}`;
+    body = `<div class="ugrid two shopg">${tile("csel", "castle", ck === "castle", `icons/ui/castle${ct}.webp`, cur.name, { price: nx ? nx.cost : null, pips: [ct, 3] })}${supplyV2Now() ? tile("csel", "supply", ck === "supply", "icons/ui/supply.webp", "Waves", { price: waveUnlockCost() ?? null, pips: [wavesOpen(), WAVE_COUNT] }) : tile("csel", "supply", ck === "supply", "icons/ui/supply.webp", "Supply", { price: bedsFull ? null : slotCost(S.slots), pips: [S.slots, SLOT_MAX] })}</div>${det}${abar(bar)}`;
   }
   if (tab === "shop") {
     const keys = Object.keys(ITEMS), pages = Math.ceil(keys.length / ISH_PAGE), ik = ITEMS[sheet.ish] ? sheet.ish : keys[0], it = ITEMS[ik];

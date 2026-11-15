@@ -93,7 +93,7 @@ function buildBattleInputs(W, dayKey, opts = {}) {
   const raw = roster.map((p, i) => {
     let plan;
     const hs = wHeroState(W, p.uid, week, dayKey), lvl = hs.lvl, z = zoneFor(L.castles[i], L.N, L.castles), sp = armySpots(L.castles[i], L.N);
-    const botDay = n => lordBotPlan({ uid: p.uid, cls: (p.state && p.state.cls) || "warrior", i, ids: roster.map(q => q.uid), L, zone: z, dayNo: n, lvl: wHeroState(W, p.uid, week, addDays(week, n - 1)).lvl, v2: balV3For(dayKey), fair: fairV1For(dayKey), pick: pickV1For(dayKey), ranks: rkm0, v3: heroV3For(dayKey) });
+    const botDay = n => lordBotPlan({ uid: p.uid, cls: (p.state && p.state.cls) || "warrior", i, ids: roster.map(q => q.uid), L, zone: z, dayNo: n, lvl: wHeroState(W, p.uid, week, addDays(week, n - 1)).lvl, v2: balV3For(dayKey), sup: supplyV2For(dayKey), fair: fairV1For(dayKey), pick: pickV1For(dayKey), ranks: rkm0, v3: heroV3For(dayKey) });
     if (opts.test && p.uid === opts.uid) plan = opts.test.mine;
     else if (p.bot) plan = opts.test ? (dayNo > 1 ? botDay(dayNo - 1) : null) : botDay(dayNo); // bots have no saved orders: theirs are worked out. In a test only yesterday's are known
     else if (opts.test) plan = lvl > 1 ? wLatestPlan(W, p, dayKey, false) : null; // fog: only yesterday's orders are known
@@ -116,7 +116,7 @@ function buildBattleInputs(W, dayKey, opts = {}) {
     ...(noOrders && !opts.test ? { noOrders: true } : {}) })); // noOrders: this lord sealed nothing all week, so these are the stand-in orders, not theirs
   const feuds0 = wFeudsBefore(W, dayKey, week), { pairs, transfers } = resolveAlliances(plans, { persist: wCarriedPairs(W, dayKey), final, prevDay: addDays(dayKey, -1), feuds: feuds0, blocMax: balV2For(dayKey) ? BLOC_MAX : 0 });
   plans.feuds = feuds0;
-  let mercs = {}; if (dayNo >= MERC_DAY) { const mer = resolveMercs(plans, { day: dayKey, N: L.N, cool: id => mercCool(id, null, k => { const b = W.battles[addDays(dayKey, -k)]; return b && b.week === week ? b : null; }) }); plans.notes = (plans.notes || []).concat(mer.notes); mercs = mer.hires; }
+  let mercs = {}; if (dayNo >= MERC_DAY) { const mer = resolveMercs(plans, { day: dayKey, dayNo, v2: mercV2For(dayKey), N: L.N, cool: id => mercCool(id, null, k => { const b = W.battles[addDays(dayKey, -k)]; return b && b.week === week ? b : null; }) }); plans.notes = (plans.notes || []).concat(mer.notes); mercs = mer.hires; }
   plans.mercs = mercs;
   const twist = wTwist(W, dayKey), offers = {}, picks = {};
   if (contractsFor(dayKey)) raw.forEach(({ uid, plan }) => { const o = wContractOffers(W, dayKey, uid); offers[uid] = o; const bot = W.players[uid] && W.players[uid].bot;

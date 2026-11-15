@@ -1086,7 +1086,8 @@ function runBattle(plans, seed, opts = {}) {
   const PTS = [10, 7, 5, 4, 3, 2, 1, 0]; // placement points; from 8th place down a lord scores only for kills and castles
   const results = order.map(pid => ({ pid, name: nm(pid), color: P[pid].color, cls: P[pid].cls, place: P[pid].place, kills: P[pid].kills, ukills: P[pid].ukills, castles: P[pid].castles,
     points: Math.round(((PTS[P[pid].place - 1] || 0) + P[pid].kills + castlePts(FV) * P[pid].castles) * W8) + (treach[pid] || 0) * TREACHERY_PTS, ...(treach[pid] ? { treachery: treach[pid] } : {}), fellAt: P[pid].elimT, gold: Math.round(P[pid].gold) })).sort((a, b) => a.place - b.place);
-  const invest = (type, lvl) => { const c = UNITS[type].cost; let g = c; for (let l = 1; l < lvl; l++) g += Math.round(c * .5 * l); return g; };
+  const TEL_COST = { footman: 50, bowman: 70, knight: 120, healer: 100, raider: 110, mage: 140, sniper: 160, ram: 240, cart: 200, catapult: 220 }; // telemetry keeps the prices from before 15 Nov 2026 so recorded battles replay identically
+  const invest = (type, lvl) => { const c = TEL_COST[type] ?? UNITS[type].cost; let g = c; for (let l = 1; l < lvl; l++) g += Math.round(c * .5 * l); return g; };
   const tel = { duration: Math.min(t, SV ? SD_AT + SD_COUNT + SD_LEN : TMAX),
     players: order.map(pid => ({ pid, name: nm(pid), cls: P[pid].cls, level: P[pid].level || 1, place: P[pid].place, points: results.find(r => r.pid === pid).points, elimT: P[pid].elimT, trapDmg: Math.round(P[pid].trapDmg || 0) })),
     ents: ents.filter(e => (e.kind === "champ" || e.kind === "unit") && !e.militia && !e.free).map(e => ({ pid: e.pid, ref: e.ref || null, kind: e.kind, cls: e.cls, type: e.kind === "unit" ? e.key : null, lvl: e.lvl || null, gold: e.kind === "unit" ? invest(e.key, e.lvl || 1) : null,

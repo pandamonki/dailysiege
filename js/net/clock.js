@@ -19,7 +19,7 @@ const weekdayOf = key => wWeekdayOf(key, typeof LIVE !== "undefined" ? LIVE.conf
 function planDayNow(tz, lock) { const now = tzNow(tz); return now.h >= lock ? addDays(now.date, 1) : now.date; }
 function liveClock() {
   const cfg = LIVE.config, now = tzNow(cfg.tz), lock = cfg.lockHour;
-  let planDay = now.h >= lock ? addDays(now.date, 1) : now.date, mins = lock * 60 - (now.h * 60 + now.m); if (mins <= 0) mins += 1440;
+  let planDay = addDays(now.h >= lock ? addDays(now.date, 1) : now.date, cfg.testSkew || 0), mins = lock * 60 - (now.h * 60 + now.m); if (mins <= 0) mins += 1440; // testSkew: days skipped in testing mode
   const sd = startOf(cfg); if (sd && planDay < sd) { mins += 1440 * (dayDiff(sd, planDay)); planDay = sd; }
   const dayNo = weekdayOf(planDay), week = addDays(planDay, -(dayNo - 1));
   return { planDay, dayNo, week, minsToLock: mins };

@@ -43,7 +43,7 @@ function renderCommands() {
 function renderCamp() {
   const b = document.getElementById("campbtn"); if (!b) return;
   let show = false, n = 0, fresh = false;
-  try { show = !!S && mode === "plan" && mercOpen() && !(isLive() && LIVE.readOnly); n = show ? myBids().length : 0; fresh = show && S.mercSeen !== (isLive() ? liveClock().week : "p"); } catch (e) {}
+  try { show = !!S && mode === "plan" && mercOpen() && !(isLive() && LIVE.readOnly); n = show ? myBids().length : 0; fresh = show && S.mercSeen !== mercSeenKey(); } catch (e) {}
   b.hidden = !show; b.classList.toggle("pulse", fresh);
   const sb = document.getElementById("shopbtn"); if (sb) sb.hidden = !(S && mode === "plan" && !(isLive() && LIVE.readOnly));
   const gb = document.getElementById("giftbtn"); if (gb) gb.hidden = !(S && S.spin && !spinStale() && mode === "plan" && !(isLive() && LIVE.readOnly));

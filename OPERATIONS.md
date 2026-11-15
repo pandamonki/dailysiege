@@ -68,6 +68,28 @@ A deploy never touches the data (wars, orders, results), so rolling back does no
   every pull request (the green ticks). It never uses the real project.
 - The second Firebase project (`-dev`) is not needed for any of this and can be left as it is or deleted.
 
+## Several wars at once
+
+A player can be in several games. `users/{uid}.games` lists them and `users/{uid}.gameId` is the one
+open on that device. Opening a new invite link adds that game and opens it. The **Your wars** screen
+(main menu) switches between them, joins another by pasting an invite link, and lets hosts set up a
+new game while their others keep running. Each game is fought by the server on its own schedule.
+Battle alerts carry `?war=<game id>`, so tapping one opens that game.
+
+## Testing mode
+
+`TEST_MODE` in `js/config/balance.js` is on while the game is being tested. With it on, the host sees
+a **Begin battle now** button on the Orders Sealed screen (tap it twice). The server then fights the
+day's battle at once, for every lord, and moves the war on to the next day. Lords who haven't sealed
+fight with their saved or stand-in orders.
+
+Each skip moves the game's clock one day ahead of the calendar (the game's `testSkew` field). The
+normal schedule carries on from there: the next battle is still fought at the usual hour, it is just
+for a later day of the war. Starting a new war puts the clock back in step with the calendar.
+
+To turn it off, set `TEST_MODE` to `false` and deploy. The button disappears and the server refuses
+the request. A game that was skipped ahead keeps running its days ahead of the calendar.
+
 ## Checking that devices agree
 
 Open https://daily-siege.firebaseapp.com/selftest.html on any phone. It fights 62 fixed battles and shows

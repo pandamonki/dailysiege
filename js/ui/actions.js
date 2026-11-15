@@ -78,9 +78,10 @@ const A = {
   cls: v => { if (v === S.cls) return; if (isLive() && DAY > 1) { toast("Your class is set for the week. Pick again next week."); return; } S.cls = v; S.ranks = { a1: 0, a2: 0, a3: 0, ult: 0 }; S.tree = emptyTree(); S.picks = {}; toast(`${CLASSES[v].name} chosen. Skill points refunded.`); },
   rank: (_, k) => { if (canRank(k)) S.ranks[k] = (S.ranks[k] || 0) + 1; },
   choose: (v, k) => { S.picks[k] = v; },
-  buy: k => { const u = UNITS[k]; if (avail() < u.cost || supplyFull() || ctNow() < UNIT_TIER[k]) return; ensureGarrison(); const toGar = fieldCount() >= S.slots; if (toGar && garrisonCount() >= GARRISON_SOLDIERS) { toast("Your field supply and garrison are full."); return; } S.gold -= u.cost; const id = "u" + idc++; S.owned.push({ id, type: k, lvl: 1, hp: 1 }); if (toGar) { toGarrison(id); sel = null; toast(`${u.name} recruited into your garrison.`); } else { sel = id; sheet = null; toast(`${u.name} recruited. Tap a glowing tile.`); } },
+  buy: k => { const u = UNITS[k]; if (avail() < u.cost || supplyFull() || ctNow() < UNIT_TIER[k]) return; ensureGarrison(); const toGar = fieldCount() >= S.slots; if (toGar && garrisonCount() >= garrisonCap()) { toast(supplyV2Now() && wavesOpen() < WAVE_COUNT ? "Your field is full. Unlock a reinforcement wave for more soldiers." : "Your field supply and garrison are full."); return; } S.gold -= u.cost; const id = "u" + idc++; S.owned.push({ id, type: k, lvl: 1, hp: 1 }); if (toGar) { toGarrison(id); sel = null; toast(`${u.name} recruited into your garrison.`); } else { sel = id; sheet = null; toast(`${u.name} recruited. Tap a glowing tile.`); } },
   up: id => { const u = findUnit(id), c = upgradeCost(u); if (u.lvl < 3 && avail() >= c && ctNow() >= UNIT_LVL_TIER[u.lvl]) { S.gold -= c; u.lvl++; } },
-  slot: () => { const c = slotCost(S.slots); if (avail() >= c && S.slots < SLOT_MAX) { S.gold -= c; S.slots++; } },
+  wunlock: () => { if (S.locked) { toast("Draft new orders to change your garrison."); return; } ensureGarrison(); const c = waveUnlockCost(); if (!supplyV2Now() || c == null) return; if (avail() < c) { toast("Not enough gold."); return; } S.gold -= c; S.wavesOpen = wavesOpen() + 1; toast(`Wave ${S.wavesOpen} unlocked: ${WAVE_SLOTS} more soldiers can march out later in the battle.`); },
+  slot: () => { if (supplyV2Now()) return; const c = slotCost(S.slots); if (avail() >= c && S.slots < SLOT_MAX) { S.gold -= c; S.slots++; } },
   trap: k => { const t = TRAPS[k]; if (avail() < t.cost) return; S.gold -= t.cost; const id = "t" + idc++; S.traps.push({ id, type: k }); sel = id; sheet = null; toast(`${t.name} bought. Tap a glowing tile.`); },
   help: () => { sheet.help = !sheet.help; },
   shop: () => { open("castle"); sheet.tab = "shop"; },
@@ -147,10 +148,13 @@ const A = {
   opentoday: () => { S.phase = "orders"; sel = null; ensureDip(); sheet = { type: "orders", grp: "ord", tab: "contracts" }; },
   cxpick: v => { if (S.locked || (isLive() && LIVE.readOnly)) return; S.contract = v && myOffers().includes(v) ? v : null; if (S.contract) toast("Contract taken. Seal your orders to keep it."); },
   opencamp: () => { sel = null; sheet = { type: "camp" }; },
-  mbid: (v, k) => { ensureDip(); const m = MERCS[k]; if (!m || mercWait(k)) return; const b = S.bids[k] && S.bids[k].day === planDayKey() ? S.bids[k].gold : 0, step = 10;
-    const next = +v > 0 ? (b ? b + step : m.min) : (b - step < m.min ? 0 : b - step);
-    if (next - b > avail()) { toast("Not enough gold."); return; }
+  mbid: (v, k) => { ensureDip(); const m = MERCS[k]; if (!m || mercWait(k) || (mercV2Now() && !mercToday().open.includes(k))) return; const b = S.bids[k] && S.bids[k].day === planDayKey() ? S.bids[k].gold : 0, step = 10;
+    const lo = mercMin(k, mercV2Now()), next = +v > 0 ? (b ? b + step : lo) : (b - step < lo ? 0 : b - step);
+    const moved = next && mercV2Now() ? myBids().filter(([id]) => id !== k) : [], freed = moved.reduce((a, [, x]) => a + x.gold, 0); // one group a day: a new bid replaces the old one
+    if (next - b > avail() + freed) { toast("Not enough gold."); return; }
+    if (moved.length) { moved.forEach(([id]) => delete S.bids[id]); toast(`Bid moved to the ${m.name}: one group a day.`); }
     if (next) S.bids[k] = { gold: next, day: planDayKey() }; else delete S.bids[k]; },
+  mpick: v => { if (sheet && sheet.type === "camp" && MERCS[v]) sheet.pick = v; },
   mclear: (_, k) => { ensureDip(); delete S.bids[k]; },
   topen: (_, k) => { S.terms[k].mode = S.terms[k].mode === "refuse" ? "accept" : "refuse"; },
   tbet: (_, k) => { S.terms[k].mode = S.terms[k].mode === "betray" ? "accept" : "betray"; },

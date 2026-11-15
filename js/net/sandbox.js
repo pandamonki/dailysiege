@@ -13,7 +13,7 @@ function sandboxDb(store) {
 }
 function startPreview() {
   if (PREVIEW) return;
-  const keep = Object.assign({}, LIVE), ls = {}; ["lastbanner.mode", "lastbanner.seen"].forEach(k => { try { ls[k] = localStorage.getItem(k); } catch (e) {} });
+  const keep = Object.assign({}, LIVE), ls = {}; ["lastbanner.mode", "lastbanner.seen", seenKey()].forEach(k => { try { ls[k] = localStorage.getItem(k); } catch (e) {} });
   if (gameMode === "practice") PRACTICE_S = S; else if (S && S.week) LIVE_S = S;
   PREVIEW = { keep, liveS: LIVE_S, ls };
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC", cfg = { tz, lockHour: 20, lobby: true, lobbyEnds: Date.now() + 6 * 36e5, createdAt: Date.now(), host: "pv_bot0" }, store = { "game/config": cfg };

@@ -2,10 +2,10 @@
 // right at the top of the page body. One place for all the wording, so the pages stay consistent.
 
 const HELP = {
-  recruit: ["Recruit", "Buy new soldiers with gold. Pick a type to see its stats, then tap Buy. Better soldiers unlock as your castle grows. You can only field as many as your supply allows, and the rest wait in reserve."],
+  recruit: ["Recruit", "Buy new soldiers with gold. Pick a type to see its stats, then tap Buy. Better soldiers unlock as your castle grows. You can field 4 soldiers on the map. More go into the reinforcement waves you have unlocked, which march out later in the battle."],
   garrison: ["Train", "Every soldier you own, in one short list. Tap one to see its stats now and after training. Train it up to level 3 with gold, or sell soldiers you no longer want for part of their cost. The soldier you picked stays pinned at the bottom."],
-  deployment: ["Deployment", "Choose who stands on the field tonight and who waits in reserve. Tap a soldier to place it on a glowing tile, or send it back to the barracks. Units on the field fight in the battle."],
-  keep: ["Castle", "Upgrade your castle for more gold each day, tougher walls and access to stronger soldiers. Supply adds more field slots, so you can bring more soldiers to each battle."],
+  deployment: ["Deployment", "Choose who stands on the field tonight, who waits in reserve, and who joins a reinforcement wave. Up to 4 soldiers start on the map. Unlock waves (60, 100, 150 gold) to send more later, and set each wave's trigger and orders with its chips."],
+  keep: ["Castle", "Upgrade your castle for more gold each day, tougher walls and access to stronger soldiers. Waves unlocks your reinforcement waves one at a time (60, 100 and 150 gold), each holding 3 more soldiers who join the battle later."],
   traps: ["Defences", "Buy walls and traps. Walls block or slow enemies and rebuild free each day. Traps are single-use and only last tonight's battle. Buy one, then tap a glowing tile near your castle to place it."],
   armoury: ["Armoury", "Forge permanent upgrades for your hero and castle: weapon, armour and charm for the hero, plus castle walls and tower. Higher tiers need a stronger castle."],
   banner: ["Coat of arms", "Design the banner that flies over your castle and shows in replays and on the leaderboard. Banners are set on the first day and stay for the week."],
@@ -23,7 +23,8 @@ const HELP = {
   unit: ["Soldier", "Stats and options for this soldier. Train it with gold, move it on the map, or send it back to the barracks."],
   trap: ["Trap", "A single-use trap. It only lasts tonight's battle. Tap a glowing tile to place it, or pick it up again before you seal your orders."],
   wall: ["Wall", "Enemies stop and chop at walls that block their path, or walk around them. Rotate or move a wall, or dismantle it for gold back. Walls rebuild free each day."],
-  camp: ["Mercenary camp", "From day 4 each week, mercenary groups are for hire. Bids are sealed, and the highest bidder fights with that group for one battle and pays their own bid. A hired group then rests for 2 days for everyone."],
+  wars: ["Your wars", "You can be in several wars at once, each with its own friends, castle, army and gold. Tap Open to switch to another war; the others carry on and are fought on their own schedule. To join another war, paste its invite link. Hosts can set up a new war here too. Battle alerts open the war they are about."],
+  camp: ["Mercenary camp", "From day 4 each week, mercenaries are for hire. Each day a new, stronger headline group arrives, shown at the top, with three regular groups below it. Tap a group to see it, then bid. Bids are sealed and you can bid on one group a day. The highest bidder fights with that group for one battle and pays their own bid. A hired group then rests for 2 days for everyone."],
   invites: ["Invitations", "Lords who want to ally with you. Accept or decline, or decide later in Allies. If you accept, the alliance starts at the next battle and any dowry is paid to you."],
   gold: ["Treasury", "Your gold, your daily income and what is set aside for alliance offers. Kill spoils and dowries are added after each battle."],
   day: ["The war", "The war runs for seven daily battles. Each day you spend gold, place your soldiers and seal your orders before the timer ends."],
