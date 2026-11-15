@@ -8,7 +8,7 @@ const RELEASES = [
     ["🔓", "Four on the map, waves you buy", "Supply beds are gone. Everyone fields 4 soldiers and unlocks reinforcement waves for 60, 100 and 150 gold."],
     ["⭐", "A mercenary headliner every day", "From day 4 a stronger group tops the camp each day. Every fighter now shows its stats."],
     ["🏰", "Several wars at once", "Join more than one war and switch between them from Your wars in the main menu."],
-    ["🎯", "Targets from the leaderboard", "Three target slots and every lord listed by rank, with a Target button. The same list is on the seal screen."],
+    ["🎯", "Three targets a day", "Fill all three target slots before you seal, from the leaderboard or by role. The same list is on the seal screen."],
     ["✅", "A proper seal checklist", "Soldiers, skill points, targets, contract, castle, alliances and mercenaries, each with a button to fix it. Rehearse from there too."],
     ["⏱", "Tell skills when to cast", "Every active skill and the ultimate can wait for a condition you pick. Clocks show each recharge."],
     ["🧱", "Walls in bulk", "Build several walls at once and place them one after another. Traps show their damage."],

@@ -187,7 +187,7 @@ const A = {
   tmin: (v, k) => { S.terms[k].min = stepGold(S.terms[k].min, +v); },
   ogold: (v, k) => { const o = S.offers[k]; if (!o || o.day !== planDayKey()) { toast("Already sent. The dowry is locked."); return; } const next = stepGold(o.gold, +v); if (next - o.gold > avail()) { toast("Not enough free gold."); return; } o.gold = next; },
   uorder: (v, k) => { if (v === "army") delete S.uorders[k]; else S.uorders[k] = v; sheet = null; },
-  seal: () => { if (pickV1Now() && !S.lists.hostile.length) { toast("Pick at least one target first (Strategy)."); return; } S.locked = true; sel = null; if (isLive()) { const snap = mySnapshot(); delete snap.sealedPlan; S.sealedSnap = JSON.parse(JSON.stringify(snap)); } }, // a copy of what was sealed: it stays in effect while new orders are drafted, until they are sealed
+  seal: () => { if (!targetsReady()) { toast(`Pick ${TARGETS_NEED()} targets first (Strategy).`); return; } S.locked = true; sel = null; if (isLive()) { const snap = mySnapshot(); delete snap.sealedPlan; S.sealedSnap = JSON.parse(JSON.stringify(snap)); } }, // a copy of what was sealed: it stays in effect while new orders are drafted, until they are sealed
   unseal: () => { S.locked = false; },
   copy: () => { const txt = planJSON(); try { navigator.clipboard.writeText(txt).then(() => toast("Plan copied."), selectPlan); } catch (e) { selectPlan(); } },
   reset: () => { if (isLive()) return; S = freshState(); ensureDip(); sel = null; sheet = null; toast("Back to the example setup."); },

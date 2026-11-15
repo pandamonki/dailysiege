@@ -176,7 +176,7 @@ const PATCHES = [
   ], balance: [
     "Each active skill and the ultimate can now be told when to cast: on your top target, with 3 or more enemies near, below 30% health, when an ally or your castle is attacked. Left on automatic, a skill picks its own moment exactly as before.",
   ], changes: [
-    "Orders › Strategy: three target slots (the first required), role chips with icons, and every lord listed by today's leaderboard with a Target button. The Keep formation button is gone: armies always keep formation.",
+    "Orders › Strategy: you now pick three targets a day before you can seal (lords, roles or a mix), in three numbered slots, role chips with icons, and every lord listed by today's leaderboard with a Target button. The Keep formation button is gone: armies always keep formation.",
     "Seal Orders: a full checklist (soldiers placed, skill points, targets, contract, castle upgrade from day 2, alliance offers, pacts and betrayals, mercenary bid), each with a button to fix it. Targets with the leaderboard, the ultimate with its cast-when choice, the weekly ritual and Rehearse are all on the seal screen. Unused order seals are no longer counted.",
     "The wax seal is now a wax blob in your army colour, stamped with your initials.",
     "Hero: the learn and level up button is red, every active skill shows its recharge on a small clock, the Stats tab has an icon for each stat, and the Gear section is gone from Items (Armoury weapons and armour arm your soldiers).",
