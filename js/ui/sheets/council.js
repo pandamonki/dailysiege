@@ -272,9 +272,9 @@ function planJSON() {
 }
 function sealMerc() {
   if (!mercOpen()) return "";
-  const b = bidSummary(), free = Object.keys(MERCS).filter(id => !mercWait(id)).length;
-  return `<div class="sec tight"><h3>Mercenary camp</h3><p class="${b ? "muted" : "need"}">${!free ? "Every group is recharging today." : b ? `Your sealed bids: <b>${esc(b)}</b>. The highest bid wins and pays its own bid.` : "No mercenary bid placed. Rival lords may hire them."}</p>
-    <button class="btn ${b ? "wood" : "wax"}" data-act="opencamp" ${free ? "" : "disabled"}>${b ? "Change mercenary bids" : "Place mercenary bid"}</button></div>`;
+  const b = bidSummary(), free = mercV2Now() ? mercToday().open.length : MERC_V1_IDS.filter(id => !mercWait(id)).length;
+  return `<div class="sec tight"><h3>Mercenary camp</h3><p class="${b ? "muted" : "need"}">${!free ? "Every group is recharging today." : b ? `Your sealed bid${mercV2Now() ? "" : "s"}: <b>${esc(b)}</b>. The highest bid wins and pays its own bid.` : "No mercenary bid placed. Rival lords may hire them."}</p>
+    <button class="btn ${b ? "wood" : "wax"}" data-act="opencamp" ${free ? "" : "disabled"}>${b ? (mercV2Now() ? "Change mercenary bid" : "Change mercenary bids") : "Place mercenary bid"}</button></div>`;
 }
 function sealPowers() { // ultimate and weekly ritual can be switched on right where you seal
   const cl = { ult: (heroV3Now() && treeUlt()) || CLASSES[S.cls].ult }, learned = ultLearned(), cd = ultCooling(), armed = planUlt(), used = blessLocked();
