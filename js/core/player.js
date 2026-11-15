@@ -14,9 +14,9 @@ const ultLearned = () => (heroV3Now() ? treeHasUlt(S.tree) : (S.ranks.ult || 0) 
 const opUsed = () => S.rules.length;
 const inZone = (r, c) => zoneSet.has(`${r},${c}`);
 const placedAt = ref => Object.keys(S.place).find(k => S.place[k] === ref);
-const unitValue = u => { const c = UNITS[u.type].cost; let g = c; for (let l = 1; l < u.lvl; l++) g += Math.round(c * .5 * l); return g; };
+const unitValue = u => { const c = UNITS[u.type].cost; let g = c; for (let l = 1; l < u.lvl; l++) g += trainCost(u.type, l); return g; };
 const unitSellPrice = u => Math.floor(unitValue(u) * .25);
-const upgradeCost = u => Math.round(UNITS[u.type].cost * 0.5 * u.lvl);
+const upgradeCost = u => trainCost(u.type, u.lvl);
 const unitStats = u => { const b = UNITS[u.type], m = 1 + UNIT_LVL_GAIN * (u.lvl - 1), g = (S && S.gear) || {}; return { hp: Math.round(b.hp * m * (1 + .15 * (g.armour || 0))), atk: Math.round(b.atk * m * (1 + .15 * (g.weapon || 0))) }; };
 // the garrison: S.garrison = three waves { when, at, slots: [unit id | null, x3] }. A soldier is on the field (placed on the map) or in a wave, never both.
 const garrisonIds = () => (S.garrison || []).flatMap(w => w.slots).filter(Boolean);

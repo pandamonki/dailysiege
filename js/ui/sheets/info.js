@@ -157,6 +157,10 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "Cheaper training", date: "15 Nov", fixes: [], balance: [
+    "Training a soldier is cheaper: level 2 now costs 40% of the soldier's price (was 50%) and level 3 costs 60% (was 100%). A fully trained soldier now costs twice its price in all, the same as buying two, but fights better and needs only one bed.",
+    "Selling a trained soldier still returns a quarter of what you spent on it, so it is a little less than before.",
+  ], changes: [] },
   { v: "Solid forest and tree blockades", date: "15 Nov", fixes: [], balance: [], changes: [
     "The forest around the map is now a solid wall in battles from 16 Nov: soldiers and heroes can no longer walk into the trees at the edge and corners, and slide round them instead.",
     "The old random trees and rocks scattered across the middle of the map are gone. In their place is a small blockade of trees between each pair of bases. Every blockade is the same, and the design is the same around every base whatever the number of lords.",
