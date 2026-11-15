@@ -160,7 +160,7 @@ test("after each battle every lord's devices are told the result, and dead devic
   const day2 = pushes.filter(p => p.title === "Daily Siege: day 2 results");
   assert.deepEqual(day2.map(p => p.token).sort(), ["phone-1a", "phone-1b", "phone-2"]);
   assert.match(day2.find(p => p.token === "phone-2").body, /won the day|You won the day/);
-  assert.equal(pushes.filter(p => p.tag === "battle").length, 6 * 3, "days 2 to 7, three live devices");
+  assert.equal(pushes.filter(p => p.tag === "battle" && p.link === "/?war=" + GAME).length, 6 * 3, "days 2 to 7, three live devices");
   assert.ok(pushes.some(p => /invited you to an alliance/.test(p.body)), "an alliance invitation is mentioned to its recipient");
   assert.ok(!pushes.find(p => p.title.includes("day 7")).body.includes("Tomorrow"), "the final day does not promise a tomorrow");
   assert.deepEqual((await db.collection("users").doc("bot03").get()).get("fcmTokens"), []);

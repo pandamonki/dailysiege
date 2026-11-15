@@ -15,7 +15,7 @@ const wars = +process.argv[2] || 12, nLords = +process.argv[3] || 10;
 sim.run(`globalThis.__lab = (function () {
   const mk = (seed, pids, wars) => {};
   return {
-    unitCost: t => UNITS[t].cost, upCost: (t, l) => Math.round(UNITS[t].cost * .5 * l),
+    unitCost: t => UNITS[t].cost, upCost: (t, l) => trainCost(t, l),
     play(seed, n, V2, doctrine, engage, WAVES) {
       const WHENS = WAVE_WHEN.map(o => o[0]).filter(k => k !== "timer").concat(["timer", "timer"]);
       const DOC2 = { hunter: { hero: ["hero", "ranged", "melee"], melee: ["ranged", "hero", "melee"], ranged: ["hero", "melee"] }, raider: { hero: ["melee", "hero"], melee: ["melee"], ranged: ["melee"] }, brawler: { hero: ["melee", "hero"], melee: ["melee", "ranged", "hero"], ranged: ["ranged", "melee"] }, sniper: { hero: ["ranged", "hero"], melee: ["ranged"], ranged: ["hero", "ranged"] }, balanced: { hero: ["hero"], melee: ["melee"], ranged: ["hero", "ranged"] } };
@@ -33,7 +33,7 @@ sim.run(`globalThis.__lab = (function () {
             castle: () => l.tier < 3 && buy(CASTLE_TIERS[l.tier].cost) && (l.tier++, true),
             bed: () => l.beds < SLOT_MAX && buy(slotCost(l.beds)) && (l.beds++, true),
             soldier: types => { const fieldN = l.units.filter(x => !x.g).length, garN = l.units.filter(x => x.g).length; if (WAVES && fieldN >= l.beds && garN >= GARRISON_SOLDIERS) return false; if (!WAVES && l.units.length >= l.beds) return false; const ok = types.filter(t => UNIT_TIER[t] <= l.tier && (!UNITS[t].castleOnly || l.units.filter(u => UNITS[u.type].castleOnly).length < SIEGE_MAX)); if (!ok.length) return false; const t = pick(ok); if (!buy(UNITS[t].cost)) return false; l.units.push({ id: "u" + (l.uid++), type: t, lvl: 1, cool: 0, g: WAVES && fieldN >= l.beds && !UNITS[t].castleOnly }); return true; },
-            train: () => { const u = l.units.filter(x => x.lvl < 3).sort((a, b) => a.lvl - b.lvl)[0]; return !!u && buy(Math.round(UNITS[u.type].cost * .5 * u.lvl)) && (u.lvl++, true); },
+            train: () => { const u = l.units.filter(x => x.lvl < 3).sort((a, b) => a.lvl - b.lvl)[0]; return !!u && buy(trainCost(u.type, u.lvl)) && (u.lvl++, true); },
             gear: () => { const k = pick(["weapon", "armour", "charm"]), v = l.gear[k]; return v < 3 && UPGRADE_NEEDS[k][v] <= l.tier && buy(GEAR[k][v].cost) && (l.gear[k]++, true); },
             defence: () => { const k = pick(["walls", "tower"]), v = l.defences[k]; return v < 2 && UPGRADE_NEEDS[k][v] <= l.tier && buy(DEFENCES[k][v].cost) && (l.defences[k]++, true); },
             item: () => { if (l.items.length >= ITEM_SLOTS) return false; const ks = Object.keys(ITEMS).filter(k => !l.items.includes(k) && !ITEMS[k].unique && ITEMS[k].tier <= l.tier); const k = ks.length && pick(ks); return !!k && buy(itemCost(k)) && (l.items.push(k), true); },

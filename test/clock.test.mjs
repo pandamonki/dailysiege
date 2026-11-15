@@ -67,3 +67,25 @@ test("the game asks for server functions in the region they are deployed to", as
   const client = readFileSync(new URL("../js/net/backend-firebase.js", import.meta.url), "utf8").match(/FUNCTIONS_REGION = "([^"]+)"/)[1];
   assert.equal(client, REGION);
 });
+
+test("testing mode: each skipped day brings the game's locks a day sooner, so the war runs that many days ahead", () => {
+  const base = { tz: "Australia/Sydney", lockHour: 20, lobby: true, lobbyEnds: at("2026-11-12T03:00:00Z"), war: 1 };
+  const c0 = clockFor(base, null), c1 = clockFor({ ...base, testSkew: 1 }, { planDay: c0.nextPlanDay, clockWar: 1 });
+  assert.equal(c1.planDay, c0.nextPlanDay);
+  assert.equal(c1.nextLockAt, c0.nextLockAt); // the next day's lock lands where today's would have been
+  assert.equal(c1.lockAfter - c1.nextLockAt, 864e5);
+});
+
+test("testing mode: the phones' clock counts the skipped days too", () => {
+  const { loadGame, CLOCK_FILES } = createRequire(import.meta.url)("../functions/lib/game.js");
+  const g = loadGame(CLOCK_FILES), cfg = { tz: "UTC", lockHour: 20, startDate: "2026-01-05" };
+  g.context.LIVE = { config: cfg }; const a = g.run("liveClock()");
+  cfg.testSkew = 2; const b = g.run("liveClock()");
+  assert.equal(b.planDay, g.get("addDays")(a.planDay, 2)); assert.equal(b.minsToLock, a.minsToLock);
+});
+
+test("testing mode: a new war starts back in step with the calendar", () => {
+  const base = { tz: "UTC", lockHour: 20, lobby: true, lobbyEnds: at("2026-11-12T03:00:00Z"), war: 2, testSkew: 3 };
+  const c = clockFor(base, { planDay: "2026-11-20", clockWar: 1 }), plain = clockFor({ ...base, testSkew: 0 }, { planDay: "2026-11-20", clockWar: 1 });
+  assert.equal(c.testSkew, 0); assert.equal(c.nextLockAt, plain.nextLockAt); assert.equal(c.planDay, plain.planDay);
+});

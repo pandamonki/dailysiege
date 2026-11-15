@@ -22,7 +22,8 @@ function treeNodeState(bi, i) {
 function treeNodeHTML(bi, i, sel) {
   const node = TREES[S.cls][bi].nodes[i], s = treeNodeState(bi, i), side = i === 2 || i === 4, ult = i === 5;
   const badge = s.st === "locked" ? `<i class="miss">${s.miss ? "+" + s.miss : "🔒"}</i>` : `<i class="rk">${s.rank}/${TREE_MAX[i]}</i>`;
-  return `<button class="tn st-${s.st}${i === 0 ? " base" : ""}${side ? " side" : ""}${ult ? " ult" : ""}${sel ? " sel" : ""}" data-act="tnode" data-v="${nodeKey(bi, i)}" aria-label="${esc(node.name)}, ${s.rank} of ${TREE_MAX[i]}"><span class="ti"><img alt="" src="${spellURL(node.ic, 96)}">${badge}</span><span class="tl">${esc(node.name)}</span></button>`;
+  const cdv = node.kind === "trigger" && node.cd ? Math.round(node.cd * BAL.cd) : 0, cdc = cdv ? `<i class="cdt" title="Recharge about ${cdv}s">${CLOCK_SVG}${cdv}s</i>` : ult ? `<i class="cdt u" title="Once per battle">1×</i>` : "";
+  return `<button class="tn st-${s.st}${i === 0 ? " base" : ""}${side ? " side" : ""}${ult ? " ult" : ""}${sel ? " sel" : ""}" data-act="tnode" data-v="${nodeKey(bi, i)}" aria-label="${esc(node.name)}, ${s.rank} of ${TREE_MAX[i]}"><span class="ti"><img alt="" src="${spellURL(node.ic, 96)}">${badge}${cdc}</span><span class="tl">${esc(node.name)}</span></button>`;
 }
 function treeColumnHTML(bi, sel) {
   const tr = TREES[S.cls][bi], pts = treePts(S.tree, TREE_BKEY[bi]), N = (i) => treeNodeHTML(bi, i, sel[0] === bi && sel[1] === i);
@@ -35,12 +36,14 @@ function treeDetailHTML(bi, i) {
   const kindName = (i === 2 || i === 4) ? "Side talent" : i === 3 ? "Synergy" : kind;
   const now = nodeDesc(S.cls, bi, i, Math.max(1, rank)), nxt = rank >= 1 && rank < max && node.v.length ? nodeDesc(S.cls, bi, i, rank + 1) : null;
   const reqs = need.maxed ? [] : [...need.list, { ok: free > 0, text: free > 0 ? `A skill point to spend (${free} free)` : "A skill point to spend (none free yet: your hero gains them as it levels up)" }];
-  const unmet = reqs.filter(x => !x.ok), cd = node.kind === "trigger" && node.cd ? `<div class="row muted">Recharge about ${Math.round(node.cd * BAL.cd)}s</div>` : node.kind === "ultimate" ? `<div class="row muted">Once per battle, and only if you plan it for the night. It rests the next day.</div>` : "";
+  const unmet = reqs.filter(x => !x.ok), castable = node.kind === "trigger" || i === 5;
+  const cd = node.kind === "trigger" && node.cd ? `<div class="cdrow"><span class="cdt big">${CLOCK_SVG}${Math.round(node.cd * BAL.cd)}s</span><span class="muted">recharge between casts</span></div>` : i === 5 ? `<div class="cdrow"><span class="cdt big u">1×</span><span class="muted">once per battle, only on nights you plan it. It rests the next day.</span></div>` : "";
   const label = need.maxed ? "Fully learned" : canL ? (rank ? "Level up (1 point)" : `Learn ${esc(node.name)} (1 point)`) : unmet.some(x => !/skill point/.test(x.text)) ? "Locked" : "No skill point to spend";
   return `<div class="det tdet"><img class="tdico" alt="" src="${spellURL(node.ic, 96)}"><h3><span>${esc(node.name)}</span><em>${kindName} · ${rank}/${max}</em></h3>
     <p>${esc(rank ? now : `Rank 1: ${now}`)}</p>${nxt ? `<p class="muted">Next rank: ${esc(nxt)}</p>` : ""}${cd}
+    ${castable && rank ? castWhenHTML(nodeKey(bi, i)) : ""}
     ${reqs.length ? `<div class="req">${reqs.map(x => `<div class="${x.ok ? "ok" : "no"}"><i>${x.ok ? "✓" : "✕"}</i>${esc(x.text)}</div>`).join("")}</div>` : ""}</div>
-    <button class="btn wood tlearn${canL ? "" : " off"}" data-act="tlearn" data-v="${nodeKey(bi, i)}" ${canL && !S.locked ? "" : "disabled"}>${S.locked && canL ? "Orders are sealed" : label}</button>`;
+    <button class="btn ${canL ? "wax" : "wood"} tlearn${canL ? "" : " off"}" data-act="tlearn" data-v="${nodeKey(bi, i)}" ${canL && !S.locked ? "" : "disabled"}>${S.locked && canL ? "Orders are sealed" : label}</button>`;
 }
 // the two tabs at the top of a hero screen (yours or a rival's), styled like the Army and Base tabs
 function heroTabs(tab, free) {
@@ -53,16 +56,17 @@ function champSheetV3() {
   const sel = treeSelection(), learned = treeHasUlt(S.tree), cool = typeof ultCooling === "function" && ultCooling();
   const slots = Array.from({ length: ITEM_SLOTS }, (_, i) => S.items[i] || null);
   const b = CHAMP_V3[S.cls], ty = CLASS_TYPES[S.cls];
-  const sr = (l, v) => `<div><span>${l}</span><b>${v}</b></div>`;
+  const sr = (ic, l, v) => `<div><span><i class="sic">${ic}</i>${l}</span><b>${v}</b></div>`;
   const stats = `<div class="xpbar" title="Experience toward the next level"><i style="width:${Math.round(xp / nd * 100)}%"></i><span>Level ${L} · ${xp}/${nd} XP</span></div>
     <p class="muted xpnote">Every level is one skill point, up to level ${MAX_HERO_LVL_V3}.</p>
-    <div class="sgrid">${sr("Health", now.hp)}${sr("Attack", now.atk)}${sr("Attack type", esc(ATK_TYPES[ty[0]].name))}${sr("Armour type", esc(ARMOUR_TYPES[ty[1]] || "–"))}${sr("Damage blocked", Math.round(b.armor * 100) + "%")}${sr("Attack every", b.as + "s")}${sr("Range", b.range + " tiles")}${sr("Move speed", b.spd.toFixed(1) + " tiles/s")}</div>`;
+    <div class="sgrid sgi">${sr(SI.hp, "Health", now.hp)}${sr(SI.atk, "Attack", now.atk)}${sr(SI.atype, "Attack type", esc(ATK_TYPES[ty[0]].name))}${sr(SI.armour, "Armour type", esc(ARMOUR_TYPES[ty[1]] || "–"))}${sr(SI.block, "Damage blocked", Math.round(b.armor * 100) + "%")}${sr(SI.as, "Attack every", b.as + "s")}${sr(SI.range, "Range", b.range + " tiles")}${sr(SI.spd, "Move speed", b.spd.toFixed(1) + " tiles/s")}</div>
+    ${typeInfo(ty, "hstats")}`;
   const abilities = `<div class="tcols">${[0, 1, 2].map(bi => treeColumnHTML(bi, sel)).join("")}</div>
     ${treeDetailHTML(sel[0], sel[1])}
-    <div><button class="btn ${S.ultArm && learned && !cool ? "wax" : "wood"}" data-act="ultarm" ${dis(!learned || cool)}>${ultBolt()}${!learned ? "Ultimate not learned yet" : cool ? "Ultimate recharging until tomorrow" : S.ultArm ? "Ultimate planned for tonight ✓ (tap to cancel)" : "Plan the ultimate for tonight"}</button></div>`;
+    <div class="ultplan"><button class="btn ${S.ultArm && learned && !cool ? "wax" : "wood"}" data-act="ultarm" ${dis(!learned || cool)}>${ultBolt()}${!learned ? "Ultimate not learned yet" : cool ? "Ultimate recharging until tomorrow" : S.ultArm ? "Ultimate planned for tonight ✓ (tap to cancel)" : "Plan the ultimate for tonight"}</button>${learned && !cool && S.ultArm && sel[1] !== 5 ? castWhenHTML(ultKey()) : ""}</div>`;
   const items = `
     ${heroItemsHTML(slots)}
-    <div class="sec"><h3>Gear</h3>${gearLines(S.gear)}</div>
+    <p class="muted">Your hero fights with items, not the castle's forge: Armoury upgrades only arm your soldiers.</p>
     <div><button class="btn small" data-act="open" data-v="spells">Spell book</button></div>`;
   return head(spriteURL("c-" + S.cls), `${c.name} Hero`, `Level ${L} of ${MAX_HERO_LVL_V3}`) + `<div class="body">
     ${S.ob === 2 ? `<div class="obbox"><b>Step 1 of 2 · Choose your hero</b><span>Pick a class, then spend your first skill point in a tree.</span><button class="btn wax" data-act="obnext">Next: design your banner →</button></div>` : ""}
@@ -84,7 +88,7 @@ function rivalHeroSheet(id) {
   if (!r || !h) return head(null, r ? `${r.name}'s hero` : "Rival hero", "Nothing scouted yet") + `<div class="body"><p class="muted">You haven't seen this hero fight yet. After a battle you can see its skills and items here.</p></div>`;
   const tab = sheet.tab === "items" ? "items" : "abilities", c = CLASSES[h.cls], v3 = heroV3Now() && h.tree, b = v3 ? CHAMP_V3[h.cls] : CHAMP[h.cls], L = h.level;
   const hp = Math.round(b.hp * (v3 ? hpLvV3(L) : 1 + .08 * (L - 1))), atk = Math.round(b.atk * (v3 ? atkLvV3(L) : 1 + .06 * (L - 1)));
-  const stats = `<div class="stats"><span>${IC.hp(hp)}</span><span>${IC.atk(atk)}</span><span>${typeLine(CLASS_TYPES[h.cls])}</span></div>`;
+  const stats = `<div class="stats"><span>${IC.hp(hp)}</span><span>${IC.atk(atk)}</span></div>${typeInfo(CLASS_TYPES[h.cls], "rhero")}`;
   let abil;
   if (h.tree) {
     const rows = TREE_BKEY.map(k => h.tree[k] || []); let [sb, si] = (sheet.tn || "").split(".").map(Number);
@@ -99,9 +103,9 @@ function rivalHeroSheet(id) {
     abil = list.map(([k, n, d]) => { const rr = h.ranks[k] || 0, mx = rankMax(k); return `<div class="det rrow${rr ? "" : " off"}"><img class="tdico" alt="" src="${spellURL(h.cls + "_" + k, 96)}"><h3><span>${esc(n)}</span><em>Rank ${rr}/${mx}</em></h3><p>${esc(d)}</p></div>`; }).join("");
   }
   const slots = Array.from({ length: ITEM_SLOTS }, (_, i) => h.items[i] || null);
-  const items = `<div class="sec"><h3>Items (${h.items.length}/${ITEM_SLOTS})</h3><div class="islots tiny">${slots.map(k => k && ITEMS[k] ? `<div class="islot" title="${esc(itemDesc(k))}"><img alt="" src="${itemURL(k)}"><b>${esc(ITEMS[k].name)}</b></div>` : `<div class="islot empty"><span>Empty</span></div>`).join("")}</div>
+  const items = `<div class="sec"><h3>Items <span class="cnt">${h.items.length}/${ITEM_SLOTS}</span></h3><div class="islots tiny">${slots.map(k => k && ITEMS[k] ? `<div class="islot" title="${esc(itemDesc(k))}"><img alt="" src="${itemURL(k)}"><b>${esc(ITEMS[k].name)}</b></div>` : `<div class="islot empty"><span>Empty</span></div>`).join("")}</div>
     ${h.items.length ? `<div class="islist">${h.items.filter(k => ITEMS[k]).map(k => `<div class="gline"><b>${esc(ITEMS[k].name)}</b><small>${esc(itemDesc(k))}</small></div>`).join("")}</div>` : `<p class="muted">No items bought.</p>`}</div>
-    <div class="sec"><h3>Gear</h3>${gearLines(h.gear)}</div>`;
+`;
   return head(spriteURL("c-" + h.cls, r.color), `${esc(r.name)}'s ${c.name}`, `Level ${L} · as it fought yesterday`) + `<div class="body">${heroTabs(tab, 0)}${stats}${tab === "items" ? items : abil}
     <div class="row"><button class="btn small" data-act="open" data-v="rival" data-k="${esc(r.id)}">About ${esc(r.name)}</button></div></div>`;
 }
@@ -113,3 +117,18 @@ function treeUlt() {
 }
 const ultBolt = () => `<img class="sico" alt="" src="icons/ui/ultimate.webp"> `; // the lightning bolt that marks every ultimate
 const ultIconHTML = u => (u && u.ic ? `<img class="sico" alt="" src="${spellURL(u.ic, 32)}"> ` : "");
+
+// a small clock for recharge times
+const CLOCK_SVG = `<svg class="clk" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6.5" r="4.6" fill="#fff6dc" stroke="#3a2614" stroke-width="1.2"/><path d="M6 3.9V6.6l1.9 1.1" stroke="#3a2614" stroke-width="1.2" fill="none" stroke-linecap="round"/><path d="M4.6 1.2h2.8" stroke="#3a2614" stroke-width="1.2" stroke-linecap="round"/></svg>`;
+// icons for the hero stats grid
+const SI = { hp: "❤", atk: "⚔", atype: "🗡", armour: "🛡", block: "⛨", as: "⏱", range: "➶", spd: "👢" };
+// "cast when": a skill picks its own best moment unless the lord adds a condition (skill-tree heroes key it by "tree.node")
+const CAST_WHEN = [["", "Its own best moment (automatic)"], ["On my top-priority target", "On my top-priority target"], ["When 3+ enemies are near", "When 3 or more enemies are near"], ["When my HP is under 30%", "When my hero is below 30% health"], ["When an ally is attacked", "When an ally nearby is attacked"], ["When my castle is attacked", "When my castle is under attack"]];
+function ultKey() { if (!heroV3Now()) return "ult"; for (let bi = 0; bi < 3; bi++) if (S.tree && S.tree[TREE_BKEY[bi]][5] > 0) return nodeKey(bi, 5); return null; }
+function castWhenHTML(key) {
+  if (!key) return "";
+  S.triggers = S.triggers || {};
+  if (!heroV3Now()) return `<label class="inline castwhen"><span>Cast when</span><select data-act="trig" data-k="${key}" ${dis()}>${opts(TRIGGERS, S.triggers[key])}</select></label>`;
+  const cur = S.triggers[key] || "";
+  return `<label class="inline castwhen"><span>Cast when</span><select data-act="trig" data-k="${key}" ${dis()}>${CAST_WHEN.map(([v, l]) => `<option value="${esc(v)}"${cur === v ? " selected" : ""}>${esc(l)}</option>`).join("")}</select></label>${cur ? `<small class="muted cwnote">It still waits for its own moment too, and only casts once this is also true.</small>` : ""}`;
+}

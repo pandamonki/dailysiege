@@ -1,7 +1,7 @@
 // Button actions and document-level event handlers
 
 // ================= actions =================
-let idc = Date.now();
+let idc = Date.now(), PLACE_Q = [], TWIST_POP = false; // PLACE_Q: more pieces to place one after another (several walls built at once)
 const A = {
   open: (v, k) => open(v, k),
   close: () => close(),
@@ -53,8 +53,8 @@ const A = {
   zin: () => { if (replay && replay.auto) { autoZoomBy(AUTO_ZOOM_STEP); return; } camTarget = null; zoomAt(vw / 2, vh / 2, cam.z * 1.35); },
   zout: () => { if (replay && replay.auto) { autoZoomBy(1 / AUTO_ZOOM_STEP); return; } camTarget = null; zoomAt(vw / 2, vh / 2, cam.z / 1.35); },
   zall: () => { if (replay) replay.auto = false; flyTo(W / 2, W / 2, 0); },
-  zhome: () => { if (replay) replay.auto = false; home(); },
-  cancel: () => { sel = null; },
+  zhome: () => { if (replay && !replay.reel) { replay.auto = true; replay.camMode = null; return; } home(); }, // in a replay the home button follows your hero again
+  cancel: () => { sel = null; PLACE_Q = []; },
   trainunit: id => { S.phase = "muster"; sel = null; sheet = { type: "castle", tab: "garrison", grp: "army", tsel: id }; }, // the unit strip's Train button: open the training screen on that soldier
   opencastle: v => { S.phase = "muster"; sel = null; sheet = { type: "castle", tab: v, grp: v === "recruit" ? "army" : "base" }; if (v === "armoury") sheet.tab = "keep"; },
   openhero: v => { S.phase = "muster"; sel = null; open("champ", "champ"); if (v === "items" || v === "abilities" || v === "stats") sheet.tab = v; },
@@ -78,9 +78,10 @@ const A = {
   cls: v => { if (v === S.cls) return; if (isLive() && DAY > 1) { toast("Your class is set for the week. Pick again next week."); return; } S.cls = v; S.ranks = { a1: 0, a2: 0, a3: 0, ult: 0 }; S.tree = emptyTree(); S.picks = {}; toast(`${CLASSES[v].name} chosen. Skill points refunded.`); },
   rank: (_, k) => { if (canRank(k)) S.ranks[k] = (S.ranks[k] || 0) + 1; },
   choose: (v, k) => { S.picks[k] = v; },
-  buy: k => { const u = UNITS[k]; if (avail() < u.cost || supplyFull() || ctNow() < UNIT_TIER[k]) return; ensureGarrison(); const toGar = fieldCount() >= S.slots; if (toGar && garrisonCount() >= GARRISON_SOLDIERS) { toast("Your field supply and garrison are full."); return; } S.gold -= u.cost; const id = "u" + idc++; S.owned.push({ id, type: k, lvl: 1, hp: 1 }); if (toGar) { toGarrison(id); sel = null; toast(`${u.name} recruited into your garrison.`); } else { sel = id; sheet = null; toast(`${u.name} recruited. Tap a glowing tile.`); } },
+  buy: k => { const u = UNITS[k]; if (avail() < u.cost || supplyFull() || ctNow() < UNIT_TIER[k]) return; ensureGarrison(); const toGar = fieldCount() >= S.slots; if (toGar && garrisonCount() >= garrisonCap()) { toast(supplyV2Now() && wavesOpen() < WAVE_COUNT ? "Your field is full. Unlock a reinforcement wave for more soldiers." : "Your field supply and garrison are full."); return; } S.gold -= u.cost; const id = "u" + idc++; S.owned.push({ id, type: k, lvl: 1, hp: 1 }); if (toGar) { toGarrison(id); sel = null; toast(`${u.name} recruited into your garrison.`); } else { sel = id; sheet = null; toast(`${u.name} recruited. Tap a glowing tile.`); } },
   up: id => { const u = findUnit(id), c = upgradeCost(u); if (u.lvl < 3 && avail() >= c && ctNow() >= UNIT_LVL_TIER[u.lvl]) { S.gold -= c; u.lvl++; } },
-  slot: () => { const c = slotCost(S.slots); if (avail() >= c && S.slots < SLOT_MAX) { S.gold -= c; S.slots++; } },
+  wunlock: () => { if (S.locked) { toast("Draft new orders to change your garrison."); return; } ensureGarrison(); const c = waveUnlockCost(); if (!supplyV2Now() || c == null) return; if (avail() < c) { toast("Not enough gold."); return; } S.gold -= c; S.wavesOpen = wavesOpen() + 1; toast(`Wave ${S.wavesOpen} unlocked: ${WAVE_SLOTS} more soldiers can march out later in the battle.`); },
+  slot: () => { if (supplyV2Now()) return; const c = slotCost(S.slots); if (avail() >= c && S.slots < SLOT_MAX) { S.gold -= c; S.slots++; } },
   trap: k => { const t = TRAPS[k]; if (avail() < t.cost) return; S.gold -= t.cost; const id = "t" + idc++; S.traps.push({ id, type: k }); sel = id; sheet = null; toast(`${t.name} bought. Tap a glowing tile.`); },
   help: () => { sheet.help = !sheet.help; },
   shop: () => { open("castle"); sheet.tab = "shop"; },
@@ -110,7 +111,10 @@ const A = {
   spinno: () => { if (sheet) sheet.pend = null; },
   spinopen: () => spinOpen(),
   spingold: () => { if (!S.spin || S.items.length < ITEM_SLOTS) return; S.gold += SPIN_GOLD; toast(`+${SPIN_GOLD} gold.`); endSpin(); },
-  wallbuy: () => { if (S.walls.length >= wallLimit(ctNow()) || avail() < WALL_COST) return; S.gold -= WALL_COST; const id = "w" + idc++; S.walls.push({ id, dir: "h" }); sel = id; sheet = null; toast("Wall built. Tap a glowing tile to place it. Tap it afterwards to turn it."); },
+  wallbuy: v => { const n = Math.max(1, Math.min(+v || 1, wallLimit(ctNow()) - S.walls.length, Math.floor(avail() / WALL_COST))); if (S.walls.length >= wallLimit(ctNow()) || avail() < WALL_COST) return; const ids = [];
+    for (let i = 0; i < n; i++) { S.gold -= WALL_COST; const id = "w" + idc++; S.walls.push({ id, dir: "h" }); ids.push(id); }
+    sel = ids.shift(); PLACE_Q = ids; sheet = null; toast(n > 1 ? `${n} walls built. Tap a glowing tile for each one in turn.` : "Wall built. Tap a glowing tile to place it. Tap it afterwards to turn it."); },
+  wn: v => { sheet.wn = Math.max(1, (sheet.wn || 1) + +v); },
   wrot: id => { const w = findWall(id), k = placedAt(id), nd = w.dir === "h" ? "v" : "h"; if (k) { const [r, c] = k.split(",").map(Number); if (!wallFree(r, c, nd, id)) { toast("It doesn't fit that way round."); return; } } w.dir = nd; },
   wsell: id => { const k = placedAt(id); if (k) delete S.place[k]; S.walls = S.walls.filter(w => w.id !== id); S.gold += Math.floor(WALL_COST / 2); sheet = null; },
   shellat: v => { if (!S.locked) S.shellAt = Math.max(1, Math.min(10, (S.shellAt || 2) + +v)); },
@@ -145,12 +149,18 @@ const A = {
     toast(v === "accept" ? "Accepted. You ally at the start of tonight's battle." : "Declined."); if (sheet && sheet.type === "invites" && !pendingInvites().length) sheet = null; },
   idismiss: () => { sheet = null; },
   opentoday: () => { S.phase = "orders"; sel = null; ensureDip(); sheet = { type: "orders", grp: "ord", tab: "contracts" }; },
+  twistpop: () => { TWIST_POP = !TWIST_POP; if (S) S.twSeen = planDayKey(); },
+  sealgo: v => { sel = null; if (["strategy", "contracts", "alliances", "rituals"].includes(v)) { S.phase = "orders"; ensureDip(); sheet = { type: "orders", grp: v === "alliances" ? "alli" : "ord", tab: v }; }
+    else if (v === "hero") open("champ", "champ"); else if (v === "deploy") sheet = { type: "castle", tab: "deployment", grp: "army" }; else if (v === "castle") sheet = { type: "castle", tab: "keep", grp: "base" }; else if (v === "camp") sheet = { type: "camp" }; },
   cxpick: v => { if (S.locked || (isLive() && LIVE.readOnly)) return; S.contract = v && myOffers().includes(v) ? v : null; if (S.contract) toast("Contract taken. Seal your orders to keep it."); },
   opencamp: () => { sel = null; sheet = { type: "camp" }; },
-  mbid: (v, k) => { ensureDip(); const m = MERCS[k]; if (!m || mercWait(k)) return; const b = S.bids[k] && S.bids[k].day === planDayKey() ? S.bids[k].gold : 0, step = 10;
-    const next = +v > 0 ? (b ? b + step : m.min) : (b - step < m.min ? 0 : b - step);
-    if (next - b > avail()) { toast("Not enough gold."); return; }
+  mbid: (v, k) => { ensureDip(); const m = MERCS[k]; if (!m || mercWait(k) || (mercV2Now() && !mercToday().open.includes(k))) return; const b = S.bids[k] && S.bids[k].day === planDayKey() ? S.bids[k].gold : 0, step = 10;
+    const lo = mercMin(k, mercV2Now()), next = +v > 0 ? (b ? b + step : lo) : (b - step < lo ? 0 : b - step);
+    const moved = next && mercV2Now() ? myBids().filter(([id]) => id !== k) : [], freed = moved.reduce((a, [, x]) => a + x.gold, 0); // one group a day: a new bid replaces the old one
+    if (next - b > avail() + freed) { toast("Not enough gold."); return; }
+    if (moved.length) { moved.forEach(([id]) => delete S.bids[id]); toast(`Bid moved to the ${m.name}: one group a day.`); }
     if (next) S.bids[k] = { gold: next, day: planDayKey() }; else delete S.bids[k]; },
+  mpick: v => { if (sheet && sheet.type === "camp" && MERCS[v]) sheet.pick = v; },
   mclear: (_, k) => { ensureDip(); delete S.bids[k]; },
   topen: (_, k) => { S.terms[k].mode = S.terms[k].mode === "refuse" ? "accept" : "refuse"; },
   tbet: (_, k) => { S.terms[k].mode = S.terms[k].mode === "betray" ? "accept" : "betray"; },
@@ -160,6 +170,8 @@ const A = {
   rdel: v => { S.rules.splice(+v, 1); },
   abil: v => { sheet.ab = v; },
   tnode: v => { sheet.tn = v; },
+  rtip: v => { sheet.rtip = sheet.rtip === v ? null : v; },
+  tinfo: v => { sheet.tinfo = sheet.tinfo === v ? null : v; },
   tlearn: v => { const [bi, i] = v.split(".").map(Number); TREE_NAME_CLS = S.cls; if (!S.locked && treeCanLearn(S.tree, TREE_BKEY[bi], i, level())) { S.tree[TREE_BKEY[bi]][i]++; sheet.tn = v; } },
   gsel: v => { sheet.gear = v; },
   rvopen: v => { sheet.rv = sheet.rv === v ? null : v; },
@@ -175,7 +187,7 @@ const A = {
   tmin: (v, k) => { S.terms[k].min = stepGold(S.terms[k].min, +v); },
   ogold: (v, k) => { const o = S.offers[k]; if (!o || o.day !== planDayKey()) { toast("Already sent. The dowry is locked."); return; } const next = stepGold(o.gold, +v); if (next - o.gold > avail()) { toast("Not enough free gold."); return; } o.gold = next; },
   uorder: (v, k) => { if (v === "army") delete S.uorders[k]; else S.uorders[k] = v; sheet = null; },
-  seal: () => { if (pickV1Now() && !S.lists.hostile.length) { toast("Pick at least one target first (Strategy)."); return; } S.locked = true; sel = null; if (isLive()) { const snap = mySnapshot(); delete snap.sealedPlan; S.sealedSnap = JSON.parse(JSON.stringify(snap)); } }, // a copy of what was sealed: it stays in effect while new orders are drafted, until they are sealed
+  seal: () => { if (!targetsReady()) { toast(`Pick ${TARGETS_NEED()} targets first (Strategy).`); return; } S.locked = true; sel = null; if (isLive()) { const snap = mySnapshot(); delete snap.sealedPlan; S.sealedSnap = JSON.parse(JSON.stringify(snap)); } }, // a copy of what was sealed: it stays in effect while new orders are drafted, until they are sealed
   unseal: () => { S.locked = false; },
   copy: () => { const txt = planJSON(); try { navigator.clipboard.writeText(txt).then(() => toast("Plan copied."), selectPlan); } catch (e) { selectPlan(); } },
   reset: () => { if (isLive()) return; S = freshState(); ensureDip(); sel = null; sheet = null; toast("Back to the example setup."); },
@@ -183,6 +195,7 @@ const A = {
 function selectPlan() { const el = document.getElementById("plan"); if (!el) return; const r = document.createRange(); r.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast("Plan selected. Copy it from here."); }
 
 document.addEventListener("click", e => {
+  if (TWIST_POP && !e.target.closest("#twistbtn")) { TWIST_POP = false; renderHint(); }
   if (e.target.id === "veil") { close(); return; }
   const b = e.target.closest("[data-act]"); if (!b || b.tagName === "SELECT" || b.disabled) return;
   const f = A[b.dataset.act]; if (!f) return;

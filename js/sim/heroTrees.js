@@ -86,6 +86,7 @@ function makeTreeKit(X) {
     for (const [bi, i] of e.kc) {
       const key = bi + "." + i, node = TREES[e.cls][bi].nodes[i];
       if (e.cds[key] > now || (i === 5 && !e.ultArm)) continue;
+      if (X.trigOk && !X.trigOk(e, key)) continue; // the lord's own "cast when" condition, if they set one (none set: the skill picks its own moment)
       const fn = FN[e.cls + "." + bi + "." + i]; if (!fn) continue;
       X.setAb(node.name); const res = fn(e, rk(e, bi, i)); X.setAb(null);
       if (!res) continue;

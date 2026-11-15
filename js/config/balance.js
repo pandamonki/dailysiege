@@ -3,12 +3,21 @@
 const OP_MAX = 5, SLOT_START = 3, SLOT_MAX = 8;
 const SLOT_COSTS = [0, 0, 0, 60, 100, 160, 240, 340]; // gold for bed n+1 is SLOT_COSTS[n] (n beds owned)
 const slotCost = n => SLOT_COSTS[Math.min(n, SLOT_COSTS.length - 1)];
+// From SUPPLY_V2_FROM (the week of 16 Nov 2026): no more beds. Every lord can field FIELD_MAX soldiers on the map, and buys the three
+// reinforcement waves instead, in order, each opening that wave's soldier slots. Beds already bought are refunded.
+// Testing mode. On: once the host has sealed, a "Begin battle now" button fights the day's battle at once and moves the war on a
+// day (the game's clock runs testSkew days ahead of the calendar; the normal schedule carries on from there). Off: the button is
+// hidden and the server refuses it.
+const TEST_MODE = true;
+const DAY_MS = 864e5;
+let SUPPLY_V2_FROM = "2026-11-16"; const supplyV2For = d => String(d) >= SUPPLY_V2_FROM;
+const FIELD_MAX = 4, WAVE_UNLOCK_COSTS = [60, 100, 150];
 
 // ---- castle tiers, walls, shop items, hero levelling, gold ----
 const CASTLE_TIERS = [
   { name: "Castle", cost: 0, hp: 1, note: "Where every lord begins. Earns base pay of 225 gold after day 1, growing 30 a day." },
-  { name: "Fortress", cost: 150, hp: 1.15, note: "+15% castle health and +70 gold a day, so it pays for itself in about two days. Opens tier 2 gear, Arrow Slits, Bastions and stronger timber walls." },
-  { name: "Citadel", cost: 300, hp: 1.3, note: "+30% castle health and +130 gold a day in all. Opens tier 3 gear, the Ballista and stone walls." },
+  { name: "Fortress", cost: 100, hp: 1.15, note: "+15% castle health and +70 gold a day, so it pays for itself in under two days. Opens tier 2 gear, Arrow Slits, Bastions and stronger timber walls." },
+  { name: "Citadel", cost: 200, hp: 1.3, note: "+30% castle health and +130 gold a day in all. Opens tier 3 gear, the Ballista and stone walls." },
 ];
 const CASTLE_INCOME = [0, 70, 130]; // extra gold a day for each castle tier
 const UPGRADE_NEEDS = { weapon: [1, 2, 3], armour: [1, 2, 3], charm: [1, 2, 3], walls: [1, 2], tower: [2, 3] }; // castle tier each upgrade tier needs

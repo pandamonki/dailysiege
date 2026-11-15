@@ -1,0 +1,33 @@
+name: Clear previews
+
+# Preview addresses use Firebase Hosting channels, and the site only holds a few at a time.
+# When a pull request closes, its preview channel is deleted. Run it by hand from the Actions tab
+# to delete every preview channel at once (the live site is never touched).
+on:
+  pull_request:
+    types: [closed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DAILY_SIEGE || secrets.FIREBASE_SERVICE_ACCOUNT || secrets.GCP_SA_KEY }}
+
+jobs:
+  clear:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete preview channels
+        env:
+          PREFIX: ${{ github.event_name == 'pull_request' && format('pr{0}-', github.event.pull_request.number) || '' }}
+        run: |
+          if [ -z "$SERVICE_ACCOUNT" ]; then echo "::warning::No Firebase service-account secret found."; exit 0; fi
+          printf '%s' "$SERVICE_ACCOUNT" > "$RUNNER_TEMP/sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
+          npm install --no-save --no-audit --no-fund firebase-tools@15 >/dev/null
+          FB="npx --no-install firebase --project daily-siege"
+          ids=$($FB hosting:channel:list --json | jq -r '.result.channels[].name | split("/") | last' | grep -v '^live$' | grep "^${PREFIX}" || true)
+          if [ -z "$ids" ]; then echo "No preview channels to delete."; exit 0; fi
+          for id in $ids; do echo "Deleting $id"; $FB hosting:channel:delete "$id" --force; done

@@ -61,6 +61,7 @@ function ensureDip() {
   S.lists = S.lists || { hostile: [], neutral: [], ally: [] }; S.offers = S.offers || {}; S.replies = S.replies || {}; S.declined = S.declined || {}; S.bids = S.bids || {}; S.mercHist = S.mercHist || {};
   S.lists.neutral = (S.lists.neutral || []).concat(S.lists.ally || []); S.lists.ally = []; S.terms = S.terms || {}; S.uorders = S.uorders || {}; S.diplo = S.diplo || {};
   S.castle = S.castle || 1; S.items = S.items || []; S.walls = S.walls || []; S.banner = S.banner || defaultBanner(); S.pairs = S.pairs || []; S.pactAct = S.pactAct || {}; S.pactWhen = S.pactWhen || {}; S.xp = S.xp || 0;
+  delete S.formation; // formation is always kept now (the toggle is gone)
   S.phase = S.phase || "muster"; if (STANCE_FIX[S.stance]) S.stance = STANCE_FIX[S.stance];
   S.rules = (S.rules || []).map(r => ({ if: r.if, then: r.then === "All units defend castle" ? "All units fall back to regroup" : r.then === "Switch to Defensive" ? "Switch to Cautious" : r.then }));
   const ids = RIVALS.map(r => r.id);
@@ -150,18 +151,35 @@ function previewOrder() {
     weakhero: id => (CHAMP[rv(id).cls] || CHAMP.warrior).hp * (1 + .08 * ((rv(id).level || DAY) - 1)), weakcastle: id => rv(id).ctier || 1, closest: dist }[st.mode];
   return ids.sort((a, b) => key(a) - key(b));
 }
-// Pick your targets (PICK_V1): one to three lords a day, in order. Once they have fallen, the army goes for the lord just above on the board.
+// Pick your targets (PICK_V1): three targets a day (TARGETS_NEED), in order. Once they have fallen, the army goes for the lord just above on the board.
+// how many targets a lord must pick before sealing: three, or every option there is if fewer
+const TARGETS_NEED = () => Math.min(PICK_MAX, RIVALS.length + Object.keys(PICK_ROLES).length);
+const targetsReady = () => !pickV1Now() || S.lists.hostile.length >= TARGETS_NEED();
+const ROLE_ICON = { "@weakcastle": "🏚", "@leader": "👑", "@above": "⬆", "@nearcastle": "🏰", "@neararmy": "⚔" };
+const tgtName = id => { const r = RIVALS.find(x => x.id === id); return r ? r.name : PICK_ROLES[id] || ""; };
+const tgtMark = id => { const r = RIVALS.find(x => x.id === id); return r ? `<i class="sw" style="background:${r.color}"></i>` : `<i class="rico">${ROLE_ICON[id] || "◎"}</i>`; };
+// the three target slots: filled ones can be dragged into order or cleared; empty ones say what to do
+function targetSlotsHTML() {
+  const hostile = S.lists.hostile;
+  return `<ol class="tslots" id="tgtlist">${[0, 1, 2].slice(0, PICK_MAX).map(i => { const id = hostile[i];
+    if (id && tgtName(id)) return `<li class="tgt tslot on" data-k="${id}"><span class="grip" aria-label="Drag to reorder">⠿</span><span class="ord">${i + 1}</span>${tgtMark(id)}<span class="tnm"><b>${esc(tgtName(id))}</b>${PICK_ROLES[id] ? `<small>role</small>` : ""}</span><button class="tx" data-act="lmove" data-v="neutral" data-k="${id}" aria-label="Stop attacking ${esc(tgtName(id))}" ${dis()}>✕</button></li>`;
+    return `<li class="tslot empty"><span class="ord">${i + 1}</span><span class="tnm">${i === hostile.length ? (i === 0 ? "<b>Pick your first target</b>" : "<b>Pick your next target</b>") : ""}</span><small class="req">required</small></li>`; }).join("")}</ol>`;
+}
+// the board as it stands: rank, points and a target button for every lord (used on the Strategy tab and the seal screen)
+function targetBoardHTML(compact) {
+  const rows = boardRows().sort((a, b) => b.pts - a.pts || b.lvl - a.lvl), hostile = S.lists.hostile, full = hostile.length >= PICK_MAX;
+  return `<div class="tboard${compact ? " compact" : ""}">${rows.map((r, i) => { const n = hostile.indexOf(r.id) + 1;
+    return `<div class="tbr${r.me ? " me" : ""}${n ? " on" : ""}"><span class="rk">${i + 1}</span><i class="sw" style="background:${r.color}"></i><span class="nm"><b>${esc(r.me ? "You" : r.name)}</b>${r.cls && !compact ? `<small>${esc(CLASSES[r.cls].name)}</small>` : ""}</span><span class="pt">${r.pts} pts</span>
+      ${r.me ? `<span class="tbt self">—</span>` : n ? `<button class="tbt on" data-act="lmove" data-v="neutral" data-k="${r.id}" ${dis()} aria-label="Stop attacking ${esc(r.name)}">Target ${n} ✕</button>` : `<button class="tbt" data-act="lmove" data-v="hostile" data-k="${r.id}" ${full ? "disabled" : dis()}>Target</button>`}</div>`; }).join("")}</div>`;
+}
 function pickTab() {
-  const hostile = S.lists.hostile, idle = RIVALS.filter(r => !hostile.includes(r.id)), roles = Object.keys(PICK_ROLES).filter(k => !hostile.includes(k)), full = hostile.length >= PICK_MAX;
-  const row = (id, i) => { const r = RIVALS.find(x => x.id === id), role = PICK_ROLES[id]; if (!r && !role) return "";
-    return `<li class="tgt cp" data-k="${id}"><span class="grip" aria-label="Drag to reorder">⠿</span><span class="ord">${i + 1}</span>${r ? `<i class="sw" style="background:${r.color}"></i>` : ""}<span class="tn"><b>${esc(r ? r.name : role)}</b></span><button class="btn small" data-act="lmove" data-v="neutral" data-k="${id}" aria-label="Stop attacking ${esc(r ? r.name : role)}" ${dis()}>✕</button></li>`; };
-  const chip = (k, label, sw) => `<button class="chip" data-act="lmove" data-v="hostile" data-k="${k}" ${full ? "disabled" : dis()}>${sw ? `<i class="sw" style="background:${sw}"></i>` : ""}${esc(label)} +</button>`;
-  return `<div class="sec tight"><h3>1 · Today's targets <small class="hint">${hostile.length} of ${PICK_MAX} picked</small></h3>
-      <p class="muted">Pick one to three targets before you seal: a lord, or a kind of target worked out during the battle. Out of combat your army marches on them in this order, and it still fights any army it meets and any rival castle it passes. Once they have fallen it goes for ${fallbackLabel()}.</p>
-      <ol class="tgts cpl" id="tgtlist">${hostile.map(row).join("") || `<li class="muted">Nobody yet.</li>`}</ol>
-      ${full ? `<p class="muted">Full. Remove one to swap.</p>` : ""}
-      ${roles.length ? `<div class="chips"><span class="muted">Roles:</span>${roles.map(k => chip(k, PICK_ROLES[k])).join("")}</div>` : ""}
-      ${idle.length ? `<div class="chips"><span class="muted">Lords:</span>${idle.map(r => chip(r.id, r.name, r.color)).join("")}</div>` : ""}</div>
+  const hostile = S.lists.hostile, roles = Object.keys(PICK_ROLES).filter(k => !hostile.includes(k)), full = hostile.length >= PICK_MAX;
+  const chip = k => `<button class="chip" data-act="lmove" data-v="hostile" data-k="${k}" ${full ? "disabled" : dis()}><i class="rico">${ROLE_ICON[k] || "◎"}</i>${esc(PICK_ROLES[k])}</button>`;
+  return `<div class="sec tight"><h3>1 · Today's targets <span class="cnt${hostile.length >= TARGETS_NEED() ? " ok" : ""}">${hostile.length}/${PICK_MAX}</span></h3>
+      <p class="muted">Pick ${PICK_MAX} targets each day, in order, before you seal: lords, roles, or a mix. Your army marches on them one by one and fights anything it meets on the way. After that it goes for ${fallbackLabel()}.</p>
+      ${targetSlotsHTML()}
+      ${roles.length ? `<h4 class="minih">Or target a role, worked out in battle</h4><div class="chips">${roles.map(chip).join("")}</div>` : ""}
+      <h4 class="minih">Lords, by today's leaderboard</h4>${targetBoardHTML()}</div>
     ${strategyTabRest(S.strategy)}`;
 }
 function fallbackLabel() {
@@ -181,9 +199,9 @@ function strategyTab() {
     ${strategyTabRest(st)}`;
 }
 function strategyTabRest(st) {
-  return `<div class="sec tight"><h3>2 · March on their <small class="hint">${st.heading === "hero" ? "straight at it" : st.heading === "castle" ? "straight at it" : st.heading === "centre" ? "hold the hill for 2 min" : "closest first"}</small></h3><div class="seg3 two">${HEADINGS.map(([k, n]) => `<button class="btn small${st.heading === k ? " on" : ""}" data-act="heading" data-v="${k}" ${dis()}>${n}</button>`).join("")}</div>${st.heading === "centre" ? `<p class="muted">Your army skips the attack list and marches to the hill in the middle, fighting anything that comes near. After 2 minutes the order dissolves and it marches on castles instead. Every hero standing on the hill earns 25% more gold and XP.</p>` : ""}</div>
-    <div class="sec tight"><h3>Formation</h3><button class="btn small${S.formation === false ? "" : " on"}" data-act="formation" ${dis()}>${S.formation === false ? "Free advance" : "Keep formation ✓"}</button><p class="muted">${S.formation === false ? "Fast soldiers run ahead and arrive alone." : "Your soldiers march at the slowest soldier's pace and stay in line until the first contact. Siege units and guards move on their own."}</p></div>
-    <div class="sec tight"><h3>Stance</h3><div class="seg3">${STANCES.map(([k, n]) => `<button class="btn small${S.stance === k ? " on" : ""}" data-act="stance" data-v="${k}" ${dis()}>${n}</button>`).join("")}</div><p class="muted">${esc(STANCES.find(x => x[0] === S.stance)[2])}.</p></div>`;
+  const hn = { hero: "Straight at their hero", castle: "Straight at their castle (the default)", near: "Whatever of theirs is closest", centre: "Hold the central hill for 2 minutes first" }[st.heading] || "";
+  return `<div class="sec tight"><h3>2 · On reaching a target, go for</h3><div class="seg3 two">${HEADINGS.map(([k, n]) => `<button class="btn small${st.heading === k ? " on" : ""}" data-act="heading" data-v="${k}" ${dis()}>${n}</button>`).join("")}</div><p class="muted">${esc(hn)}.${st.heading === "centre" ? " Your army skips its targets and holds the hill, fighting anything that comes near. After 2 minutes it marches on its targets. Heroes on the hill earn 25% more gold and XP." : ""}</p></div>
+    <div class="sec tight"><h3>3 · Stance</h3><div class="seg3">${STANCES.map(([k, n]) => `<button class="btn small${S.stance === k ? " on" : ""}" data-act="stance" data-v="${k}" ${dis()}>${n}</button>`).join("")}</div><p class="muted">${esc(STANCES.find(x => x[0] === S.stance)[2])}.</p></div>`;
 }
 function knownAlliances() {
   const live = isLive(), src = live ? carriedPairs(liveClock().planDay) : (S.pairs || []), me = live ? LIVE.uid : "you";
@@ -223,14 +241,24 @@ const blessLocked = () => { if (!isLive()) return S.blessDone != null && S.bless
 const BLESSINGS = { vamp: ["Blood Rite", "Your whole army heals for 15% of the damage it deals, for the entire battle."], ward: ["Ward of Arrows", "Missiles cannot hurt your army for the first 45 seconds of the battle."] };
 const planUlt = () => !!S.ultArm && !ultCooling() && ultLearned();
 const planBless = () => (blessLocked() ? null : S.bless || null);
+// the ultimate: plan it for tonight and say when to cast it (used on the Rituals tab and the seal screen)
+function ultPlanHTML() {
+  const u = (heroV3Now() && treeUlt()) || CLASSES[S.cls].ult, learned = ultLearned(), cd = ultCooling(), armed = planUlt();
+  const img = u && u.ic ? spellURL(u.ic, 64) : spellURL(S.cls + "_ult", 64);
+  return `<div class="ritcard${armed ? " on" : ""}${!learned || cd ? " off" : ""}">${artImg(img, "ritart")}<div class="ritx"><small>${ultBolt()}Ultimate</small><b>${esc(learned ? u.name : "Not learned yet")}</b>
+      <span class="muted">${!learned ? "Spend a skill point on an ultimate in the Hero screen first." : cd ? "Recharging: it was cast in the last battle and is ready again tomorrow." : "Once per battle, only on nights you plan it. It rests the next day."}</span></div></div>
+    ${learned && !cd ? `<button class="btn ${armed ? "wax" : "wood"}" data-act="ultarm" ${dis()}>${ultBolt()}${armed ? "Using it tonight ✓ (tap to cancel)" : "Use the ultimate tonight"}</button>${armed ? castWhenHTML(ultKey()) : ""}` : ""}`;
+}
+// the weekly ritual: one per war week, for a single battle
+function blessPlanHTML() {
+  const used = blessLocked();
+  return `<p class="muted">${used ? "You have used this week's ritual. The next one comes with a new war week." : "One ritual per war week, for a single battle. Pick one, or none to save it."}</p>
+    ${Object.entries(BLESSINGS).map(([k, [n, ds]]) => { const on = S.bless === k && !used;
+      return `<button class="ritcard btnlike${on ? " on" : ""}${used ? " off" : ""}" data-act="bless" data-v="${on ? "" : k}" ${dis(used)} aria-pressed="${on}">${artImg(ART.bless[k], "ritart")}<span class="ritx"><b>${esc(n)}${on ? " ✓" : ""}</b><span class="muted">${esc(ds)}</span></span></button>`; }).join("")}`;
+}
 function ritualsTab() {
-  const cd = ultCooling(), learned = ultLearned(), cl = { ult: (heroV3Now() && treeUlt()) || CLASSES[S.cls].ult }, used = blessLocked();
-  return `<div class="sec tight"><h3>${ultBolt()}Ultimate</h3><p class="muted">Your hero only uses its ultimate if you plan it here. Once per battle, then it needs one full day to recharge.</p>
-    ${!learned ? `<p class="need">Your hero hasn't learned the ultimate yet. Spend a skill point on it in the Hero sheet.</p>` : cd ? `<p class="need">Recharging. It was cast in the last battle and is ready again tomorrow.</p>` : ""}
-    <button class="btn ${S.ultArm && learned && !cd ? "wax" : "wood"}" data-act="ultarm" ${dis(!learned || cd)}>${ultBolt()}${S.ultArm && learned && !cd ? "Planned for tonight ✓ (tap to cancel)" : "Plan the ultimate for tonight"}</button></div>
-  <div class="sec tight"><h3>Weekly blessing</h3><p class="muted">One ritual per war, in effect for a single battle. ${used ? "You have already used yours this week." : "Choose one, or none to save it for later."}</p>
-    ${Object.entries(BLESSINGS).map(([k, [n, ds]]) => `<button class="btn ${S.bless === k && !used ? "wax" : ""}" style="display:block;width:100%;text-align:left;margin:4px 0" data-act="bless" data-v="${k}" ${dis(used)}><b>${n}</b><br><small>${esc(ds)}</small></button>`).join("")}
-    ${S.bless && !used ? `<button class="btn small" data-act="bless" data-v="">Save it for later</button>` : ""}</div>`;
+  return `<div class="sec tight"><h3>${ultBolt()}Ultimate</h3>${ultPlanHTML()}</div>
+  <div class="sec tight"><h3>Weekly ritual</h3>${blessPlanHTML()}</div>`;
 }
 // the Combat tab's groups: one row each (collapsed), tap one to open its three priority slots
 const gprioName = (opts, id) => (opts.find(o => o[0] === id) || [id, id])[1];
@@ -271,50 +299,66 @@ function planJSON() {
     allianceOffers: Object.fromEntries(Object.keys(S.offers).map(id => [(RIVALS.find(r => r.id === id) || {}).name, S.offers[id]])),
     allianceTerms: Object.fromEntries(RIVALS.map(r => [r.name, S.terms[r.id]])), soldierOrders: S.uorders }, null, 2);
 }
-function sealMerc() {
-  if (!mercOpen()) return "";
-  const b = bidSummary(), free = Object.keys(MERCS).filter(id => !mercWait(id)).length;
-  return `<div class="sec tight"><h3>Mercenary camp</h3><p class="${b ? "muted" : "need"}">${!free ? "Every group is recharging today." : b ? `Your sealed bids: <b>${esc(b)}</b>. The highest bid wins and pays its own bid.` : "No mercenary bid placed. Rival lords may hire them."}</p>
-    <button class="btn ${b ? "wood" : "wax"}" data-act="opencamp" ${free ? "" : "disabled"}>${b ? "Change mercenary bids" : "Place mercenary bid"}</button></div>`;
+function sealWarnings() { return ""; } // the checklist below carries every reminder now
+// the seal checklist: [state, text, where to fix it]; state is "ok", "need" (must fix to seal), "warn" (a reminder) or "info"
+function sealChecks() {
+  const L = [], ck = (st, t, go) => L.push([st, t, go]), day = isLive() ? liveClock().dayNo : DAY, ct = ctNow();
+  ck(placedAt("champ") ? "ok" : "need", placedAt("champ") ? "Hero is on the field" : "<b>Put your hero on the field</b>", "map");
+  const un = S.owned.filter(u => !placedAt(u.id) && !inGarrison(u.id)).length;
+  ck(un ? "warn" : "ok", un ? `<b>${un} soldier${un > 1 ? "s" : ""} not placed</b>, so ${un > 1 ? "they" : "it"} won't fight` : `All ${S.owned.length} soldier${S.owned.length === 1 ? "" : "s"} placed or in waves`, "deploy");
+  const wt = (S.walls || []).concat(S.traps).filter(x => !placedAt(x.id)).length;
+  if ((S.walls || []).length || S.traps.length) ck(wt ? "warn" : "ok", wt ? `<b>${wt} wall${wt > 1 ? "s or traps" : " or trap"} not set</b> on the field` : "Walls and traps are set", "map");
+  const fp = freePts(); ck(fp ? "warn" : "ok", fp ? `<b>${fp} skill point${fp > 1 ? "s" : ""} unspent</b>` : "All skill points spent", "hero");
+  if (pickV1Now()) ck(targetsReady() ? "ok" : "need", targetsReady() ? `Targets: ${S.lists.hostile.map(id => esc(tgtName(id))).join(" → ")}` : `<b>Pick ${TARGETS_NEED() - S.lists.hostile.length} more target${TARGETS_NEED() - S.lists.hostile.length > 1 ? "s" : ""}</b> (${TARGETS_NEED()} a day)`, "strategy");
+  if (contractsOn() && myOffers().length) { const c = contractParse(S.contract); ck(c ? "ok" : "warn", c ? `Contract: ${esc(c.c.name)}` : "<b>No contract taken</b>", "contracts"); }
+  if (day >= 2 && ct < 2) ck("warn", "Castle is still tier 1. A Fortress pays for itself in two days", "castle");
+  else if (day >= 4 && ct < 3) ck("warn", "Castle is a Fortress. A Citadel opens tier 3 soldiers and gear", "castle");
+  const inc = RIVALS.map(r => incomingOffer(r)).filter(Boolean), open = inc.filter(o => !o.reply).length;
+  if (inc.length) ck(open ? "warn" : "ok", open ? `<b>${open} alliance offer${open > 1 ? "s" : ""} to answer</b>` : "Alliance offers answered", "alliances");
+  if (!finalToday()) { const sent = Object.keys(S.offers || {}).length, carried = carriedPartners().length; ck(sent || carried ? "ok" : "info", carried ? `Allied with ${carriedPartners().map(id => esc((RIVALS.find(r => r.id === id) || {}).name || "")).join(", ")}` : sent ? `${sent} alliance offer${sent > 1 ? "s" : ""} sent` : "No alliance offered (optional)", "alliances"); }
+  carriedPartners().filter(id => !finalToday()).forEach(id => { const a = (S.pactAct || {})[id] || "keep", nm = esc((RIVALS.find(r => r.id === id) || {}).name || "an ally");
+    ck("ok", a === "betray" ? `Betraying ${nm} ${esc(String(S.pactWhen[id] || BETRAY_WHEN[0]).toLowerCase())}` : a === "break" ? `Breaking the pact with ${nm}` : `Keeping the pact with ${nm}`, "alliances"); });
+  if (mercOpen()) { const free = mercV2Now() ? mercToday().open.length : MERC_V1_IDS.filter(id => !mercWait(id)).length, b = bidSummary(); if (free) ck(b ? "ok" : "warn", b ? `Mercenary bid: ${esc(b)}` : "<b>No mercenary bid</b>. Rivals may hire them", "camp"); }
+  return L;
 }
-function sealPowers() { // ultimate and weekly ritual can be switched on right where you seal
-  const cl = { ult: (heroV3Now() && treeUlt()) || CLASSES[S.cls].ult }, learned = ultLearned(), cd = ultCooling(), armed = planUlt(), used = blessLocked();
-  const ult = !learned ? `<p class="muted">Learn the ultimate in the Hero sheet to use it.</p>` : cd ? `<p class="need">Recharging. It was cast in the last battle and is ready again tomorrow.</p>` : `<p class="muted">Cast once this battle. It then needs a full day to recharge.</p>`;
-  return `<div class="sec tight"><h3>${ultBolt()}${ultIconHTML(cl.ult)}Ultimate · ${esc(cl.ult.name)}</h3>${ult}
-      <button class="btn ${armed ? "wax" : "wood"}" data-act="ultarm" ${dis(!learned || cd)}>${ultBolt()}${armed ? "Using it this battle ✓ (tap to cancel)" : "Use ultimate this battle"}</button></div>
-    <div class="sec tight"><h3>Weekly ritual</h3><p class="muted">${used ? "Already used this week. Your next one is a new war." : "One ritual per week, for a single battle. Once spent it is gone until next week."}</p>
-      <div class="row">${Object.entries(BLESSINGS).map(([k, [n]]) => `<button class="btn ${S.bless === k && !used ? "wax" : "wood"}" data-act="bless" data-v="${S.bless === k ? "" : k}" ${dis(used)}>${S.bless === k && !used ? `${n} ✓` : n}</button>`).join("")}</div>
-      ${!used && S.bless ? `<p class="muted">${esc(BLESSINGS[S.bless][1])} Tap again to cancel.</p>` : ""}</div>` + sealMerc();
-}
-function sealWarnings() { // loud reminders at the top of the seal screen: unspent skill points and soldiers left off the field
-  const w = [], fp = freePts(), un = S.owned.filter(u => !placedAt(u.id) && !inGarrison(u.id)).length, oth = (S.walls || []).concat(S.traps).filter(x => !placedAt(x.id)).length;
-  if (fp) w.push(`<b>${fp} unspent skill point${fp > 1 ? "s" : ""}</b>. Spend ${fp > 1 ? "them" : "it"} on your hero's abilities.`);
-  if (un) w.push(`<b>${un} soldier${un > 1 ? "s" : ""} not placed</b> on the field, so ${un > 1 ? "they" : "it"} won't fight.`);
-  if (oth) w.push(`<b>${oth} wall${oth > 1 ? "s or traps" : " or trap"} not set</b> on the field.`);
-  return w.length ? `<div class="warnbox"><b class="wt">⚠ Before you seal</b><ul>${w.map(x => `<li>${x}</li>`).join("")}</ul></div>` : "";
-}
+const GO_LABEL = { map: "Map", deploy: "Deploy", hero: "Hero", strategy: "Targets", contracts: "Contracts", castle: "Castle", alliances: "Allies", camp: "Camp" };
 const sealInitials = () => { const w = String(typeof MY_NAME === "string" ? MY_NAME : "").replace(/^(ser|lord|lady|baron|dame|count|sir)\s+/i, "").split(/\s+/).filter(Boolean); return (w.length > 1 ? w[0][0] + w[w.length - 1][0] : (w[0] || "Y")[0]).toUpperCase(); }; // the wax seal carries your initials
+// testing mode: the host can fight today's battle now, which moves the whole game on a day
+const testSkipOn = () => typeof TEST_MODE !== "undefined" && TEST_MODE && isLive() && typeof DS === "object" && typeof DS.isHost === "function" && DS.isHost() && !(LIVE && LIVE.readOnly);
+function testSkipHTML() {
+  if (!testSkipOn()) return "";
+  const armed = LIVE.testArm === liveClock().planDay, busy = DS.busy === "skip";
+  return `<div class="sec tight testskip"><h3>Testing mode</h3><p class="muted">Fight today's battle now for every lord, then move the game on to the next day. Lords who haven't sealed fight with their saved or stand-in orders.</p>
+    <button class="btn ${armed ? "wax" : "wood"}" data-act="testskip" ${busy ? "disabled" : ""}>${busy ? "Fighting the battle…" : armed ? "Tap again to begin the battle now" : "⏩ Begin battle now"}</button></div>`;
+}
 function sealSheet() {
   if (S.locked) return head(null, "Orders Sealed", "The battle plays out at dusk") + `<div class="body">
-    ${sealWarnings()}<div class="waxseal">${esc(sealInitials())}</div><p class="muted" style="text-align:center">These orders will be fought at the lock. You can draft new orders until then: the sealed ones stay in effect until you seal the new ones.</p>
+    ${waxSealHTML()}<p class="muted" style="text-align:center">These orders will be fought at the lock. You can draft new orders until then: the sealed ones stay in effect until you seal the new ones.</p>
     <p class="muted" style="text-align:center">${ultBolt()}Ultimate: ${planUlt() ? "<b>will be used</b>" : "not planned"} · Ritual: ${planBless() ? `<b>${esc(BLESSINGS[S.bless][0])}</b>` : "none"}${mercOpen() ? ` · Mercenaries: ${bidSummary() ? `<b>${esc(bidSummary())}</b>` : "no bids"}` : ""}</p>
-    <div class="row" style="justify-content:center">${isLive() ? "" : `<button class="btn wax" data-act="battle">Watch tonight's battle</button>`}<button class="btn" data-act="unseal">Draft new orders</button>${isLive() ? "" : `<button class="btn wood" data-act="copy">Copy plan</button>`}</div>
-    <p class="muted" style="text-align:center">${isLive() ? `The real battle is fought at ${lockLabel(LIVE.config)}. Watch it afterwards from the Battle report.` : "In this prototype the battle runs now on your phone against the example players."}</p>
-    ${isLive() ? "" : `<div class="sec"><h3>Your sealed plan</h3><p class="muted">This is what the battle will read.</p><div class="plan" id="plan">${esc(planJSON())}</div></div>`}</div>`;
-  const checks = [
-    [!!placedAt("champ"), "Hero is on the field"],
-    [S.owned.every(u => placedAt(u.id) || inGarrison(u.id)), `Soldiers placed or in waves (${S.owned.filter(u => placedAt(u.id) || inGarrison(u.id)).length} of ${S.owned.length})`],
-    [freePts() === 0, freePts() ? `${freePts()} skill point${freePts() > 1 ? "s" : ""} unspent` : "All skill points spent"],
-    [S.traps.every(t => placedAt(t.id)), "Bought traps are set"],
-    pickV1Now() ? [S.lists.hostile.length > 0, S.lists.hostile.length ? `Targets: ${S.lists.hostile.map(id => esc(PICK_ROLES[id] || (RIVALS.find(r => r.id === id) || {}).name || "")).join(" → ")}` : "<b>Pick at least one lord to attack</b> (Strategy)"] :
-    [S.strategy.mode !== "list" || S.lists.hostile.length > 0, S.strategy.mode !== "list" ? `Attack: ${esc(TMODES.find(x => x[0] === S.strategy.mode)[1].toLowerCase())}` : S.lists.hostile.length ? `Main attack: ${esc((RIVALS.find(r => r.id === S.lists.hostile[0]) || {}).name || "")}` : "Nobody marked hostile, so your army picks the nearest castle"],
-    [opUsed() === OP_MAX, opUsed() < OP_MAX ? `${OP_MAX - opUsed()} order seal${OP_MAX - opUsed() > 1 ? "s" : ""} unused` : "All order seals used"],
-  ];
+    <div class="row" style="justify-content:center">${isLive() ? `<button class="btn wood" data-act="battle" ${LIVE.readOnly ? "disabled" : ""}>⚔ Rehearse</button>` : `<button class="btn wax" data-act="battle">Watch tonight's battle</button>`}<button class="btn" data-act="unseal">Draft new orders</button></div>
+    ${testSkipHTML()}
+    <p class="muted" style="text-align:center">${isLive() ? `The real battle is fought at ${lockLabel(LIVE.config)}. Watch it afterwards from the Battle report.` : "In this prototype the battle runs now on your phone against the example players."}</p></div>`;
+  const checks = sealChecks(), canSeal = !checks.some(c => c[0] === "need"), left = checks.filter(c => c[0] === "warn").length;
   return head(null, "Seal Your Orders", `Battle in ${countdown()}`) + `<div class="body">
-    ${isLive() && S.sealedSnap ? `<div class="warnbox"><b class="wt">Your sealed orders are still in effect</b><p class="muted">You're drafting changes. They won't be fought until you press the seal again. If you don't, the orders you already sealed are used.</p></div>` : ""}${sealWarnings()}<ul class="checks">${checks.map(([ok, t]) => `<li class="${ok ? "ok" : ""}">${t}</li>`).join("")}</ul>
-    ${sealPowers()}
-    <p class="muted">${checks[0][0] ? "Unticked items are only reminders." : "Your hero must be on the field before you can seal."}${pickV1Now() && !S.lists.hostile.length ? " Pick at least one target before you seal." : ""}</p>
-    <button class="btn wax" data-act="seal" ${checks[0][0] && (!pickV1Now() || S.lists.hostile.length) ? "" : "disabled"}>Press the seal</button>
-    ${isLive() ? "" : `<div class="row"><button class="btn wood" data-act="battle">Run a test battle</button><button class="btn" data-act="lab">Balance lab</button></div>`}
-    ${isLive() ? `<p class="muted">Orders save to the shared game as you go. If you never seal, your latest draft is used. Once you have sealed, those orders stay in effect until you seal new ones.</p>` : `<button class="btn" data-act="reset">Reset to the example setup</button>`}</div>`;
+    ${isLive() && S.sealedSnap ? `<div class="warnbox"><b class="wt">Your sealed orders are still in effect</b><p class="muted">You're drafting changes. They won't be fought until you press the seal again. If you don't, the orders you already sealed are used.</p></div>` : ""}
+    <div class="sec tight"><h3>Checklist ${left ? `<span class="cnt">${left} to check</span>` : `<span class="cnt ok">ready</span>`}</h3>
+      <ul class="checks2">${checks.map(([st, t, go]) => `<li class="c-${st}"><i>${st === "ok" ? "✓" : st === "need" ? "!" : st === "warn" ? "!" : "·"}</i><span>${t}</span>${st !== "ok" && go !== "map" ? `<button class="btn small" data-act="sealgo" data-v="${go}">${GO_LABEL[go]}</button>` : ""}</li>`).join("")}</ul></div>
+    <div class="sec tight"><h3>Who you attack</h3>${targetSlotsHTML()}<h4 class="minih">The leaderboard</h4>${targetBoardHTML(true)}<div class="row"><button class="btn small" data-act="sealgo" data-v="strategy">Roles and more orders</button></div></div>
+    <div class="sec tight"><h3>${ultBolt()}Ultimate</h3>${ultPlanHTML()}</div>
+    <div class="sec tight"><h3>Weekly ritual</h3>${blessPlanHTML()}</div>
+    <div class="sec tight"><h3>Rehearse</h3><p class="muted">${isLive() ? "Fight your current orders against your rivals' last known orders and see your battle report. Nothing counts." : "Run a practice battle with these orders. Nothing counts."}</p><button class="btn wood" data-act="battle" ${isLive() && LIVE.readOnly ? "disabled" : ""}>⚔ Rehearse the battle</button></div>
+    ${abar(`<button class="btn wax" data-act="seal" ${canSeal ? "" : "disabled"}>${canSeal ? "Press the seal" : "Fix the marked items to seal"}</button>`)}
+    <p class="muted">${isLive() ? "Orders save to the shared game as you go. If you never seal, your latest draft is used. Once you have sealed, those orders stay in effect until you seal new ones." : ""}</p></div>`;
+}
+// the wax seal: a blob of wax in the lord's colour, stamped with their initials
+function waxSealHTML() {
+  const c = MY_COLOR || "#8a1f17", L = esc(sealInitials()), pts = [];
+  for (let i = 0; i < 28; i++) { const a = i / 28 * Math.PI * 2, r = 46 + (i % 2 ? 3.5 : -1) + Math.sin(i * 2.3) * 2; pts.push(`${(60 + Math.cos(a) * r).toFixed(1)},${(60 + Math.sin(a) * r).toFixed(1)}`); }
+  return `<div class="waxseal2" aria-label="Sealed with your initials"><svg viewBox="0 0 120 120"><defs><radialGradient id="wxg" cx="38%" cy="32%" r="75%"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".35" stop-color="${c}" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".5"/></radialGradient></defs>
+    <path d="M70 104 q4 12 -2 14 q-6 1 -5 -12z" fill="${c}"/><path d="M28 88 q-10 8 -6 13 q5 3 10 -9z" fill="${c}"/>
+    <polygon points="${pts.join(" ")}" fill="${c}"/><polygon points="${pts.join(" ")}" fill="url(#wxg)"/>
+    <circle cx="60" cy="60" r="33" fill="none" stroke="#000" stroke-opacity=".28" stroke-width="3"/><circle cx="60" cy="60" r="33" fill="none" stroke="#fff" stroke-opacity=".25" stroke-width="1" transform="translate(-1,-1)"/>
+    <circle cx="60" cy="60" r="28" fill="#000" fill-opacity=".12"/>
+    <text x="60" y="${L.length > 1 ? 71 : 73}" text-anchor="middle" font-family="IM Fell English SC, serif" font-size="${L.length > 1 ? 30 : 38}" fill="#000" fill-opacity=".35" transform="translate(1,1.5)">${L}</text>
+    <text x="60" y="${L.length > 1 ? 71 : 73}" text-anchor="middle" font-family="IM Fell English SC, serif" font-size="${L.length > 1 ? 30 : 38}" fill="#fff" fill-opacity=".55">${L}</text></svg></div>`;
 }

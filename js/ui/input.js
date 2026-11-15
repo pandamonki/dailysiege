@@ -22,7 +22,10 @@ function tapAt(clientX, clientY) {
     else { if (wref) { toast("A wall stands there."); return; } if (here && here !== sel) { toast("Someone already holds that ground."); return; } }
     if (inGarrison(sel)) { if (fieldCount() >= S.slots) { toast("Your field supply is full."); return; } unGarrison(sel); }
     const old = placedAt(sel); if (old) delete S.place[old];
-    S.place[key] = sel; sel = null; render(); return;
+    S.place[key] = sel; sel = null;
+    while (PLACE_Q.length && !sel) { const nx = PLACE_Q.shift(); if (!placedAt(nx) && (findWall(nx) || findTrap(nx) || findUnit(nx))) sel = nx; }
+    if (sel) toast(`Next: tap a tile for ${pieceName(sel)}. ${PLACE_Q.length ? `${PLACE_Q.length + 1} left.` : "Last one."}`);
+    render(); return;
   }
   if (here && S.phase === "orders") { if (here === "champ" || findUnit(here)) open("uorder", here); return; }
   if (S.phase === "orders") return;

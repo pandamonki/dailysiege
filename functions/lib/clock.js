@@ -36,7 +36,8 @@ function clockFor(cfg, prev, { now = Date.now(), before = null } = {}) {
   const { addDays, lockInstant } = { addDays: g().get("addDays"), lockInstant: g().get("lockInstant") };
   const keep = sameWar && prev.planDay && prev.planDay >= start;
   const planDay = keep ? prev.planDay : start, nextPlanDay = addDays(planDay, 1);
-  return { planDay, nextPlanDay, nextLockAt: lockInstant(planDay, cfg.tz, cfg.lockHour), lockAfter: lockInstant(nextPlanDay, cfg.tz, cfg.lockHour), clockWar: war, ...(pinned ? { startDate: start } : {}) };
+  const skew = sameWar ? cfg.testSkew || 0 : 0, sk = skew * 864e5; // testing mode: the war runs this many days ahead of the calendar, so each lock comes that much sooner; a new war starts level
+  return { planDay, nextPlanDay, nextLockAt: lockInstant(planDay, cfg.tz, cfg.lockHour) - sk, lockAfter: lockInstant(nextPlanDay, cfg.tz, cfg.lockHour) - sk, clockWar: war, ...(pinned ? { startDate: start } : {}), ...(cfg.testSkew ? { testSkew: skew } : {}) };
 }
 
 module.exports = { clockFor, startDate };

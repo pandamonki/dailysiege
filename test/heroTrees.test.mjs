@@ -90,3 +90,15 @@ test("the old abilities and the new trees never mix: a battle without heroV3 ign
   const c = sim.run(`(() => { const x = goldenCase(14); x.plans.forEach(p => { p.tree = autoTree(15, 5, p.cls); }); const r = runBattle(x.plans, x.seed, Object.assign({}, x.opts, { fast: true })); const y = goldenCase(14); const q = runBattle(y.plans, y.seed, Object.assign({}, y.opts, { fast: true })); return [battleHash(r), battleHash(q)]; })()`);
   assert.equal(c[0], c[1]);
 });
+
+// "cast when": a lord can add a condition to any active skill (keyed "tree.node"); with none set, battles are unchanged
+sim.run(`globalThis.__castWhen = (i, trig) => { const c = goldenCase(i);
+  c.plans.forEach((p, k) => { p.level = 15; p.cls = "mage"; p.ranks = { a1: 0, a2: 0, a3: 0, ult: 0 }; const t = emptyTree(); t.b1 = TREE_MAX.slice(); p.tree = t; p.triggers = trig ? { "0.1": trig, "0.2": trig } : {}; });
+  const res = runBattle(c.plans, c.seed, Object.assign({}, c.opts, { fast: true, heroV3: true }));
+  let n = 0; res.tel.ents.filter(e => e.kind === "champ").forEach(e => Object.entries(e.ab || {}).forEach(([k, v]) => { if (k !== "Auto attack") n += v.casts; }));
+  return { hash: battleHash(res), casts: n }; };`);
+test("cast when: no condition fights the same battle; a condition that rarely holds casts less", () => {
+  const plain = sim.run("__castWhen(3, null)"), auto = sim.run('__castWhen(3, "")'), low = sim.run('__castWhen(3, "When my HP is under 30%")');
+  assert.equal(auto.hash, plain.hash, "an empty (automatic) condition changes nothing");
+  assert.ok(low.casts < plain.casts, `waiting for low health should cast less (${low.casts} vs ${plain.casts})`);
+});

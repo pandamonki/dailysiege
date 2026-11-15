@@ -3,6 +3,22 @@
 // Each item is [icon, headline, one short sentence]. Players who have not seen the newest id get the pop-up the next time they plan;
 // the id is remembered on their device, so changing the id is all it takes to show it again. Keep about 8 to 14 items.
 const RELEASES = [
+  { id: "1.4", title: "What's new in v1.4", sub: "Fewer, better soldiers, bought waves, and clearer planning screens", items: [
+    ["💰", "New prices", "Footmen cost 100, Knights 240 and siege units 300. Training is cheaper (30% then 40%), and the Fortress costs 100, the Citadel 200."],
+    ["🔓", "Four on the map, waves you buy", "Supply beds are gone. Everyone fields 4 soldiers and unlocks reinforcement waves for 60, 100 and 150 gold."],
+    ["⭐", "A mercenary headliner every day", "From day 4 a stronger group tops the camp each day. Every fighter now shows its stats."],
+    ["🏰", "Several wars at once", "Join more than one war and switch between them from Your wars in the main menu."],
+    ["🎯", "Three targets a day", "Fill all three target slots before you seal, from the leaderboard or by role. The same list is on the seal screen."],
+    ["✅", "A proper seal checklist", "Soldiers, skill points, targets, contract, castle, alliances and mercenaries, each with a button to fix it. Rehearse from there too."],
+    ["⏱", "Tell skills when to cast", "Every active skill and the ultimate can wait for a condition you pick. Clocks show each recharge."],
+    ["🧱", "Walls in bulk", "Build several walls at once and place them one after another. Traps show their damage."],
+    ["ℹ", "Strengths and weaknesses", "Tap the i beside any attack or armour type to see what it beats and what beats it."],
+    ["📈", "The board on the move", "After the battle, today's points join the weekly totals and the leaderboard reorders before your eyes."],
+    ["🧩", "Every hero's kit", "The battle report shows each lord's skills and items. Tap one to read it."],
+    ["❗", "Today's twist", "Tap the ! beside the camp button on the map."],
+    ["🎥", "Replay camera", "Zoom further in, and the home button follows your hero again."],
+    ["🖼", "A fresh coat of paint", "A wax seal in your colour, and painted icons for contracts, rituals, traps, waves, the armoury and the treasury."],
+  ] },
   { id: "1.3", title: "What's new in v1.3", sub: "Daily twists, contracts, rehearsals and your own battle report (from the battle of 16 Nov)", items: [
     ["📜", "Orders › Contracts", "Your contracts pop up when you start planning. Close them and they wait under Orders › Contracts, with the twist and the rehearsal."],
     ["🌕", "A twist every day", "From day 2 each day brings one rule change, like Blood Moon, Siege Weather or Market Day. You see tomorrow's a day ahead."],

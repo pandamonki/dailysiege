@@ -14,28 +14,49 @@ const ultLearned = () => (heroV3Now() ? treeHasUlt(S.tree) : (S.ranks.ult || 0) 
 const opUsed = () => S.rules.length;
 const inZone = (r, c) => zoneSet.has(`${r},${c}`);
 const placedAt = ref => Object.keys(S.place).find(k => S.place[k] === ref);
-const unitValue = u => { const c = UNITS[u.type].cost; let g = c; for (let l = 1; l < u.lvl; l++) g += Math.round(c * .5 * l); return g; };
+const unitValue = u => { const c = UNITS[u.type].cost; let g = c; for (let l = 1; l < u.lvl; l++) g += trainCost(u.type, l); return g; };
 const unitSellPrice = u => Math.floor(unitValue(u) * .25);
-const upgradeCost = u => Math.round(UNITS[u.type].cost * 0.5 * u.lvl);
+const upgradeCost = u => trainCost(u.type, u.lvl);
 const unitStats = u => { const b = UNITS[u.type], m = 1 + UNIT_LVL_GAIN * (u.lvl - 1), g = (S && S.gear) || {}; return { hp: Math.round(b.hp * m * (1 + .15 * (g.armour || 0))), atk: Math.round(b.atk * m * (1 + .15 * (g.weapon || 0))) }; };
 // the garrison: S.garrison = three waves { when, at, slots: [unit id | null, x3] }. A soldier is on the field (placed on the map) or in a wave, never both.
 const garrisonIds = () => (S.garrison || []).flatMap(w => w.slots).filter(Boolean);
 const inGarrison = id => garrisonIds().includes(id);
 const fieldCount = () => S.owned.filter(u => !inGarrison(u.id)).length; // soldiers that go onto the map: limited by supply (beds)
 const garrisonCount = () => garrisonIds().length;
-const supplyFull = () => fieldCount() >= S.slots && garrisonCount() >= GARRISON_SOLDIERS;
+const supplyV2Now = () => (typeof isLive === "function" && isLive() ? supplyV2For(liveClock().planDay) : true); // practice always uses bought waves
+const wavesOpen = () => (supplyV2Now() ? Math.max(0, Math.min(WAVE_COUNT, S.wavesOpen || 0)) : WAVE_COUNT);
+const waveOpen = i => i < wavesOpen();
+const waveUnlockCost = () => WAVE_UNLOCK_COSTS[wavesOpen()]; // the next wave's price (undefined once all are open)
+const garrisonCap = () => WAVE_SLOTS * wavesOpen();
+const supplyFull = () => fieldCount() >= S.slots && garrisonCount() >= garrisonCap();
 function ensureGarrison() {
   const cw = cleanWaves(S.garrison), seen = new Set();
   S.garrison = cw.map((w, i) => { const old = (S.garrison && S.garrison[i] && S.garrison[i].slots) || [];
     return { when: w.when, at: w.at, order: w.order, slots: [...Array(WAVE_SLOTS)].map((_, j) => { const id = old[j], u = id && S.owned.find(x => x.id === id); if (!u || seen.has(id)) return null; seen.add(id); return id; }) }; });
+  if (supplyV2Now()) supplyV2Fix();
+}
+// the first time the new supply rules apply to a save: refund beds, fix the field at FIELD_MAX, and keep any waves already holding soldiers open for free
+function supplyV2Fix() {
+  if (S.sup2) { S.slots = FIELD_MAX; S.garrison.forEach((w, i) => { if (!waveOpen(i)) w.slots = w.slots.map(() => null); }); return; }
+  let refund = 0; for (let n = SLOT_START; n < (S.slots || SLOT_START); n++) refund += SLOT_COSTS[n] || 0;
+  S.gold = (S.gold || 0) + refund; S.slots = FIELD_MAX;
+  S.wavesOpen = 0; S.garrison.forEach((w, i) => { if (w.slots.some(Boolean)) S.wavesOpen = i + 1; });
+  const extra = () => S.owned.filter(u => !inGarrison(u.id)).sort((a, b) => (placedAt(a.id) ? 1 : 0) - (placedAt(b.id) ? 1 : 0)); // reserve before placed
+  while (fieldCount() > FIELD_MAX) { // too many soldiers for the field: into an open wave, else open the next wave free, else refund the soldier
+    if (garrisonCount() < garrisonCap()) toGarrison(extra()[0].id);
+    else if (S.wavesOpen < WAVE_COUNT) S.wavesOpen++;
+    else { const u = extra()[0], k = placedAt(u.id); if (k) delete S.place[k]; S.gold += unitValue(u); refund += unitValue(u); S.owned = S.owned.filter(x => x !== u); }
+  }
+  S.sup2 = 1;
+  if (refund && typeof toast === "function") toast(`Supply beds are gone: ${refund} gold refunded. You can field ${FIELD_MAX} soldiers and buy reinforcement waves.`);
 }
 function unGarrison(id) { (S.garrison || []).forEach(w => w.slots.forEach((x, j) => { if (x === id) w.slots[j] = null; })); }
 function toGarrison(id) { // first free slot, earliest wave first; the unit leaves the map
-  for (const w of S.garrison) { const j = w.slots.indexOf(null); if (j > -1) { w.slots[j] = id; const k = placedAt(id); if (k) delete S.place[k]; return true; } } return false;
+  for (const w of S.garrison.slice(0, wavesOpen())) { const j = w.slots.indexOf(null); if (j > -1) { w.slots[j] = id; const k = placedAt(id); if (k) delete S.place[k]; return true; } } return false;
 }
 // put a soldier into a wave (slot optional: the first free one); false with a reason if it can't go
 function assignWave(id, w, slot) {
-  const u = findUnit(id), wv = S.garrison[w]; if (!u || !wv) return "No such soldier.";
+  const u = findUnit(id), wv = S.garrison[w]; if (!u || !wv) return "No such soldier."; if (!waveOpen(w)) return `Wave ${w + 1} is locked. Unlock it first.`;
   const j = slot != null ? slot : wv.slots.indexOf(null); if (j < 0 || j >= WAVE_SLOTS) return `Wave ${w + 1} is full.`;
   const old = wv.slots[j]; unGarrison(id); const k = placedAt(id); if (k) delete S.place[k];
   wv.slots[j] = id; if (old && old !== id) { /* the soldier it replaces goes back to reserve */ }
@@ -59,7 +80,7 @@ function reserveUnit(id) {
   if (!findUnit(id)) return "No such soldier."; if (inGarrison(id) && fieldCount() >= S.slots) return "Your field supply is full.";
   unGarrison(id); const k = placedAt(id); if (k) delete S.place[k]; return null;
 }
-const garrisonPlan = () => (S.garrison || []).map(w => ({ when: w.when, at: w.at, order: w.order, units: w.slots.map(id => id && S.owned.find(u => u.id === id)).filter(Boolean).map(u => ({ type: u.type, lvl: u.lvl, id: u.id, hp: u.hp ?? 1 })) }));
+const garrisonPlan = () => (S.garrison || []).map((w, i) => !waveOpen(i) ? { when: w.when, at: w.at, order: w.order, slots: [] } : w).map(w => ({ when: w.when, at: w.at, order: w.order, units: w.slots.map(id => id && S.owned.find(u => u.id === id)).filter(Boolean).map(u => ({ type: u.type, lvl: u.lvl, id: u.id, hp: u.hp ?? 1 })) }));
 const pieces = () => ["champ", ...S.owned.filter(u => !inGarrison(u.id)).map(u => u.id), ...(S.walls || []).map(w => w.id), ...S.traps.map(t => t.id)];
 const unplaced = () => pieces().filter(p => !placedAt(p));
 const findUnit = id => S.owned.find(u => u.id === id);

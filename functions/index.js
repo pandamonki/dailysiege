@@ -13,7 +13,7 @@ const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, Timestamp, FieldValue } = require("firebase-admin/firestore");
 const { clockFor } = require("./lib/clock");
 const { getMessaging } = require("firebase-admin/messaging");
-const { resolveDue, resolveAllDue, explainNotDue, fightMissing, reassignSeat, remindAll } = require("./lib/resolve");
+const { resolveDue, resolveAllDue, explainNotDue, fightMissing, reassignSeat, remindAll, testMode } = require("./lib/resolve");
 const { setBots } = require("./lib/bots");
 const { REGION, TRIGGER_REGION } = require("./region");
 
@@ -22,7 +22,7 @@ initializeApp();
 setGlobalOptions({ region: REGION, maxInstances: 2, memory: "512MiB", timeoutSeconds: 120 });
 
 // (remindedFor, set when the day's reminder goes out, is also server-owned but is not part of the clock)
-const CLOCK_KEYS = ["planDay", "nextPlanDay", "nextLockAt", "lockAfter", "clockWar", "startDate"];
+const CLOCK_KEYS = ["planDay", "nextPlanDay", "nextLockAt", "lockAfter", "clockWar", "startDate", "testSkew"];
 
 // Keeps a game's clock fields right whenever its settings change (war begins, battle time moved,
 // new war started). Players cannot write these fields; the security rules use them to freeze orders.
@@ -41,7 +41,7 @@ exports.keepGameClock = onDocumentWritten({ document: "games/{gameId}", region: 
 });
 
 // One push notification to one device. The message is data only; the game's service worker turns it into a notification.
-const send = (token, msg) => getMessaging().send({ token, data: { title: msg.title, body: msg.body, tag: msg.tag, link: msg.link }, webpush: { headers: { Urgency: "high", TTL: "43200" } } });
+const send = (token, msg) => getMessaging().send({ token, data: { title: msg.title, body: msg.body, tag: msg.war ? msg.tag + "-" + msg.war : msg.tag, link: msg.link }, webpush: { headers: { Urgency: "high", TTL: "43200" } } });
 
 // The one scheduled job: a battle is fought within five minutes of its lock time, and an hour before a lock
 // the lords who have not sealed get a reminder.
@@ -67,6 +67,15 @@ exports.resolveNow = onCall(async request => {
     if (!days.length) { const m = await fightMissing(getFirestore(), gameId); days = m.days; note = days.length ? "" : (m.why + " " + await explainNotDue(getFirestore(), gameId)).trim(); }
     return { days, note }; }
   catch (e) { console.error("resolveNow", gameId, e); throw new HttpsError("internal", "The battle could not be fought: " + ((e && e.message) || "error")); }
+});
+
+// Testing mode only (TEST_MODE in js/config/balance.js): the host's "Begin battle now". Fights the day being planned at once and
+// moves the game's clock a day ahead; the normal schedule then carries on from the new day.
+exports.testSkipDay = onCall(async request => {
+  const gameId = await hostOnly(request);
+  if (!testMode()) throw new HttpsError("failed-precondition", "Testing mode is off.");
+  try { const days = await resolveDue(getFirestore(), gameId, { send, force: true }); return { days }; }
+  catch (e) { console.error("testSkipDay", gameId, e); throw new HttpsError("internal", "The battle could not be fought: " + ((e && e.message) || "error")); }
 });
 
 exports.reassignSeat = onCall(async request => {

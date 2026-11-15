@@ -20,21 +20,20 @@ const cxOpen = () => { try { return !!(S && !S.locked && !(isLive() && LIVE.read
 // the contract board pops up once at the start of each planning phase, until a contract is taken
 const cxDue = () => cxOpen() && S.cxSeen !== planDayKey();
 
-// Orders > Contracts: the offers for the next battle, the twist, and rehearsal
+// Orders > Contracts: the offers for the next battle and the twist, sized to fit one screen (rehearsal is on the seal screen)
+const twistArt = id => ART.twist[id && TWISTS[id] ? id : "calm"];
+function twistStripHTML(compact) {
+  const tw = myTwist(), ti = twistInfo(tw), nx = tomorrowTwist();
+  return `<div class="twstrip">${artImg(twistArt(tw), "twart")}<div><small>Today's twist</small><b>${esc(ti.name)}</b><span>${esc(ti.note)}</span>${!compact && nx !== undefined ? `<em>Tomorrow: ${esc(twistInfo(nx).name)}. ${esc(twistInfo(nx).note)}</em>` : !compact ? `<em>The last day of the war.</em>` : ""}</div></div>`;
+}
 function contractsTab() {
-  const tw = myTwist(), ti = twistInfo(tw), nx = tomorrowTwist(), offers = myOffers(), lk = S.locked || (isLive() && LIVE.readOnly);
-  const dayNo = isLive() ? liveClock().dayNo : DAY, on = contractsOn();
-  const twist = `<div class="sec twistcard"><span class="tw-ic">${ti.icon}</span><div><h3>Today's twist: ${esc(ti.name)}</h3><p>${esc(ti.note)}</p>${nx !== undefined ? `<p class="muted">Tomorrow: ${twistInfo(nx).icon} <b>${esc(twistInfo(nx).name)}</b>. ${esc(twistInfo(nx).note)}</p>` : `<p class="muted">The last day of the war.</p>`}</div></div>`;
+  const tw = myTwist(), offers = myOffers(), lk = S.locked || (isLive() && LIVE.readOnly), on = contractsOn();
   const cards = !on ? `<p class="muted">Contracts begin with the battle of ${esc(CONTRACTS_FROM)}.</p>` : !offers.length ? `<p class="muted">No contracts for you today.</p>` : offers.map(key => {
     const k = contractParse(key), pay = contractPay(key, tw), took = S.contract === key;
-    return `<div class="cxcard${took ? " on" : ""} t${k.c.tier}"><span class="cx-ic">${k.c.icon}</span><div class="cx-tx"><small>${TIER_NAME[k.c.tier]}</small><b>${esc(k.c.name)}</b><span>${esc(contractText(key, cxName))}</span><em>+${pay.pts} points · +${pay.gold} gold</em></div>
-      <button class="btn small ${took ? "wood" : "wax"}" data-act="cxpick" data-v="${esc(key)}" ${lk ? "disabled" : ""}>${took ? "Taken ✓" : "Take"}</button></div>`; }).join("");
-  const rival = dayNo === 1 ? "On day 1 nobody has fought yet, so your rivals appear with their heroes only." : "Your rivals fight with the orders they used yesterday, so treat it as a guide, not a promise.";
-  return `<div class="sec"><h3>Contracts for the next battle</h3><p class="muted">Take one. Complete it in the battle for bonus points and gold. You can change it until you seal.</p>${cards}
-      ${S.contract && !lk ? `<div class="row"><button class="btn small" data-act="cxpick" data-v="">Drop my contract</button></div>` : ""}</div>
-    ${twist}
-    ${isLive() ? `<div class="sec"><h3>Rehearse the battle</h3><p class="muted">Fight your current orders right now and see your personal battle report. ${rival} Nothing in a rehearsal counts, and you can rehearse as often as you like.</p>
-      <div class="row"><button class="btn wax" data-act="battle" ${LIVE.readOnly ? "disabled" : ""}>⚔ Rehearse now</button></div></div>` : ""}`;
+    return `<button class="cxcard${took ? " on" : ""} t${k.c.tier}" data-act="cxpick" data-v="${took ? "" : esc(key)}" ${lk ? "disabled" : ""} aria-pressed="${took}">${artImg(ART.cx[k.id], "cxart")}<span class="cx-tx"><span class="cxh"><small>${TIER_NAME[k.c.tier]}</small><b>${esc(k.c.name)}</b></span><span>${esc(contractText(key, cxName))}</span></span>
+      <span class="cxpay"><b>+${pay.pts}</b><small>pts</small><b>+${pay.gold}</b><small>gold</small></span><span class="cxtick">${took ? "✓" : ""}</span></button>`; }).join("");
+  return `<div class="sec tight"><h3>Contracts for the next battle ${S.contract ? `<span class="cnt ok">taken</span>` : `<span class="cnt">pick one</span>`}</h3><p class="muted">Tap one to take it, tap again to drop it. Complete it in the battle for the bonus. You can change it until you seal.</p>${cards}</div>
+    ${twistStripHTML()}`;
 }
 
 // ----- the personal battle report: what my decisions did -----

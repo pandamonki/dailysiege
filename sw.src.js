@@ -40,5 +40,5 @@ self.addEventListener("push", e => {
 self.addEventListener("notificationclick", e => {
   e.notification.close();
   const link = (e.notification.data && e.notification.data.link) || "/";
-  e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(list => { const open = list.find(c => "focus" in c); return open ? open.focus() : self.clients.openWindow(link); }));
+  e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(list => { const open = list.find(c => "focus" in c); if (open) open.postMessage({ type: "open-link", link }); return open ? open.focus() : self.clients.openWindow(link); }));
 });

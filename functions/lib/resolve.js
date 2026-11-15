@@ -36,7 +36,8 @@ async function loadWorld(gameRef, cfg, day) {
  * so a battle is fought and saved exactly once.
  * @returns {Promise<{ day: string, fought: boolean, lords: number }[]>} the days moved past
  */
-async function resolveDue(db, gameId, { now = Date.now(), maxDays = 8, send = null } = {}) {
+// force (testing mode only): fight the day being planned now, whatever the time, and move the game's clock a day ahead (testSkew)
+async function resolveDue(db, gameId, { now = Date.now(), maxDays = 8, send = null, force = false } = {}) {
   const gameRef = db.collection("games").doc(gameId), done = [];
   const { addDays, lockInstant, wRoster, wWeekOf, fightDay } = { addDays: g().get("addDays"), lockInstant: g().get("lockInstant"), wRoster: g().get("wRoster"), wWeekOf: g().get("wWeekOf"), fightDay: g().get("fightDay") };
   for (let i = 0; i < maxDays; i++) {
@@ -44,8 +45,8 @@ async function resolveDue(db, gameId, { now = Date.now(), maxDays = 8, send = nu
     const cfg = snap.data(), day = cfg.planDay;
     if (!day) break;
     // the lock is worked out from the game's own settings, so a stored lock time that is missing or has drifted cannot hold a battle back
-    const lockAt = cfg.tz && cfg.lockHour !== undefined ? lockInstant(day, cfg.tz, cfg.lockHour) : cfg.nextLockAt ? cfg.nextLockAt.toMillis() : null;
-    if (lockAt === null || now < lockAt) break; // nothing due
+    const sk = (cfg.testSkew || 0) * 864e5, lockAt = cfg.tz && cfg.lockHour !== undefined ? lockInstant(day, cfg.tz, cfg.lockHour) - sk : cfg.nextLockAt ? cfg.nextLockAt.toMillis() : null;
+    if (!(force && i === 0) && (lockAt === null || now < lockAt)) break; // nothing due
     const W = await loadWorld(gameRef, cfg, day), lords = wRoster(W, wWeekOf(W, day)).length;
     // a battle needs two lords; with fewer, the day simply passes
     const doc = lords >= 2 ? Object.assign(plain(fightDay(W, day, now)), { war: cfg.war || 1 }) : null;
@@ -53,15 +54,17 @@ async function resolveDue(db, gameId, { now = Date.now(), maxDays = 8, send = nu
     const claimed = await db.runTransaction(async tx => {
       const cur = (await tx.get(gameRef)).data();
       if (!cur || cur.planDay !== day || (cur.war || 1) !== (cfg.war || 1)) return false; // someone else fought it, or a new war began
+      const skew = (cur.testSkew || 0) + (force ? 1 : 0), sk2 = skew * 864e5;
       const battleRef = gameRef.collection("battles").doc(day);
       if (doc && !(await tx.get(battleRef)).exists) tx.create(battleRef, doc);
-      tx.update(gameRef, { planDay: next, nextPlanDay: after, nextLockAt: Timestamp.fromMillis(lockInstant(next, cur.tz, cur.lockHour)), lockAfter: Timestamp.fromMillis(lockInstant(after, cur.tz, cur.lockHour)), clockWar: cur.war || 1, resolvedAt: Timestamp.fromMillis(now) });
+      tx.update(gameRef, { planDay: next, nextPlanDay: after, nextLockAt: Timestamp.fromMillis(lockInstant(next, cur.tz, cur.lockHour) - sk2), lockAfter: Timestamp.fromMillis(lockInstant(after, cur.tz, cur.lockHour) - sk2), clockWar: cur.war || 1, resolvedAt: Timestamp.fromMillis(now), ...(force ? { testSkew: skew } : {}) });
       return true;
     });
     if (!claimed) break;
+    if (force) { done.push({ day, fought: !!doc, lords }); break; }
     done.push({ day, fought: !!doc, lords });
     // tell the lords (only the newest battle when catching up on several days); a failed notification never fails the battle
-    if (doc && send && now < lockInstant(next, cfg.tz, cfg.lockHour)) await notifyBattle(db, gameRef, day, doc, send).catch(e => console.error("Daily Siege: notifications failed", gameId, e));
+    if (doc && send && now < lockInstant(next, cfg.tz, cfg.lockHour) - ((cfg.testSkew || 0) + (force ? 1 : 0)) * 864e5) await notifyBattle(db, gameRef, day, doc, send).catch(e => console.error("Daily Siege: notifications failed", gameId, e));
   }
   return done;
 }
@@ -121,10 +124,11 @@ async function fightMissing(db, gameId, { now = Date.now() } = {}) {
 async function explainNotDue(db, gameId, { now = Date.now() } = {}) {
   const snap = await db.collection("games").doc(gameId).get(); if (!snap.exists) return "This game was not found.";
   const cfg = snap.data(), day = cfg.planDay; if (!day) return "The war has not started yet, so there is no battle to fight.";
-  const lockInstant = g().get("lockInstant"), at = cfg.tz && cfg.lockHour !== undefined ? lockInstant(day, cfg.tz, cfg.lockHour) : cfg.nextLockAt ? cfg.nextLockAt.toMillis() : null;
+  const lockInstant = g().get("lockInstant"), at = cfg.tz && cfg.lockHour !== undefined ? lockInstant(day, cfg.tz, cfg.lockHour) - (cfg.testSkew || 0) * 864e5 : cfg.nextLockAt ? cfg.nextLockAt.toMillis() : null;
   if (at === null) return "The game has no battle time saved.";
   const when = new Date(at).toLocaleString("en-AU", { timeZone: cfg.tz || "UTC", weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
   return now < at ? `The server's next battle is for ${day} at ${when}.` : `The server is already planning ${day}.`;
 }
 
-module.exports = { fightMissing, explainNotDue, resolveDue, resolveAllDue, reassignSeat, loadWorld, remindAll };
+const testMode = () => !!g().get("TEST_MODE");
+module.exports = { testMode, fightMissing, explainNotDue, resolveDue, resolveAllDue, reassignSeat, loadWorld, remindAll };
