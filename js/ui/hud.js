@@ -48,6 +48,10 @@ function renderCamp() {
   const sb = document.getElementById("shopbtn"); if (sb) sb.hidden = !(S && mode === "plan" && !(isLive() && LIVE.readOnly));
   const gb = document.getElementById("giftbtn"); if (gb) gb.hidden = !(S && S.spin && !spinStale() && mode === "plan" && !(isLive() && LIVE.readOnly));
   const bd = b.querySelector(".cbadge"); bd.hidden = !n; bd.textContent = n;
+  const tb = document.getElementById("twistbtn"), tp = document.getElementById("twistpop"); let tw = null;
+  try { tw = S && mode === "plan" && contractsOn() ? myTwist() : null; } catch (e) {}
+  if (tb) { tb.hidden = !tw; tb.classList.toggle("fresh", !!tw && S.twSeen !== planDayKey()); }
+  if (tp) { tp.hidden = !(tw && TWIST_POP); if (!tp.hidden) tp.innerHTML = `${twistStripHTML()}<small class="muted">Tap anywhere to close</small>`; }
 }
 function renderHint() {
   renderCamp();
@@ -58,9 +62,8 @@ function renderHint() {
   else if (sel) h.innerHTML = `Place <b>${esc(pieceName(sel))}</b> on a glowing tile <button data-act="cancel">Cancel</button>`;
   else h.innerHTML = "";
 }
-function renderTray() {
-  const up = unplaced();
-  document.getElementById("tray").innerHTML = `<span class="lbl" title="Soldiers on the field out of the supply you have built, and soldiers waiting in the garrison">Units ${fieldCount()}/${S.slots}<small class="muted"> · ${S.owned.filter(u => placedAt(u.id)).length} placed${garrisonCount() ? ` · ${garrisonCount()} in garrison` : ""}</small></span>` + (up.length
-    ? up.map(p => `<button class="chip${sel === p ? " on" : ""}" data-act="pick" data-v="${p}" ${dis()}><img class="${findWall(p) ? "wide" : ""}" alt="" src="${pieceImg(p)}">${esc(pieceName(p).replace(" (your hero)", ""))}</button>`).join("")
-    : `<span class="empty">Everyone is on the field.</span>`);
+function renderTray() { // only the pieces still waiting to be placed; the army count lives on the top bar
+  const up = unplaced(), t = document.getElementById("tray");
+  t.innerHTML = up.map(p => `<button class="chip${sel === p ? " on" : ""}" data-act="pick" data-v="${p}" ${dis()}><img class="${findWall(p) ? "wide" : ""}" alt="" src="${pieceImg(p)}">${esc(pieceName(p).replace(" (your hero)", ""))}</button>`).join("");
+  t.classList.toggle("none", !up.length);
 }

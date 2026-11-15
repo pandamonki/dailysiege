@@ -22,7 +22,9 @@ const cmpBox = (now, next, nextLabel) => `<div class="cmp"><div><span class="ila
 const abar = html => `<div class="abar">${html}</div>`;
 const ISH_PAGE = 12;
 const TRAP_ICON = k => ({ spike: "trap_spike", snare: "trap_snare", bell: "trap_bell" }[k]);
-const trapImg = k => TRAP_ICON(k) ? `icons/ui/${TRAP_ICON(k)}.webp` : trapURL(k);
+const trapImg = k => ART.trap[k] || (TRAP_ICON(k) ? `icons/ui/${TRAP_ICON(k)}.webp` : trapURL(k));
+// what each trap does in the battle (the numbers the battle uses)
+const TRAP_STATS = { spike: [["Damage", "90, ignores armour"], ["Hits", "The first enemy to step in"]], snare: [["Damage", "None"], ["Holds", "The first enemy, for 3 seconds"]], blade: [["Damage", "60 to each enemy"], ["Hits", "Everyone in a lane 2 to 4 tiles long"]] };
 const canBanner = () => !isLive() || DAY === 1;
 const ctNow = () => S.castle || 1;
 const rapierTaken = k => isLive() && Object.entries(LIVE.players || {}).some(([uid, p]) => uid !== LIVE.uid && p && p.state && (p.state.items || []).includes(k));
@@ -30,7 +32,7 @@ const itemKindTag = it => `<span class="kind k-${it.kind}"><b>T${it.tier}</b> ·
 // the hero's item slots: tap an item for its details (like the shop), with Sell and a way to the shop
 function heroItemsHTML(slots) {
   const k = S.items.includes(sheet.hit) ? sheet.hit : null, it = k && ITEMS[k];
-  return `<div class="sec"><div class="spread"><h3>Items (${S.items.length}/${ITEM_SLOTS})</h3><button class="bagbtn" data-act="shop" aria-label="Shop"><img alt="" src="icons/ui/shop.webp"></button></div>
+  return `<div class="sec"><div class="spread"><h3>Items <span class="cnt">${S.items.length}/${ITEM_SLOTS}</span></h3><button class="bagbtn" data-act="shop" aria-label="Shop"><img alt="" src="icons/ui/shop.webp"></button></div>
       <div class="islots tiny">${slots.map(x => x ? `<button class="islot${x === k ? " sel" : ""}" data-act="hitem" data-v="${x}" aria-label="${esc(ITEMS[x].name)}: details"><img alt="" src="${itemURL(x)}"><b>${esc(ITEMS[x].name)}</b></button>` : `<div class="islot empty"><span>Empty</span></div>`).join("")}</div>
       ${it ? `${udet(esc(it.name), null, `<p>${itemKindTag(it)} ${esc(itemDesc(k))}</p>`)}<div class="row"><button class="btn" data-act="isell" data-v="${k}" ${dis()}>Sell +${Math.floor(itemCost(k) / 2)}g</button><button class="btn small" data-act="shop">Shop</button></div>` : S.items.length ? `<p class="muted">Tap an item for its details.</p>` : ""}</div>`;
 }
@@ -40,7 +42,7 @@ function castleSheet() {
   if (tab === "recruit") { const pk = sheet.pick || "footman", pu = UNITS[pk], need = UNIT_TIER[pk], lk = ct < need, sCap = false;
     body = `<p class="muted">Field <b>${fieldCount()}/${S.slots}</b> · ${S.owned.filter(u => placedAt(u.id)).length} placed · Garrison <b>${garrisonCount()}/${garrisonCap()}</b>. ${supplyV2Now() ? `You can field ${FIELD_MAX} soldiers. More wait in the reinforcement waves you have unlocked and march out later.` : "Soldiers beyond your field supply wait in the garrison and march out in waves."}</p>
     <div class="ugrid shopg">${Object.entries(UNITS).filter(([, u]) => !u.merc).map(([k, u]) => tile("upick", k, pk === k, spriteURL(k), u.name, { price: u.cost, lk: ct < UNIT_TIER[k] })).join("")}</div>
-    ${udet(pu.name, pu.cost, `<p>${pu.note}</p><p>${IC.hp(pu.hp)} ${IC.atk(pu.atk)} · ${typeLine(UNIT_TYPES[pk])}</p>${lk ? `<p class="muted">Needs a ${tierName(need)}.</p>` : ""}`)}
+    ${udet(pu.name, pu.cost, `<p>${pu.note}</p><p>${IC.hp(pu.hp)} ${IC.atk(pu.atk)}</p>${typeInfo(UNIT_TYPES[pk], "u-" + pk)}${lk ? `<p class="muted">Needs a ${tierName(need)}.</p>` : ""}`)}
     ${abar(`<button class="btn wax" data-act="buy" data-v="${pk}" ${dis(lk || full || sCap || avail() < pu.cost)}>${lk ? `Needs a ${tierName(need)}` : full ? (supplyV2Now() ? (wavesOpen() < WAVE_COUNT ? "Field full: unlock a wave" : "Field and waves full") : "Barracks and garrison full") : sCap ? `Siege limit ${SIEGE_MAX}` : `Recruit · ${pu.cost}g`}</button>`)}`; }
   if (tab === "garrison") { // the Train tab: pick a soldier, see its stats now and after training, then train or sell. The picked soldier's panel is always pinned at the bottom.
     const ts = sheet.tsel && findUnit(sheet.tsel) ? sheet.tsel : (S.owned[0] || {}).id || null, u = ts ? findUnit(ts) : null;
@@ -48,7 +50,7 @@ function castleSheet() {
     if (!u) det = udet("No soldiers yet", null, `<p>Recruit soldiers in the Recruit tab first.</p>`);
     else { const st = unitStats(u), nx = u.lvl < 3 ? unitStats({ ...u, lvl: u.lvl + 1 }) : null, lk = ct < UNIT_LVL_TIER[u.lvl], dep = !!placedAt(u.id);
       det = udet(`${UNITS[u.type].name} · Lv${u.lvl}/3`, u.lvl < 3 ? upgradeCost(u) : null, `<div class="lvrow">${pipRow(u.lvl, 3)}<span class="st st-${dep ? "d" : "r"}">${dep ? "Deployed on the map" : inGarrison(u.id) ? "Waiting in a wave" : "In reserve"}</span></div>${u.cool > 0 ? `<p class="need">⏳ Recharging: ready in ${u.cool} day${u.cool > 1 ? "s" : ""}.</p>` : ""}${cmpBox([["Health", st.hp], ["Attack", st.atk]], UNITS[u.type].noUpgrade ? null : nx && [["Health", nx.hp], ["Attack", nx.atk]], nx ? `Lv${u.lvl + 1}` : "")}`);
-      bar = `<button class="btn wax" data-act="up" data-v="${u.id}" ${dis(UNITS[u.type].noUpgrade || u.lvl >= 3 || lk || avail() < upgradeCost(u))}>${UNITS[u.type].noUpgrade ? "Can't be trained" : u.lvl >= 3 ? "Max level" : lk ? `Needs a ${tierName(UNIT_LVL_TIER[u.lvl])}` : `Train to Lv${u.lvl + 1} · ${upgradeCost(u)}g`}</button><button class="btn" data-act="usell" data-v="${u.id}" ${dis()}>Sell +${unitSellPrice(u)}g</button>`; }
+      bar = `<button class="btn" data-act="usell" data-v="${u.id}" ${dis()}>Sell +${unitSellPrice(u)}g</button><button class="btn wax" data-act="up" data-v="${u.id}" ${dis(UNITS[u.type].noUpgrade || u.lvl >= 3 || lk || avail() < upgradeCost(u))}>${UNITS[u.type].noUpgrade ? "Can't be trained" : u.lvl >= 3 ? "Max level" : lk ? `Needs a ${tierName(UNIT_LVL_TIER[u.lvl])}` : `Train to Lv${u.lvl + 1} · ${upgradeCost(u)}g`}</button>`; }
     body = `<p class="muted">${S.owned.length} soldier${S.owned.length === 1 ? "" : "s"}. Tap one to see its stats and what training would add.</p><div class="ugrid shopg trainl">${S.owned.map(o => tile("tsel", o.id, ts === o.id, spriteURL(o.type), UNITS[o.type].name, { pips: [o.lvl, 3] })).join("")}</div><div class="trainfoot">${det}${bar ? abar(bar) : ""}</div>`; }
   if (tab === "deployment") body = deploymentTab();
   if (tab === "armoury") {
@@ -65,7 +67,7 @@ function castleSheet() {
       return [["Tower damage", Math.round(20 * [1, 1.5, 2][tr])], ["Tower range", tr >= 2 ? "3.6 tiles" : "3 tiles"]]; };
     const lines = L => L.map(([l, v]) => `<div><span>${l}</span><b>${v}</b></div>`).join("");
     body = `<div class="abtiles five">${slots.map(([k, l, g]) => { const tt = (k === "walls" || k === "tower") ? S.defences[k] : S.gear[k], mx = (k === "walls" || k === "tower") ? 2 : 3;
-      return `<button class="abt${selG === k ? " on" : ""}${tt ? "" : " off"}" data-act="gsel" data-v="${k}" aria-label="${l}"><b>${g}</b><span class="pips">${Array.from({ length: mx }, (_, i) => `<i class="pip${i < tt ? " on" : ""}"></i>`).join("")}</span><small>${l}</small></button>`; }).join("")}</div>
+      return `<button class="abt${selG === k ? " on" : ""}${tt ? "" : " off"}" data-act="gsel" data-v="${k}" aria-label="${l}"><img class="aico" alt="" src="${ART.gear[k]}"><span class="pips">${Array.from({ length: mx }, (_, i) => `<i class="pip${i < tt ? " on" : ""}"></i>`).join("")}</span><small>${l}</small></button>`; }).join("")}</div>
     <div class="abd">
       <span class="dtag">Details</span><div class="spread"><b class="abn">${esc(cur ? cur.name : slots.find(x => x[0] === selG)[1])}</b><span class="muted">${isDef ? "Castle" : selG === "charm" ? "Hero" : "Soldiers"} · tier ${tier}/${list.length}</span></div>
       <div class="cmp"><div><span class="ilabel">Now</span>${lines(effect(selG, tier))}</div><div><span class="ilabel">${nx ? esc(nx.name) : "Next"}</span>${nx ? lines(effect(selG, tier + 1)) : `<p class="muted">Finest there is</p>`}</div></div>
@@ -82,7 +84,7 @@ function castleSheet() {
       bar = wc != null ? `<button class="btn wax" data-act="wunlock" ${dis(avail() < wc)}>Unlock Wave ${wo + 1} · ${wc}g</button>` : `<button class="btn wax" disabled>All waves unlocked</button>`; }
     else { det = udet(`Supply · ${S.slots}/${SLOT_MAX}`, bedsFull ? null : slotCost(S.slots), `<div class="lvrow">${pipRow(S.slots, SLOT_MAX)}<span class="muted">Each point of supply lets you field one more soldier</span></div>${cmpBox([["Supply", S.slots]], bedsFull ? null : [["Supply", S.slots + 1]])}`);
       bar = `<button class="btn wax" data-act="slot" ${dis(bedsFull || avail() < slotCost(S.slots))}>${bedsFull ? `Supply maxed (${SLOT_MAX})` : `Raise supply to ${S.slots + 1} · ${slotCost(S.slots)}g`}</button>`; }
-    body = `<div class="ugrid two shopg">${tile("csel", "castle", ck === "castle", `icons/ui/castle${ct}.webp`, cur.name, { price: nx ? nx.cost : null, pips: [ct, 3] })}${supplyV2Now() ? tile("csel", "supply", ck === "supply", "icons/ui/supply.webp", "Waves", { price: waveUnlockCost() ?? null, pips: [wavesOpen(), WAVE_COUNT] }) : tile("csel", "supply", ck === "supply", "icons/ui/supply.webp", "Supply", { price: bedsFull ? null : slotCost(S.slots), pips: [S.slots, SLOT_MAX] })}</div>${det}${abar(bar)}`;
+    body = `<div class="ugrid two shopg">${tile("csel", "castle", ck === "castle", `icons/ui/castle${ct}.webp`, cur.name, { price: nx ? nx.cost : null, pips: [ct, 3] })}${supplyV2Now() ? tile("csel", "supply", ck === "supply", ART.wave, "Waves", { price: waveUnlockCost() ?? null, pips: [wavesOpen(), WAVE_COUNT] }) : tile("csel", "supply", ck === "supply", "icons/ui/supply.webp", "Supply", { price: bedsFull ? null : slotCost(S.slots), pips: [S.slots, SLOT_MAX] })}</div>${det}${abar(bar)}`;
   }
   if (tab === "shop") {
     const keys = Object.keys(ITEMS), pages = Math.ceil(keys.length / ISH_PAGE), ik = ITEMS[sheet.ish] ? sheet.ish : keys[0], it = ITEMS[ik];
@@ -108,11 +110,12 @@ function castleSheet() {
   if (tab === "traps") {
     const wt = WALL_TIERS[ct - 1], lim = wallLimit(ct), have = S.walls.length, dk = sheet.dsel || Object.keys(TRAPS)[0], isW = dk === "wall+", wm = dk.startsWith("w") && dk !== "wall+" ? S.walls.find(w => w.id === dk) : null;
     let det, bar;
-    if (isW) { det = udet(wt.name, WALL_COST, `<p>One block, ${wt.hp} HP, built to your castle's tier. Turn it to run either way. Enemies must chop through or walk around. ${have}/${lim} built.</p>`);
-      bar = `<button class="btn wax" data-act="wallbuy" ${dis(have >= lim || avail() < WALL_COST)}>${have >= lim ? "Limit reached" : `Build a wall · ${WALL_COST}g`}</button>`; }
-    else if (wm) { const i = S.walls.indexOf(wm); det = udet(`Wall ${i + 1}`, null, `<p>${placedAt(wm.id) ? "Standing in your field." : "Waiting in the barracks."} ${wt.hp} HP.</p>`);
+    if (isW) { const room = lim - have, aff = Math.floor(avail() / WALL_COST), n = Math.max(1, Math.min(sheet.wn || 1, room, Math.max(1, aff)));
+      det = udet(wt.name, WALL_COST, `<div class="statrows">${rows([["Health", `${wt.hp} HP`], ["Size", "1 block, turn it either way"], ["Built", `${have} of ${lim}`], ["Rebuilds", "Free every day"]])}</div><p class="muted">Enemies must chop through or walk around. A castle upgrade strengthens every wall.</p>`);
+      bar = room > 0 ? `<span class="stepper qty"><button class="btn small" data-act="wn" data-v="-1" ${dis(n <= 1)}>−</button><b>×${n}</b><button class="btn small" data-act="wn" data-v="1" ${dis(n >= room || n >= aff)}>+</button></span><button class="btn wax" data-act="wallbuy" data-v="${n}" ${dis(avail() < WALL_COST * n)}>Build ${n} · ${WALL_COST * n}g</button>` : `<button class="btn wax" disabled>All ${lim} walls built</button>`; }
+    else if (wm) { const i = S.walls.indexOf(wm); det = udet(`Wall ${i + 1}`, null, `<div class="statrows">${rows([["Health", `${wt.hp} HP`], ["Where", placedAt(wm.id) ? "Standing in your field" : "Waiting to be placed"]])}</div>`);
       bar = `<button class="btn wax" data-act="open" data-v="wall" data-k="${wm.id}">Manage</button>`; }
-    else { const t = TRAPS[dk]; det = udet(t.name, t.cost, `<p>${t.note}</p><p class="muted">Single use. Only lasts tonight's battle.</p>`);
+    else { const t = TRAPS[dk]; det = udet(t.name, t.cost, `<p>${t.note}</p><div class="statrows">${rows(TRAP_STATS[dk] || [])}</div><p class="muted">Single use. Only lasts tonight's battle.</p>`);
       bar = `<button class="btn wax" data-act="trap" data-v="${dk}" ${dis(avail() < t.cost)}>Buy · ${t.cost}g</button>`; }
     body = `<div class="ugrid shopg">${Object.entries(TRAPS).map(([k, t]) => tile("dsel", k, dk === k, trapImg(k), t.name, { price: t.cost })).join("")}${tile("dsel", "wall+", isW, `icons/ui/wall${ct}.webp`, "Wall", { price: WALL_COST })}${S.walls.map((w, i) => tile("dsel", w.id, dk === w.id, `icons/ui/wall${ct}.webp`, `Wall ${i + 1}`, { own: 1 })).join("")}</div>${det}${abar(bar)}`;
   }
@@ -144,7 +147,7 @@ function champSheet() {
     ${S.ob === 2 ? `<div class="obbox"><b>Step 1 of 2 · Choose your hero</b><span>Pick a class below, then spend your first skill point on an ability.</span><button class="btn wax" data-act="obnext">Next: design your banner →</button></div>` : ""}
     <div class="xpbar" title="Experience toward the next level"><i style="width:${Math.round(xp / nd * 100)}%"></i><span>Level ${L} · ${xp}/${nd} XP</span></div>
     <p class="muted xpnote">Gains up to ${XP_CAP} levels a day in battle. Every level is one skill point.</p>
-    <div class="stats"><span>${IC.hp(now.hp)}</span><span>${IC.atk(now.atk)}</span><span>${typeLine(CLASS_TYPES[S.cls])}</span></div>
+    <div class="stats"><span>${IC.hp(now.hp)}</span><span>${IC.atk(now.atk)}</span></div>${typeInfo(CLASS_TYPES[S.cls], "hero")}
     <div class="row"><button class="btn small wood" data-act="move" data-v="champ" ${dis()}>Move on the map</button><span class="muted">then tap a glowing tile</span></div>
     ${canChange ? `<div><button class="btn wood" data-act="heropick" ${dis()}>Change hero…</button></div>` : ""}
     <div class="abtiles five">${abil.map(a => { const rr = S.ranks[a.key] || 0, mx = rankMax(a.key), cd = isPassive(a.key) ? "passive" : abilCD(a.key, rr || 1).toFixed(0) + "s";
@@ -153,7 +156,7 @@ function champSheet() {
       <div class="spread"><b class="abn">${esc(A0.name)}${A0.ult ? " · Ultimate" : ""}${isPassive(selK) ? " · Passive" : ""}</b><span class="muted">Rank ${r}/${max}</span></div>
       <p class="muted">${esc(A0.desc)}</p>
       <div class="cmp"><div><span class="ilabel">Now</span>${lines(nowL)}</div><div><span class="ilabel">${r < max ? `Rank ${r + 1}` : "Next"}</span>${r < max ? lines(nextL) : `<p class="muted">Maxed</p>`}</div></div>
-      <div class="row"><button class="btn wood" data-act="rank" data-k="${selK}" ${canRank(selK) ? "" : "disabled"}>${r ? "Level up" : "Learn"}</button><span class="muted">${need}</span></div>
+      <div class="row"><button class="btn ${canRank(selK) ? "wax" : "wood"}" data-act="rank" data-k="${selK}" ${canRank(selK) ? "" : "disabled"}>${r ? "Level up" : "Learn"}</button><span class="muted">${need}</span></div>
       ${!A0.ult && !A0.vig ? (r >= 3 ? `<div class="choices">${A0.choice.map(([n, dd]) => `<button class="choice${S.picks[selK] === n ? " on" : ""}" data-act="choose" data-k="${selK}" data-v="${esc(n)}" ${dis()}><b>${esc(n)}</b>${esc(dd)}</button>`).join("")}</div>`
         : `<p class="muted">At rank 3, pick an upgrade: ${A0.choice.map(([n]) => `<b>${esc(n)}</b>`).join(" or ")}.</p>`) : ""}
       ${isPassive(selK) ? "" : `<label class="inline">Cast<select data-act="trig" data-k="${selK}" ${dis(!r)}>${opts(TRIGGERS, S.triggers[selK])}</select></label>`}

@@ -25,6 +25,7 @@ canvas#map { display: block; width: 100%; max-width: 100%; touch-action: none; c
 
 /* barracks tray */
 .tray { display: flex; gap: 8px; overflow-x: auto; padding-block: 6px 4px; align-items: center; }
+.tray.none { display: none; }
 .tray .lbl { font-family: var(--f-display); font-size: 15px; color: var(--gold); flex: none; }
 .chip { flex: none; display: flex; align-items: center; gap: 6px; padding: 3px 10px 3px 4px; border-radius: 999px; background: var(--leather-2); border: 1px solid var(--wood); color: var(--parchment); cursor: pointer; font-size: 14px; }
 .chip.on { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); color: var(--gold); }
@@ -171,3 +172,14 @@ html, body { overflow: hidden; overscroll-behavior: none; }
 .ugrid.trainl { grid-template-columns: repeat(4, minmax(0, 1fr)); max-height: 25vh; overflow-y: auto; padding: 3px; margin: 0 -3px; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
 .ugrid.trainl .ucard { padding: 3px 1px 2px; } .ugrid.trainl .ib, .ugrid.trainl .ib img { width: 40px; height: 40px; } .ugrid.trainl .ucard b { font-size: 11px; }
 .trainfoot { position: sticky; bottom: 0; background: var(--parchment); padding-bottom: 2px; z-index: 1; } .trainfoot .abar { position: static; margin-top: 8px; }
+/* today's twist: a small ! by the camp button, and its pop-up */
+#twistbtn { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); z-index: 6; width: 34px; height: 34px; padding: 0; border-radius: 50%; border: 2px solid var(--wood-dark); background: radial-gradient(circle at 40% 35%, #ffe08a, #c9962f 70%); color: #3a2208; font: 700 18px/1 var(--f-body); box-shadow: 0 2px 0 rgba(62,39,20,.6); cursor: pointer; }
+#campbtn:not([hidden]) ~ #twistbtn { left: calc(50% + 72px); transform: none; }
+#twistbtn[hidden] { display: none; }
+#twistbtn.fresh { animation: campPulse 1.4s ease-in-out infinite; }
+#twistpop { position: absolute; top: 50px; left: 50%; transform: translateX(-50%); width: min(300px, calc(100% - 24px)); z-index: 7; padding: 8px; border-radius: 12px; border: 2px solid var(--wood-dark); background: var(--parchment); color: var(--ink); box-shadow: 0 6px 18px rgba(0,0,0,.45); }
+#twistpop[hidden] { display: none; }
+#twistpop .twstrip { margin: 0; background: none; padding: 0; }
+#twistpop > small { display: block; text-align: center; margin-top: 4px; font-size: 11px; }
+.sheet .wmock { background: rgba(42,26,14,.88); color: #f3e6c4; }
+.sheet .wmock .mk-chip.bad { color: #ffd9d0; }

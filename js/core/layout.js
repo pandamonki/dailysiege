@@ -22,6 +22,12 @@ function treeGeom(n, size) {
   for (let i = 0; i < n; i++) { const am = ref + (i + .5) * sec, ux = dcos(am), uy = dsin(am); for (let k = 0; k < m; k++) { const o = (k - (m - 1) / 2) * sp; clumps.push({ x: cc + ux * rho - uy * o, y: cc + uy * rho + ux * o, r: .55, i, k }); } }
   return { n, cc, half, sec, ref, rim, clumps };
 }
+// a tile whose middle stands in the trees (a blockade or the forest rim): nothing can be placed there in planning
+function treeTile(r, c, n, size) {
+  const G = treeGeom(n, size), x = c + .5, y = r + .5;
+  if (G.clumps.some(k => hyp(x - k.x, y - k.y) < k.r + .3)) return true;
+  const dx = x - G.cc, dy = y - G.cc, rr = hyp(dx, dy); return rr > G.half - 1.5 && rr > G.rim(datan2(dy, dx)) - .2;
+}
 function zoneFor([r, c], size, all) {
   // the deployment field: a ring around the castle plus the old forward patch, shared fairly with neighbours, never the centre
   const ctr = (size - 1) / 2, dy = ctr - r, dx = ctr - c, L = Math.sqrt(dx * dx + dy * dy) || 1, zy = r + dy / L * 1.7, zx = c + dx / L * 1.7, z = new Set();
@@ -52,7 +58,7 @@ const seeArmies = () => DAY > 1;
 let MY_NAME = "You";
 const myName = () => MY_NAME; // day 1: only castles are known; later days show yesterday's armies
 function applyLayout(size, myCastle, others) {
-  N = size; CENTRE = (N - 1) / 2; CASTLE = myCastle; zoneSet = zoneFor(myCastle, N, [myCastle, ...others]);
+  N = size; CENTRE = (N - 1) / 2; CASTLE = myCastle; zoneSet = zoneFor(myCastle, N, [myCastle, ...others]); zoneSet.forEach(k => { const [a, b] = k.split(",").map(Number); if (treeTile(a, b, others.length + 1, N)) zoneSet.delete(k); }); // no placing soldiers in the trees
   W = N * T; MID = (CENTRE + .5) * T;
   castleTiles = [CASTLE, ...others];
   roadTiles = new Set();

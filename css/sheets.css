@@ -398,7 +398,7 @@ body.pdx .ud-tip { bottom: calc(308px + env(safe-area-inset-bottom, 0px) + 8px);
 .twistcard h3 { margin: 0 0 2px; }
 .twistcard p { margin: 2px 0; }
 .twistnote { margin: 0 0 8px; padding: 6px 10px; border-radius: 8px; background: rgba(201,162,39,.18); }
-.cxcard { display: flex; gap: 10px; align-items: center; padding: 8px 10px; margin: 6px 0; border: 2px solid rgba(62,39,20,.25); border-radius: 10px; background: rgba(255,255,255,.35); }
+.cxcard { display: grid; grid-template-columns: 46px minmax(0, 1fr) auto 18px; gap: 8px; align-items: center; width: 100%; padding: 6px 8px; margin: 5px 0; border: 2px solid rgba(62,39,20,.25); border-radius: 10px; background: rgba(255,255,255,.35); font: inherit; color: var(--ink); text-align: left; cursor: pointer; }
 .cxcard.on { border-color: var(--gold); background: rgba(201,162,39,.2); }
 .cxcard .cx-ic { font-size: 26px; line-height: 1; width: 30px; text-align: center; }
 .cxcard .cx-tx { flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
@@ -424,3 +424,83 @@ body.pdx .ud-tip { bottom: calc(308px + env(safe-area-inset-bottom, 0px) + 8px);
 .cxres div { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 .cxres small { color: var(--ink-soft); }
 .cxres em { font-style: normal; font-weight: 700; font-size: 12px; text-align: right; }
+/* attack and armour type line with its strengths and weaknesses */
+.tinfo { margin: 4px 0; }
+.tline { display: inline-flex; align-items: center; gap: 6px; background: none; border: 0; padding: 2px 0; font: inherit; font-size: 14px; color: var(--ink); cursor: pointer; text-align: left; }
+.ibtn { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--wood-dark); font: italic 700 12px/1 Georgia, serif; color: var(--wood-dark); background: rgba(255,250,230,.8); flex: 0 0 auto; }
+.tinfo.open .ibtn { background: var(--wood-dark); color: var(--parchment); }
+.tmx { display: grid; gap: 6px; margin-top: 4px; padding: 6px 8px; border-radius: 8px; background: rgba(62,39,20,.08); }
+.tmx > div > small:first-child { display: block; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-soft); }
+.tms { display: flex; flex-wrap: wrap; gap: 4px; margin: 3px 0; }
+.tms .tm { font-size: 12px; padding: 2px 7px; border-radius: 10px; background: rgba(255,250,230,.7); border: 1px solid rgba(62,39,20,.25); white-space: nowrap; }
+.tms .tm.g { background: rgba(79,122,46,.2); border-color: rgba(79,122,46,.6); color: #2f5419; }
+.tms .tm.b { background: rgba(179,38,30,.14); border-color: rgba(179,38,30,.5); color: #8a1f17; }
+/* hero screen: recharge chips, cast-when, stat icons */
+.tn .cdt { position: absolute; left: -6px; top: -6px; display: inline-flex; align-items: center; gap: 1px; padding: 1px 3px 1px 2px; border-radius: 7px; background: rgba(20,12,6,.85); color: #ffe7b0; font: 700 9px/1 var(--f-body); font-style: normal; border: 1px solid rgba(255,231,176,.5); }
+.tn .cdt .clk { width: 9px; height: 9px; }
+.tn .cdt.u { color: #ffd36a; }
+.tn.side .cdt { left: -8px; top: -8px; font-size: 8px; }
+.cdrow { display: flex; align-items: center; gap: 8px; margin: 4px 0; font-size: 13px; }
+.cdt.big { display: inline-flex; align-items: center; gap: 3px; padding: 3px 8px; border-radius: 10px; background: #2a1a0e; color: #ffe7b0; font: 700 13px/1 var(--f-body); }
+.cdt.big .clk { width: 13px; height: 13px; }
+.cdt.big.u { color: #ffd36a; }
+.castwhen { margin-top: 6px; } .castwhen select { min-width: 0; width: 100%; }
+.cwnote { display: block; margin-top: 2px; font-size: 12px; }
+.ultplan { display: grid; gap: 4px; }
+.sgrid.sgi .sic { font-style: normal; display: inline-block; width: 20px; text-align: center; margin-right: 4px; }
+.sec h3:has(.cnt), .spread h3:has(.cnt) { display: flex; align-items: center; gap: 8px; }
+h3 .cnt { font: 700 13px/1 var(--f-body); font-style: normal; color: var(--parchment); background: var(--wood-dark); border-radius: 10px; padding: 3px 8px; letter-spacing: 0; text-transform: none; }
+/* stat rows in detail panels, and the quantity stepper in the action bar */
+.statrows { display: grid; gap: 0; margin: 4px 0; } .statrows > div { display: flex; justify-content: space-between; gap: 10px; padding: 4px 0; border-bottom: 1px dashed rgba(90,58,32,.35); font-size: 14px; } .statrows span { color: var(--ink-soft); } .statrows b { text-align: right; }
+.abar .stepper.qty { flex: none; gap: 4px; } .abar .stepper.qty b { min-width: 34px; }
+/* mercenary camp: each fighter's stats in the details panel */
+.mstats { display: grid; gap: 6px; margin: 6px 0; }
+.mst { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 8px; align-items: start; padding: 4px 0; border-bottom: 1px dashed rgba(90,58,32,.35); }
+.mst > img { width: 40px; height: 40px; image-rendering: pixelated; object-fit: contain; }
+.mst .stats { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; font-size: 13px; margin: 2px 0; }
+.mhst { display: flex; gap: 8px; align-items: center; margin-top: 3px; font-size: 13px; }
+/* contracts and twist, compact */
+.cxcard:disabled { cursor: default; opacity: .85; }
+.cxart { width: 46px; height: 46px; border-radius: 8px; border: 2px solid var(--wood-dark); object-fit: cover; display: block; }
+.cxcard.t2 .cxart { border-color: #8a6d2a; } .cxcard.t3 .cxart { border-color: var(--wax); }
+.cxcard.on .cxart { border-color: var(--gold); box-shadow: 0 0 8px rgba(201,150,47,.8); }
+.cxcard .cx-tx { font-size: 13px; line-height: 1.25; }
+.cxcard .cxh { display: flex; align-items: baseline; gap: 6px; } .cxcard .cxh b { font-size: 15px; }
+.cxpay { display: grid; grid-template-columns: auto auto; gap: 0 3px; align-items: baseline; font-size: 13px; } .cxpay small { font-size: 10px; color: var(--ink-soft); }
+.cxtick { width: 18px; height: 18px; border-radius: 50%; border: 2px solid rgba(62,39,20,.35); display: grid; place-items: center; font-size: 11px; font-weight: 700; }
+.cxcard.on .cxtick { background: var(--verdant); border-color: var(--verdant); color: #fff; }
+.twstrip { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 10px; align-items: center; padding: 6px 8px; border-radius: 10px; background: rgba(62,39,20,.08); margin-top: 6px; }
+.twart { width: 40px; height: 40px; border-radius: 8px; border: 2px solid var(--wood-dark); object-fit: cover; display: block; }
+.twstrip small { display: block; text-transform: uppercase; font-size: 10px; letter-spacing: .06em; color: var(--ink-soft); }
+.twstrip b { margin-right: 6px; } .twstrip span { font-size: 13px; } .twstrip em { display: block; font-size: 12px; color: var(--ink-soft); font-style: normal; margin-top: 2px; }
+/* seal checklist, ritual cards, wax seal */
+.checks2 { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.checks2 li { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 4px 6px; border-radius: 6px; font-size: 14px; }
+.checks2 li i { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font: 700 12px/1 var(--f-body); font-style: normal; color: #fff; background: rgba(62,39,20,.3); }
+.checks2 li.c-ok i { background: var(--verdant); } .checks2 li.c-warn { background: rgba(201,150,47,.16); } .checks2 li.c-warn i { background: #c9862f; }
+.checks2 li.c-need { background: rgba(179,38,30,.12); } .checks2 li.c-need i { background: var(--wax); } .checks2 li.c-info { color: var(--ink-soft); }
+.checks2 .btn.small { padding: 4px 10px; }
+.ritcard { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 10px; align-items: center; padding: 6px 8px; margin: 4px 0; border-radius: 10px; border: 2px solid rgba(62,39,20,.25); background: rgba(255,255,255,.3); width: 100%; text-align: left; font: inherit; color: var(--ink); }
+.ritcard.btnlike { cursor: pointer; } .ritcard.on { border-color: var(--gold); background: rgba(201,162,39,.2); } .ritcard.off { opacity: .6; } .ritcard:disabled { cursor: default; }
+.ritart { width: 48px; height: 48px; border-radius: 8px; border: 2px solid var(--wood-dark); object-fit: cover; display: block; }
+.ritcard.on .ritart { border-color: var(--gold); box-shadow: 0 0 8px rgba(201,150,47,.8); }
+.ritx { display: flex; flex-direction: column; gap: 1px; min-width: 0; font-size: 13px; } .ritx small { text-transform: uppercase; font-size: 10px; letter-spacing: .06em; color: var(--ink-soft); display: flex; align-items: center; gap: 3px; } .ritx b { font-size: 15px; }
+.ritx small .sico { width: 12px; height: 12px; }
+.waxseal2 { width: 120px; height: 120px; margin: 4px auto; filter: drop-shadow(0 3px 3px rgba(0,0,0,.35)); }
+.waxseal2 svg { width: 100%; height: 100%; display: block; }
+@media (prefers-reduced-motion: no-preference) { .waxseal2 { animation: stamp .35s ease-out; } }
+/* treasury tiles */
+.trgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 8px; }
+.trs { display: grid; grid-template-columns: 40px minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 8px; align-items: center; padding: 6px 8px; border-radius: 10px; border: 2px solid rgba(62,39,20,.25); background: rgba(255,255,255,.3); }
+.trs img { grid-row: 1 / 3; width: 40px; height: 40px; border-radius: 8px; border: 2px solid var(--wood-dark); object-fit: cover; }
+.trs b { font-family: var(--f-display); font-size: 20px; line-height: 1.1; } .trs span { font-size: 12px; color: var(--ink-soft); line-height: 1.2; }
+.trs.big { grid-column: 1 / -1; } .trs.big b { font-size: 26px; } .trs.sum { grid-column: 1 / -1; background: rgba(201,162,39,.18); border-color: var(--gold); }
+/* battle report: each lord's skills and items as small tiles */
+.kit { display: flex; flex-wrap: wrap; gap: 4px; margin: -2px 0 8px 34px; }
+.kt { width: 30px; height: 30px; padding: 0; border-radius: 6px; border: 2px solid var(--wood-dark); background: #caa66b; cursor: pointer; overflow: hidden; }
+.kt img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.kt.ult { border-color: var(--gold); box-shadow: 0 0 5px rgba(201,150,47,.8); } .kt.it { border-radius: 50%; }
+.kt.on { outline: 3px solid var(--wax); outline-offset: 1px; }
+.ktip { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 8px; margin: 0 0 10px 34px; padding: 6px 8px; border-radius: 8px; background: rgba(62,39,20,.08); font-size: 13px; }
+.ktip img { width: 40px; height: 40px; border-radius: 8px; border: 2px solid var(--wood-dark); }
+.ktip small { display: block; color: var(--ink-soft); } .ktip p { margin: 2px 0 0; }
