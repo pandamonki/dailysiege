@@ -33,12 +33,16 @@ async function setBots(db, gameId, want, { now = Date.now(), removeId = null } =
   if (target < bots.length) bots.slice(0, bots.length - target).forEach(d => batch.delete(d.ref));
   else if (target > bots.length) {
     const ids = new Set(pubs.docs.map(d => d.id)), names = new Set(live.map(d => d.get("nick"))), colours = new Set(live.map(d => (d.get("banner") || {}).c1).filter(Boolean)), heroes = Object.keys(CLASSES);
-    const used = pubs.docs.filter(d => isBot(d.data())).length;
+    const used = pubs.docs.filter(d => isBot(d.data())).length, taken = {};
+    live.forEach(d => { const c = d.get("cls"); if (c) taken[c] = (taken[c] || 0) + 1; });
     for (let k = 0, n = 1; k < target - bots.length; k++) {
       while (ids.has("bot_" + n)) n++;
       const id = "bot_" + n, nick = BOT_LORD_NAMES.find(x => !names.has(x)) || "Bot " + n, c1 = SEAT_COLORS.find(c => !colours.has(c)) || null, i = used + k;
       ids.add(id); names.add(nick); if (c1) colours.add(c1);
-      batch.set(gameRef.collection("players").doc(id), { bot: true, fromWeek: "0000-00-00", joinedAt: now + k, nick, real: "Bot", pending: false, cls: heroes[(seedOf(gameId) + i * 3) % heroes.length], week: null, war: cfg.war || 1, banner: JSON.parse(JSON.stringify(Object.assign({}, BOT_LORD_BANNERS[i % BOT_LORD_BANNERS.length], { c1 }))) });
+      // the hero nobody in this game plays yet (ties broken by a rotation that differs per game), so bots show every class before any repeats
+      const start = seedOf(gameId) + i * 3, cls = heroes.map((h, j) => [h, taken[h] || 0, (j - start % heroes.length + heroes.length) % heroes.length]).sort((a, b) => a[1] - b[1] || a[2] - b[2])[0][0];
+      taken[cls] = (taken[cls] || 0) + 1;
+      batch.set(gameRef.collection("players").doc(id), { bot: true, fromWeek: "0000-00-00", joinedAt: now + k, nick, real: "Bot", pending: false, cls, week: null, war: cfg.war || 1, banner: JSON.parse(JSON.stringify(Object.assign({}, BOT_LORD_BANNERS[i % BOT_LORD_BANNERS.length], { c1 }))) });
     }
   }
   await batch.commit();

@@ -156,3 +156,8 @@ html, body { overflow: hidden; overscroll-behavior: none; }
 .nshop .pg { display: flex; align-items: center; gap: 4px; font-size: 13px; } .nshop .pg .btn { min-width: 34px; padding: 2px 8px; font-size: 18px; }
 .nshop .ugrid.shopg { gap: 5px; } .nshop .ugrid.shopg .ucard { padding: 4px 1px 3px; } .nshop .ugrid.shopg .ib, .nshop .ugrid.shopg .ib img { width: 42px; height: 42px; } .nshop .ugrid.shopg .ucard b { font-size: 11.5px; }
 .nshop .udet { margin-top: 4px; padding: 14px 10px 8px; } .nshop .abar { margin: 6px 0 0; padding: 0; }
+
+/* Train tab: a short scrolling list of soldiers, with the picked soldier's details and buttons pinned below it */
+.ugrid.trainl { grid-template-columns: repeat(4, minmax(0, 1fr)); max-height: 25vh; overflow-y: auto; padding: 3px; margin: 0 -3px; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+.ugrid.trainl .ucard { padding: 3px 1px 2px; } .ugrid.trainl .ib, .ugrid.trainl .ib img { width: 40px; height: 40px; } .ugrid.trainl .ucard b { font-size: 11px; }
+.trainfoot { position: sticky; bottom: 0; background: var(--parchment); padding-bottom: 2px; z-index: 1; } .trainfoot .abar { position: static; margin-top: 8px; }

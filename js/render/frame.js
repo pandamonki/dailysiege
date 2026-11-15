@@ -25,7 +25,7 @@ function draw(t) {
   ctx.imageSmoothingEnabled = true; ctx.drawImage(bg, 0, 0, W, W);
   if (!(mode === "replay" && replay)) drawCentreRing(t, null);
   drawFlag(ctx, MID, MID + ts * .1, ts * .55, ts * .95, "#c9962f", t);
-  if (mode === "replay" && replay) { drawReplay(t); if (replay.reel) drawReel(); return; }
+  if (mode === "replay" && replay) { drawReplay(t); drawSuddenOverlay(); if (replay.reel) drawReel(); return; }
   const lift = sel;
   if (lift) {
     const pulse = .25 + Math.sin(t * 5) * .12, wl = findWall(lift);

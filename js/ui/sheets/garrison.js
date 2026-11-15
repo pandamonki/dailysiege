@@ -40,7 +40,7 @@ Object.assign(A, {
   wback: v => { if (S.locked) return; const err = reserveUnit(v); if (err) toast(err); },
   wdep: () => { if (S.locked) { toast("Draft new orders to change your garrison."); return; } if (!sheet.tsel) { toast("Tap a soldier first."); return; } const err = deployUnit(sheet.tsel); if (err) toast(err); },
   wres: () => { if (S.locked) { toast("Draft new orders to change your garrison."); return; } if (!sheet.tsel) { toast("Tap a soldier first."); return; } const err = reserveUnit(sheet.tsel); if (err) toast(err); },
-  wpop: (v, k) => { const w = +k; sheet.wpop = sheet.wpop && sheet.wpop.w === w && sheet.wpop.kind === v ? null : { w, kind: v }; },
+  wpop: (v, k) => { if (S.locked) return; const w = +k; sheet.wpop = sheet.wpop && sheet.wpop.w === w && sheet.wpop.kind === v ? null : { w, kind: v }; },
   wopt: (v, k) => { if (S.locked) return; const w = S.garrison[+k], [kind, val] = v.split(":");
     if (kind === "when") { w.when = val; sheet.wpop = val === "timer" ? { w: +k, kind: "time" } : null; }
     else if (kind === "time") { w.when = "timer"; w.at = +val; sheet.wpop = null; }

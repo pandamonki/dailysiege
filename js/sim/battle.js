@@ -52,12 +52,14 @@ const BLOC_MAX = 3, TREACHERY_PTS = 3, TREACHERY_LOOT = .25, DAY_WEIGHT = { 5: 1
 const ORPHAN_ARMIES = true;
 const dayWeight = (v2, dayNo) => (v2 && DAY_WEIGHT[dayNo]) || 1;
 function runBattle(plans, seed, opts = {}) {
-  const BV = !!opts.balV2, V3 = !!opts.balV3, FV = !!opts.fairV1 || !!opts.pickV1, PV = !!opts.pickV1, V4 = !!opts.balV4, HV3 = !!opts.heroV3, maxLvl = HV3 ? MAX_HERO_LVL_V3 : MAX_HERO_LVL, hpLvX = HV3 ? hpLvV3 : hpLv, atkLvX = HV3 ? atkLvV3 : atkLv, OA = !!opts.balV2 && ORPHAN_ARMIES, UV = !!opts.ultV2, UD = UV ? .75 : 1, UR = rk => UV ? [.7, .85, 1][Math.min(3, Math.max(1, rk || 1)) - 1] : 1;
+  const SV = !!opts.suddenV1, BV = !!opts.balV2, V3 = !!opts.balV3, FV = !!opts.fairV1 || !!opts.pickV1, PV = !!opts.pickV1, V4 = !!opts.balV4, HV3 = !!opts.heroV3, maxLvl = HV3 ? MAX_HERO_LVL_V3 : MAX_HERO_LVL, hpLvX = HV3 ? hpLvV3 : hpLv, atkLvX = HV3 ? atkLvV3 : atkLv, OA = !!opts.balV2 && ORPHAN_ARMIES, UV = !!opts.ultV2, UD = UV ? .75 : 1, UR = rk => UV ? [.7, .85, 1][Math.min(3, Math.max(1, rk || 1)) - 1] : 1;
   const rng = mulberry(seed), DT = .1, fast = !!opts.fast, leaderPid = (plans.find(p => p.leader) || {}).pid;
   let curAb = null;
   const mePid = (plans.find(p => p.me) || plans[0]).pid, NN = opts.N || N;
   let t = 0, tick = 0, over = false, anyUlt = false;
   const ents = [], events = [], cdlog = [], xplog = [], logs = [], frames = [], pending = [], traps = [], walls = [];
+  let sd = null; // sudden death: null until SD_AT, then { t0, go, skip, winners }
+  const sdOn = () => !!sd && !sd.skip, tmax = () => (sdOn() ? SD_AT + SD_COUNT + SD_LEN : TMAX);
   let ctrHolder = null, teamWin = null; const finalDay = !!opts.finalDay;
   const P = {}, order = plans.map(p => p.pid), idx = Object.fromEntries(order.map((p, i) => [p, i]));
   const d = (a, b) => hyp(a.x - b.x, a.y - b.y);
@@ -285,6 +287,7 @@ function runBattle(plans, seed, opts = {}) {
     if (c && got > 0) { const label = ab || curAb || (src.kind === "totem" ? "Healing Totem" : src.healer ? "Heal" : "Other"); c.tel.healed += got; abRec(c, label).heal += got; } if (!quiet && e.hp - before >= 1) txt(e, "+" + Math.round(e.hp - before), "#7ef08a"); }
   function deal(src, tgt, amt, o = {}) {
     if (!live(tgt)) return 0;
+    if (sdOn() && tgt.kind === "castle") return 0; // in sudden death the castles are out of the fight
     if (fxv(tgt, "invuln")) { if (o.big) txt(tgt, "Immune", "#ffe082"); return 0; }
     if (HV3 && kit.blocked(src, tgt, o)) return 0;
     if (src && src.range > 1.5 && P[tgt.pid].blessing === "ward" && t < 45 && tgt.kind !== "castle") { if (o.big) txt(tgt, "Warded", "#bfe3ff"); return 0; } // Ward of Arrows blessing: no missile touches the army for 45s
@@ -396,7 +399,7 @@ function runBattle(plans, seed, opts = {}) {
         let ti = STREAKS.length - 1; while (ti >= 0 && sum < STREAKS[ti][0]) ti--;
         if (ti > kp.tier) { kp.tier = ti; const nmS = STREAKS[ti][1]; sp.marks.push({ t, name: nmS, n: Math.round(sum) }); sp.streak = nmS; log(`${nm(kc.pid)}: ${nmS.toUpperCase()}! ${Math.round(sum)} kills in a row.`, "big"); } } }
     if (e.kind === "champ" && e.rapier) { e.rapier = false; rapierDrop = { x: e.x, y: e.y, ev: null }; H({ kind: "rapierdrop", pid: e.pid, other: src ? (src.owner || src).pid : null, x: e.x, y: e.y, score: 54 }); ev({ ty: "rapier", x: e.x, y: e.y, until: null }); if (!fast) rapierDrop.ev = events[events.length - 1]; txt(e, "Rapier dropped!", "#ffd34d"); log(`${poss(e.pid)} hero drops the Divine Rapier.`, "big"); }
-    if (e.kind === "champ" && P[e.pid].alive && e.respawns > 0) { e.respawns--; const rt = respawnTime(e.heroLvl) * (e.phoenix ? .5 : 1); e.respawnAt = t + rt; const c = P[e.pid].castle; ev({ ty: "respawn", pid: e.pid, id: e.id, x: c.x, y: c.y, t0: t, t1: t + rt }); }
+    if (e.kind === "champ" && P[e.pid].alive && e.respawns > 0) { e.respawns--; const rt = respawnTime(e.heroLvl) * (e.phoenix ? .5 : 1); e.respawnAt = t + rt; e.respawnLen = rt; const c = P[e.pid].castle; const rv = { ty: "respawn", pid: e.pid, id: e.id, x: c.x, y: c.y, t0: t, t1: t + rt }; ev(rv); e.respawnEv = rv; }
     if (e.kind === "castle") eliminate(e.pid, src ? src.pid : e.lastBy);
   }
   function eliminate(pid, by) {
@@ -517,6 +520,7 @@ function runBattle(plans, seed, opts = {}) {
     return minBy(hurt, o => o.hp / o.maxhp);
   }
   function pickTarget(e) {
+    if (sdOn()) { const pool = ents.filter(o => !o.dead && o.kind !== "castle" && o.kind !== "totem" && hostile(e.pid, o.pid) && P[o.pid].alive && vis(o, e)); return pool.length ? minBy(pool, o => d(o, e)) : null; } // sudden death: whoever is nearest
     if (e.hunter) { const hs = ents.filter(x => !x.dead && x.kind === "champ" && hostile(e.pid, x.pid) && vis(x, e)); if (hs.length) return minBy(hs, x => d(x, e)); }
     const p = P[e.pid], guard = e.order === "guard", escort = e.order === "escort" && live(p.champ);
     if (!e.cart && !e.ram && ((UNIT_TYPES[e.key] || [])[0] !== "siege" || e.order === "guard")) { const carts = ents.filter(o => o.cart && !o.dead && hostile(e.pid, o.pid) && ents.some(c => c.kind === "castle" && !c.dead && !hostile(e.pid, c.pid) && d(c, o) <= 4) && d(o, e) <= 9); if (carts.length) return minBy(carts, o => d(o, e)); } // a powder cart within 4 tiles of a friendly castle: stop it
@@ -748,6 +752,8 @@ function runBattle(plans, seed, opts = {}) {
 
   function think(e) {
     const p = P[e.pid];
+    if (sdOn() && e.kind === "castle") return;
+    if (sdOn() && t < sd.go && e.kind !== "totem") return; // the countdown: everyone stands ready
     if (e.regen && e.hp < e.maxhp) e.hp = Math.min(e.maxhp, e.hp + e.regen * DT);
     if (HV3) kit.tick(e);
     if (e.kind === "totem") {
@@ -896,18 +902,48 @@ function runBattle(plans, seed, opts = {}) {
     const fr = { t: +t.toFixed(2), al, d: dd }; if (walls.length) fr.w = walls.map(w => (w.born != null && w.born > t ? 0 : Math.round(w.hp))); fr.c = ctrHolder != null ? idx[ctrHolder] : -1; frames.push(fr);
   }
 
+  // sudden death: carry every surviving hero and soldier to the middle of the map, one camp per lord around the ring, then fight to the death
+  function startSudden() {
+    const mobile = e => !e.dead && (e.kind === "champ" || e.kind === "unit" || e.kind === "summon") && P[e.pid].alive;
+    const returning = ents.filter(e => e.dead && e.kind === "champ" && e.respawnAt && P[e.pid].alive); // heroes still waiting to respawn
+    let fighters = ents.filter(e => mobile(e) && !e.cart && !e.ram && !e.cat);
+    const pids = order.filter(q => fighters.some(e => e.pid === q) || returning.some(e => e.pid === q));
+    if (pids.every(a => pids.every(b => allied(a, b)))) { sd = { skip: true }; return; } // one side only: the day ends as before
+    sd = { t0: t, go: +(t + SD_COUNT).toFixed(2), winners: null };
+    returning.forEach(e => { // a hero on its way back joins the fight at once, with health by how far through the wait it was (never below a quarter)
+      const prog = Math.max(0, Math.min(1, e.respawnLen ? 1 - (e.respawnAt - t) / e.respawnLen : 0)); e.dead = false; e.respawnAt = null; e.hp = Math.max(1, e.maxhp * (.25 + .75 * prog)); e.fx = {}; e.dots = []; e.tgt = null;
+      if (e.respawnEv) e.respawnEv.t1 = t; if (HV3) kit.onRespawn(e); });
+    fighters = ents.filter(e => mobile(e) && !e.cart && !e.ram && !e.cat);
+    ents.forEach(e => { if (e.dead) { e.respawnAt = null; return; } if (e.cart || e.ram || e.cat || e.kind === "totem") { e.dead = true; ev({ ty: "die", id: e.id, x: e.x, y: e.y, fx: 0, ex: 1 }); } });
+    const cx = NN / 2, cy = NN / 2, R = 3 + pids.length * .4;
+    // seating: the board's 1st and 2nd face each other, 3rd and 4th face each other, and the weakest lords sit beside the top two so they don't just trade blows and leave the day to the bottom half
+    const rk = q => RANKS[q] != null ? RANKS[q] : ((plans.find(p => p.pid === q) || {}).rank || idx[q] + 1), n = pids.length, byRank = pids.slice().sort((a, b) => rk(a) - rk(b) || idx[a] - idx[b]), seat = Array(n).fill(null), h = Math.floor(n / 2);
+    const put = (q, s) => { if (q != null && s != null && seat[s] == null) { seat[s] = q; return true; } return false; };
+    put(byRank[0], 0); put(byRank[1], h);
+    if (n >= 4) { const qd = Math.round(n / 4); put(byRank[2], qd); put(byRank[3], (qd + h) % n); }
+    const placed = new Set(seat.filter(q => q != null)), rest = byRank.filter(q => !placed.has(q)).reverse(); // weakest first
+    const near = s => Math.min(Math.abs(s - 0), n - Math.abs(s - 0), Math.abs(s - h), n - Math.abs(s - h));
+    seat.map((q, s) => [q, s]).filter(([q]) => q == null).sort((x, y) => near(x[1]) - near(y[1]) || x[1] - y[1]).forEach(([, s]) => { seat[s] = rest.shift(); });
+    pids.forEach(pid => { const i = seat.indexOf(pid), a = -Math.PI / 2 + 2 * Math.PI * i / n, ux = dcos(a), uy = dsin(a), vx = -uy, vy = ux;
+      fighters.filter(e => e.pid === pid).sort((x, y) => (y.kind === "champ") - (x.kind === "champ") || x.id - y.id).forEach((e, k) => {
+        const row = Math.floor(k / 4), col = (k % 4) - 1.5;
+        e.x = Math.max(.5, Math.min(NN - .5, cx + ux * R + vx * col * .75 + ux * row * .75)); e.y = Math.max(.5, Math.min(NN - .5, cy + uy * R + vy * col * .75 + uy * row * .75));
+        e.hx = e.x; e.hy = e.y; e.tgt = null; e.retreating = false; e.noRetreat = true; e.aggro = null; if (e.order === "guard" || e.order === "escort") e.order = "army"; }); });
+    ev({ ty: "sudden", x: cx, y: cy, go: sd.go }); log("SUDDEN DEATH! Every hero and soldier is drawn to the arena. Fight to the last.", "big");
+  }
   // ----- main loop -----
   log("The horns sound. Battle begins!", "big");
   (plans.notes || []).forEach(n => log(n));
   record();
   while (!over) {
     t = +(t + DT).toFixed(2); tick++;
+    if (SV && !sd && !opts.duel && t >= SD_AT) startSudden();
     for (let i = pending.length - 1; i >= 0; i--) if (pending[i].at <= t) { const pe = pending.splice(i, 1)[0]; curAb = pe.ab; pe.fn(); curAb = null; }
     if (HV3) kit.world();
     if (tick % 10 === 0) { order.forEach(pid => { const p = P[pid]; if (p.alive && !p.frenzy && p.castle.hp / p.castle.maxhp <= .2) { p.frenzy = true; aoe(p.castle.x, p.castle.y, 3, "#ff5a2a", 1.2); txt(p.castle, "Desperation Frenzy!", "#ff8a4a"); log(`${poss(pid)} defenders fight with Desperation Frenzy!`, "big"); H({ kind: "frenzy", pid, x: p.castle.x, y: p.castle.y, score: 50 }); } }); council(); }
     if (tick % 20 === 0 && !opts.duel) centreTick();
     // reinforcement waves (from 12 Nov 2026): each castle sends the garrison out when its conditions are met, never sooner than WAVE_GAP after the last, and forced out at each minute mark
-    if (V3 && !opts.duel && tick % 5 === 0) order.forEach(pid => {
+    if (V3 && !opts.duel && !sdOn() && tick % 5 === 0) order.forEach(pid => {
       const p = P[pid]; if (!p.alive || !p.waves || t - p.lastWave < WAVE_GAP) return;
       const c = p.castle, soldiers = ents.some(x => !x.dead && x.pid === pid && x.kind === "unit" && !x.free && !x.militia && !x.merc);
       const met = w => w.when === "timer" ? t >= w.at : w.when === "castle_hit" ? p.castleHitT > 0 : w.when === "castle_low" ? c.hp / c.maxhp < .5 : w.when === "hero_dies" ? p.heroDied : w.when === "army_dead" ? t > 5 && !soldiers : w.when === "enemy_hero" ? p.enemyHeroDied : anyUlt;
@@ -916,7 +952,7 @@ function runBattle(plans, seed, opts = {}) {
       if (i >= 0) deployWave(p, i);
     });
     // reinforcements: every living castle musters militia on a timer, so the field never empties into hero-only sieges
-    if (!opts.duel && !FV && t >= MILITIA.first && Math.abs(((t - MILITIA.first) % MILITIA.every)) < DT / 2) order.forEach(pid => {
+    if (!opts.duel && !FV && !sdOn() && t >= MILITIA.first && Math.abs(((t - MILITIA.first) % MILITIA.every)) < DT / 2) order.forEach(pid => {
       const p = P[pid]; if (!p.alive) return;
       const c = p.castle, dx = NN / 2 - c.x, dy = NN / 2 - c.y, L = hyp(dx, dy) || 1;
       for (let i = 0; i < (nP <= 4 ? 1 : MILITIA.count); i++) {
@@ -937,7 +973,7 @@ function runBattle(plans, seed, opts = {}) {
     });
     ents.forEach(e => {
       if (e.dead) {
-        if (e.respawnAt && t >= e.respawnAt && P[e.pid].alive) {
+        if (e.respawnAt && t >= e.respawnAt && P[e.pid].alive && !sdOn()) {
           const c = P[e.pid].castle; e.dead = false; e.respawnAt = null; e.hp = e.maxhp; e.x = c.x; e.y = c.y - 1; e.fx = {}; e.dots = []; e.tgt = null;
           aoe(e.x, e.y, 1, "#ffe082", .8); if (HV3) kit.onRespawn(e); if (e.pid === mePid) log("Your hero rises again at the castle.", "you");
         }
@@ -989,13 +1025,18 @@ function runBattle(plans, seed, opts = {}) {
     mob.forEach(e => { e.x = Math.max(.3, Math.min(NN - .3, e.x)); e.y = Math.max(.3, Math.min(NN - .3, e.y)); });
     if (tick % 2 === 0) record();
     const alive = alivePlayers();
-    if (alive.length <= 1 || t >= TMAX) over = true;
+    if (sdOn() && t >= sd.go) { // last side standing wins; when time runs out, the side with the most health left
+      const mb = ents.filter(e => !e.dead && (e.kind === "champ" || e.kind === "unit" || e.kind === "summon") && P[e.pid].alive), left = order.filter(q => mb.some(e => e.pid === q));
+      if (left.every(a => left.every(b => allied(a, b)))) { over = true; sd.winners = left; }
+      else if (t >= tmax()) { over = true; const hp = q => mb.filter(e => e.pid === q).reduce((s, e) => s + e.hp, 0), best = left.slice().sort((a, b) => hp(b) - hp(a) || (a < b ? -1 : 1))[0]; sd.winners = [best]; }
+    } else if (alive.length <= 1 || (!sdOn() && t >= TMAX)) over = true;
     if (opts.duel) { const sides = order.filter(pid => ents.some(e => !e.dead && e.pid === pid && e.kind !== "castle" && e.kind !== "totem")); if (sides.length <= 1 || t >= 90) { over = true; opts.duel.winner = sides.length === 1 ? sides[0] : null; opts.duel.t = t; opts.duel.hp = P[mePid].champ ? Math.max(0, P[mePid].champ.hp) / P[mePid].champ.maxhp : 0; } }
   }
   // ----- results -----
   const hpF = q => Math.round(Math.max(0, P[q].castle.hp) / P[q].castle.maxhp * 1e6);
-  const alive = alivePlayers().sort((a, b) => FV ? (hpF(b) - hpF(a)) || ((P[b].castleDmg || 0) - (P[a].castleDmg || 0)) || (P[b].kills - P[a].kills) || (fairTie(seed, a, 0) - fairTie(seed, b, 0)) : P[b].castle.hp / P[b].castle.maxhp - P[a].castle.hp / P[a].castle.maxhp);
-  if (t >= TMAX && alive.length > 1) log("Night falls. The strongest castle claims the banner.", "big");
+  let alive = alivePlayers().sort((a, b) => FV ? (hpF(b) - hpF(a)) || ((P[b].castleDmg || 0) - (P[a].castleDmg || 0)) || (P[b].kills - P[a].kills) || (fairTie(seed, a, 0) - fairTie(seed, b, 0)) : P[b].castle.hp / P[b].castle.maxhp - P[a].castle.hp / P[a].castle.maxhp);
+  if (sd && sd.winners && sd.winners.length) { alive = [...alive.filter(q => sd.winners.includes(q)), ...alive.filter(q => !sd.winners.includes(q))]; if (sd.winners.length > 1 && !teamWin) teamWin = sd.winners.slice(); }
+  else if (t >= TMAX && alive.length > 1) log("Night falls. The strongest castle claims the banner.", "big");
   alive.forEach((pid, i) => { P[pid].place = i + 1; });
   if (BV) { // castles that fell on the same tick share the places they took between them: the one that dealt more siege damage, then killed more heroes, ranks higher; a seeded draw settles the rest (never seat order)
     const fell = {}; order.filter(pid => !P[pid].alive).forEach(pid => { (fell[P[pid].elimT] = fell[P[pid].elimT] || []).push(pid); });
@@ -1014,7 +1055,7 @@ function runBattle(plans, seed, opts = {}) {
       if (best && best.s >= BURST_MIN && !hl.some(h => h.kind === "spree" && h.pid === pid && Math.abs(h.t2 - best.k0 / 2) < 6))
         hl.push({ kind: "burst", pid, t: best.k0 / 2 + 1.5, dmg: Math.round(best.s), x: best.last[1], y: best.last[2], score: Math.min(80, 40 + best.s / 60) }); });
     const wc = P[champion].castle, frac = wc.hp / wc.maxhp;
-    hl.push({ kind: "winner", pid: champion, team: teamWin, t, clutch: frac < .2 && frac > 0, timeout: t >= TMAX, hpFrac: frac, x: wc.x, y: wc.y, score: 999 });
+    hl.push({ kind: "winner", pid: champion, team: teamWin, t, clutch: frac < .2 && frac > 0, timeout: t >= TMAX && !(sd && sd.winners), hpFrac: frac, x: wc.x, y: wc.y, score: 999 });
     hl.sort((a, b) => a.t - b.t);
   }
   for (let i = 0; i < 10; i++) { t = +(t + FRAME_DT).toFixed(2); record(); }
@@ -1025,7 +1066,7 @@ function runBattle(plans, seed, opts = {}) {
   const results = order.map(pid => ({ pid, name: nm(pid), color: P[pid].color, cls: P[pid].cls, place: P[pid].place, kills: P[pid].kills, ukills: P[pid].ukills, castles: P[pid].castles,
     points: Math.round(((PTS[P[pid].place - 1] || 0) + P[pid].kills + castlePts(FV) * P[pid].castles) * W8) + (treach[pid] || 0) * TREACHERY_PTS, ...(treach[pid] ? { treachery: treach[pid] } : {}), fellAt: P[pid].elimT, gold: Math.round(P[pid].gold) })).sort((a, b) => a.place - b.place);
   const invest = (type, lvl) => { const c = UNITS[type].cost; let g = c; for (let l = 1; l < lvl; l++) g += Math.round(c * .5 * l); return g; };
-  const tel = { duration: Math.min(t, TMAX),
+  const tel = { duration: Math.min(t, SV ? SD_AT + SD_COUNT + SD_LEN : TMAX),
     players: order.map(pid => ({ pid, name: nm(pid), cls: P[pid].cls, level: P[pid].level || 1, place: P[pid].place, points: results.find(r => r.pid === pid).points, elimT: P[pid].elimT, trapDmg: Math.round(P[pid].trapDmg || 0) })),
     ents: ents.filter(e => (e.kind === "champ" || e.kind === "unit") && !e.militia && !e.free).map(e => ({ pid: e.pid, ref: e.ref || null, kind: e.kind, cls: e.cls, type: e.kind === "unit" ? e.key : null, lvl: e.lvl || null, gold: e.kind === "unit" ? invest(e.key, e.lvl || 1) : null,
       ranks: e.ranks || null, survived: !e.tel.deaths, ...e.tel })) };
@@ -1037,5 +1078,5 @@ function runBattle(plans, seed, opts = {}) {
   const pairsEnd = BV ? (finalDay ? [] : pact0.filter(k => !feudsNew.has(k))) // pacts last until a betrayal or a break ends them, even if a castle fell
     : []; if (!BV) order.forEach(a => order.forEach(b => { if (a < b && P[a].alive && P[b].alive && P[a].pacts.has(b)) pairsEnd.push(a + "|" + b); }));
   const trapsUsed = traps.filter(tr => tr.used && !tr.ranger).map(tr => tr.pid + "|" + Math.round(tr.y - .5) + "," + Math.round(tr.x - .5));
-  return { ...(V3 && !opts.duel ? { waves: true } : {}), me: mePid, feudsNew: [...feudsNew], trapsUsed, awards, ultCast: order.filter(pid => P[pid].ultCast), lvl: lvlOut, rapierEnd: rapierOwner ? rapierHolder : null, rapier: rapierOwner && rapierHolder && rapierHolder !== rapierOwner ? { from: rapierOwner, to: rapierHolder } : null, pairsEnd, team: teamWin, wallMeta: walls.map(w => ({ pid: w.pid, x: w.x0, y: w.y0, dir: w.dir, maxhp: w.maxhp, tier: w.tier, ...(w.born != null ? { born: w.born } : {}) })), tel, frames, events, cdlog, xplog, logs, hl, ranks: RANKS, meta: meta(), results, order, colors: Object.fromEntries(order.map(p => [p, P[p].color])), traps, duration: t };
+  return { ...(sdOn() ? { sudden: { t0: sd.t0, go: sd.go } } : {}), ...(V3 && !opts.duel ? { waves: true } : {}), me: mePid, feudsNew: [...feudsNew], trapsUsed, awards, ultCast: order.filter(pid => P[pid].ultCast), lvl: lvlOut, rapierEnd: rapierOwner ? rapierHolder : null, rapier: rapierOwner && rapierHolder && rapierHolder !== rapierOwner ? { from: rapierOwner, to: rapierHolder } : null, pairsEnd, team: teamWin, wallMeta: walls.map(w => ({ pid: w.pid, x: w.x0, y: w.y0, dir: w.dir, maxhp: w.maxhp, tier: w.tier, ...(w.born != null ? { born: w.born } : {}) })), tel, frames, events, cdlog, xplog, logs, hl, ranks: RANKS, meta: meta(), results, order, colors: Object.fromEntries(order.map(p => [p, P[p].color])), traps, duration: t };
 }
