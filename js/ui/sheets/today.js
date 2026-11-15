@@ -1,4 +1,4 @@
-// The day's twist, the contract board, rehearsal, and the personal battle report
+// The day's twist, the contract board (Orders > Contracts), rehearsal, and the personal battle report
 
 // ----- today's twist and contracts, on this device -----
 const contractsOn = () => isLive() ? contractsFor(liveClock().planDay) : true;
@@ -15,22 +15,26 @@ const buyCost = k => myTwist() === "market" && !ITEMS[k].fixed ? Math.round(item
 function contractPay(key, twist) { const k = contractParse(key); if (!k) return { pts: 0, gold: 0 }; const p = CONTRACT_PAY[k.c.tier]; return { pts: p.pts * (twist === "glory" ? 2 : 1), gold: p.gold * (twist === "goldrush" ? 2 : 1) }; }
 const TIER_NAME = { 1: "Easy", 2: "Hard", 3: "Rival" };
 
-function todaySheet() {
+// a contract is still to be taken for the next battle
+const cxOpen = () => { try { return !!(S && !S.locked && !(isLive() && LIVE.readOnly) && !S.contract && contractsOn() && myOffers().length); } catch (e) { return false; } };
+// the contract board pops up once at the start of each planning phase, until a contract is taken
+const cxDue = () => cxOpen() && S.cxSeen !== planDayKey();
+
+// Orders > Contracts: the offers for the next battle, the twist, and rehearsal
+function contractsTab() {
   const tw = myTwist(), ti = twistInfo(tw), nx = tomorrowTwist(), offers = myOffers(), lk = S.locked || (isLive() && LIVE.readOnly);
   const dayNo = isLive() ? liveClock().dayNo : DAY, on = contractsOn();
-  const twist = `<div class="sec twistcard"><span class="tw-ic">${ti.icon}</span><div><h3>${esc(ti.name)}</h3><p>${esc(ti.note)}</p>${nx !== undefined ? `<p class="muted">Tomorrow: ${twistInfo(nx).icon} <b>${esc(twistInfo(nx).name)}</b>. ${esc(twistInfo(nx).note)}</p>` : `<p class="muted">The last day of the war.</p>`}</div></div>`;
+  const twist = `<div class="sec twistcard"><span class="tw-ic">${ti.icon}</span><div><h3>Today's twist: ${esc(ti.name)}</h3><p>${esc(ti.note)}</p>${nx !== undefined ? `<p class="muted">Tomorrow: ${twistInfo(nx).icon} <b>${esc(twistInfo(nx).name)}</b>. ${esc(twistInfo(nx).note)}</p>` : `<p class="muted">The last day of the war.</p>`}</div></div>`;
   const cards = !on ? `<p class="muted">Contracts begin with the battle of ${esc(CONTRACTS_FROM)}.</p>` : !offers.length ? `<p class="muted">No contracts for you today.</p>` : offers.map(key => {
     const k = contractParse(key), pay = contractPay(key, tw), took = S.contract === key;
     return `<div class="cxcard${took ? " on" : ""} t${k.c.tier}"><span class="cx-ic">${k.c.icon}</span><div class="cx-tx"><small>${TIER_NAME[k.c.tier]}</small><b>${esc(k.c.name)}</b><span>${esc(contractText(key, cxName))}</span><em>+${pay.pts} points · +${pay.gold} gold</em></div>
       <button class="btn small ${took ? "wood" : "wax"}" data-act="cxpick" data-v="${esc(key)}" ${lk ? "disabled" : ""}>${took ? "Taken ✓" : "Take"}</button></div>`; }).join("");
   const rival = dayNo === 1 ? "On day 1 nobody has fought yet, so your rivals appear with their heroes only." : "Your rivals fight with the orders they used yesterday, so treat it as a guide, not a promise.";
-  return head(null, `Day ${dayNo} · Today`, "Twist, contract and rehearsal") + `<div class="body">
-    ${twist}
-    <div class="sec"><h3>Contracts</h3><p class="muted">Take one with your orders. Complete it in tonight's battle for bonus points and gold. You can change it until you seal.</p>${cards}
+  return `<div class="sec"><h3>Contracts for the next battle</h3><p class="muted">Take one. Complete it in the battle for bonus points and gold. You can change it until you seal.</p>${cards}
       ${S.contract && !lk ? `<div class="row"><button class="btn small" data-act="cxpick" data-v="">Drop my contract</button></div>` : ""}</div>
-    ${isLive() ? `<div class="sec"><h3>Rehearse tonight's battle</h3><p class="muted">Fight your current orders right now and see your personal battle report. ${rival} Nothing in a rehearsal counts, and you can rehearse as often as you like.</p>
-      <div class="row"><button class="btn wax" data-act="battle" ${LIVE.readOnly ? "disabled" : ""}>⚔ Rehearse now</button></div></div>` : `<div class="sec"><h3>Fight</h3><p class="muted">In practice there is no rehearsal: this fights the day's battle. In the friends game the same button runs a rehearsal that doesn't count.</p><div class="row"><button class="btn wax" data-act="battle">⚔ Fight now</button></div></div>`}
-  </div>`;
+    ${twist}
+    ${isLive() ? `<div class="sec"><h3>Rehearse the battle</h3><p class="muted">Fight your current orders right now and see your personal battle report. ${rival} Nothing in a rehearsal counts, and you can rehearse as often as you like.</p>
+      <div class="row"><button class="btn wax" data-act="battle" ${LIVE.readOnly ? "disabled" : ""}>⚔ Rehearse now</button></div></div>` : ""}`;
 }
 
 // ----- the personal battle report: what my decisions did -----

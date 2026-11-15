@@ -247,8 +247,8 @@ function combatGroupsHTML() {
 }
 function ordersSheet() {
   ensureDip();
-  const tab = ["strategy", "tactics", "alliances", "rituals"].includes(sheet.tab) ? sheet.tab : (sheet.grp === "alli" ? "alliances" : "strategy");
-  const tabs = [["strategy", "Strategy"], ["tactics", "Combat"], ["alliances", "Alliances"], ["rituals", "Rituals"]];
+  const tab = ["strategy", "tactics", "contracts", "alliances", "rituals"].includes(sheet.tab) ? sheet.tab : (sheet.grp === "alli" ? "alliances" : "strategy");
+  const tabs = [["strategy", "Strategy"], ["tactics", "Combat"], ["contracts", "Contracts"], ["alliances", "Alliances"], ["rituals", "Rituals"]];
   let body = "";
   if (tab === "strategy") body = strategyTab();
   if (tab === "tactics") body = `<p class="muted tight">These rules only apply mid-skirmish, once your soldiers are in a fight. Strategy decides where they go.</p>
@@ -257,6 +257,7 @@ function ordersSheet() {
       ${S.rules.map((r, i) => `<div class="rule"><label><span>If</span><select data-act="rif" data-v="${i}" ${dis()}>${opts(IFS, r.if)}</select></label><label><span>Then</span><select data-act="rthen" data-v="${i}" ${dis()}>${opts(THENS, r.then)}</select></label><button class="btn small" data-act="rdel" data-v="${i}" aria-label="Remove command" ${dis()}>✕</button></div>`).join("")}
       <div><button class="btn wood" data-act="radd" ${dis(opUsed() >= OP_MAX)}>Add command</button></div>
       <p class="muted">Tap a soldier or your hero on the map to give it its own job.</p></div>`;
+  if (tab === "contracts") body = contractsTab();
   if (tab === "alliances") body = alliancesTab();
   if (tab === "rituals") body = ritualsTab();
   return head(null, sheet.grp === "alli" ? "Alliances" : "Orders", `${avail()} gold free${reserved() ? `, ${reserved()} offered` : ""}`) + `<div class="body">

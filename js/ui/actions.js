@@ -144,7 +144,7 @@ const A = {
   ireply: (v, k) => { ensureDip(); S.replies[k] = v; if (!isLive()) { if (v === "reject") S.declined[k] = true; else delete S.declined[k]; }
     toast(v === "accept" ? "Accepted. You ally at the start of tonight's battle." : "Declined."); if (sheet && sheet.type === "invites" && !pendingInvites().length) sheet = null; },
   idismiss: () => { sheet = null; },
-  opentoday: () => { sel = null; sheet = { type: "today" }; },
+  opentoday: () => { S.phase = "orders"; sel = null; ensureDip(); sheet = { type: "orders", grp: "ord", tab: "contracts" }; },
   cxpick: v => { if (S.locked || (isLive() && LIVE.readOnly)) return; S.contract = v && myOffers().includes(v) ? v : null; if (S.contract) toast("Contract taken. Seal your orders to keep it."); },
   opencamp: () => { sel = null; sheet = { type: "camp" }; },
   mbid: (v, k) => { ensureDip(); const m = MERCS[k]; if (!m || mercWait(k)) return; const b = S.bids[k] && S.bids[k].day === planDayKey() ? S.bids[k].gold : 0, step = 10;
