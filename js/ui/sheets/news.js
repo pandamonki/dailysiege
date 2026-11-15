@@ -9,7 +9,7 @@ const RELEASES = [
     ["🪨", "Siege units at 300", "The Powder Cart, Catapult and Battering Ram all cost 300 gold."],
     ["🏰", "Cheaper castles", "The Fortress costs 100 and the Citadel 200."],
     ["⭐", "A headliner every day", "From day 4 a new, stronger mercenary group tops the camp each day, and you hear about it when you plan."],
-    ["👹", "The Troll War Host", "Day 7's headliner: the Troll Warlord leading three Orc Berserkers."],
+    ["👹", "The Troll War Host", "Day 7's headliner: the Troll Warlord leading two Orc Berserkers. The Bone Crew is tougher and the Ogre Breaker softer, so no single group decides a battle."],
     ["🗂", "A tidier camp", "The headliner sits in a wide card, three regular groups below it, and the details and bid underneath."],
     ["☝", "One group a day", "You bid on one group a day, and no lord can win more than one, so the camp is shared around."],
   ] },

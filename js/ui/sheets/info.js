@@ -159,7 +159,9 @@ function abilLines(k, r) {
 
 const PATCHES = [
   { v: "The new mercenary camp", date: "15 Nov", fixes: [], balance: [
-    "New headline mercenary group for the last day of the week: the Troll War Host, the Troll Warlord leading three Orc Berserkers, from 400 gold.",
+    "New headline mercenary group for the last day of the week: the Troll War Host, the Troll Warlord leading two Orc Berserkers, from 400 gold.",
+    "The Bone Crew is tougher: the Necromancer has 320 health and 30 attack (was 160 and 20), and the skeletons 170 health and 18 attack (were 60 and 11) with light armour.",
+    "The Ogre Breaker is softer, as it often decided battles on its own: 600 health and 80 attack (was 650 and 110).",
     "Mercenaries cost more, starting at 250: Dark Elf Assassins 250, Orc Berserkers 260, Troll Warlord 280, Centaur Archers 290, Bone Crew 320, Ogre Breaker 340 and Troll War Host 400.",
   ], changes: [
     "From the 16 Nov battle, the mercenary camp has a headline group each day, getting stronger through the week: the Troll Warlord on day 4, the Bone Crew on day 5, the Ogre Breaker on day 6 and the Troll War Host on day 7. Each new headliner is announced when you first plan that day.",

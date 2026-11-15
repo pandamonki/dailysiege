@@ -5,9 +5,9 @@ const MERCS = {
   orcs:    { name: "Orc Berserkers", min: 260, units: ["orc", "orc", "orc", "orc"], note: "Four fast, hard-hitting melee raiders." },
   centaur: { name: "Centaur Archers", min: 290, units: ["centaur", "centaur", "centaur"], note: "Three swift archers who shoot from afar." },
   elves:   { name: "Dark Elf Assassins", min: 250, units: ["delf", "delf"], note: "Two fragile killers who hunt enemy heroes across the map." },
-  ogre:    { name: "Ogre Breaker", min: 340, units: ["ogre"], note: "Slow, tough and castle-only. Smashes castle after castle." },
-  necro:   { name: "Bone Crew", min: 320, units: ["necro", "skel", "skel", "skel", "skel"], note: "A necromancer who drains life, with four skeleton guards." },
-  warhost: { name: "Troll War Host", min: 400, units: ["trollw", "orc", "orc", "orc"], note: "The Troll Warlord at the head of three Orc Berserkers. The strongest band in the camp." },
+  ogre:    { name: "Ogre Breaker", min: 340, units: ["ogre2"], units1: ["ogre"], note: "Slow, tough and castle-only. Smashes castle after castle." },
+  necro:   { name: "Bone Crew", min: 320, units: ["necro2", "skel2", "skel2", "skel2", "skel2"], units1: ["necro", "skel", "skel", "skel", "skel"], note: "A necromancer who drains life, with four skeleton guards." },
+  warhost: { name: "Troll War Host", min: 400, units: ["trollw", "orc", "orc"], note: "The Troll Warlord at the head of two Orc Berserkers. The strongest band in the camp." },
 };
 // From MERC_V2_FROM the camp has one new headline group a day, growing stronger through the week, plus three regular tiles.
 // A headliner becomes a regular group the day after it arrives. Each lord can win at most one group a day.
@@ -33,6 +33,10 @@ const MERC_UNITS = {
   ogre:    [{ name: "Ogre Breaker", hp: 650, atk: 110 }, { range: 1.2, as: 1.4, spd: .9, armor: .1, rammer: 1 }, ["siege", "heavy"], [.52, 5.5]],
   necro:   [{ name: "Necromancer", hp: 160, atk: 20 }, { range: 3.2, as: 1.3, spd: 1.3, armor: 0, shot: "#7fe08a", lifesteal: .3 }, ["magic", "light"], [.3, 1.4]],
   skel:    [{ name: "Skeleton Guard", hp: 60, atk: 11 }, { range: 1.1, as: .9, spd: 1.7, armor: 0 }, ["blade", "light"], [.28, 1.2]],
+  // from MERC_V2_FROM (units1 holds the group as it was before): a tougher Bone Crew and a softer Ogre, so no single group decides a battle
+  ogre2:   [{ name: "Ogre Breaker", hp: 600, atk: 80 }, { range: 1.2, as: 1.4, spd: .9, armor: .1, rammer: 1 }, ["siege", "heavy"], [.52, 5.5]],
+  necro2:  [{ name: "Necromancer", hp: 320, atk: 30 }, { range: 3.2, as: 1.3, spd: 1.3, armor: 0, shot: "#7fe08a", lifesteal: .3 }, ["magic", "light"], [.3, 1.4]],
+  skel2:   [{ name: "Skeleton Guard", hp: 170, atk: 18 }, { range: 1.1, as: .9, spd: 1.7, armor: .1 }, ["blade", "light"], [.28, 1.2]],
 };
 Object.entries(MERC_UNITS).forEach(([k, [u, s, ty, body]]) => { UNITS[k] = Object.assign({ cost: 0, merc: true, note: "" }, u); UNIT_SIM[k] = s; UNIT_TYPES[k] = ty; BODY[k] = body; });
 // 0 when the group is free to hire on this day, otherwise the days still to wait. docs: a function that gives the finished battle of a given earlier day (or null)
@@ -57,7 +61,7 @@ function resolveMercs(plans, o) {
     const w = tied[tied.length === 1 ? 0 : mercHash(String(o.day) + id) % tied.length][0];
     won.add(w.pid); hires[id] = { pid: w.pid, gold: top, bidders: bids.length, all: bids.map(([p, b]) => ({ pid: p.pid, gold: b.gold })).sort((a, b) => b.gold - a.gold || (a.pid < b.pid ? -1 : 1)) };
     const used = new Set((w.pieces || []).map(pc => pc.r + "," + pc.c)), sp = mercSpots(w.castle, o.N, used);
-    m.units.forEach((type, i) => { const q = sp[i % Math.max(1, sp.length)] || [w.castle[0], w.castle[1]]; used.add(q.join(",")); w.pieces.push({ kind: "unit", type, lvl: 1, hp: 1, r: q[0], c: q[1], merc: id, bid: i === 0 ? top : 0 }); });
+    (!o.v2 && m.units1 || m.units).forEach((type, i) => { const q = sp[i % Math.max(1, sp.length)] || [w.castle[0], w.castle[1]]; used.add(q.join(",")); w.pieces.push({ kind: "unit", type, lvl: 1, hp: 1, r: q[0], c: q[1], merc: id, bid: i === 0 ? top : 0 }); });
     notes.push(`${w.name} hired the ${m.name} for ${top} gold${bids.length > 1 ? `, outbidding ${bids.length - 1} other lord${bids.length > 2 ? "s" : ""}` : ""}.`);
   });
   return { hires, notes };

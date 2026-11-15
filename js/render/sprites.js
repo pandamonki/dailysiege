@@ -25,6 +25,9 @@ const SPECS = {
   ogre:        { a: "#8a7a4a", b: YOU_COLOR, hc: "#6a5a30", head: "horned", weapon: "axe" },
   necro:       { a: "#2c2c3c", b: YOU_COLOR, hc: "#3a2a4a", head: "hood", weapon: "staff", f: "#7fe08a", robe: 1 },
   skel:        { a: "#d9d4c0", b: YOU_COLOR, hc: "#d9d4c0", head: "helmet", weapon: "swordshield" },
+  ogre2:       { a: "#8a7a4a", b: YOU_COLOR, hc: "#6a5a30", head: "horned", weapon: "axe" },
+  necro2:      { a: "#2c2c3c", b: YOU_COLOR, hc: "#3a2a4a", head: "hood", weapon: "staff", f: "#7fe08a", robe: 1 },
+  skel2:       { a: "#d9d4c0", b: YOU_COLOR, hc: "#d9d4c0", head: "helmet", weapon: "swordshield" },
   guard:       { a: "#5d6672", b: "#e2b33c", sh: "#e2b33c", head: "greathelm", weapon: "swordshield" },
   militia:     { a: "#8a7d66", b: YOU_COLOR, sh: YOU_COLOR, hc: "#6b5a40", head: "cap", weapon: "swordshield" },
 };
