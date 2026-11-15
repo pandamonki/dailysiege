@@ -3,6 +3,19 @@
 // Each item is [icon, headline, one short sentence]. Players who have not seen the newest id get the pop-up the next time they plan;
 // the id is remembered on their device, so changing the id is all it takes to show it again. Keep about 8 to 14 items.
 const RELEASES = [
+  { id: "1.3", title: "What's new in v1.3", sub: "Daily twists, contracts, rehearsals and your own battle report (from the battle of 16 Nov)", items: [
+    ["📜", "A Today button", "The scroll on the left of the map shows today's twist, your contracts and the rehearsal."],
+    ["🌕", "A twist every day", "From day 2 each day brings one rule change, like Blood Moon, Siege Weather or Market Day. You see tomorrow's a day ahead."],
+    ["🛒", "Market Day", "Items in the shop cost 25% less."],
+    ["🧱", "Battle twists", "Iron Walls, Siege Weather, Golden Hill and Blood Moon change how tonight's battle plays."],
+    ["🎯", "Daily contracts", "Each morning you are offered three: one easy, one hard and one aimed at a named rival. Take one with your orders."],
+    ["💰", "Bonus points and gold", "Complete your contract in the battle for up to 5 extra points and 150 extra gold."],
+    ["🩸", "Revenge", "Whoever took your castle or slew your hero may be named in tomorrow's rival contract."],
+    ["👑", "Topple the leader", "Rival contracts sometimes aim you at the lord at the top of the board."],
+    ["⚔", "Rehearse your orders", "Fight your current orders against your rivals' last known orders as often as you like. Nothing counts."],
+    ["📊", "Your battle report", "After every battle and rehearsal: where your damage came from, how your castle held, when your waves went out."],
+    ["➜", "Try tomorrow", "The report ends with two or three tips tied to things you can change in planning."],
+  ] },
   { id: "1.2", title: "What's new in v1.2", sub: "From today's battle: items, gifts, fights and highlights", items: [
     ["🎒", "Items matter more", "Stat items are twice as strong for your hero, and the area-buff items (Banner, Standard, Mender, Pipe) are twice as strong for everyone near it."],
     ["🎁", "A proper free gift", "The reels spin like a slot machine. Close it and it waits behind a 🎁 button on the map until you take it."],

@@ -12,7 +12,7 @@ function savedBattle(dayKey) {
   const b = LIVE.battles[dayKey], s = b && b.inputs; if (!s) return null;
   const plans = JSON.parse(JSON.stringify(s.plans)).map(p => Object.assign(p, { me: p.pid === LIVE.uid, name: nameOf(p.pid) }));
   if (s.feuds) plans.feuds = s.feuds.slice(); if (b.mercs) plans.mercs = b.mercs;
-  return { N: s.N, final: !!s.final, ultV2: !!s.ultV2, balV2: !!s.balV2, balV3: !!s.balV3, fairV1: !!s.fairV1, pickV1: !!s.pickV1, balV4: !!s.balV4, suddenV1: !!s.suddenV1, treesV1: !!s.treesV1, heroV3: !!s.heroV3, dayNo: s.dayNo || null, ranks: s.ranks || null, transfers: b.transfers || [], plans };
+  return { N: s.N, final: !!s.final, ultV2: !!s.ultV2, balV2: !!s.balV2, balV3: !!s.balV3, fairV1: !!s.fairV1, pickV1: !!s.pickV1, balV4: !!s.balV4, suddenV1: !!s.suddenV1, treesV1: !!s.treesV1, heroV3: !!s.heroV3, dayNo: s.dayNo || null, ranks: s.ranks || null, twist: s.twist || null, transfers: b.transfers || [], plans };
 }
 // On the hosted game: the earliest day of this war whose lock has passed but whose result has not arrived yet (or null).
 function battlePending() {
@@ -46,4 +46,9 @@ async function resolveBattles() {
     catch (e) { console.warn("Daily Siege battle save", d, e); if (!warnedB) { warnedB = true; toast("Battle results couldn't be shared yet. They'll retry (" + ((e && (e.code || e.message)) || "error") + ")."); } }
     SAVING_B.delete(d);
   }
+}
+// A saved battle's contract results, laid onto a replay of it (the fight itself does not pay contracts; the server adds them after)
+function applySavedContracts(res, b) {
+  if (!b || !b.contracts) return; res.contracts = b.contracts; res.offers = b.offers || null;
+  Object.entries(b.contracts).forEach(([pid, c]) => { const r = res.results.find(x => x.pid === pid); if (r) { r.points += c.pts || 0; r.gold = (r.gold || 0) + (c.gold || 0); if (c.pts) r.contract = c.pts; } });
 }

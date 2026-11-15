@@ -48,14 +48,16 @@ function resultsSheet() {
   const board = R.board ? (() => { const after = { ...R.board }; R.results.forEach(r => after[r.pid] = (after[r.pid] || 0) + r.points);
     return R.order.slice().sort((a, b) => after[b] - after[a]).map((pid, i) => { const r = R.results.find(x => x.pid === pid), was = rankMap(R.board, R.order)[pid], move = was ? was - (i + 1) : 0;
       return `<div class="place${pid === R.me ? " me" : ""}"><span class="ord">${i + 1}</span><i style="background:${r.color}"></i><span><b>${esc(N(pid))}</b>${move ? ` <span class="${move > 0 ? "up" : "down"}">${move > 0 ? "▲" : "▼"}${Math.abs(move)}</span>` : ""}<br><span class="muted">+${r.points} today</span></span><span class="pts">${after[pid]}<small>points</small></span></div>`; }).join(""); })() : "";
-  return head(null, `Day ${dayNo} Recap`, `The fighting lasted ${fmt(R.duration)}`) + `<div class="body">
-    <div class="verdict"><b>${me.place === 1 ? (R.team ? "Victory, together" : "Victory") : ord(me.place) + " of " + R.results.length}</b><span class="muted">${R.team ? "Allies won the Daily Siege together. " : ""}${me.points} point${me.points === 1 ? "" : "s"} toward this week's leaderboard</span></div>
+  return head(null, R.rehearsal ? `Day ${dayNo} Rehearsal` : `Day ${dayNo} Recap`, `The fighting lasted ${fmt(R.duration)}`) + `<div class="body">
+    ${R.rehearsal ? `<p class="twistnote">A rehearsal: your current orders against what you know of your rivals. Nothing here counts toward the war.</p>` : ""}
+    <div class="verdict"><b>${me.place === 1 ? (R.team ? "Victory, together" : "Victory") : ord(me.place) + " of " + R.results.length}</b><span class="muted">${R.team ? "Allies won the Daily Siege together. " : ""}${R.rehearsal ? `Would score ${me.points} point${me.points === 1 ? "" : "s"}` : `${me.points} point${me.points === 1 ? "" : "s"} toward this week's leaderboard`}</span></div>
     <div class="row"><button class="btn wax" data-act="reel">▶ Play highlights</button>${canRecord() && window.claude ? `<button class="btn wood" data-act="reelrec">Save highlights video</button>` : ""}</div>
     <div class="stats">
       <div class="stat"><b>${Math.round(mine.dealt).toLocaleString()}</b><span>damage by your army</span></div>
       <div class="stat"><b>${mine.kills}</b><span>foes cut down</span></div>
       ${goldLine}
     </div>
+    ${personalReport(R)}
     <div class="sec mvp"><h3>Hero of the day</h3><div class="spread"><span><i class="sw" style="background:${R.colors[mvp]}"></i><b>${esc(N(mvp))}</b> · ${CLASSES[R.results.find(r => r.pid === mvp).cls].name}</span>
       <span class="muted">${Math.round(mv.dealt).toLocaleString()} damage · ${mv.kills} kills${mv.healed > 200 ? ` · ${Math.round(mv.healed)} healed` : ""}</span></div></div>
     ${moments.length ? `<div class="sec"><h3>Key moments</h3><ol class="moments">${moments.map(m => `<li><button data-act="rjump" data-v="${m.a.toFixed(1)}"><span class="mt">${fmt(m.h.t)}</span><span><b>${esc(m.title)}</b><br><span class="muted">${esc(m.sub)}</span></span></button></li>`).join("")}</ol></div>` : ""}

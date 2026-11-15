@@ -85,6 +85,9 @@ function runBattle(plans, seed, opts = {}) {
   const log = (msg, kind = "") => logs.push({ t, msg, kind });
   // highlights: structured key moments the reel and recap are built from
   const hl = [], RANKS = opts.ranks || {}, nP = plans.length;
+  // the day's twist (battles from CONTRACTS_FROM; see config/contracts.js), and per-lord counters for the personal battle report and contracts.
+  // The counters only watch: nothing in the fight reads them, and they are not part of the result hash.
+  const TW = opts.twist || null, ST = {}, st = pid => ST[pid] || (ST[pid] = { hold: 0, castleTaken: 0, castleBy: {}, wallHit: 0, waves: [], heroBy: {}, heroSlain: {}, fellTo: null });
   const top3 = pid => RANKS[pid] != null && RANKS[pid] <= 3;
   const under = pid => RANKS[pid] != null && RANKS[pid] > Math.max(3, Math.ceil(nP / 2));
   const H = o => { if (!fast) hl.push({ t, ...o }); return o; };
@@ -125,7 +128,7 @@ function runBattle(plans, seed, opts = {}) {
   // a wave marches out of the castle gate
   function deployWave(p, i) {
     const w = p.waves[i], c = p.castle, dx = NN / 2 - c.x, dy = NN / 2 - c.y, L = hyp(dx, dy) || 1, px = -dy / L, py = dx / L, n = w.units.length;
-    w.done = true; p.lastWave = t;
+    w.done = true; p.lastWave = t; st(p.pid).waves.push(Math.round(t));
     w.units.forEach((u, j) => { const o = (j - (n - 1) / 2) * .45, e = makeUnit(p, { ...u, kind: "unit" }, c.x + dx / L * .9 + px * o, c.y + dy / L * .9 + py * o);
       e.hx = e.x; e.hy = e.y; e.spd *= BAL.move; e.as *= BAL.swing; e.retreats = 1; e.wave = i + 1; if (p.noRetreat) e.noRetreat = true;
       if (w.order === "castle") e.purpose = "castle"; else if (w.order === "hero") e.hunter = true; else if (w.order === "nearest") e.purpose = "nearest"; }); // the wave's purpose: raider-style march on a castle, hunt heroes, or fight the nearest enemy
@@ -142,7 +145,7 @@ function runBattle(plans, seed, opts = {}) {
   const pact0 = []; order.forEach(a => order.forEach(b => { if (a < b && P[a].pacts.has(b)) pact0.push(a + "|" + b); })); // the pacts the day starts with, after bad blood has dissolved any between feuding lords
   plans.forEach(pl => {
     const p = P[pl.pid], [cr, cc] = pl.castle, def = pl.defences || {};
-    p.castle = add({ pid: pl.pid, kind: "castle", x: cc + .5, y: cr + .5, maxhp: BAL.castleHp * (1 + .25 * (def.walls || 0)) * CASTLE_TIERS[Math.max(0, Math.min(2, (pl.castleTier || 1) - 1))].hp, atk: 20 * [1, 1.5, 2][def.tower || 0], range: (def.tower || 0) >= 2 ? 3.6 : 3, as: 1.5, spd: 0, armor: .25, shot: "#e8e2d0" });
+    p.castle = add({ pid: pl.pid, kind: "castle", x: cc + .5, y: cr + .5, maxhp: BAL.castleHp * (1 + .25 * (def.walls || 0)) * CASTLE_TIERS[Math.max(0, Math.min(2, (pl.castleTier || 1) - 1))].hp * (TW === "iron" ? TWIST_IRON : 1), atk: 20 * [1, 1.5, 2][def.tower || 0], range: (def.tower || 0) >= 2 ? 3.6 : 3, as: 1.5, spd: 0, armor: .25, shot: "#e8e2d0" });
     p.castle.hp = p.castle.maxhp; p.castle.atype = "pierce"; p.castle.armour = "fortified";
     const lvl = pl.level || 1, g = pl.gear || {};
     pl.pieces.forEach(pc => {
@@ -245,6 +248,7 @@ function runBattle(plans, seed, opts = {}) {
     const rk = RANKS[v.pid]; if ((v.kind === "champ" || v.kind === "castle") && rk && rk <= 3) g += bountyGold(rk, v.kind === "champ" ? v.heroLvl : (champOf(v.pid) || {}).heroLvl); // dynamic leader bounty
     if (HV3) g *= kit.goldMul(kc, v);
     if (inCentre(v.x, v.y)) g *= 1.5;
+    if (TW === "bloodmoon" && v.kind === "champ") g *= TWIST_BLOODMOON;
     { const kh = champOf(kc.pid); if (kh && live(kh) && inCentre(kh.x, kh.y)) g *= CTR_BONUS; }
     g = Math.round(g); P[kc.pid].gold += g;
     if (v.kind === "champ" || v.kind === "castle") txt(kc, `+${g}g`, "#f3d27a");
@@ -252,7 +256,8 @@ function runBattle(plans, seed, opts = {}) {
   function centreTick() {
     const near = ents.filter(e => !e.dead && (e.kind === "champ" || e.kind === "unit") && fighting(e.pid) && inCentre(e.x, e.y));
     const pids = [...new Set(near.map(e => e.pid))], hold = pids.length && pids.every(a => pids.every(b => allied(a, b))) ? pids : [];
-    hold.forEach(pid => { P[pid].gold += 2; const h = champOf(pid); if (h && live(h) && inCentre(h.x, h.y)) giveXp(h, top3(pid) ? 2.5 : 3); });
+    near.forEach(e => { if (e.kind === "champ") st(e.pid).onHill = (st(e.pid).onHill || 0) + 2; });
+    const hm = TW === "hill" ? TWIST_HILL : 1; hold.forEach(pid => { P[pid].gold += 2 * hm; st(pid).hold += 2; const h = champOf(pid); if (h && live(h) && inCentre(h.x, h.y)) giveXp(h, (top3(pid) ? 2.5 : 3) * hm); });
     ctrHolder = hold.length ? hold[0] : null;
   }
   function itemTick(e) {
@@ -285,7 +290,7 @@ function runBattle(plans, seed, opts = {}) {
   const wallAt = (e, x, y) => { for (const w of walls) { if (w.hp <= 0 || !hostile(e.pid, w.pid)) continue; const lx = w.dir === "v" ? .3 : .72, ly = w.dir === "v" ? .72 : .3; if (Math.abs(x - w.x0 - .5) < lx && Math.abs(y - w.y0 - .5) < ly) return w; } return null; };
   const nearestWall = e => minBy(walls.filter(w => w.hp > 0 && hostile(e.pid, w.pid) && hyp(w.x0 + .5 - e.x, w.y0 + .5 - e.y) <= 2), w => hyp(w.x0 + .5 - e.x, w.y0 + .5 - e.y));
   function hitWall(e, w) {
-    const wx = w.x0 + .5, wy = w.y0 + .5; w.hp -= e.atk * (1 + fxv(e, "atkbuf")) * (V4 && e.atype === "magic" ? MAGIC_VS_FORT : TYPE_TABLE[e.atype || "blade"].fortified) * (e.key === "raider" ? 1.4 : 1) * (HV3 ? kit.wallMul(e) : 1);
+    const wx = w.x0 + .5, wy = w.y0 + .5, wd = e.atk * (1 + fxv(e, "atkbuf")) * (V4 && e.atype === "magic" ? MAGIC_VS_FORT : TYPE_TABLE[e.atype || "blade"].fortified) * (e.key === "raider" ? 1.4 : 1) * (HV3 ? kit.wallMul(e) : 1); st(w.pid).wallHit += Math.min(wd, Math.max(0, w.hp)); w.hp -= wd;
     ev({ ty: "slash", x: wx, y: wy, c: "#d9c9a0" });
     if (w.hp <= 0) { w.hp = 0; aoe(wx, wy, .9, "#a08050", .6); }
   }
@@ -335,6 +340,7 @@ function runBattle(plans, seed, opts = {}) {
     if (abil && src) { const sh = fxv(tgt, "shell"); if (sh) m *= 1 - sh; const sw = fxv(tgt, "spellward"); if (sw) m *= 1 - sw; }
     let critHit = false;
     if (src && src.icm && plain && !o.aoe && !o.critMul) { m *= src.icm; src.icm = 0; critHit = true; } // Crystalys / Daedalus
+    if (TW === "siege" && tgt.kind === "castle" && src && (src.kind === "unit" || src.kind === "summon")) m *= TWIST_SIEGE;
     let dmg = Math.max(1, amt * m);
     if (tgt.block && plain) dmg = Math.max(1, dmg - tgt.block); // Vanguard
     if (HV3) { if (o.capAbs) dmg = Math.min(dmg, o.capAbs); dmg = kit.redirect(tgt, dmg); if (tgt.sh && tgt.sh.length) dmg = kit.absorb(tgt, dmg); }
@@ -358,7 +364,7 @@ function runBattle(plans, seed, opts = {}) {
       const label = o.ab || curAb || (src.kind === "summon" ? "Spirit Wolves" : src.kind === "castle" ? "Tower" : "Auto attack");
       credit.tel.dealt += eff; abRec(credit, label).dmg += eff;
       if (!fast && tgt.kind !== "castle" && P[credit.pid]) { const B = P[credit.pid].burst || (P[credit.pid].burst = {}), k = Math.floor(t * 2); B[k] = B[k] || [0, tgt.x, tgt.y]; B[k][0] += eff; B[k][1] = tgt.x; B[k][2] = tgt.y; }
-      if (tgt.kind === "castle" && P[credit.pid] && credit.pid !== tgt.pid) P[credit.pid].castleDmg = (P[credit.pid].castleDmg || 0) + eff;
+      if (tgt.kind === "castle" && P[credit.pid] && credit.pid !== tgt.pid) { P[credit.pid].castleDmg = (P[credit.pid].castleDmg || 0) + eff; const s2 = st(tgt.pid); s2.castleTaken += eff; s2.castleBy[credit.pid] = (s2.castleBy[credit.pid] || 0) + eff; }
       if (tgt.kind === "champ") credit.tel.toChamp += eff; else if (tgt.kind === "castle") credit.tel.toCastle += eff; else credit.tel.toUnit += eff;
     } else if (o.trapPid) P[o.trapPid].trapDmg = (P[o.trapPid].trapDmg || 0) + eff;
     const tp = P[tgt.pid]; tp.hitT = t;
@@ -396,7 +402,7 @@ function runBattle(plans, seed, opts = {}) {
     if (sdOn() && e.kind === "champ" && src && (src.owner || src).pid !== e.pid) quip((src.owner || src).pid, "te", src.owner || src);
     const kc = src && (src.owner || src); if (kc && kc.pid !== e.pid && e.kind !== "totem" && e.kind !== "castle") { kc.tel.kills++; if (e.kind !== "champ" && P[kc.pid]) P[kc.pid].ukills++; }
     if (!opts.duel) { awardXp(e); awardGold(e, kc); if ((e.kind === "champ" || e.kind === "castle") && kc && kc.pid !== e.pid && RANKS[e.pid] && RANKS[e.pid] <= 3 && hostile(kc.pid, e.pid)) { const kh = champOf(kc.pid); if (kh) giveXp(kh, bountyGold(RANKS[e.pid], e.kind === "champ" ? e.heroLvl : (champOf(e.pid) || {}).heroLvl) * .8); } }
-    if (src && src.pid !== e.pid && e.kind === "champ") { P[src.pid].kills++; log(`${nm(src.pid)} slew ${lposs(e.pid)} hero.`);
+    if (src && src.pid !== e.pid && e.kind === "champ") { P[src.pid].kills++; { const a = st(e.pid).heroBy, b = st(src.pid).heroSlain; a[src.pid] = (a[src.pid] || 0) + 1; b[e.pid] = (b[e.pid] || 0) + 1; } log(`${nm(src.pid)} slew ${lposs(e.pid)} hero.`);
       if (!firstBlood) { firstBlood = true; H({ kind: "firstblood", pid: src.pid, other: e.pid, x: e.x, y: e.y, score: 38 }); }
       else if (under(src.pid) && top3(e.pid) && !hl.some(h => h.kind === "giantslayer" && h.other === e.pid)) H({ kind: "giantslayer", pid: src.pid, other: e.pid, x: e.x, y: e.y, score: 62 }); }
     if (kc && kc.pid !== e.pid && (e.kind === "champ" || e.kind === "unit" || e.kind === "summon")) {
@@ -423,7 +429,7 @@ function runBattle(plans, seed, opts = {}) {
       log(`${poss(pid)} army fights on without a castle.`);
     } else ents.forEach(e => { if (e.pid === pid && !e.dead) { e.dead = true; e.hp = 0; e.respawnAt = null; ev({ ty: "die", id: e.id, x: e.x, y: e.y, fx: 0 }); } });
     if (by && (by === pid || !P[by] || !P[by].alive)) by = null;
-    if (by) { P[by].castles++; quip(by, "te", null); }
+    if (by) { P[by].castles++; st(pid).fellTo = by; quip(by, "te", null); }
     order.forEach(o => { P[o].pacts.delete(pid); });
     log(`${poss(pid)} castle has fallen${by ? ` to ${nm(by)}` : ""}.`, "big");
     { const revenge = by && hl.some(h => (h.kind === "betray" || h.kind === "bomb") && h.pid === pid && h.other === by);
@@ -1093,5 +1099,6 @@ function runBattle(plans, seed, opts = {}) {
   const pairsEnd = BV ? (finalDay ? [] : pact0.filter(k => !feudsNew.has(k))) // pacts last until a betrayal or a break ends them, even if a castle fell
     : []; if (!BV) order.forEach(a => order.forEach(b => { if (a < b && P[a].alive && P[b].alive && P[a].pacts.has(b)) pairsEnd.push(a + "|" + b); }));
   const trapsUsed = traps.filter(tr => tr.used && !tr.ranger).map(tr => tr.pid + "|" + Math.round(tr.y - .5) + "," + Math.round(tr.x - .5));
-  return { ...(sdOn() ? { sudden: { t0: sd.t0, go: sd.go } } : {}), ...(V3 && !opts.duel ? { waves: true } : {}), me: mePid, feudsNew: [...feudsNew], trapsUsed, awards, ultCast: order.filter(pid => P[pid].ultCast), lvl: lvlOut, rapierEnd: rapierOwner ? rapierHolder : null, rapier: rapierOwner && rapierHolder && rapierHolder !== rapierOwner ? { from: rapierOwner, to: rapierHolder } : null, pairsEnd, team: teamWin, wallMeta: walls.map(w => ({ pid: w.pid, x: w.x0, y: w.y0, dir: w.dir, maxhp: w.maxhp, tier: w.tier, ...(w.born != null ? { born: w.born } : {}) })), tel, frames, events, cdlog, xplog, logs, hl, ranks: RANKS, meta: meta(), results, order, colors: Object.fromEntries(order.map(p => [p, P[p].color])), traps, duration: t };
+  order.forEach(pid => { const c = P[pid].castle; st(pid).castleEnd = c && c.maxhp ? Math.max(0, c.hp) / c.maxhp : 0; });
+  return { stats: ST, twist: TW, ...(sdOn() ? { sudden: { t0: sd.t0, go: sd.go } } : {}), ...(V3 && !opts.duel ? { waves: true } : {}), me: mePid, feudsNew: [...feudsNew], trapsUsed, awards, ultCast: order.filter(pid => P[pid].ultCast), lvl: lvlOut, rapierEnd: rapierOwner ? rapierHolder : null, rapier: rapierOwner && rapierHolder && rapierHolder !== rapierOwner ? { from: rapierOwner, to: rapierHolder } : null, pairsEnd, team: teamWin, wallMeta: walls.map(w => ({ pid: w.pid, x: w.x0, y: w.y0, dir: w.dir, maxhp: w.maxhp, tier: w.tier, ...(w.born != null ? { born: w.born } : {}) })), tel, frames, events, cdlog, xplog, logs, hl, ranks: RANKS, meta: meta(), results, order, colors: Object.fromEntries(order.map(p => [p, P[p].color])), traps, duration: t };
 }

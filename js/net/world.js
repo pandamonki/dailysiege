@@ -65,6 +65,22 @@ function wTeamColours(pool, bannerOf) { // pool: [uid, player] in sign-up order
   return out;
 }
 
+// ----- daily twist and contracts (battles from CONTRACTS_FROM; see config/contracts.js) -----
+const wTwist = (W, dayKey) => contractsFor(dayKey) ? dayTwist(wWeekOf(W, dayKey), wWeekdayOf(dayKey, W.config)) : null;
+// the three contracts offered to a lord for a day: one aimed at a rival, chosen from the board and from who hurt them last battle
+function wContractOffers(W, dayKey, uid) {
+  if (!contractsFor(dayKey)) return [];
+  const week = wWeekOf(W, dayKey), ids = wRoster(W, week).map(p => p.uid); if (!ids.includes(uid)) return [];
+  const pts = wStandings(W, week, addDays(dayKey, -1)), lead = Object.entries(pts).filter(([p, v]) => v > 0 && ids.includes(p)).sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1))[0];
+  const prev = W.battles[addDays(dayKey, -1)], nemesis = prev && prev.week === week && prev.foes ? prev.foes[uid] || null : null;
+  return contractOffers({ uid, dayKey, rivals: ids, leader: lead ? lead[0] : null, nemesis });
+}
+// who hurt each lord most in a battle: whoever took their castle, else whoever slew their hero most often (tomorrow's Revenge contract)
+function battleFoes(res) {
+  const out = {}; Object.entries(res.stats || {}).forEach(([pid, s]) => { let f = s.fellTo; if (!f) { const e = Object.entries(s.heroBy || {}).sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1))[0]; f = e ? e[0] : null; } if (f && f !== pid) out[pid] = f; });
+  return out;
+}
+
 // ----- turning everyone's orders into a battle -----
 // opts (phones only): uid = whose device this is; nameOf, colours = how this device shows names and colours;
 // test = { mine } builds a practice fight from my unsaved orders against what is publicly known of my rivals.
@@ -102,20 +118,27 @@ function buildBattleInputs(W, dayKey, opts = {}) {
   plans.feuds = feuds0;
   let mercs = {}; if (dayNo >= MERC_DAY) { const mer = resolveMercs(plans, { day: dayKey, N: L.N, cool: id => mercCool(id, null, k => { const b = W.battles[addDays(dayKey, -k)]; return b && b.week === week ? b : null; }) }); plans.notes = (plans.notes || []).concat(mer.notes); mercs = mer.hires; }
   plans.mercs = mercs;
-  return { N: L.N, plans, pairs, transfers, final, mercs, feuds: plans.feuds, week, dayNo, lords: roster.length, ranks: rkm };
+  const twist = wTwist(W, dayKey), offers = {}, picks = {};
+  if (contractsFor(dayKey)) raw.forEach(({ uid, plan }) => { const o = wContractOffers(W, dayKey, uid); offers[uid] = o; const bot = W.players[uid] && W.players[uid].bot;
+    const k = bot && !opts.test ? o[Math.floor(cxHash(dayKey + uid + "bot") * o.length)] : plan && plan.contract; if (k && o.includes(k)) picks[uid] = k; });
+  return { N: L.N, plans, pairs, transfers, final, mercs, feuds: plans.feuds, week, dayNo, lords: roster.length, ranks: rkm, twist, offers, picks };
 }
 const daySeed = dayKey => (+dayKey.replace(/-/g, "") % 1000003) * 7 + 13;
 
 // Fight the day's battle and build the record that is saved for it. `at` is the time to stamp on it.
 function fightDay(W, dayKey, at, opts) {
-  const { N: size, plans, pairs, transfers, final, mercs, feuds, week, dayNo, ranks } = buildBattleInputs(W, dayKey, opts);
+  const { N: size, plans, pairs, transfers, final, mercs, feuds, week, dayNo, ranks, twist, offers, picks } = buildBattleInputs(W, dayKey, opts);
   // ranks: the standings going into the day. They set the bounty on the top three, so the official fight and every replay must use the same ones.
-  const inputs = JSON.parse(JSON.stringify({ N: size, final: !!final, ultV2: ultV2For(dayKey), balV2: balV2For(dayKey), balV3: balV3For(dayKey), fairV1: fairV1For(dayKey), pickV1: pickV1For(dayKey), balV4: balV4For(dayKey), suddenV1: suddenV1For(dayKey), treesV1: treesV1For(dayKey), heroV3: heroV3For(dayKey), dayNo, ranks, feuds: plans.feuds || [], plans: plans.map(p => Object.assign({}, p, { me: false })) })); // taken before the fight, which edits its plans as it goes
-  const res = runBattle(plans, daySeed(dayKey), { fast: true, N: size, finalDay: final, ultV2: ultV2For(dayKey), balV2: balV2For(dayKey), balV3: balV3For(dayKey), fairV1: fairV1For(dayKey), pickV1: pickV1For(dayKey), balV4: balV4For(dayKey), suddenV1: suddenV1For(dayKey), treesV1: treesV1For(dayKey), heroV3: heroV3For(dayKey), dayNo, ranks });
+  const inputs = JSON.parse(JSON.stringify({ N: size, final: !!final, ultV2: ultV2For(dayKey), balV2: balV2For(dayKey), balV3: balV3For(dayKey), fairV1: fairV1For(dayKey), pickV1: pickV1For(dayKey), balV4: balV4For(dayKey), suddenV1: suddenV1For(dayKey), treesV1: treesV1For(dayKey), heroV3: heroV3For(dayKey), dayNo, ranks, ...(twist ? { twist } : {}), feuds: plans.feuds || [], plans: plans.map(p => Object.assign({}, p, { me: false })) })); // taken before the fight, which edits its plans as it goes
+  const res = runBattle(plans, daySeed(dayKey), { fast: true, N: size, finalDay: final, ultV2: ultV2For(dayKey), balV2: balV2For(dayKey), balV3: balV3For(dayKey), fairV1: fairV1For(dayKey), pickV1: pickV1For(dayKey), balV4: balV4For(dayKey), suddenV1: suddenV1For(dayKey), treesV1: treesV1For(dayKey), heroV3: heroV3For(dayKey), dayNo, ranks, twist });
   const units = {}; res.tel.ents.filter(e => e.kind === "unit" && e.ref).forEach(e => { (units[e.pid] = units[e.pid] || {})[e.ref] = e.survived ? 1 : 0; });
   const doc = { week, day: dayNo, at, results: res.results.map(r => ({ pid: r.pid, place: r.place, points: r.points, kills: r.kills, ukills: r.ukills || 0, castles: r.castles, fellAt: r.fellAt ?? null })), units, pairs: pairs.map(p => p.join("|")), pairsEnd: res.pairsEnd, transfers,
     awards: res.awards, ...(res.rapier ? { rapier: res.rapier } : {}), ...(res.ultCast && res.ultCast.length ? { ults: Object.fromEntries(res.ultCast.map(p => [p, 1])) } : {}), ...(res.rapierEnd ? { rapierEnd: res.rapierEnd } : {}), gain: Object.fromEntries(Object.entries(res.lvl).map(([k, v]) => [k, v.gain])), xp: Object.fromEntries(Object.entries(res.lvl).map(([k, v]) => [k, v.xp])), gold: Object.fromEntries(res.results.map(r => [r.pid, r.gold])), team: !!res.team };
   doc.feuds = Array.from(new Set((feuds || []).concat(res.feudsNew || []))); doc.mercs = mercs || {}; doc.trapsUsed = res.trapsUsed || []; doc.inputs = inputs; // the exact orders fought, so replaying never depends on orders that were edited or lost later
   doc.resultHash = battleHash(res); // a fingerprint of the outcome: every device that replays this battle must arrive at the same one
+  if (contractsFor(dayKey)) { // contracts are paid on top of the battle's own result (after the fingerprint, which covers the fight alone)
+    const cs = settleContracts(res, picks, offers, twist); doc.contracts = cs; doc.offers = offers; doc.foes = battleFoes(res); if (twist) doc.twist = twist;
+    Object.entries(cs).forEach(([pid, c]) => { const r = doc.results.find(x => x.pid === pid); if (r) { r.points += c.pts; if (c.pts) r.contract = c.pts; } if (c.gold) doc.gold[pid] = (doc.gold[pid] || 0) + c.gold; });
+  }
   return doc;
 }

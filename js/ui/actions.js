@@ -5,7 +5,7 @@ let idc = Date.now();
 const A = {
   open: (v, k) => open(v, k),
   close: () => close(),
-  battle: () => { if (isLive()) return; startBattle(); },
+  battle: () => { if (isLive() && (LIVE.readOnly || !S)) return; sheet = null; startBattle(); }, // in the friends game this is a rehearsal: my orders against what I know of my rivals
   testmenu: () => { sheet = { type: "title", tab: "test" }; },
   testgo: () => { if (gameMode !== "practice") setMode("practice"); sheet = null; render(); },
   testnext: () => { if (gameMode !== "practice") setMode("practice"); A.nextday(); sheet = null; render(); },
@@ -99,7 +99,7 @@ const A = {
     enterPractice(); home(); sheet = null; render(); setTimeout(() => startWizard(true), 300); toast("A new game begins on day 1."); },
   nextday: () => { if (isLive()) return; if (DAY >= 7) { toast("Day 7 is the last day. Start a new game to begin again."); return; }
     const inc = baseIncome(DAY) + CASTLE_INCOME[ctNow() - 1] + ((LASTP && LASTP.gold && LASTP.gold.you) || 0);
-    if (LASTP) { if ((LASTP.ults || []).includes("you")) S.ultLast = DAY; if (LASTP.blessed) S.blessDone = DAY; } S.ultArm = false; S.gold += inc; S.gain = inc; if (LASTP && LASTP.mercs) { ensureDip(); S.mercHist[DAY] = LASTP.mercs; Object.values(LASTP.mercs).forEach(h => { if (h.pid === "you") S.gold -= h.gold; }); } S.bids = {}; { const g = LASTP && LASTP.gain && LASTP.gain.you != null ? LASTP.gain.you : MIN_GAIN; S.lvl = Math.min(MAX_HERO_LVL, (S.lvl || DAY) + Math.max(MIN_GAIN, g)); S.xp = (LASTP && LASTP.xp && LASTP.xp.you) || 0; } DAY++; pickReset(); S.locked = false; S.phase = "muster"; S.offers = Object.fromEntries(Object.entries(S.offers || {}).filter(([, o]) => o.day === DAY - 1)); S.replies = {}; S.owned.forEach(u => { u.hp = 1; });
+    if (LASTP) { if ((LASTP.ults || []).includes("you")) S.ultLast = DAY; if (LASTP.blessed) S.blessDone = DAY; } S.ultArm = false; S.contract = null; S.gold += inc; S.gain = inc; if (LASTP && LASTP.mercs) { ensureDip(); S.mercHist[DAY] = LASTP.mercs; Object.values(LASTP.mercs).forEach(h => { if (h.pid === "you") S.gold -= h.gold; }); } S.bids = {}; { const g = LASTP && LASTP.gain && LASTP.gain.you != null ? LASTP.gain.you : MIN_GAIN; S.lvl = Math.min(MAX_HERO_LVL, (S.lvl || DAY) + Math.max(MIN_GAIN, g)); S.xp = (LASTP && LASTP.xp && LASTP.xp.you) || 0; } DAY++; pickReset(); S.locked = false; S.phase = "muster"; S.offers = Object.fromEntries(Object.entries(S.offers || {}).filter(([, o]) => o.day === DAY - 1)); S.replies = {}; S.owned.forEach(u => { u.hp = 1; });
     S.owned.forEach(u => { if (UNITS[u.type].cool) { if (placedAt(u.id)) { u.cool = UNITS[u.type].cool; delete S.place[placedAt(u.id)]; } else u.cool = Math.max(0, (u.cool || 0) - 1); } });
     { const used = new Set((LASTP && LASTP.trapsUsed) || []); S.traps = S.traps.filter(t => { const k = placedAt(t.id); if (k && used.has("you|" + k)) { delete S.place[k]; return false; } return true; }); } LASTP = null;
     try { localStorage.setItem("lastbanner.pday", String(DAY)); } catch (e) {}
@@ -114,7 +114,7 @@ const A = {
   wrot: id => { const w = findWall(id), k = placedAt(id), nd = w.dir === "h" ? "v" : "h"; if (k) { const [r, c] = k.split(",").map(Number); if (!wallFree(r, c, nd, id)) { toast("It doesn't fit that way round."); return; } } w.dir = nd; },
   wsell: id => { const k = placedAt(id); if (k) delete S.place[k]; S.walls = S.walls.filter(w => w.id !== id); S.gold += Math.floor(WALL_COST / 2); sheet = null; },
   shellat: v => { if (!S.locked) S.shellAt = Math.max(1, Math.min(10, (S.shellAt || 2) + +v)); },
-  ibuy: k => { const it = ITEMS[k]; if (!it || S.items.includes(k) || S.items.length >= ITEM_SLOTS || avail() < itemCost(k) || (it.unique && rapierTaken(k))) return; S.gold -= itemCost(k); S.items.push(k); toast(`${it.name} bought.`); },
+  ibuy: k => { const it = ITEMS[k]; if (!it || S.items.includes(k) || S.items.length >= ITEM_SLOTS || avail() < buyCost(k) || (it.unique && rapierTaken(k))) return; S.gold -= buyCost(k); S.items.push(k); toast(`${it.name} bought.`); },
   hitem: k => { sheet.hit = sheet.hit === k ? null : k; }, // hero screen: show (or hide) an item's details
   isell: k => { const it = ITEMS[k]; if (!it) return; S.items = S.items.filter(x => x !== k); S.gold += Math.floor(itemCost(k) / 2); },
   bset: (v, k) => { if (!canBanner()) { toast("Banners are designed on Day 1."); return; }
@@ -144,6 +144,8 @@ const A = {
   ireply: (v, k) => { ensureDip(); S.replies[k] = v; if (!isLive()) { if (v === "reject") S.declined[k] = true; else delete S.declined[k]; }
     toast(v === "accept" ? "Accepted. You ally at the start of tonight's battle." : "Declined."); if (sheet && sheet.type === "invites" && !pendingInvites().length) sheet = null; },
   idismiss: () => { sheet = null; },
+  opentoday: () => { sel = null; sheet = { type: "today" }; },
+  cxpick: v => { if (S.locked || (isLive() && LIVE.readOnly)) return; S.contract = v && myOffers().includes(v) ? v : null; if (S.contract) toast("Contract taken. Seal your orders to keep it."); },
   opencamp: () => { sel = null; sheet = { type: "camp" }; },
   mbid: (v, k) => { ensureDip(); const m = MERCS[k]; if (!m || mercWait(k)) return; const b = S.bids[k] && S.bids[k].day === planDayKey() ? S.bids[k].gold : 0, step = 10;
     const next = +v > 0 ? (b ? b + step : m.min) : (b - step < m.min ? 0 : b - step);

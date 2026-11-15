@@ -24,6 +24,7 @@ const SIM_FILES = [
   "js/config/spells.js",
   "js/config/trees.js",
   "js/config/seats.js",
+  "js/config/contracts.js",
   "js/core/util.js",
   "js/core/detmath.js",
   "js/core/layout.js",
