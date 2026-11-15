@@ -1,0 +1,48 @@
+name: Preview cleanup
+
+# Firebase only allows so many preview channels at once, and a pull request's channel otherwise lingers
+# until it expires. When a pull request is merged or closed, delete its channel straight away so the
+# limit is never hit ("channel quota reached" stops new previews being made).
+on:
+  pull_request:
+    types: [closed]
+    paths-ignore: ["**.md"]
+
+permissions:
+  contents: read
+
+env:
+  SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DAILY_SIEGE || secrets.FIREBASE_SERVICE_ACCOUNT || secrets.GCP_SA_KEY }}
+  PROJECT: daily-siege
+  SITE: daily-siege
+
+jobs:
+  cleanup:
+    # pull requests from forks never had a preview, and cannot read the key
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Delete this pull request's preview channel
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          if [ -z "$SERVICE_ACCOUNT" ]; then
+            echo "::warning::No Firebase service-account secret found, so no preview channel was cleaned up."
+            exit 0
+          fi
+          printf '%s' "$SERVICE_ACCOUNT" > "$RUNNER_TEMP/key.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/key.json"
+          # channels are named pr<number>-<branch>-<hash>: find every one for this pull request
+          npx --yes firebase-tools@13 hosting:channel:list --project "$PROJECT" --site "$SITE" --json > "$RUNNER_TEMP/channels.json" || { echo "::warning::Could not list preview channels."; exit 0; }
+          ids=$(node -e '
+            const j = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")), n = process.argv[2];
+            const list = (j.result && j.result.channels) || [];
+            list.map(c => String(c.name || "").split("/").pop()).filter(id => id.startsWith("pr" + n + "-")).forEach(id => console.log(id));
+          ' "$RUNNER_TEMP/channels.json" "$PR_NUMBER")
+          if [ -z "$ids" ]; then echo "No preview channel found for pull request $PR_NUMBER."; exit 0; fi
+          for id in $ids; do
+            echo "Deleting preview channel $id"
+            npx --yes firebase-tools@13 hosting:channel:delete "$id" --project "$PROJECT" --site "$SITE" --force || echo "::warning::Could not delete $id."
+          done
+          rm -f "$RUNNER_TEMP/key.json"
