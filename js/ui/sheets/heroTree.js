@@ -31,7 +31,7 @@ function treeColumnHTML(bi, sel) {
 }
 function treeDetailHTML(bi, i) {
   const node = TREES[S.cls][bi].nodes[i], b = TREE_BKEY[bi], rank = S.tree[b][i], max = TREE_MAX[i], L = level(); TREE_NAME_CLS = S.cls;
-  const need = treeNeeds(S.tree, b, i, L), free = treeFree(S.tree, L), canL = treeCanLearn(S.tree, b, i, L), kind = { passive: "Passive", trigger: "Trigger", synergy: "Synergy", ultimate: "Ultimate" }[node.kind] || "";
+  const need = treeNeeds(S.tree, b, i, L), free = treeFree(S.tree, L), canL = treeCanLearn(S.tree, b, i, L), kind = { passive: "Passive", trigger: "Trigger", synergy: "Synergy", ultimate: ultBolt() + "Ultimate" }[node.kind] || "";
   const kindName = (i === 2 || i === 4) ? "Side talent" : i === 3 ? "Synergy" : kind;
   const now = nodeDesc(S.cls, bi, i, Math.max(1, rank)), nxt = rank >= 1 && rank < max && node.v.length ? nodeDesc(S.cls, bi, i, rank + 1) : null;
   const reqs = need.maxed ? [] : [...need.list, { ok: free > 0, text: free > 0 ? `A skill point to spend (${free} free)` : "A skill point to spend (none free yet: your hero gains them as it levels up)" }];
@@ -59,7 +59,7 @@ function champSheetV3() {
     <div class="sgrid">${sr("Health", now.hp)}${sr("Attack", now.atk)}${sr("Attack type", esc(ATK_TYPES[ty[0]].name))}${sr("Armour type", esc(ARMOUR_TYPES[ty[1]] || "–"))}${sr("Damage blocked", Math.round(b.armor * 100) + "%")}${sr("Attack every", b.as + "s")}${sr("Range", b.range + " tiles")}${sr("Move speed", b.spd.toFixed(1) + " tiles/s")}</div>`;
   const abilities = `<div class="tcols">${[0, 1, 2].map(bi => treeColumnHTML(bi, sel)).join("")}</div>
     ${treeDetailHTML(sel[0], sel[1])}
-    <div><button class="btn ${S.ultArm && learned && !cool ? "wax" : "wood"}" data-act="ultarm" ${dis(!learned || cool)}>${!learned ? "Ultimate not learned yet" : cool ? "Ultimate recharging until tomorrow" : S.ultArm ? "Ultimate planned for tonight ✓ (tap to cancel)" : "Plan the ultimate for tonight"}</button></div>`;
+    <div><button class="btn ${S.ultArm && learned && !cool ? "wax" : "wood"}" data-act="ultarm" ${dis(!learned || cool)}>${ultBolt()}${!learned ? "Ultimate not learned yet" : cool ? "Ultimate recharging until tomorrow" : S.ultArm ? "Ultimate planned for tonight ✓ (tap to cancel)" : "Plan the ultimate for tonight"}</button></div>`;
   const items = `
     ${heroItemsHTML(slots)}
     <div class="sec"><h3>Gear</h3>${gearLines(S.gear)}</div>
@@ -91,7 +91,7 @@ function rivalHeroSheet(id) {
     if (!(sb >= 0 && sb < 3 && si >= 0 && si < 6)) { sb = 0; si = 0; outer: for (const n of [5, 4, 3, 2, 1, 0]) for (let bi = 0; bi < 3; bi++) if ((rows[bi][n] || 0) > 0) { sb = bi; si = n; break outer; } }
     const col = bi => { const tr = TREES[h.cls][bi], pts = rows[bi].reduce((a, x) => a + (x || 0), 0), N = i => rTreeNode(h.cls, h.tree, bi, i, sb === bi && si === i);
       return `<div class="tcol${pts ? " on" : ""}"><div class="tch"><b>${esc(tr.name)}</b><span>${pts} pt${pts === 1 ? "" : "s"}</span></div><div class="tbody"><div class="trow">${N(5)}<span></span></div><div class="trow">${N(3)}${N(4)}</div><div class="trow">${N(1)}${N(2)}</div><div class="trow">${N(0)}<span></span></div></div></div>`; };
-    const node = TREES[h.cls][sb].nodes[si], rank = rows[sb][si] || 0, kind = si === 2 || si === 4 ? "Side talent" : si === 3 ? "Synergy" : { passive: "Passive", trigger: "Trigger", synergy: "Synergy", ultimate: "Ultimate" }[node.kind] || "";
+    const node = TREES[h.cls][sb].nodes[si], rank = rows[sb][si] || 0, kind = si === 2 || si === 4 ? "Side talent" : si === 3 ? "Synergy" : { passive: "Passive", trigger: "Trigger", synergy: "Synergy", ultimate: ultBolt() + "Ultimate" }[node.kind] || "";
     abil = `<div class="tcols">${[0, 1, 2].map(col).join("")}</div>
       <div class="det tdet"><img class="tdico" alt="" src="${spellURL(node.ic, 96)}"><h3><span>${esc(node.name)}</span><em>${kind} · ${rank}/${TREE_MAX[si]}</em></h3><p>${esc(nodeDesc(h.cls, sb, si, Math.max(1, rank)))}</p>${rank ? "" : `<p class="muted">Not learned.</p>`}${node.kind === "trigger" && node.cd ? `<div class="row muted">Recharge about ${Math.round(node.cd * BAL.cd)}s</div>` : ""}</div>`;
   } else {
@@ -111,4 +111,5 @@ function treeUlt() {
   for (let bi = 0; bi < 3; bi++) if (S.tree && S.tree[TREE_BKEY[bi]][5] > 0) { const n = TREES[S.cls][bi].nodes[5]; return { name: n.name, desc: nodeDesc(S.cls, bi, 5, 1), ic: n.ic }; }
   return null;
 }
+const ultBolt = () => `<img class="sico" alt="" src="icons/ui/ultimate.webp"> `; // the lightning bolt that marks every ultimate
 const ultIconHTML = u => (u && u.ic ? `<img class="sico" alt="" src="${spellURL(u.ic, 32)}"> ` : "");
