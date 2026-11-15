@@ -157,6 +157,12 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "Solid forest and tree blockades", date: "15 Nov", fixes: [], balance: [], changes: [
+    "The forest around the map is now a solid wall in battles from 16 Nov: soldiers and heroes can no longer walk into the trees at the edge and corners, and slide round them instead.",
+    "The old random trees and rocks scattered across the middle of the map are gone. In their place is a small blockade of trees between each pair of bases. Every blockade is the same, and the design is the same around every base whatever the number of lords.",
+    "The forest edge curves in a little between each pair of bases. Your own deployment field is still kept clear. The trees are drawn this way for everyone straight away; only battles from 16 Nov treat them as solid.",
+    "Lightning bolt icon added to every ultimate heading and button.",
+  ] },
   { v: "Sudden death", date: "15 Nov", fixes: [], balance: [], changes: [
     "If two or more sides are still fighting at the 3 minute mark, the battle cuts to the centre arena with a SUDDEN DEATH announcement and a 5 second countdown.",
     "Every surviving hero and soldier is carried to the arena, one camp per lord around the ring. The board's 1st and 2nd face each other with the weakest lords beside them, and 3rd and 4th face each other. Siege engines and totems are removed, and nobody can fall back or be reinforced. A hero still waiting to respawn joins the fight at once, with health by how far through the wait it was (at least 25%).",

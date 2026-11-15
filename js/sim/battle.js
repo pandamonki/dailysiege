@@ -52,12 +52,19 @@ const BLOC_MAX = 3, TREACHERY_PTS = 3, TREACHERY_LOOT = .25, DAY_WEIGHT = { 5: 1
 const ORPHAN_ARMIES = true;
 const dayWeight = (v2, dayNo) => (v2 && DAY_WEIGHT[dayNo]) || 1;
 function runBattle(plans, seed, opts = {}) {
-  const SV = !!opts.suddenV1, BV = !!opts.balV2, V3 = !!opts.balV3, FV = !!opts.fairV1 || !!opts.pickV1, PV = !!opts.pickV1, V4 = !!opts.balV4, HV3 = !!opts.heroV3, maxLvl = HV3 ? MAX_HERO_LVL_V3 : MAX_HERO_LVL, hpLvX = HV3 ? hpLvV3 : hpLv, atkLvX = HV3 ? atkLvV3 : atkLv, OA = !!opts.balV2 && ORPHAN_ARMIES, UV = !!opts.ultV2, UD = UV ? .75 : 1, UR = rk => UV ? [.7, .85, 1][Math.min(3, Math.max(1, rk || 1)) - 1] : 1;
+  const TV = !!opts.treesV1, SV = !!opts.suddenV1, BV = !!opts.balV2, V3 = !!opts.balV3, FV = !!opts.fairV1 || !!opts.pickV1, PV = !!opts.pickV1, V4 = !!opts.balV4, HV3 = !!opts.heroV3, maxLvl = HV3 ? MAX_HERO_LVL_V3 : MAX_HERO_LVL, hpLvX = HV3 ? hpLvV3 : hpLv, atkLvX = HV3 ? atkLvV3 : atkLv, OA = !!opts.balV2 && ORPHAN_ARMIES, UV = !!opts.ultV2, UD = UV ? .75 : 1, UR = rk => UV ? [.7, .85, 1][Math.min(3, Math.max(1, rk || 1)) - 1] : 1;
   const rng = mulberry(seed), DT = .1, fast = !!opts.fast, leaderPid = (plans.find(p => p.leader) || {}).pid;
   let curAb = null;
   const mePid = (plans.find(p => p.me) || plans[0]).pid, NN = opts.N || N;
   let t = 0, tick = 0, over = false, anyUlt = false;
   const ents = [], events = [], cdlog = [], xplog = [], logs = [], frames = [], pending = [], traps = [], walls = [];
+  // solid trees (from TREES_V1_FROM): the forest rim and the blockades between bases cannot be walked through; soldiers slide round them
+  const TG = TV ? treeGeom(plans.length, opts.N || N) : null;
+  const treeHit = (x, y) => { if (!TG) return null;
+    for (const c of TG.clumps) { const ex = x - c.x, ey = y - c.y; if (ex > c.r + .3 || ex < -c.r - .3 || ey > c.r + .3 || ey < -c.r - .3) continue; const dd = hyp(ex, ey), lim = c.r + .22; if (dd < lim) return { nx: dd ? ex / dd : 1, ny: dd ? ey / dd : 0, d: lim - dd }; }
+    const dx = x - TG.cc, dy = y - TG.cc, r = hyp(dx, dy); if (r > TG.half - 1.5) { const lim = TG.rim(datan2(dy, dx)) - .12; if (r > lim) return { nx: -dx / r, ny: -dy / r, d: r - lim }; }
+    return null; };
+  const settle = e => { for (let i = 0; i < 5; i++) { const h = treeHit(e.x, e.y); if (!h) return; e.x += h.nx * (h.d + .01); e.y += h.ny * (h.d + .01); } }; // step clear of the trees (a few passes: a blockade's trees overlap)
   let sd = null; // sudden death: null until SD_AT, then { t0, go, skip, winners }
   const sdOn = () => !!sd && !sd.skip, tmax = () => (sdOn() ? SD_AT + SD_COUNT + SD_LEN : TMAX);
   let ctrHolder = null, teamWin = null; const finalDay = !!opts.finalDay;
@@ -571,6 +578,10 @@ function runBattle(plans, seed, opts = {}) {
     if (fxv(e, "stun") || fxv(e, "root") || fxv(e, "aim")) return;
     const dx = x - e.x, dy = y - e.y, dd = hyp(dx, dy); if (dd <= stop) return;
     const sp = e.kind === "unit" && !e.cart && !e.ram && P[e.pid] && P[e.pid].hold && (e.order || "army") === "army" ? Math.min(e.spd, P[e.pid].slow) : e.spd, step = Math.min(dd - stop, sp * (1 - fxv(e, "slow")) * (1 + (e.v3ms || 0)) * DT), nx = e.x + dx / dd * step, ny = e.y + dy / dd * step;
+    if (TG && e.kind !== "totem") { const h = treeHit(nx, ny); if (h) { // trees in the way: slide along them, to whichever side the way on lies (or by turns when dead ahead)
+      const vx = dx / dd, vy = dy / dd, dot = vx * h.nx + vy * h.ny; let sx = vx - dot * h.nx, sy = vy - dot * h.ny; const sl = hyp(sx, sy);
+      if (sl < .25) { const sg = e.id % 2 ? 1 : -1; sx = -h.ny * sg; sy = h.nx * sg; } else { sx /= sl; sy /= sl; }
+      const tx = e.x + sx * step, ty = e.y + sy * step; if (!treeHit(tx, ty)) { e.x = tx; e.y = ty; } return; } }
     if (walls.length && e.kind !== "totem" && wallAt(e, nx, ny)) { // blocked: slide along the wall if there's room
       e.blk = (e.blk || 0) + 1;
       if (Math.abs(dx) >= Math.abs(dy)) { if (!wallAt(e, nx, e.y)) e.x = nx; else if (!wallAt(e, e.x, ny)) e.y = ny; }
@@ -935,6 +946,7 @@ function runBattle(plans, seed, opts = {}) {
     ev({ ty: "sudden", x: cx, y: cy, go: sd.go }); log("SUDDEN DEATH! Every hero and soldier is drawn to the arena. Fight to the last.", "big");
   }
   // ----- main loop -----
+  if (TG) ents.forEach(e => { if (e.kind === "castle" || e.kind === "totem") return; e.x = Math.max(.9, Math.min(NN - .9, e.x)); e.y = Math.max(.9, Math.min(NN - .9, e.y)); settle(e); }); // soldiers set down among the trees start just clear of them
   log("The horns sound. Battle begins!", "big");
   (plans.notes || []).forEach(n => log(n));
   record();
@@ -1025,7 +1037,7 @@ function runBattle(plans, seed, opts = {}) {
     if (walls.length) mob.forEach(e => { for (const w of walls) { if (w.hp <= 0 || !hostile(e.pid, w.pid)) continue;
       if (e.x > w.x0 && e.x < w.x0 + 1 && e.y > w.y0 && e.y < w.y0 + 1) { const l = e.x - w.x0, r = w.x0 + 1 - e.x, u = e.y - w.y0, b = w.y0 + 1 - e.y, m = Math.min(l, r, u, b);
         if (m === l) e.x = w.x0 - .23; else if (m === r) e.x = w.x0 + 1.23; else if (m === u) e.y = w.y0 - .23; else e.y = w.y0 + 1.23; } } });
-    mob.forEach(e => { e.x = Math.max(.3, Math.min(NN - .3, e.x)); e.y = Math.max(.3, Math.min(NN - .3, e.y)); });
+    { const mg = TG ? .9 : .3; mob.forEach(e => { e.x = Math.max(mg, Math.min(NN - mg, e.x)); e.y = Math.max(mg, Math.min(NN - mg, e.y)); if (TG) settle(e); }); }
     if (tick % 2 === 0) record();
     const alive = alivePlayers();
     if (sdOn() && t >= sd.go) { // last side standing wins; when time runs out, the side with the most health left

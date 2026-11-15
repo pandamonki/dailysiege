@@ -10,6 +10,18 @@ function seatLayout(n) {
   for (let i = 0; i < n; i++) { const a = Math.PI / 2 + 2 * Math.PI * i / n; castles.push([Math.round(c + R * dsin(a)), Math.round(c + R * dcos(a))]); }
   return { N: size, castles };
 }
+// Trees. One definition, used by the map drawing and by the battle rules (from TREES_V1_FROM the forest is solid), so what you see is what blocks you.
+// The forest rim lies outside a smooth boundary at distance rim(angle) from the centre: it starts just behind the castles and bulges a little way in between each pair of bases.
+// A small blockade of three trees stands between each pair too. Everything is turned once per base, so it is identical between every pair of bases, whatever the number of lords.
+let TREES_V1_FROM = "2026-11-16"; const treesV1For = d => String(d) >= TREES_V1_FROM;
+function treeGeom(n, size) {
+  n = Math.max(2, n); const cc = size / 2, half = (size - 1) / 2, Rc = half - 1, sec = 2 * Math.PI / n, ref = Math.PI / 2;
+  const rim = th => { const v = (1 - dcos(n * (th - ref))) / 2; return half + .7 - 1.4 * v * Math.sqrt(v); };
+  // a blockade spans about 40% of the gap between neighbouring bases at its distance from the centre: three trees when lords are few, one when they are many, so a ring of them never closes off the middle
+  const rho = Math.max(3.2, .55 * Rc), w = .4 * rho * sec, m = Math.max(1, Math.min(3, Math.round((w - 1.1) / .7) + 1)), sp = m > 1 ? Math.min(1, (w - 1.1) / (m - 1)) : 0, clumps = [];
+  for (let i = 0; i < n; i++) { const am = ref + (i + .5) * sec, ux = dcos(am), uy = dsin(am); for (let k = 0; k < m; k++) { const o = (k - (m - 1) / 2) * sp; clumps.push({ x: cc + ux * rho - uy * o, y: cc + uy * rho + ux * o, r: .55, i, k }); } }
+  return { n, cc, half, sec, ref, rim, clumps };
+}
 function zoneFor([r, c], size, all) {
   // the deployment field: a ring around the castle plus the old forward patch, shared fairly with neighbours, never the centre
   const ctr = (size - 1) / 2, dy = ctr - r, dx = ctr - c, L = Math.sqrt(dx * dx + dy * dy) || 1, zy = r + dy / L * 1.7, zx = c + dx / L * 1.7, z = new Set();
