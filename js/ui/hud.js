@@ -38,7 +38,7 @@ function renderCommands() {
   const o = S.phase === "orders";
   const seal = `<button class="sealbar ${S.locked ? "sealed" : "wax"}" data-act="open" data-v="seal"><b>${S.locked ? "ORDERS SEALED ✓" : S.sealedSnap && isLive() ? "SEAL NEW ORDERS" : "SEAL ORDERS"}</b><small>${S.locked ? "battle in " + countdown() + " · tap to review" : S.sealedSnap && isLive() ? "sealed orders stand until then" : "battle in " + countdown()}</small></button>`;
   const nb = (act, v, ico, label, extra = "") => `<button class="nb2" data-act="${act}" ${v != null ? `data-v="${v}"` : ""}><span class="ni">${ico}</span><span>${label}${extra}</span></button>`;
-  document.getElementById("cmdbar").innerHTML = nb("opencastle", "keep", UIIMG("base"), "Base") + nb("opencastle", "recruit", UIIMG("army"), "Army") + nb("openhero", null, S.cls ? UIIMG("hero_" + S.cls) : "🧙", "Hero", freePts() ? `<sup class="dot">${freePts()}</sup>` : "") + nb("openorders", "ord", UIIMG("orders"), "Orders") + nb("openorders", "alli", UIIMG("allies"), "Allies") + seal;
+  document.getElementById("cmdbar").innerHTML = nb("opencastle", "keep", UIIMG("base"), "Base") + nb("opencastle", "recruit", UIIMG("army"), "Army") + nb("openhero", null, S.cls ? UIIMG("hero_" + S.cls) : "🧙", "Hero", freePts() ? `<sup class="dot">${freePts()}</sup>` : "") + nb("openorders", "ord", UIIMG("orders"), "Orders", cxOpen() ? `<sup class="dot">!</sup>` : "") + nb("openorders", "alli", UIIMG("allies"), "Allies") + seal;
 }
 function renderCamp() {
   const b = document.getElementById("campbtn"); if (!b) return;
@@ -46,7 +46,6 @@ function renderCamp() {
   try { show = !!S && mode === "plan" && mercOpen() && !(isLive() && LIVE.readOnly); n = show ? myBids().length : 0; fresh = show && S.mercSeen !== (isLive() ? liveClock().week : "p"); } catch (e) {}
   b.hidden = !show; b.classList.toggle("pulse", fresh);
   const sb = document.getElementById("shopbtn"); if (sb) sb.hidden = !(S && mode === "plan" && !(isLive() && LIVE.readOnly));
-  const tb = document.getElementById("todaybtn"); if (tb) { const on = !!(S && mode === "plan" && !(isLive() && LIVE.readOnly)); tb.hidden = !on; const d = tb.querySelector(".dot"); if (d) d.hidden = !(on && !S.contract && contractsOn() && myOffers().length); }
   const gb = document.getElementById("giftbtn"); if (gb) gb.hidden = !(S && S.spin && !spinStale() && mode === "plan" && !(isLive() && LIVE.readOnly));
   const bd = b.querySelector(".cbadge"); bd.hidden = !n; bd.textContent = n;
 }

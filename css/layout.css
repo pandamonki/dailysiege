@@ -161,9 +161,3 @@ html, body { overflow: hidden; overscroll-behavior: none; }
 .ugrid.trainl { grid-template-columns: repeat(4, minmax(0, 1fr)); max-height: 25vh; overflow-y: auto; padding: 3px; margin: 0 -3px; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
 .ugrid.trainl .ucard { padding: 3px 1px 2px; } .ugrid.trainl .ib, .ugrid.trainl .ib img { width: 40px; height: 40px; } .ugrid.trainl .ucard b { font-size: 11px; }
 .trainfoot { position: sticky; bottom: 0; background: var(--parchment); padding-bottom: 2px; z-index: 1; } .trainfoot .abar { position: static; margin-top: 8px; }
-#todaybtn { position: absolute; left: 0; top: 196px; z-index: 6; width: 54px; height: 54px; padding: 2px 0 0; border: 2px solid var(--wood-dark); border-left: 0; border-radius: 0 27px 27px 0; background: linear-gradient(#f3e6c4, #d9c290); box-shadow: 0 2px 0 rgba(62,39,20,.5); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; color: var(--ink); }
-#todaybtn[hidden] { display: none; }
-#todaybtn .tico { font-size: 22px; line-height: 1; }
-#todaybtn .tlbl { font-size: 10px; letter-spacing: .02em; }
-#todaybtn .dot { position: absolute; top: 4px; right: 6px; width: 10px; height: 10px; border-radius: 50%; background: var(--wax); border: 1px solid #fff8; }
-#todaybtn .dot[hidden] { display: none; }

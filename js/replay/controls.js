@@ -2,8 +2,8 @@
 
 // auto camera: stay on your hero, cut to the keep while it is under attack, then follow the hero back out
 const AUTO_ZOOM_STEP = 1.35;
-// how far the viewer has zoomed the auto camera from its own framing; it starts one step zoomed out
-function autoZoomMul() { if (replay.zmul == null) replay.zmul = 1 / AUTO_ZOOM_STEP; return replay.zmul; }
+// how far the viewer has zoomed the auto camera from its own framing; it starts at the camera's regular zoom
+function autoZoomMul() { if (replay.zmul == null) replay.zmul = 1; return replay.zmul; }
 function autoZoomBy(k) { const b = replay.zbase || 1.7; replay.zmul = Math.max(minZoom() / b, Math.min(2.4 / b, autoZoomMul() * k)); }
 function autoCam() {
   const R = replay.res, f = replayFrameAt(replay.time); if (!f) return;

@@ -157,6 +157,12 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "Contracts move to Orders", date: "15 Nov", fixes: [
+    "Replays that follow your hero start at the regular zoom again, not one step zoomed out.",
+  ], balance: [], changes: [
+    "The Today button is gone. Contracts, the twist and rehearsal now live in a Contracts tab under Orders.",
+    "At the start of each planning phase the contracts for the next battle pop up until you take one. Close them and they wait under Orders › Contracts. The Orders button shows a mark while no contract is taken.",
+  ] },
   { v: "Twists, contracts, rehearsal and battle reports", date: "16 Nov", fixes: [], balance: [
     "Contracts pay 2 points and 60 gold (easy), 3 points and 100 gold (hard) or 5 points and 150 gold (rival). Contract points are not multiplied on the late days of the week.",
     "Twists: Iron Walls +30% castle health; Siege Weather +30% soldier damage to castles; Blood Moon doubles gold for slaying heroes; Golden Hill pays 2.5 times the battleground's gold and experience; Market Day takes 25% off items; Gold Rush doubles contract gold; Day of Glory doubles contract points.",
