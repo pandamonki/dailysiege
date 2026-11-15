@@ -41,7 +41,8 @@ function drawReplay(t) {
   const f0 = fr[i], f1 = fr[i + 1], a = Math.max(0, Math.min(1, (time - f0.t) / ((f1.t - f0.t) || 1)));
   const friendly = pid => pid === R.me || !!((f0.al >> R.order.indexOf(pid)) & 1);
   { const hc = f0.c != null && f0.c >= 0 ? R.colors[R.order[f0.c]] : null; drawCentreRing(t, hc); }
-  if (R.sudden && time >= R.sudden.t0) { const rr = (3 + R.order.length * .4 + 2.4) * ts, pu = .5 + .5 * Math.sin(t * 4); ctx.save(); ctx.strokeStyle = `rgba(214,60,40,${.55 + .25 * pu})`; ctx.fillStyle = "rgba(120,20,10,.14)"; ctx.lineWidth = ts * .1; ctx.setLineDash([ts * .35, ts * .22]); ctx.lineDashOffset = -t * ts * .6; ctx.beginPath(); ctx.arc(MID, MID, rr, 0, 7); ctx.fill(); ctx.stroke(); ctx.restore(); } // the sudden-death arena
+  if (R.sudden && time >= R.sudden.t0) { const rr = (3 + R.order.length * .4 + 3.2) * ts, pu = .5 + .5 * Math.sin(t * 4), fade = Math.min(1, (time - R.sudden.t0) / 1.2); ctx.save(); ctx.fillStyle = `rgba(10,4,2,${.4 * fade})`; ctx.beginPath(); ctx.rect(0, 0, W, W); ctx.arc(MID, MID, rr, 0, 7); ctx.fill("evenodd"); // darken everything outside the arena so the eye stays inside it
+     ctx.strokeStyle = `rgba(214,60,40,${.55 + .25 * pu})`; ctx.fillStyle = "rgba(120,20,10,.14)"; ctx.lineWidth = ts * .1; ctx.setLineDash([ts * .35, ts * .22]); ctx.lineDashOffset = -t * ts * .6; ctx.beginPath(); ctx.arc(MID, MID, rr, 0, 7); ctx.fill(); ctx.stroke(); ctx.restore(); } // the sudden-death arena
   // your traps until sprung
   R.traps.forEach(tr => { if (tr.pid === R.me && !(tr.t0 != null && time < tr.t0) && !(tr.usedT && time >= tr.usedT)) drawTrap(ctx, tr.type, tr.x * ts, (tr.y + .05) * ts, ts * .9); });
   const items = [];
