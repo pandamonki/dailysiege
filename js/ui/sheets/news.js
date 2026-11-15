@@ -3,6 +3,16 @@
 // Each item is [icon, headline, one short sentence]. Players who have not seen the newest id get the pop-up the next time they plan;
 // the id is remembered on their device, so changing the id is all it takes to show it again. Keep about 8 to 14 items.
 const RELEASES = [
+  { id: "1.3", title: "What's new in v1.3", sub: "Fewer, better soldiers, and a new mercenary camp", items: [
+    ["⬆", "Cheaper training", "Training to level 2 costs 30% of a soldier's price and level 3 costs 40%, so a fully trained soldier beats buying another."],
+    ["💰", "Dearer soldiers", "Footmen cost 100, Bowmen 120, Raiders and Clerics 140, Battle Mages 180, Snipers 220 and Knights 240."],
+    ["🪨", "Siege units at 300", "The Powder Cart, Catapult and Battering Ram all cost 300 gold."],
+    ["🏰", "Cheaper castles", "The Fortress costs 100 and the Citadel 200."],
+    ["⭐", "A headliner every day", "From day 4 a new, stronger mercenary group tops the camp each day, and you hear about it when you plan."],
+    ["👹", "The Troll War Host", "Day 7's headliner: the Troll Warlord leading three Orc Berserkers."],
+    ["🗂", "A tidier camp", "The headliner sits in a wide card, three regular groups below it, and the details and bid underneath."],
+    ["☝", "One group a day", "You bid on one group a day, and no lord can win more than one, so the camp is shared around."],
+  ] },
   { id: "1.2", title: "What's new in v1.2", sub: "From today's battle: items, gifts, fights and highlights", items: [
     ["🎒", "Items matter more", "Stat items are twice as strong for your hero, and the area-buff items (Banner, Standard, Mender, Pipe) are twice as strong for everyone near it."],
     ["🎁", "A proper free gift", "The reels spin like a slot machine. Close it and it waits behind a 🎁 button on the map until you take it."],

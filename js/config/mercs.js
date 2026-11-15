@@ -7,7 +7,22 @@ const MERCS = {
   elves:   { name: "Dark Elf Assassins", min: 170, units: ["delf", "delf"], note: "Two fragile killers who hunt enemy heroes across the map." },
   ogre:    { name: "Ogre Breaker", min: 260, units: ["ogre"], note: "Slow, tough and castle-only. Smashes castle after castle." },
   necro:   { name: "Bone Crew", min: 240, units: ["necro", "skel", "skel", "skel", "skel"], note: "A necromancer who drains life, with four skeleton guards." },
+  warhost: { name: "Troll War Host", min: 320, units: ["trollw", "orc", "orc", "orc"], note: "The Troll Warlord at the head of three Orc Berserkers. The strongest band in the camp." },
 };
+// From MERC_V2_FROM the camp has one new headline group a day, growing stronger through the week, plus three regular tiles.
+// A headliner becomes a regular group the day after it arrives. Each lord can win at most one group a day.
+let MERC_V2_FROM = "2026-11-16"; const mercV2For = d => String(d) >= MERC_V2_FROM;
+const MERC_V1_IDS = ["troll", "orcs", "centaur", "elves", "ogre", "necro"]; // the camp before the headliners
+const MERC_BASIC = ["elves", "orcs", "centaur"], MERC_HEAD = ["troll", "necro", "ogre", "warhost"], MERC_TILES = 3; // headliners for days 4, 5, 6 and 7
+const mercHeadIdx = dayNo => Math.max(0, Math.min(MERC_HEAD.length - 1, dayNo - MERC_DAY));
+const mercHeadline = dayNo => (dayNo >= MERC_DAY ? MERC_HEAD[mercHeadIdx(dayNo)] : null);
+// the camp on day dayNo: the headliner, and three regular tiles (yesterday's headliners newest first, then the basic groups; groups that are resting go last)
+function mercRoster(dayNo, cool) {
+  const head = mercHeadline(dayNo); if (!head) return { head: null, tiles: [], open: [] };
+  const pool = MERC_HEAD.slice(0, mercHeadIdx(dayNo)).reverse().concat(MERC_BASIC).filter(id => id !== head);
+  const tiles = pool.filter(id => !(cool(id) > 0)).concat(pool.filter(id => cool(id) > 0)).slice(0, MERC_TILES);
+  return { head, tiles, open: [head, ...tiles].filter(id => !(cool(id) > 0)) }; // open: the groups that can be bid on, headliner first
+}
 const MERC_UNITS = {
   trollw:  [{ name: "Troll Warlord", hp: 900, atk: 38 }, { range: 1.2, as: 1.1, spd: 1.4, armor: .15, regen: 6 }, ["blade", "heavy"], [.5, 5]],
   orc:     [{ name: "Orc Berserker", hp: 230, atk: 30 }, { range: 1.1, as: .9, spd: 2.1, armor: .05 }, ["blade", "medium"], [.36, 2.4]],
@@ -28,15 +43,17 @@ function mercSpots(castle, size, used) {
   return out;
 }
 // sealed bids: highest bid per group wins (tie: a fair coin from the day), the winner's own bid is what they pay
+// v2 (o.v2, with o.dayNo): only today's camp can be bid on, headliner first, and a lord who has already won a group today is passed over
 function resolveMercs(plans, o) {
-  const hires = {}, notes = [];
-  Object.entries(MERCS).forEach(([id, m]) => {
+  const hires = {}, notes = [], won = new Set();
+  const ids = o.v2 ? mercRoster(o.dayNo, o.cool).open : MERC_V1_IDS;
+  ids.forEach(id => { const m = MERCS[id];
     if (o.cool(id) > 0) return;
-    const bids = plans.map(p => [p, (p.bids || {})[id]]).filter(([, b]) => b && b.day === o.day && b.gold >= m.min);
+    const bids = plans.map(p => [p, (p.bids || {})[id]]).filter(([p, b]) => b && b.day === o.day && b.gold >= m.min && !(o.v2 && won.has(p.pid)));
     if (!bids.length) return;
     const top = Math.max(...bids.map(x => x[1].gold)), tied = bids.filter(x => x[1].gold === top).sort((a, b) => (a[0].pid < b[0].pid ? -1 : 1));
     const w = tied[tied.length === 1 ? 0 : mercHash(String(o.day) + id) % tied.length][0];
-    hires[id] = { pid: w.pid, gold: top, bidders: bids.length, all: bids.map(([p, b]) => ({ pid: p.pid, gold: b.gold })).sort((a, b) => b.gold - a.gold || (a.pid < b.pid ? -1 : 1)) };
+    won.add(w.pid); hires[id] = { pid: w.pid, gold: top, bidders: bids.length, all: bids.map(([p, b]) => ({ pid: p.pid, gold: b.gold })).sort((a, b) => b.gold - a.gold || (a.pid < b.pid ? -1 : 1)) };
     const used = new Set((w.pieces || []).map(pc => pc.r + "," + pc.c)), sp = mercSpots(w.castle, o.N, used);
     m.units.forEach((type, i) => { const q = sp[i % Math.max(1, sp.length)] || [w.castle[0], w.castle[1]]; used.add(q.join(",")); w.pieces.push({ kind: "unit", type, lvl: 1, hp: 1, r: q[0], c: q[1], merc: id, bid: i === 0 ? top : 0 }); });
     notes.push(`${w.name} hired the ${m.name} for ${top} gold${bids.length > 1 ? `, outbidding ${bids.length - 1} other lord${bids.length > 2 ? "s" : ""}` : ""}.`);

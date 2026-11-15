@@ -29,7 +29,7 @@ function goldenCase(i) {
     const others = pids.filter(q => q !== pid), targets = others.filter(() => chance(.7));
     const offers = {}, replies = {}, bids = {};
     others.forEach(q => { if (chance(.25)) offers[q] = { gold: 10 * int(0, 30), day: day - 1 }; if (chance(.5)) replies[q] = pick(["accept", "accept", "refuse"]); });
-    if (day >= MERC_DAY && chance(.5)) { const id = pick(Object.keys(MERCS)); bids[id] = { gold: MERCS[id].min + 10 * int(0, 8), day }; }
+    if (day >= MERC_DAY && chance(.5)) { const id = pick(MERC_V1_IDS); bids[id] = { gold: MERCS[id].min + 10 * int(0, 8), day }; }
     return { pid, me: s === 0, name: "Lord " + (s + 1), color: "#" + (0x334455 + (s % 8) * 0x1a2b3c + (s >> 3) * 0x050505).toString(16).slice(0, 6), cls, level, xp0: int(0, 60), castle, castleTier: int(1, Math.min(3, 1 + Math.floor(day / 3))), banner: null,
       ranks: v3 ? { a1: 0, a2: 0, a3: 0, ult: 0 } : autoRanks(level, int(0, 9999)), ...(v3 ? { tree: autoTree(level, 3000 + s * 31 + i, cls) } : {}), picks, triggers: { a1: pick(TRIGGERS), a2: pick(TRIGGERS), a3: pick(TRIGGERS), ult: pick(TRIGGERS) }, ultArm: !chance(.1), blessing: chance(.15) ? pick(["vamp", "ward"]) : null,
       gear: { weapon: gt(), armour: gt(), charm: gt() }, defences: { walls: int(0, 2), tower: int(0, 2) }, items,

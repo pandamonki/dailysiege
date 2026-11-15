@@ -145,10 +145,13 @@ const A = {
     toast(v === "accept" ? "Accepted. You ally at the start of tonight's battle." : "Declined."); if (sheet && sheet.type === "invites" && !pendingInvites().length) sheet = null; },
   idismiss: () => { sheet = null; },
   opencamp: () => { sel = null; sheet = { type: "camp" }; },
-  mbid: (v, k) => { ensureDip(); const m = MERCS[k]; if (!m || mercWait(k)) return; const b = S.bids[k] && S.bids[k].day === planDayKey() ? S.bids[k].gold : 0, step = 10;
+  mbid: (v, k) => { ensureDip(); const m = MERCS[k]; if (!m || mercWait(k) || (mercV2Now() && !mercToday().open.includes(k))) return; const b = S.bids[k] && S.bids[k].day === planDayKey() ? S.bids[k].gold : 0, step = 10;
     const next = +v > 0 ? (b ? b + step : m.min) : (b - step < m.min ? 0 : b - step);
-    if (next - b > avail()) { toast("Not enough gold."); return; }
+    const moved = next && mercV2Now() ? myBids().filter(([id]) => id !== k) : [], freed = moved.reduce((a, [, x]) => a + x.gold, 0); // one group a day: a new bid replaces the old one
+    if (next - b > avail() + freed) { toast("Not enough gold."); return; }
+    if (moved.length) { moved.forEach(([id]) => delete S.bids[id]); toast(`Bid moved to the ${m.name}: one group a day.`); }
     if (next) S.bids[k] = { gold: next, day: planDayKey() }; else delete S.bids[k]; },
+  mpick: v => { if (sheet && sheet.type === "camp" && MERCS[v]) sheet.pick = v; },
   mclear: (_, k) => { ensureDip(); delete S.bids[k]; },
   topen: (_, k) => { S.terms[k].mode = S.terms[k].mode === "refuse" ? "accept" : "refuse"; },
   tbet: (_, k) => { S.terms[k].mode = S.terms[k].mode === "betray" ? "accept" : "betray"; },
