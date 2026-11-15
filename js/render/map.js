@@ -105,12 +105,18 @@ function paintBackground() {
       if (zoneSet.has(`${r + dr},${q + dc}`) || (r + dr === CASTLE[0] && q + dc === CASTLE[1])) return;
       c.beginPath(); c.moveTo((q + x0) * ts, (r + y0) * ts); c.lineTo((q + x1) * ts, (r + y1) * ts); c.stroke(); });
     c.setLineDash([]); });
+  // a copse stands between each pair of neighbouring castles: a band of trees across the middle third of the gap between them (scenery only: nothing blocks movement)
+  const belt = new Set(); { const cc = (N - 1) / 2, ang = ([r, q]) => Math.atan2(r - cc, q - cc), cs = castleTiles.map(p => [p, ang(p)]).sort((a, b) => a[1] - b[1]);
+    if (cs.length > 2) cs.forEach(([pa], i) => { const pb = cs[(i + 1) % cs.length][0], chord = hyp(pa[0] - pb[0], pa[1] - pb[1]) || 1, mr = (pa[0] + pb[0]) / 2, mq = (pa[1] + pb[1]) / 2, ur = (pb[0] - pa[0]) / chord, uq = (pb[1] - pa[1]) / chord, half = chord / 6;
+      for (let s = -half; s <= half; s += .5) { const pr = mr + ur * s, pq = mq + uq * s;
+        for (let r = Math.floor(pr - 1); r <= Math.ceil(pr + 1); r++) for (let q = Math.floor(pq - 1); q <= Math.ceil(pq + 1); q++) if (hyp(r - pr, q - pq) <= .8) belt.add(`${r},${q}`); } }); }
   const scenery = []; // drawn back to front so nearer trees overlap the ones behind
   for (let r = 0; r < N; r++) for (let q = 0; q < N; q++) {
     const ring = Math.min(r, q, N - 1 - r, N - 1 - q) === 0, v = hash(r, q, 11); // the outer edge of the map is a solid tree line
     if ((!ring && nearCastle(r, q)) || isCentre(r, q) || roadTiles.has(`${r},${q}`) || inZone(r, q) || occupied.has(`${r},${q}`) || (ring && CASTLE && r === CASTLE[0] && q === CASTLE[1])) continue;
-    if (ring || v < .2) {
-      const n = ring ? 2 : v < .08 ? 2 : 1;
+    const bt = !ring && belt.has(`${r},${q}`) && v < .85, deep = !ring && Math.min(r, q, N - 1 - r, N - 1 - q) === 1 && v < .55; // a second, thinner row behind the edge line, so the rim reads as a forest
+    if (ring || bt || deep || v < .2) {
+      const n = ring || bt ? 2 : v < .08 ? 2 : 1;
       for (let i = 0; i < n; i++) {
         const x = (q + .3 + hash(r, q, 20 + i) * .4) * ts, y = (r + .75 + hash(r, q, 30 + i) * .2) * ts;
         scenery.push([y, () => { c.fillStyle = "rgba(0,0,0,.24)"; c.beginPath(); c.ellipse(x, y, ts * .3, ts * .1, 0, 0, 7); c.fill(); hash(r, q, 40 + i) > .45 ? pine(c, x, y, ts, hash(r, q, 50)) : oak(c, x, y, ts); }]);
