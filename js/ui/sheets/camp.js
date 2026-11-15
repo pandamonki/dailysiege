@@ -34,11 +34,11 @@ function campSheet() {
 function campSheetV1() {
   const today = planDayKey(), news = sheet.news, bids = myBids().length;
   const card = ([id, m]) => { const wait = mercWait(id), b = (S.bids || {})[id], mine = b && b.day === today ? b.gold : 0;
-    return `<div class="mcard${wait ? " cool" : ""}"><div class="spread"><b>${esc(m.name)}</b><span class="chip"><i class="coin"></i> from ${m.min}</span></div>
+    return `<div class="mcard${wait ? " cool" : ""}"><div class="spread"><b>${esc(m.name)}</b><span class="chip"><i class="coin"></i> from ${mercMin(id, false)}</span></div>
       <p class="muted">${esc(m.note)}</p>
       <div class="mrow">${m.units.reduce((a, t) => { a[t] = (a[t] || 0) + 1; return a; }, {}) && Object.entries(m.units.reduce((a, t) => { a[t] = (a[t] || 0) + 1; return a; }, {})).map(([t, n]) => `<span class="munit"><img alt="" src="${spriteURL(t)}">${n > 1 ? "×" + n : ""}</span>`).join("")}</div>
       ${wait ? `<p class="need">⏳ Recharging: back in ${wait} day${wait > 1 ? "s" : ""}.</p>`
-        : `<div class="mrow"><span class="stepper"><button class="btn small" data-act="mbid" data-k="${id}" data-v="-1" ${dis(!mine)}>−</button><b>${mine ? mine + "g" : "No bid"}</b><button class="btn small" data-act="mbid" data-k="${id}" data-v="1" ${dis()}>${mine ? "+" : "Bid " + m.min + "g"}</button></span>${mine ? `<button class="btn small" data-act="mclear" data-k="${id}" ${dis()}>Withdraw</button>` : ""}</div>`}</div>`; };
+        : `<div class="mrow"><span class="stepper"><button class="btn small" data-act="mbid" data-k="${id}" data-v="-1" ${dis(!mine)}>−</button><b>${mine ? mine + "g" : "No bid"}</b><button class="btn small" data-act="mbid" data-k="${id}" data-v="1" ${dis()}>${mine ? "+" : "Bid " + mercMin(id, false) + "g"}</button></span>${mine ? `<button class="btn small" data-act="mclear" data-k="${id}" ${dis()}>Withdraw</button>` : ""}</div>`}</div>`; };
   return head(null, "Mercenary Camp", "Sealed bids · highest bid wins") + `<div class="body">
     ${news ? `<p class="note gold"><b>The mercenaries were drawn by all your bloodshed</b> and now offer their services in battle to the highest bidder.</p>` : ""}
     <p class="muted">Bids are sealed. Each group serves the highest bidder in tonight's battle, who pays their own bid. Lose, and you pay nothing. Hired groups then rest for ${MERC_COOL} days, for everyone. They don't use up your supply. ${bids ? `You have <b>${bidsReserved()}g</b> set aside in bids.` : ""}</p>

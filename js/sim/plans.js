@@ -26,7 +26,7 @@ function buildPlans() {
       targets: (t => pickV1Now() ? (ai.hostile || []).concat(botPicks(rv.id, botSeed(rv.id), t.filter(q => !(ai.hostile || []).includes(q)), board0)).slice(0, PICK_MAX) : t)((ai.hostile || []).concat(["you", ...RIVALS.map(r => r.id)].filter(q => q !== rv.id && !(ai.hostile || []).includes(q) && !Object.keys(ai.offers || {}).includes(q))
         .sort((x, y) => { const px = x === "you" ? CASTLE : RIVALS.find(r => r.id === x).pos, py = y === "you" ? CASTLE : RIVALS.find(r => r.id === y).pos; return (Math.round(hyp(px[0] - rv.pos[0], px[1] - rv.pos[1]) * 1e6) - Math.round(hyp(py[0] - rv.pos[0], py[1] - rv.pos[1]) * 1e6)) || (hash(botSeed(rv.id), botSeed(x), DAY) - hash(botSeed(rv.id), botSeed(y), DAY)); }))), // equally near rivals: a draw for this rival and day, not list order
       ...botCombat(botSeed(rv.id)), auto: true, offers: Object.fromEntries(Object.entries(ai.offers || {}).map(([k, v]) => [k, Object.assign({}, v, { day: DAY - 1 })])), terms: ai.terms || {},
-      bids: DAY >= MERC_DAY && hash(i, DAY, 91) > .35 ? (() => { const ids = mercV2Now() ? mercRoster(DAY, mercWait).open : MERC_V1_IDS, id = ids[Math.floor(hash(i, DAY, 92) * ids.length)]; return { [id]: { gold: MERCS[id].min + 10 * Math.floor(hash(i, DAY, 93) * 7), day: DAY } }; })() : {},
+      bids: DAY >= MERC_DAY && hash(i, DAY, 91) > .35 ? (() => { const ids = mercV2Now() ? mercRoster(DAY, mercWait).open : MERC_V1_IDS, id = ids[Math.floor(hash(i, DAY, 92) * ids.length)]; return { [id]: { gold: mercMin(id, mercV2Now()) + 10 * Math.floor(hash(i, DAY, 93) * 7), day: DAY } }; })() : {},
     });
   });
   { const rm = rankMap(PRACTICE_BOARD, plans.map(q => q.pid)); plans.forEach(q => { q.rank = rm[q.pid]; }); }

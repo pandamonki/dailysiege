@@ -28,12 +28,12 @@ test("resting groups move to the end of the tiles and can't be bid on", () => {
 
 test("a lord wins at most one group a day; the next highest bidder takes the other", () => {
   const plans = [
-    { pid: "a", name: "A", castle: [2, 2], pieces: [], bids: { troll: { gold: 300, day: "D" }, elves: { gold: 250, day: "D" } } },
-    { pid: "b", name: "B", castle: [14, 14], pieces: [], bids: { troll: { gold: 210, day: "D" }, elves: { gold: 180, day: "D" } } },
+    { pid: "a", name: "A", castle: [2, 2], pieces: [], bids: { troll: { gold: 350, day: "D" }, elves: { gold: 300, day: "D" } } },
+    { pid: "b", name: "B", castle: [14, 14], pieces: [], bids: { troll: { gold: 290, day: "D" }, elves: { gold: 260, day: "D" } } },
   ];
   sim.context.__p = plans;
   const res = J(sim.run(`resolveMercs(__p, { day: "D", dayNo: 4, v2: true, N: 17, cool: () => 0 })`));
-  assert.equal(res.hires.troll.pid, "a"); assert.equal(res.hires.elves.pid, "b"); assert.equal(res.hires.elves.gold, 180);
+  assert.equal(res.hires.troll.pid, "a"); assert.equal(res.hires.elves.pid, "b"); assert.equal(res.hires.elves.gold, 260);
 });
 
 test("groups that are not in today's camp can't be hired", () => {

@@ -1,18 +1,20 @@
 // Mercenary camp: groups of sell-swords that serve the highest sealed bid for one battle, then rest for 2 days
 const MERC_DAY = 4, MERC_COOL = 2;
 const MERCS = {
-  troll:   { name: "Troll Warlord", min: 200, units: ["trollw"], note: "One huge brute that heals itself as it fights." },
-  orcs:    { name: "Orc Berserkers", min: 180, units: ["orc", "orc", "orc", "orc"], note: "Four fast, hard-hitting melee raiders." },
-  centaur: { name: "Centaur Archers", min: 210, units: ["centaur", "centaur", "centaur"], note: "Three swift archers who shoot from afar." },
-  elves:   { name: "Dark Elf Assassins", min: 170, units: ["delf", "delf"], note: "Two fragile killers who hunt enemy heroes across the map." },
-  ogre:    { name: "Ogre Breaker", min: 260, units: ["ogre"], note: "Slow, tough and castle-only. Smashes castle after castle." },
-  necro:   { name: "Bone Crew", min: 240, units: ["necro", "skel", "skel", "skel", "skel"], note: "A necromancer who drains life, with four skeleton guards." },
-  warhost: { name: "Troll War Host", min: 320, units: ["trollw", "orc", "orc", "orc"], note: "The Troll Warlord at the head of three Orc Berserkers. The strongest band in the camp." },
+  troll:   { name: "Troll Warlord", min: 280, units: ["trollw"], note: "One huge brute that heals itself as it fights." },
+  orcs:    { name: "Orc Berserkers", min: 260, units: ["orc", "orc", "orc", "orc"], note: "Four fast, hard-hitting melee raiders." },
+  centaur: { name: "Centaur Archers", min: 290, units: ["centaur", "centaur", "centaur"], note: "Three swift archers who shoot from afar." },
+  elves:   { name: "Dark Elf Assassins", min: 250, units: ["delf", "delf"], note: "Two fragile killers who hunt enemy heroes across the map." },
+  ogre:    { name: "Ogre Breaker", min: 340, units: ["ogre"], note: "Slow, tough and castle-only. Smashes castle after castle." },
+  necro:   { name: "Bone Crew", min: 320, units: ["necro", "skel", "skel", "skel", "skel"], note: "A necromancer who drains life, with four skeleton guards." },
+  warhost: { name: "Troll War Host", min: 400, units: ["trollw", "orc", "orc", "orc"], note: "The Troll Warlord at the head of three Orc Berserkers. The strongest band in the camp." },
 };
 // From MERC_V2_FROM the camp has one new headline group a day, growing stronger through the week, plus three regular tiles.
 // A headliner becomes a regular group the day after it arrives. Each lord can win at most one group a day.
 let MERC_V2_FROM = "2026-11-16"; const mercV2For = d => String(d) >= MERC_V2_FROM;
 const MERC_V1_IDS = ["troll", "orcs", "centaur", "elves", "ogre", "necro"]; // the camp before the headliners
+const MERC_MIN_V1 = { troll: 200, orcs: 180, centaur: 210, elves: 170, ogre: 260, necro: 240 }; // its minimum bids
+const mercMin = (id, v2) => (v2 ? MERCS[id].min : MERC_MIN_V1[id]);
 const MERC_BASIC = ["elves", "orcs", "centaur"], MERC_HEAD = ["troll", "necro", "ogre", "warhost"], MERC_TILES = 3; // headliners for days 4, 5, 6 and 7
 const mercHeadIdx = dayNo => Math.max(0, Math.min(MERC_HEAD.length - 1, dayNo - MERC_DAY));
 const mercHeadline = dayNo => (dayNo >= MERC_DAY ? MERC_HEAD[mercHeadIdx(dayNo)] : null);
@@ -49,7 +51,7 @@ function resolveMercs(plans, o) {
   const ids = o.v2 ? mercRoster(o.dayNo, o.cool).open : MERC_V1_IDS;
   ids.forEach(id => { const m = MERCS[id];
     if (o.cool(id) > 0) return;
-    const bids = plans.map(p => [p, (p.bids || {})[id]]).filter(([p, b]) => b && b.day === o.day && b.gold >= m.min && !(o.v2 && won.has(p.pid)));
+    const bids = plans.map(p => [p, (p.bids || {})[id]]).filter(([p, b]) => b && b.day === o.day && b.gold >= mercMin(id, o.v2) && !(o.v2 && won.has(p.pid)));
     if (!bids.length) return;
     const top = Math.max(...bids.map(x => x[1].gold)), tied = bids.filter(x => x[1].gold === top).sort((a, b) => (a[0].pid < b[0].pid ? -1 : 1));
     const w = tied[tied.length === 1 ? 0 : mercHash(String(o.day) + id) % tied.length][0];

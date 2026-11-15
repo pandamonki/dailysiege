@@ -159,7 +159,8 @@ function abilLines(k, r) {
 
 const PATCHES = [
   { v: "The new mercenary camp", date: "15 Nov", fixes: [], balance: [
-    "New headline mercenary group for the last day of the week: the Troll War Host, the Troll Warlord leading three Orc Berserkers, from 320 gold.",
+    "New headline mercenary group for the last day of the week: the Troll War Host, the Troll Warlord leading three Orc Berserkers, from 400 gold.",
+    "Mercenaries cost more, starting at 250: Dark Elf Assassins 250, Orc Berserkers 260, Troll Warlord 280, Centaur Archers 290, Bone Crew 320, Ogre Breaker 340 and Troll War Host 400.",
   ], changes: [
     "From the 16 Nov battle, the mercenary camp has a headline group each day, getting stronger through the week: the Troll Warlord on day 4, the Bone Crew on day 5, the Ogre Breaker on day 6 and the Troll War Host on day 7. Each new headliner is announced when you first plan that day.",
     "The camp shows the headliner in a wide card at the top, three regular groups as tiles below it, and the chosen group's details and bid underneath. A headliner joins the regular tiles the day after it arrives, unless it is resting.",

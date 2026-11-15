@@ -146,7 +146,7 @@ const A = {
   idismiss: () => { sheet = null; },
   opencamp: () => { sel = null; sheet = { type: "camp" }; },
   mbid: (v, k) => { ensureDip(); const m = MERCS[k]; if (!m || mercWait(k) || (mercV2Now() && !mercToday().open.includes(k))) return; const b = S.bids[k] && S.bids[k].day === planDayKey() ? S.bids[k].gold : 0, step = 10;
-    const next = +v > 0 ? (b ? b + step : m.min) : (b - step < m.min ? 0 : b - step);
+    const lo = mercMin(k, mercV2Now()), next = +v > 0 ? (b ? b + step : lo) : (b - step < lo ? 0 : b - step);
     const moved = next && mercV2Now() ? myBids().filter(([id]) => id !== k) : [], freed = moved.reduce((a, [, x]) => a + x.gold, 0); // one group a day: a new bid replaces the old one
     if (next - b > avail() + freed) { toast("Not enough gold."); return; }
     if (moved.length) { moved.forEach(([id]) => delete S.bids[id]); toast(`Bid moved to the ${m.name}: one group a day.`); }
