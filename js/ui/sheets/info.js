@@ -162,6 +162,7 @@ const PATCHES = [
     "From the week of 16 Nov, supply beds are gone. Every lord can field 4 soldiers on the map at the start of a battle.",
     "Reinforcement waves now have to be unlocked, in order: Wave 1 for 60 gold, Wave 2 for 100 and Wave 3 for 150. Each opens 3 slots for soldiers who march out later in the battle. Every wave still sends its free footman, unlocked or not.",
     "Beds you already bought are refunded in gold, and any wave already holding soldiers stays open for free.",
+    "Computer-controlled lords and stand-in orders follow the same rules: at most 4 soldiers on the map, with Wave 1 opening on day 2, Wave 2 on day 4 and Wave 3 on day 6.",
   ], changes: [
     "Unlock waves on the Castle tab (the Waves tile) or straight from a locked wave on the Deploy tab.",
   ] },

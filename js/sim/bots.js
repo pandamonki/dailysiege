@@ -57,7 +57,9 @@ const BOT_STYLES = [
 ];
 const BOT_WAVES = { hunter: [["enemy_hero", 0, "hero"], ["hero_dies", 0, "default"], ["timer", 90, "hero"]], brawler: [["castle_hit", 0, "default"], ["timer", 60, "castle"], ["army_dead", 0, "castle"]], sniper: [["ult", 0, "default"], ["castle_low", 0, "nearest"], ["timer", 120, "default"]], assassin: [["enemy_hero", 0, "hero"], ["timer", 45, "castle"], ["hero_dies", 0, "default"]], balanced: [["castle_hit", 0, "default"], ["hero_dies", 0, "default"], ["timer", 150, "castle"]] };
 // a bot keeps some of its soldiers back in the garrison, more as the week goes on: up to 3 a wave, filled wave by wave
-const botWaves = (seed, kinds, dayNo) => { const st = BOT_STYLES[(seed >> 1) % BOT_STYLES.length].name, n = Math.min(GARRISON_SOLDIERS, Math.floor(dayNo * 1.5)), ulvl = 1 + Math.floor((dayNo - 1) / 2);
+// sup (supply rules from SUPPLY_V2_FROM): a bot unlocks waves as a player would, Wave 1 on day 2, Wave 2 on day 4 and Wave 3 on day 6, and fills only those
+const botWavesOpen = dayNo => (dayNo >= 6 ? 3 : dayNo >= 4 ? 2 : dayNo >= 2 ? 1 : 0);
+const botWaves = (seed, kinds, dayNo, sup) => { const st = BOT_STYLES[(seed >> 1) % BOT_STYLES.length].name, n = Math.min(sup ? WAVE_SLOTS * botWavesOpen(dayNo) : GARRISON_SOLDIERS, Math.floor(dayNo * 1.5)), ulvl = 1 + Math.floor((dayNo - 1) / 2);
   return BOT_WAVES[st].map(([when, at, order], i) => ({ when, at: at || 60, order, units: [...Array(Math.max(0, Math.min(WAVE_SLOTS, n - i * WAVE_SLOTS)))].map((_, k) => ({ type: kinds[Math.floor(hash(seed, i * 3 + k, 41 + dayNo) * kinds.length)], lvl: ulvl, id: null, hp: 1 })) })); };
 const botCombat = seed => { const st = BOT_STYLES[(seed >> 1) % BOT_STYLES.length]; return { gprio: cleanGprio(st.gprio), engage: 1 + (seed >> 3) % 3, heading: st.heading }; };
 
@@ -74,7 +76,7 @@ function botPicks(uid, seed, near, ranks) {
 }
 // A bot lord's castle tier by day: tier 1 for the first two days, tier 2 on day 3, and tier 3 from day 4, so it can field tier 3 soldiers (knights, snipers, siege engines) for the rest of the week.
 const botTier = dayNo => dayNo >= 4 ? 3 : dayNo >= 3 ? 2 : 1;
-function lordBotPlan({ uid, cls, i, ids, L, zone, dayNo, lvl, v2, v3, fair, pick, ranks }) {
+function lordBotPlan({ uid, cls, i, ids, L, zone, dayNo, lvl, v2, v3, fair, pick, ranks, sup }) { // sup: the supply rules from SUPPLY_V2_FROM (at most FIELD_MAX soldiers on the map)
   const seed = botSeed(uid), me = L.castles[i], c = CLASSES[cls] || CLASSES.warrior, sp = armySpots(me, L.N);
   const picks = {}; c.abilities.forEach((a, j) => { picks[a.key] = a.choice[hash(seed, j, 77) > .5 ? 1 : 0][0]; });
   const rot = Math.floor(hash(seed, 5, 3) * PRIORITIES.length), tier = botTier(dayNo);
@@ -83,7 +85,7 @@ function lordBotPlan({ uid, cls, i, ids, L, zone, dayNo, lvl, v2, v3, fair, pick
   const taken = new Set([`${sp.champ[0]},${sp.champ[1]}`, `${me[0]},${me[1]}`]);
   const field = Array.from(zone).map(k => k.split(",").map(Number)).filter(([r, q]) => !taken.has(`${r},${q}`)).sort((a, b) => (hyp(a[0] - sp.champ[0], a[1] - sp.champ[1]) - hyp(b[0] - sp.champ[0], b[1] - sp.champ[1])) || (a[0] - b[0]) || (a[1] - b[1]));
   const spots = sp.units.filter(([r, q]) => zone.has(`${r},${q}`) && !taken.has(`${r},${q}`)).concat(field.filter(([r, q]) => !sp.units.some(([a, b]) => a === r && b === q)));
-  const n = Math.min(spots.length, 2 + dayNo + (seed % 2)), ulvl = 1 + Math.floor((dayNo - 1) / 2);
+  const n = Math.min(spots.length, 2 + dayNo + (seed % 2), sup ? FIELD_MAX : 99), ulvl = 1 + Math.floor((dayNo - 1) / 2);
   const pieces = [{ kind: "champ", r: sp.champ[0], c: sp.champ[1] }];
   // siege engines are what bring castles down, so bots bring them on purpose: one from day 4, two from day 6 (they take the place of ordinary soldiers)
   const pool = ENGINES.filter(k => (UNIT_TIER[k] || 1) <= tier), engines = pool.length ? Math.min(n, dayNo >= 6 ? 2 : dayNo >= 4 ? 1 : 0) : 0; // engines follow the same tier rule as any soldier
@@ -96,5 +98,5 @@ function lordBotPlan({ uid, cls, i, ids, L, zone, dayNo, lvl, v2, v3, fair, pick
   return { cls, sealed: true, ...(v3 ? { ranks: { a1: 0, a2: 0, a3: 0, ult: 0 }, tree: autoTree(lvl, seed, cls, i) } : { ranks: autoRanks(lvl, seed) }), picks, triggers: { a1: TRIGGERS[1], a2: TRIGGERS[2], a3: TRIGGERS[0], ult: TRIGGERS[1] },
     gear: { weapon: Math.min(2, Math.floor(dayNo / 3)), armour: Math.min(2, Math.floor((dayNo + 1) / 3)), charm: dayNo >= 5 ? 1 : 0 }, defences: { walls: dayNo >= 3 ? 1 : 0, tower: dayNo >= 5 && seed % 2 ? 1 : 0 },
     items: botItems(seed).slice(0, Math.floor(dayNo / 2)), castleTier: tier, stance: BOT_STANCES[seed % BOT_STANCES.length], prio: PRIORITIES.slice(rot).concat(PRIORITIES.slice(0, rot)), rules: [{ if: IFS[0], then: THENS[0] }],
-    pieces, targets: pick ? botPicks(uid, seed, near, ranks) : near, tmode: "list", heading: "near", offers: {}, replies: {}, terms: {}, bids: {}, pacts: [], hostile: [], betray: {}, bot: true, ...(v2 ? { ...botCombat(seed), waves: botWaves(seed, kinds, dayNo) } : {}) };
+    pieces, targets: pick ? botPicks(uid, seed, near, ranks) : near, tmode: "list", heading: "near", offers: {}, replies: {}, terms: {}, bids: {}, pacts: [], hostile: [], betray: {}, bot: true, ...(v2 ? { ...botCombat(seed), waves: botWaves(seed, kinds, dayNo, sup) } : {}) };
 }

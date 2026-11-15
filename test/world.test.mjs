@@ -74,7 +74,8 @@ test("a bot fights with orders of its own, with nothing saved for it, and they g
   assert.ok(!bot.noOrders, "a bot's orders are its own, not stand-ins");
   assert.ok(bot.pieces.filter(p => p.kind === "unit").length >= 3 && bot.pieces.some(p => p.kind === "champ"));
   const later = buildBattleInputs(W, addDays(D1, 4)).plans.find(p => p.pid === "bot_1");
-  assert.ok(later.pieces.filter(p => p.kind === "unit").length > bot.pieces.filter(p => p.kind === "unit").length);
+  const army = p => p.pieces.filter(q => q.kind === "unit").length + (p.waves || []).reduce((a, w) => a + w.units.length, 0); // field plus reinforcement waves
+  assert.ok(army(later) > army(bot));
   assert.ok(later.castleTier >= bot.castleTier);
   assert.ok(bot.targets.every(t => t !== "bot_1") && bot.targets.length === 3);
 });
@@ -183,4 +184,15 @@ test("from HERO_V3_FROM the day is fought with skill trees: plans carry the tree
     assert.ok(doc.inputs.plans.every(p => p.tree && p.tree.b1.length === 6), "every plan carries a six-node tree for each of three trees");
     assert.equal(doc.results.length, 4);
   } finally { sim.run('HERO_V3_FROM = "2099-01-01"'); }
+});
+
+test("from the new supply rules, a bot fields at most 4 soldiers and fills only the waves a player could have unlocked", () => {
+  const W = botWorld(1, 3);
+  for (let n = 0; n < 7; n++) {
+    const day = addDays(D1, n), bot = buildBattleInputs(W, day).plans.find(p => p.pid === "bot_1");
+    if (!sim.run(`supplyV2For("${day}")`)) continue;
+    assert.ok(bot.pieces.filter(p => p.kind === "unit").length <= sim.get("FIELD_MAX"));
+    const open = sim.run(`botWavesOpen(${n + 1})`);
+    (bot.waves || []).forEach((w, i) => assert.ok(i < open || w.units.length === 0));
+  }
 });
