@@ -105,11 +105,11 @@ function paintBackground() {
       if (zoneSet.has(`${r + dr},${q + dc}`) || (r + dr === CASTLE[0] && q + dc === CASTLE[1])) return;
       c.beginPath(); c.moveTo((q + x0) * ts, (r + y0) * ts); c.lineTo((q + x1) * ts, (r + y1) * ts); c.stroke(); });
     c.setLineDash([]); });
-  // a copse stands between each pair of neighbouring castles: a band of trees across the middle third of the gap between them (scenery only: nothing blocks movement)
+  // between each pair of neighbouring castles the edge forest bulges in a little: one or two trees deep, thinning to a point (scenery only: nothing blocks movement)
   const belt = new Set(); { const cc = (N - 1) / 2, ang = ([r, q]) => Math.atan2(r - cc, q - cc), cs = castleTiles.map(p => [p, ang(p)]).sort((a, b) => a[1] - b[1]);
-    if (cs.length > 2) cs.forEach(([pa], i) => { const pb = cs[(i + 1) % cs.length][0], chord = hyp(pa[0] - pb[0], pa[1] - pb[1]) || 1, mr = (pa[0] + pb[0]) / 2, mq = (pa[1] + pb[1]) / 2, ur = (pb[0] - pa[0]) / chord, uq = (pb[1] - pa[1]) / chord, half = chord / 6;
-      for (let s = -half; s <= half; s += .5) { const pr = mr + ur * s, pq = mq + uq * s;
-        for (let r = Math.floor(pr - 1); r <= Math.ceil(pr + 1); r++) for (let q = Math.floor(pq - 1); q <= Math.ceil(pq + 1); q++) if (hyp(r - pr, q - pq) <= .8) belt.add(`${r},${q}`); } }); }
+    if (cs.length > 2) cs.forEach(([, a0], i) => { const a1 = cs[(i + 1) % cs.length][1], span = ((a1 - a0) + 2 * Math.PI) % (2 * Math.PI) || 2 * Math.PI, am = a0 + span / 2, dr = Math.sin(am), dq = Math.cos(am), t = (cc - .5) / Math.max(Math.abs(dr), Math.abs(dq));
+      for (let s = 0; s <= 2; s += .5) { const pr = cc + dr * t - dr * s, pq = cc + dq * t - dq * s, w = 1.6 - .5 * s;
+        for (let r = Math.floor(pr - 2); r <= Math.ceil(pr + 2); r++) for (let q = Math.floor(pq - 2); q <= Math.ceil(pq + 2); q++) if (hyp(r - pr, q - pq) <= w) belt.add(`${r},${q}`); } }); }
   const scenery = []; // drawn back to front so nearer trees overlap the ones behind
   for (let r = 0; r < N; r++) for (let q = 0; q < N; q++) {
     const ring = Math.min(r, q, N - 1 - r, N - 1 - q) === 0, v = hash(r, q, 11); // the outer edge of the map is a solid tree line
