@@ -157,8 +157,10 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
-  { v: "Cheaper training", date: "15 Nov", fixes: [], balance: [
+  { v: "Dearer soldiers, cheaper training", date: "15 Nov", fixes: [], balance: [
     "Training a soldier is cheaper: level 2 now costs 30% of the soldier's price (was 50%) and level 3 costs 40% (was 100%). A fully trained soldier now costs 1.7 times its price in all, less than buying two, and needs only one bed.",
+    "Soldiers cost more to buy: Footman 100 (was 50), Bowman 120 (was 70), Raider and Cleric 140 (were 110 and 100), Battle Mage 180 (was 140), Knight 240 (was 120), Dwarven Sniper 220 (was 160). Every siege unit is now 300.",
+    "Castle upgrades are cheaper: the Fortress costs 100 (was 150) and the Citadel 200 (was 300).",
     "Selling a trained soldier still returns a quarter of what you spent on it, so it is a little less than before.",
   ], changes: [] },
   { v: "Solid forest and tree blockades", date: "15 Nov", fixes: [], balance: [], changes: [
