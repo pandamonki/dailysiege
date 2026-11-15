@@ -17,7 +17,8 @@ function garrisonWaveHTML(w, i) {
       <button class="gr-chip" data-act="wpop" data-k="${i}" data-v="${w.when === "timer" && sheet.wpop && sheet.wpop.w === i && sheet.wpop.kind === "time" ? "time" : "when"}" ${dis()}>${whenLabel(w)}</button>
       <button class="gr-chip w" data-act="wpop" data-k="${i}" data-v="order" ${dis()}>${WAVE_ORDERS.find(o => o[0] === w.order)[1]}</button></div>
     ${garrisonPopHTML(i)}
-    <div class="gr-r4"><div class="gr-s free"><img alt="" src="${spriteURL("footman")}"><b>Footman</b><small>free</small></div>${w.slots.map(slot).join("")}</div></div>`;
+    <div class="gr-r4"><div class="gr-s free"><img alt="" src="${spriteURL("footman")}"><b>Footman</b><small>free</small></div>${waveOpen(i) ? w.slots.map(slot).join("")
+      : `<div class="gr-lock">${i === wavesOpen() ? `<button class="btn small wax" data-act="wunlock" ${dis(avail() < waveUnlockCost())}>🔒 Unlock ${WAVE_SLOTS} slots · ${waveUnlockCost()}g</button>` : `<span>🔒 Unlock Wave ${i} first</span>`}</div>`}</div></div>`;
 }
 // the Deployment tab: five rows, each holding the soldiers in that place: on the map, reserve, and the three waves
 function deploymentTab() {
@@ -26,7 +27,7 @@ function deploymentTab() {
   const tile = o => `<button class="gr-t${sel === o.id ? " sel" : ""}" data-drag="${o.id}" data-act="tsel" data-v="${o.id}" aria-label="${UNITS[o.type].name} level ${o.lvl}, ${waveStatus(o.id)[1]}"><img alt="" src="${spriteURL(o.type)}"><b>${UNITS[o.type].name}</b><span class="gr-pp">${[1, 2, 3].map(x => `<i class="${x <= o.lvl ? "on" : ""}"></i>`).join("")}</span></button>`;
   const ph = (act, text) => `<button class="gr-t gr-ph" data-act="${act}" ${dis()}><span>${text}</span></button>`;
   const row = (title, count, drop, body) => `<div class="gr-row" data-drop="${drop}"><div class="gr-rh"><b>${title}</b><small>${count}</small></div><div class="gr-r5">${body}</div></div>`;
-  return `<div class="gr-sum"><span><b>${fieldCount()}/${S.slots}</b>field</span><span class="y"><b>${garrisonCount()}/${GARRISON_SOLDIERS}</b>waves</span><span><b>${reserve.length}</b>reserve</span></div>
+  return `<div class="gr-sum"><span><b>${fieldCount()}/${S.slots}</b>field</span><span class="y"><b>${garrisonCount()}/${garrisonCap()}</b>waves</span><span><b>${reserve.length}</b>reserve</span></div>
     <p class="muted gr-tip">${S.locked ? "Your orders are sealed. Draft new orders to change this." : "Drag a soldier from one row to another, or tap a soldier then tap where it should go."}</p>
     <div class="gr-waves">
       ${row("Deployed", `${placed.length} on the map`, "dep", placed.map(tile).join("") + (freeField ? [...Array(freeField)].map(() => ph("wdep", "free")).join("") : ph("wdep", "deploy")))}

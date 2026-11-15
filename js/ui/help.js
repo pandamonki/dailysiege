@@ -2,10 +2,10 @@
 // right at the top of the page body. One place for all the wording, so the pages stay consistent.
 
 const HELP = {
-  recruit: ["Recruit", "Buy new soldiers with gold. Pick a type to see its stats, then tap Buy. Better soldiers unlock as your castle grows. You can only field as many as your supply allows, and the rest wait in reserve."],
+  recruit: ["Recruit", "Buy new soldiers with gold. Pick a type to see its stats, then tap Buy. Better soldiers unlock as your castle grows. You can field 4 soldiers on the map. More go into the reinforcement waves you have unlocked, which march out later in the battle."],
   garrison: ["Train", "Every soldier you own, in one short list. Tap one to see its stats now and after training. Train it up to level 3 with gold, or sell soldiers you no longer want for part of their cost. The soldier you picked stays pinned at the bottom."],
   deployment: ["Deployment", "Choose who stands on the field tonight and who waits in reserve. Tap a soldier to place it on a glowing tile, or send it back to the barracks. Units on the field fight in the battle."],
-  keep: ["Castle", "Upgrade your castle for more gold each day, tougher walls and access to stronger soldiers. Supply adds more field slots, so you can bring more soldiers to each battle."],
+  keep: ["Castle", "Upgrade your castle for more gold each day, tougher walls and access to stronger soldiers. Waves unlocks your reinforcement waves one at a time (60, 100 and 150 gold), each holding 3 more soldiers who join the battle later."],
   traps: ["Defences", "Buy walls and traps. Walls block or slow enemies and rebuild free each day. Traps are single-use and only last tonight's battle. Buy one, then tap a glowing tile near your castle to place it."],
   armoury: ["Armoury", "Forge permanent upgrades for your hero and castle: weapon, armour and charm for the hero, plus castle walls and tower. Higher tiers need a stronger castle."],
   banner: ["Coat of arms", "Design the banner that flies over your castle and shows in replays and on the leaderboard. Banners are set on the first day and stay for the week."],

@@ -158,6 +158,13 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "Reinforcement waves replace supply", date: "15 Nov", fixes: [], balance: [
+    "From the week of 16 Nov, supply beds are gone. Every lord can field 4 soldiers on the map at the start of a battle.",
+    "Reinforcement waves now have to be unlocked, in order: Wave 1 for 60 gold, Wave 2 for 100 and Wave 3 for 150. Each opens 3 slots for soldiers who march out later in the battle. Every wave still sends its free footman, unlocked or not.",
+    "Beds you already bought are refunded in gold, and any wave already holding soldiers stays open for free.",
+  ], changes: [
+    "Unlock waves on the Castle tab (the Waves tile) or straight from a locked wave on the Deploy tab.",
+  ] },
   { v: "The new mercenary camp", date: "15 Nov", fixes: [], balance: [
     "New headline mercenary group for the last day of the week: the Troll War Host, the Troll Warlord leading two Orc Berserkers, from 400 gold.",
     "The Bone Crew is tougher: the Necromancer has 320 health and 30 attack (was 160 and 20), and the skeletons 170 health and 18 attack (were 60 and 11) with light armour.",
@@ -169,7 +176,7 @@ const PATCHES = [
     "You can now bid on one group a day; a new bid replaces your old one. No lord can win more than one group a day.",
   ] },
   { v: "Dearer soldiers, cheaper training", date: "15 Nov", fixes: [], balance: [
-    "Training a soldier is cheaper: level 2 now costs 30% of the soldier's price (was 50%) and level 3 costs 40% (was 100%). A fully trained soldier now costs 1.7 times its price in all, less than buying two, and needs only one bed.",
+    "Training a soldier is cheaper: level 2 now costs 30% of the soldier's price (was 50%) and level 3 costs 40% (was 100%). A fully trained soldier now costs 1.7 times its price in all, less than buying two, and takes up only one place.",
     "Soldiers cost more to buy: Footman 100 (was 50), Bowman 120 (was 70), Raider and Cleric 140 (were 110 and 100), Battle Mage 180 (was 140), Knight 240 (was 120), Dwarven Sniper 220 (was 160). Every siege unit is now 300.",
     "Castle upgrades are cheaper: the Fortress costs 100 (was 150) and the Citadel 200 (was 300).",
     "Selling a trained soldier still returns a quarter of what you spent on it, so it is a little less than before.",

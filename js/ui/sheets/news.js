@@ -3,11 +3,13 @@
 // Each item is [icon, headline, one short sentence]. Players who have not seen the newest id get the pop-up the next time they plan;
 // the id is remembered on their device, so changing the id is all it takes to show it again. Keep about 8 to 14 items.
 const RELEASES = [
-  { id: "1.3", title: "What's new in v1.3", sub: "Fewer, better soldiers, and a new mercenary camp", items: [
+  { id: "1.3", title: "What's new in v1.3", sub: "Fewer, better soldiers, bought waves and a new mercenary camp", items: [
     ["⬆", "Cheaper training", "Training to level 2 costs 30% of a soldier's price and level 3 costs 40%, so a fully trained soldier beats buying another."],
     ["💰", "Dearer soldiers", "Footmen cost 100, Bowmen 120, Raiders and Clerics 140, Battle Mages 180, Snipers 220 and Knights 240."],
     ["🪨", "Siege units at 300", "The Powder Cart, Catapult and Battering Ram all cost 300 gold."],
     ["🏰", "Cheaper castles", "The Fortress costs 100 and the Citadel 200."],
+    ["🛡", "Four on the map", "Supply beds are gone: everyone fields 4 soldiers, and beds you bought are refunded."],
+    ["🔓", "Unlock your waves", "Buy reinforcement waves in order (60, 100, 150 gold). Each holds 3 more soldiers who join the battle later."],
     ["⭐", "A headliner every day", "From day 4 a new, stronger mercenary group tops the camp each day, and you hear about it when you plan."],
     ["👹", "The Troll War Host", "Day 7's headliner: the Troll Warlord leading two Orc Berserkers. The Bone Crew is tougher and the Ogre Breaker softer, so no single group decides a battle."],
     ["🗂", "A tidier camp", "The headliner sits in a wide card, three regular groups below it, and the details and bid underneath."],

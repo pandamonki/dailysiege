@@ -3,6 +3,10 @@
 const OP_MAX = 5, SLOT_START = 3, SLOT_MAX = 8;
 const SLOT_COSTS = [0, 0, 0, 60, 100, 160, 240, 340]; // gold for bed n+1 is SLOT_COSTS[n] (n beds owned)
 const slotCost = n => SLOT_COSTS[Math.min(n, SLOT_COSTS.length - 1)];
+// From SUPPLY_V2_FROM (the week of 16 Nov 2026): no more beds. Every lord can field FIELD_MAX soldiers on the map, and buys the three
+// reinforcement waves instead, in order, each opening that wave's soldier slots. Beds already bought are refunded.
+let SUPPLY_V2_FROM = "2026-11-16"; const supplyV2For = d => String(d) >= SUPPLY_V2_FROM;
+const FIELD_MAX = 4, WAVE_UNLOCK_COSTS = [60, 100, 150];
 
 // ---- castle tiers, walls, shop items, hero levelling, gold ----
 const CASTLE_TIERS = [
