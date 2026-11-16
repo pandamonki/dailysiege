@@ -45,7 +45,7 @@ function boardSheet() {
   return head(null, "Leaderboard", `${isLive() ? "Week standings" : "Test standings"} · day ${DAY} of 7`) + `<div class="body bdbody">
     <div class="bdhead"><span></span><span></span><span>Lord</span><span>Lv</span><span>Pts</span></div>
     ${rows.map((r, i) => `<div class="bd2${r.me ? " me" : ""}"><span class="ord">${i + 1}</span><img class="bmini" alt="" src="${bannerURL(r.banner, r.color, 24, 32)}"><span class="bdn"><b>${esc(r.name)}</b>${r.cls ? `<small>${CLASSES[r.cls].name}</small>` : ""}${i < 3 && n > 3 ? `<i class="tag bty" title="Bounty on their head: base + board position + hero level x 5">♛ ${bountyMap()[r.id] || ""}g</i>` : ""}${i >= n - low && n > 3 ? `<i class="tag cat" title="Earns catch-up gold">◈</i>` : ""}</span><span class="lv">${r.lvl}</span><span class="pts">${r.pts}${r.last != null ? `<small>+${r.last}</small>` : ""}</span></div>`).join("")}
-    <p class="muted bdfoot"><b class="bounty">♛</b> bounty on the top three · <b class="catch">◈</b> catch-up gold for the bottom 30%${catchUp ? ` (you get +${catchUp})` : ""}. Points: 10 for first place down to 0, +1 per hero slain, +${castlePts(isLive() ? fairV1For(liveClock().planDay) : true)} per castle taken.</p></div>`;
+    <p class="muted bdfoot"><b class="bounty">♛</b> bounty on the top three · <b class="catch">◈</b> catch-up gold for the bottom 30%${catchUp ? ` (you get +${catchUp})` : ""}. Points: 10 for first place down to 0, +1 per hero slain, +${castlePts(isLive() ? fairV1For(liveClock().planDay) : true)} per castle taken, +1 if your hero survives the battle.</p></div>`;
 }
 function latestBattleKey() { return Object.keys(LIVE.battles || {}).sort().pop() || null; }
 let LASTP = null, reportBack = null;
@@ -177,6 +177,7 @@ const PATCHES = [
     "From the battle of 17 Nov, hero items add flat amounts instead of percentages, so they help most early in the week: Whetstone +6 attack, Gauntlets and Daedalus +12, Leather Jerkin +100 health, Ring of Health +140 health and 10 health a second, Vanguard +260 health, Mending Herbs 5 health a second, Healing Salve heals 300.",
     "Swift Sandals +0.2 and Boots of Speed +0.35 tiles a second. Iron Buckler, Ring of Protection and Shiva's Guard now block 3, 6 and 5 damage from every normal hit. Elixir of Fury: 0.2 seconds faster between attacks.",
     "Lifesteal, crits, dodge, reflect, slows, splash and the area auras stay percentages. The Iron Standard's aura is now 18% less damage taken (was 24%).",
+    "Survivor: from the battle of 17 Nov, a lord whose hero is still alive when the battle ends scores 1 more point, even if their castle has fallen. Placement still goes by castles: the battle ends when one castle (or one alliance) is left, and only lords with a castle standing go to the sudden death arena.",
   ], changes: [
     "Replays start two zoom steps further out, and the highlight reel two steps further out than before.",
     "A column of small castles in each lord's colour runs down the side of every replay and highlight reel. A castle is crossed out the moment it falls, so you can follow the match without the whole map in view.",

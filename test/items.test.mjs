@@ -22,3 +22,9 @@ test("without the stamp, Gauntlets are still a percentage", () => {
 test("the Iron Standard aura gives 18% with flat items", () => {
   assert.equal(sim.get("STANDARD_V5"), .18);
 });
+
+test("survivor: a lord whose hero lives to the end scores 1 more point, only with the stamp", () => {
+  const r = sim.run(`(() => { const c = goldenCase(2), run = st => { const pl = JSON.parse(JSON.stringify(c.plans)); if (st) pl.forEach(p => { p.survV1 = true; }); return runBattle(pl, c.seed, Object.assign({}, c.opts, { fast: true })).results; };
+    const a = run(false), b = run(true); return a.map(x => ({ d: b.find(y => y.pid === x.pid).points - x.points, s: !!b.find(y => y.pid === x.pid).survivor })); })()`);
+  assert.ok(r.some(x => x.s), "someone survives in this battle"); assert.ok(r.every(x => x.d === (x.s ? 1 : 0)), JSON.stringify(r));
+});

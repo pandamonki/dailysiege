@@ -60,6 +60,8 @@ const ITEM_DESC_V4 = {
 };
 // Flat items from ITEMS_V5_FROM (ITEM_FLAT in sim/battle.js): stat items add flat amounts to the hero, the Iron Standard's aura is 18%
 let ITEMS_V5_FROM = "2026-11-17"; const itemsV5For = d => String(d) >= ITEMS_V5_FROM;
+// Survivor bonus from SURV_FROM: +1 point to a lord whose hero is alive when the battle ends (SURVIVOR_PTS in sim/battle.js)
+let SURV_FROM = "2026-11-17"; const survFor = d => String(d) >= SURV_FROM;
 const ITEM_DESC_V5 = {
   whetstone: "+6 attack damage.", jerkin: "+100 health.", sandals: "+0.2 tiles a second move speed.", buckler: "Blocks 3 damage from every normal hit you take.",
   herbs: "Regenerate 5 health every second.", boots: "+0.35 tiles a second move speed. Catch the fleeing, or run from the strong.", gauntlets: "+12 attack damage.",
