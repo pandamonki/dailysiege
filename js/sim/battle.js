@@ -45,6 +45,11 @@ let BAL_V4_FROM = "2026-11-14"; const balV4For = d => String(d) >= BAL_V4_FROM;
 //     that reach soldiers, and are AURA_BOOST times as strong
 let ITEM_BOOST = 2, AURA_BOOST = 2;
 const ITEM_STATS = { whetstone: { atk: .07 }, gauntlets: { atk: .15 }, daedalus: { atk: .15 }, jerkin: { hp: .06 }, hpring: { hp: .08 }, vanguard: { hp: .15 }, sandals: { spd: .06 }, boots: { spd: .10 }, buckler: { dr: .04 }, ringprot: { dr: .08 }, shiva: { dr: .06 } };
+// Flat items (plans stamped itemV5, from ITEMS_V5_FROM): the hero's stat items add flat amounts instead of percentages, so they matter most early in the
+// week and less as the hero levels. Lifesteal, crits, dodge, reflect, slows, splash and the area auras stay percentages. Damage-reduction items block a
+// flat amount from every normal hit (like Vanguard). The Iron Standard's aura gives STANDARD_V5 less damage taken.
+const ITEM_FLAT = { whetstone: { atk: 6 }, gauntlets: { atk: 12 }, daedalus: { atk: 12 }, jerkin: { hp: 100 }, hpring: { hp: 140 }, vanguard: { hp: 260 }, sandals: { spd: .2 }, boots: { spd: .35 }, buckler: { block: 3 }, ringprot: { block: 6 }, shiva: { block: 5 } };
+const ITEM_REGEN_V5 = { hpring: 10, herbs: 5 }, SALVE_V5 = 300, ELIXIR_V5 = .2, STANDARD_V5 = .18;
 const AGGRO_R = 4, RECALL_R = 6, RETREAT_END_V2 = .5, METEOR_CASTLE = 700, MAGIC_VS_FORT = .6, HIT_WINDOW = 2.5, BACK_AT = .6;
 const fairTie = (seed, a, b) => hash(seed, botSeed(String(a)) * 7919 + botSeed(String(b)), 17);
 const BLOC_MAX = 3, TREACHERY_PTS = 3, TREACHERY_LOOT = .25, DAY_WEIGHT = { 5: 1.5, 6: 1.5, 7: 2 };
@@ -157,19 +162,29 @@ function runBattle(plans, seed, opts = {}) {
         e.hp = e.maxhp; if (!HV3) { ["a1", "a2", "a3"].forEach(k => e.cds[k] = 2 + rng() * 3); e.cds.ult = 10 + rng() * 8; }
         e.ultArm = pl.ultArm !== false; e.heroLvl = lvl; e.lvl0 = lvl; e.xp = pl.xp0 || 0; e.xp0 = e.xp; e.gains = 0;
         const its = new Set(pl.items || []); e.itemSet = its; if (its.has("rapier")) { e.rapier = true; rapierOwner = rapierHolder = pl.pid; }
-        if (its.has("boots")) e.spd *= 1.1; if (its.has("gauntlets")) e.atk *= 1.15; if (its.has("ringprot")) e.dmgRed = (e.dmgRed || 0) + .08;
-        if (its.has("fang")) e.lifesteal = (e.lifesteal || 0) + .12; if (its.has("thornmail")) e.thorns = .15; if (its.has("talisman")) e.will = true;
-        if (its.has("vanguard")) { e.maxhp *= 1.15; e.hp = e.maxhp; e.block = 12; }
-        if (its.has("antimagic")) e.shellAt = Math.max(1, Math.min(10, Math.round(+pl.shellAt || 2)));
-        if (its.has("hpring")) { e.maxhp *= 1.08; e.hp = e.maxhp; }
-        if (its.has("whetstone")) e.atk *= 1.07; if (its.has("sandals")) e.spd *= 1.06; if (its.has("buckler")) e.dmgRed = (e.dmgRed || 0) + .04;
-        if (its.has("jerkin")) { e.maxhp *= 1.06; e.hp = e.maxhp; }
-        { const oc = ["frostdagger", "fireorb", "venomorb", "corruptorb"].filter(k => its.has(k)); if (oc.length) e.orbCols = oc.map(k => ITEMS[k].col); }
-        if (its.has("shiva")) e.dmgRed = (e.dmgRed || 0) + .06;
-        if (its.has("daedalus")) e.atk *= 1.15;
-        if (its.has("crystalys")) e.itemCrit = [.2, 1.6]; if (its.has("daedalus")) e.itemCrit = [.25, 2.4];
-        if (V4 && ITEM_BOOST !== 1) { const ab = { atk: 0, hp: 0, spd: 0, dr: 0 }; its.forEach(k => { const st = ITEM_STATS[k]; if (st) for (const q in st) ab[q] += st[q]; });
-          e.atk *= 1 + (ITEM_BOOST - 1) * ab.atk; e.maxhp *= 1 + (ITEM_BOOST - 1) * ab.hp; e.hp = e.maxhp; e.spd *= 1 + (ITEM_BOOST - 1) * ab.spd; e.dmgRed = (e.dmgRed || 0) + (ITEM_BOOST - 1) * ab.dr; }
+        e.itemV5 = !!pl.itemV5;
+        if (e.itemV5) { // flat items
+          its.forEach(k => { const st = ITEM_FLAT[k]; if (!st) return; if (st.atk) { e.atk += st.atk; e.flatAtk = (e.flatAtk || 0) + st.atk; } if (st.hp) { e.maxhp += st.hp; e.flatHp = (e.flatHp || 0) + st.hp; } if (st.spd) e.spd += st.spd; if (st.block) e.block = (e.block || 0) + st.block; });
+          e.hp = e.maxhp; if (its.has("vanguard")) e.block = (e.block || 0) + 12;
+          if (its.has("fang")) e.lifesteal = (e.lifesteal || 0) + .12; if (its.has("thornmail")) e.thorns = .15; if (its.has("talisman")) e.will = true;
+          if (its.has("antimagic")) e.shellAt = Math.max(1, Math.min(10, Math.round(+pl.shellAt || 2)));
+          { const oc = ["frostdagger", "fireorb", "venomorb", "corruptorb"].filter(k => its.has(k)); if (oc.length) e.orbCols = oc.map(k => ITEMS[k].col); }
+          if (its.has("crystalys")) e.itemCrit = [.2, 1.6]; if (its.has("daedalus")) e.itemCrit = [.25, 2.4];
+        } else {
+          if (its.has("boots")) e.spd *= 1.1; if (its.has("gauntlets")) e.atk *= 1.15; if (its.has("ringprot")) e.dmgRed = (e.dmgRed || 0) + .08;
+          if (its.has("fang")) e.lifesteal = (e.lifesteal || 0) + .12; if (its.has("thornmail")) e.thorns = .15; if (its.has("talisman")) e.will = true;
+          if (its.has("vanguard")) { e.maxhp *= 1.15; e.hp = e.maxhp; e.block = 12; }
+          if (its.has("antimagic")) e.shellAt = Math.max(1, Math.min(10, Math.round(+pl.shellAt || 2)));
+          if (its.has("hpring")) { e.maxhp *= 1.08; e.hp = e.maxhp; }
+          if (its.has("whetstone")) e.atk *= 1.07; if (its.has("sandals")) e.spd *= 1.06; if (its.has("buckler")) e.dmgRed = (e.dmgRed || 0) + .04;
+          if (its.has("jerkin")) { e.maxhp *= 1.06; e.hp = e.maxhp; }
+          { const oc = ["frostdagger", "fireorb", "venomorb", "corruptorb"].filter(k => its.has(k)); if (oc.length) e.orbCols = oc.map(k => ITEMS[k].col); }
+          if (its.has("shiva")) e.dmgRed = (e.dmgRed || 0) + .06;
+          if (its.has("daedalus")) e.atk *= 1.15;
+          if (its.has("crystalys")) e.itemCrit = [.2, 1.6]; if (its.has("daedalus")) e.itemCrit = [.25, 2.4];
+          if (V4 && ITEM_BOOST !== 1) { const ab = { atk: 0, hp: 0, spd: 0, dr: 0 }; its.forEach(k => { const st = ITEM_STATS[k]; if (st) for (const q in st) ab[q] += st[q]; });
+            e.atk *= 1 + (ITEM_BOOST - 1) * ab.atk; e.maxhp *= 1 + (ITEM_BOOST - 1) * ab.hp; e.hp = e.maxhp; e.spd *= 1 + (ITEM_BOOST - 1) * ab.spd; e.dmgRed = (e.dmgRed || 0) + (ITEM_BOOST - 1) * ab.dr; }
+        }
         e.cons = ["salve", "elixir", "net", "scroll", "shiva", "antimagic"].filter(k => its.has(k)).map(k => ({ k, ready: 0 }));
         if (!HV3 && pl.cls === "archer" && pl.ranks.a3) { e.evade = ext([.1, .18, .25], pl.ranks.a3); e.counter = pl.picks.a3 === "Counter"; e.kite = pl.picks.a3 === "Kite"; }
         if (!HV3 && pl.cls === "rogue" && pl.ranks.a3) e.poison = { dps: ext([7, 10, 13], pl.ranks.a3), venom: pl.picks.a3 === "Venom", weaken: pl.picks.a3 === "Weaken" };
@@ -217,7 +232,7 @@ function runBattle(plans, seed, opts = {}) {
   function levelUp(h) {
     if (h.gains >= XP_CAP) return; // a hero never gains more than 3 levels in one day, from any source
     const L0 = h.heroLvl; h.heroLvl++; h.gains++;
-    const oh = h.maxhp; h.maxhp *= hpLvX(h.heroLvl) / hpLvX(L0); h.hp += h.maxhp - oh; h.atk *= atkLvX(h.heroLvl) / atkLvX(L0);
+    const oh = h.maxhp, fh = h.flatHp || 0, fa = h.flatAtk || 0; h.maxhp = (h.maxhp - fh) * (hpLvX(h.heroLvl) / hpLvX(L0)) + fh; h.hp += h.maxhp - oh; h.atk = (h.atk - fa) * (atkLvX(h.heroLvl) / atkLvX(L0)) + fa; // flat item bonuses stay flat
     const k = HV3 ? null : autoPick(h); /* skill-tree heroes never skill themselves: the player spends points on the hero screen */ let nm2 = "";
     if (k) { const o = vigMul(h.ranks.a4); h.ranks[k] = (h.ranks[k] || 0) + 1; nm2 = abName(h, k); if (k === "a4") { const f = vigMul(h.ranks.a4) / o, ob = h.maxhp; h.maxhp *= f; h.hp += h.maxhp - ob; h.atk *= f; } }
     ev({ ty: "lvl", id: h.id, L: h.heroLvl, ab: nm2, ak: k, x: h.x, y: h.y });
@@ -265,17 +280,17 @@ function runBattle(plans, seed, opts = {}) {
     if (tick % 10 === 0) {
       const AB = V4 ? AURA_BOOST : 1;
       if (s.has("banner")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => setFx(o, "atkbuf", 1.3, .12 * AB));
-      if (s.has("standard")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => setFx(o, "guard", 1.3, Math.min(.6, .12 * AB)));
-      if (s.has("hpring") && e.hp < e.maxhp) heal(e, e.maxhp * .012, true, e, "Ring of Health");
-      if (s.has("herbs") && e.hp < e.maxhp) heal(e, e.maxhp * .006, true, e, "Mending Herbs");
+      if (s.has("standard")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => setFx(o, "guard", 1.3, e.itemV5 ? STANDARD_V5 : Math.min(.6, .12 * AB)));
+      if (s.has("hpring") && e.hp < e.maxhp) heal(e, e.itemV5 ? ITEM_REGEN_V5.hpring : e.maxhp * .012, true, e, "Ring of Health");
+      if (s.has("herbs") && e.hp < e.maxhp) heal(e, e.itemV5 ? ITEM_REGEN_V5.herbs : e.maxhp * .006, true, e, "Mending Herbs");
       if (s.has("pipe")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => setFx(o, "spellward", 1.3, Math.min(.6, .25 * AB)));
       if (s.has("mender")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => { if (o.hp < o.maxhp) heal(o, 4 * AB, true, e, "Mender's Charm"); });
     }
     if (s.has("antimagic")) { if (enemiesNear(e, e.x, e.y, 7).some(x => x.kind === "champ")) { if (e.engT == null) e.engT = t; } else e.engT = null; } // the clock on the Shell starts when an enemy hero comes into view
     (e.cons || []).forEach(c => {
       if (t < c.ready) return;
-      if (c.k === "salve" && e.hp / e.maxhp < .5) { c.ready = t + ITEMS[c.k].cd; heal(e, e.maxhp * .35, false, e, "Healing Salve"); txt(e, "Salve", "#9cf09c"); }
-      else if (c.k === "elixir" && live(e.tgt) && d(e, e.tgt) <= e.range + 1) { c.ready = t + ITEMS[c.k].cd; setFx(e, "asbuf", 8, .25); txt(e, "Fury!", "#ff8a7a"); }
+      if (c.k === "salve" && e.hp / e.maxhp < .5) { c.ready = t + ITEMS[c.k].cd; heal(e, e.itemV5 ? SALVE_V5 : e.maxhp * .35, false, e, "Healing Salve"); txt(e, "Salve", "#9cf09c"); }
+      else if (c.k === "elixir" && live(e.tgt) && d(e, e.tgt) <= e.range + 1) { c.ready = t + ITEMS[c.k].cd; setFx(e, "asbuf", 8, e.itemV5 ? ELIXIR_V5 / Math.max(.3, e.as - ELIXIR_V5) : .25); txt(e, "Fury!", "#ff8a7a"); }
       else if (c.k === "net") { const v = minBy(enemiesNear(e, e.x, e.y, 4).filter(x => x.kind === "champ"), x => d(x, e)); if (v) { c.ready = t + ITEMS[c.k].cd; setFx(v, "root", 2.5); shot(e, v, "#c9a46a", 2); txt(v, "Netted", "#e8cf9a"); } }
       else if (c.k === "shiva") { const vs = enemiesNear(e, e.x, e.y, 3); if (vs.length >= 2) { c.ready = t + ITEMS[c.k].cd; aoe(e.x, e.y, 3, "#9fe4ff", .6); vs.forEach(x => { deal(e, x, 140, { aoe: 1, ab: "Shiva's Guard" }); if (live(x)) setFx(x, "slow", 4, .4); }); txt(e, "Shiva's Guard", "#bdeeff"); } }
       else if (c.k === "antimagic" && e.engT != null && t - e.engT >= e.shellAt - 1e-6) { c.ready = t + ITEMS[c.k].cd; setFx(e, "shell", 5, .7); ev({ ty: "shell", id: e.id, dur: 5 }); txt(e, "Anti-Magic Shell", "#9ff0e0"); }

@@ -19,15 +19,24 @@ jobs:
     if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
+      - name: Check the deploy key is present
+        id: key
+        run: if [ -z "$SERVICE_ACCOUNT" ]; then echo "::warning::No Firebase service-account secret found."; echo "ok=false" >> "$GITHUB_OUTPUT"; else echo "ok=true" >> "$GITHUB_OUTPUT"; fi
+      - uses: google-github-actions/auth@v2
+        if: steps.key.outputs.ok == 'true'
+        id: auth
+        with:
+          credentials_json: ${{ env.SERVICE_ACCOUNT }}
+          token_format: access_token
       - name: Delete preview channels
+        if: steps.key.outputs.ok == 'true'
         env:
+          TOKEN: ${{ steps.auth.outputs.access_token }}
           PREFIX: ${{ github.event_name == 'pull_request' && format('pr{0}-', github.event.pull_request.number) || '' }}
         run: |
-          if [ -z "$SERVICE_ACCOUNT" ]; then echo "::warning::No Firebase service-account secret found."; exit 0; fi
-          printf '%s' "$SERVICE_ACCOUNT" > "$RUNNER_TEMP/sa.json"
-          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
-          npm install --no-save --no-audit --no-fund firebase-tools@15 >/dev/null
-          FB="npx --no-install firebase --project daily-siege"
-          ids=$($FB hosting:channel:list --json | jq -r '.result.channels[].name | split("/") | last' | grep -v '^live$' | grep "^${PREFIX}" || true)
-          if [ -z "$ids" ]; then echo "No preview channels to delete."; exit 0; fi
-          for id in $ids; do echo "Deleting $id"; $FB hosting:channel:delete "$id" --force; done
+          API=https://firebasehosting.googleapis.com/v1beta1/sites/daily-siege/channels
+          list=$(curl -sS -H "Authorization: Bearer $TOKEN" "$API?pageSize=100")
+          ids=$(echo "$list" | jq -r '(.channels // [])[].name | split("/") | last' | grep -v '^live$' | grep "^${PREFIX}" || true)
+          if [ -z "$ids" ]; then echo "No preview channels to delete. Response:"; echo "$list" | head -c 2000; exit 0; fi
+          for id in $ids; do echo "Deleting $id"; curl -sS -f -X DELETE -H "Authorization: Bearer $TOKEN" "$API/$id" >/dev/null; done
+          echo "Remaining:"; curl -sS -H "Authorization: Bearer $TOKEN" "$API?pageSize=100" | jq -r '(.channels // [])[].name'

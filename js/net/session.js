@@ -48,7 +48,8 @@ function payDays(ck) { // base pay once per day; spoils, catch-up, gold transfer
 function rollover() {
   const ck = liveClock();
   if (!S) { const sv = LIVE.players[LIVE.uid] && LIVE.players[LIVE.uid].state; if (sv && sv.week === ck.week) { S = JSON.parse(JSON.stringify(sv)); LIVE_S = S; } } // never start fresh when this week's saved state exists
-  if (!S || S.week !== ck.week) { const old = S; S = freshLiveState(ck); if (old && old.lobbyPrep) { S.cls = old.cls || "warrior"; S.ranks = old.ranks || S.ranks; S.picks = old.picks || {}; S.banner = old.banner || S.banner; S.ob = old.ob || 0; } return true; }
+  // a registration state always starts the war fresh, even when registration closed in the war's own first week
+  if (!S || S.week !== ck.week || S.lobbyPrep) { const old = S; S = freshLiveState(ck); if (old && old.lobbyPrep) { S.cls = old.cls || "warrior"; S.ranks = old.ranks || S.ranks; S.picks = old.picks || {}; S.banner = old.banner || S.banner; S.ob = old.ob || 0; } return true; }
   if (S.day === ck.planDay) return false;
   const g0 = S.gold;
   payDays(ck);
