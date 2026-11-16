@@ -43,7 +43,8 @@ function pieceNear(tx, ty) { // the placed piece closest to a point (in tiles), 
 function worldOf(clientX, clientY) { const rc = cvs.getBoundingClientRect(); return [cam.x + (clientX - rc.left) / cam.z, cam.y + (clientY - rc.top) / cam.z]; }
 // pieces are moved with the Move button on the unit strip, not by dragging them on the map
 cvs.addEventListener("pointerdown", e => {
-  cvs.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); camTarget = null;
+  if (e.isPrimary || ptrs.size >= 2) { ptrs.clear(); pinch = null; drag = null; } // a new gesture: forget any finger whose lift was never seen, or every touch would read as a pinch
+  try { cvs.setPointerCapture(e.pointerId); } catch (er) {} ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); camTarget = null;
   if (ptrs.size === 1) { moved = false; drag = { x: e.clientX, y: e.clientY, cx: cam.x, cy: cam.y }; }
   else if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = { d: dist(a, b) || 1, z: cam.z, zm: replay && replay.auto ? autoZoomMul() : 1 }; moved = true; }
 });
@@ -71,6 +72,7 @@ function endPtr(e) {
 }
 cvs.addEventListener("pointerup", endPtr);
 cvs.addEventListener("pointercancel", endPtr);
+cvs.addEventListener("lostpointercapture", e => { if (ptrs.has(e.pointerId)) { ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null; if (!ptrs.size) drag = null; } });
 cvs.addEventListener("wheel", e => {
   e.preventDefault();
   if (replay && replay.auto) { autoZoomBy(Math.exp(-e.deltaY * .0015)); return; }

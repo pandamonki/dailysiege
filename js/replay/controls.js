@@ -10,9 +10,16 @@ function autoCam() {
   if (replay.hi == null) { replay.hi = R.meta.findIndex(m => m.pid === R.me && m.kind === "champ"); replay.ci = R.meta.findIndex(m => m.pid === R.me && m.kind === "castle"); }
   const hb = replay.hi * 4, cb = replay.ci * 4, f0 = replayFrameAt(Math.max(0, replay.time - 3));
   const castleAlive = replay.ci >= 0 && f.d[cb + 2] > 0, heroDown = replay.hi < 0 || (f.d[hb + 3] & 1);
-  const hit = castleAlive && f0.d[cb + 2] - f.d[cb + 2] >= 1, arena = !!(R.sudden && replay.time >= R.sudden.t0), mode = arena ? "arena" : hit ? "base" : heroDown ? (castleAlive ? "base" : "field") : "hero";
+  const hit = castleAlive && f0.d[cb + 2] - f.d[cb + 2] >= 1, arena = !!(R.sudden && replay.time >= R.sudden.t0);
+  // my lord is out of the fight: follow another living hero (the one already followed, else the one nearest the middle), so zoom still works
+  const up = i => i >= 0 && R.meta[i] && R.meta[i].kind === "champ" && !(f.d[i * 4 + 3] & 1);
+  let fi = -1; if (heroDown && !castleAlive && !arena) { fi = up(replay.fi) ? replay.fi : -1; if (fi < 0) { let bd = 1e9; R.meta.forEach((m, i) => { if (!up(i)) return; const dd = Math.hypot(f.d[i * 4] - N / 2, f.d[i * 4 + 1] - N / 2); if (dd < bd) { bd = dd; fi = i; } }); } replay.fi = fi; }
+  const mode = arena ? "arena" : hit ? "base" : heroDown ? (castleAlive ? "base" : fi >= 0 ? "other" : "field") : "hero";
   let x, y, z = 1.7;
-  if (mode === "arena") { const E = 3 + R.order.length * .4 + 4.2, fit = Math.min(vw, vh * .7) / (2 * E * ts); z = Math.max(minZoom(), Math.min(2.4, fit)); x = N / 2; y = N / 2 - vh * .1 / z / ts + .3; } // the whole arena in one screen, sitting below the banner else if (mode === "base") { x = f.d[cb]; y = f.d[cb + 1]; z = 1.35; } else if (mode === "hero") { x = f.d[hb]; y = f.d[hb + 1]; } else { x = y = 0; z = 0; }
+  if (mode === "arena") { // the whole arena in one screen, sitting below the banner
+    const E = 3 + R.order.length * .4 + 4.2, fit = Math.min(vw, vh * .7) / (2 * E * ts); z = Math.max(minZoom(), Math.min(2.4, fit)); x = N / 2; y = N / 2 - vh * .1 / z / ts + .3; }
+  else if (mode === "base") { x = f.d[cb]; y = f.d[cb + 1]; z = 1.35; } else if (mode === "hero") { x = f.d[hb]; y = f.d[hb + 1]; } else if (mode === "other") { x = f.d[fi * 4]; y = f.d[fi * 4 + 1]; } else { x = y = 0; z = 0; }
+  if (mode !== "field" && !(Number.isFinite(x) && Number.isFinite(y))) return; // nothing to follow yet (the first frame has no positions)
   if (z) { replay.zbase = z; z *= autoZoomMul(); } // the viewer's own zoom is kept on top of the camera's, so zooming does not break the auto camera
   if (mode === "field") { flyTo(W / 2, W / 2, 0); } else if (mode !== replay.camMode) { const zz = Math.max(minZoom(), Math.min(MAX_ZOOM, z)); camTarget = null; Object.assign(cam, { x: x * ts - vw / 2 / zz, y: (y - .3) * ts - vh / 2 / zz, z: zz }); clampCam(); }
   else flyTo(x * ts, (y - .3) * ts, z);
@@ -42,7 +49,7 @@ function updateReplayUI() {
   const sc = document.getElementById("rscrub"); if (document.activeElement !== sc) sc.value = replay.time.toFixed(1);
   document.getElementById("rplay").textContent = replay.playing ? "❚❚" : "▶";
   document.getElementById("rspeed").textContent = replay.speed + "×";
-  { const ra = document.getElementById("rauto"); if (ra) { ra.textContent = replay.auto ? (replay.camMode === "base" ? "🎥 Following: keep" : replay.camMode === "arena" ? "🎥 Following: arena" : "🎥 Following hero") : "🎥 Follow hero"; ra.className = "btn small" + (replay.auto ? " wood" : ""); } }
+  { const ra = document.getElementById("rauto"); if (ra) { ra.textContent = replay.auto ? (replay.camMode === "base" ? "🎥 Following: keep" : replay.camMode === "arena" ? "🎥 Following: arena" : replay.camMode === "other" ? "🎥 Following the fight" : replay.camMode === "field" ? "🎥 Whole field" : "🎥 Following hero") : "🎥 Follow hero"; ra.className = "btn small" + (replay.auto ? " wood" : ""); } }
   const L = replay.res.logs, n = lowerBound(L, replay.time + 1e-6);
   if (n !== replay.logN) {
     replay.logN = n;

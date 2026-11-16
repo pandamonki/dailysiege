@@ -58,5 +58,18 @@ const ITEM_DESC_V4 = {
   banner: "Aura: allies within 3 tiles deal 24% more damage.", standard: "Aura: allies within 3 tiles take 24% less damage.",
   mender: "Aura: heals allies within 3 tiles for 8 health per second.", pipe: "Aura: you and allies within 3 tiles take 50% less damage from enemy hero abilities and ultimates.",
 };
+// Flat items from ITEMS_V5_FROM (ITEM_FLAT in sim/battle.js): stat items add flat amounts to the hero, the Iron Standard's aura is 18%
+let ITEMS_V5_FROM = "2026-11-17"; const itemsV5For = d => String(d) >= ITEMS_V5_FROM;
+const ITEM_DESC_V5 = {
+  whetstone: "+6 attack damage.", jerkin: "+100 health.", sandals: "+0.2 tiles a second move speed.", buckler: "Blocks 3 damage from every normal hit you take.",
+  herbs: "Regenerate 5 health every second.", boots: "+0.35 tiles a second move speed. Catch the fleeing, or run from the strong.", gauntlets: "+12 attack damage.",
+  ringprot: "Blocks 6 damage from every normal hit you take.", salve: "Below half health: heals 300 health.", elixir: "When you engage a foe: 0.2 seconds faster between attacks for 8s.",
+  hpring: "+140 health, and you regenerate 10 health every second.", vanguard: "+260 health, and blocks 12 damage from every normal hit you take. Soldiers' blows barely scratch you.",
+  shiva: "Blocks 5 damage from every normal hit. When 2 or more foes are within 3 tiles: a freezing blast hits them for 140 damage and slows them 40% for 4s.",
+  daedalus: "+12 attack damage. Your attacks have a 25% chance to crit for 2.4x damage.",
+  banner: "Aura: allies within 3 tiles deal 24% more damage.", standard: "Aura: allies within 3 tiles take 18% less damage.",
+  mender: "Aura: heals allies within 3 tiles for 8 health per second.", pipe: "Aura: you and allies within 3 tiles take 50% less damage from enemy hero abilities and ultimates.",
+};
 // day: a replayed battle is described as it was fought
-const itemDesc = (k, day) => { const it = ITEMS[k]; if (!it) return ""; const v4 = day ? balV4For(day) : typeof isLive === "function" && isLive() ? balV4For(liveClock().planDay) : true; return v4 && ITEM_DESC_V4[k] ? ITEM_DESC_V4[k] : it.desc; };
+const itemDesc = (k, day) => { const it = ITEMS[k]; if (!it) return ""; const d = day || (typeof isLive === "function" && isLive() ? liveClock().planDay : null);
+  if (!d || itemsV5For(d)) return ITEM_DESC_V5[k] || it.desc; return balV4For(d) && ITEM_DESC_V4[k] ? ITEM_DESC_V4[k] : it.desc; };

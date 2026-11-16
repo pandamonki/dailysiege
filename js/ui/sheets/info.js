@@ -169,6 +169,15 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "Flat items and replay fixes", date: "16 Nov", fixes: [
+    "Replays: following your hero and your keep works again (it had stopped since sudden death arrived), so the zoom buttons work while following, and when your lord is out the camera follows the fight instead of the whole field.",
+    "The map no longer freezes after watching a replay. You can pan, zoom and select units again straight away.",
+    "Victory screen: the winner's taunt now appears above their hero, not beside their name.",
+  ], balance: [
+    "From the battle of 17 Nov, hero items add flat amounts instead of percentages, so they help most early in the week: Whetstone +6 attack, Gauntlets and Daedalus +12, Leather Jerkin +100 health, Ring of Health +140 health and 10 health a second, Vanguard +260 health, Mending Herbs 5 health a second, Healing Salve heals 300.",
+    "Swift Sandals +0.2 and Boots of Speed +0.35 tiles a second. Iron Buckler, Ring of Protection and Shiva's Guard now block 3, 6 and 5 damage from every normal hit. Elixir of Fury: 0.2 seconds faster between attacks.",
+    "Lifesteal, crits, dodge, reflect, slows, splash and the area auras stay percentages. The Iron Standard's aura is now 18% less damage taken (was 24%).",
+  ], changes: [] },
   { v: "Clearer planning screens", date: "16 Nov", fixes: [
     "Soldiers, walls and traps can no longer be placed on tiles covered by trees.",
     "Replay camera: zoom in now goes further, zoom works during sudden death, and the home button follows your hero again. The Auto button is now Follow hero.",

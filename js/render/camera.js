@@ -3,16 +3,20 @@
 // ----- camera -----
 function minZoom() { return Math.min(vw / W, vh / W); }
 const MAX_ZOOM = 3.4; // how close the camera can get
-function clampCam() {
-  cam.z = Math.max(minZoom(), Math.min(MAX_ZOOM, cam.z));
-  const m = ts * .5, ww = vw / cam.z, wh = vh / cam.z;
-  cam.x = ww >= W ? (W - ww) / 2 : Math.max(-m, Math.min(W - ww + m, cam.x));
-  cam.y = wh >= W ? (W - wh) / 2 : Math.max(-m, Math.min(W - wh + m, cam.y));
+function clampView(c) { // keep a view (the camera, or where it is flying to) on the map
+  if (!Number.isFinite(c.z)) c.z = 1; if (!Number.isFinite(c.x)) c.x = W / 2 - vw / 2 / c.z; if (!Number.isFinite(c.y)) c.y = W / 2 - vh / 2 / c.z; // never let a bad number stick to the camera
+  c.z = Math.max(minZoom(), Math.min(MAX_ZOOM, c.z));
+  const m = ts * .5, ww = vw / c.z, wh = vh / c.z;
+  c.x = ww >= W ? (W - ww) / 2 : Math.max(-m, Math.min(W - ww + m, c.x));
+  c.y = wh >= W ? (W - wh) / 2 : Math.max(-m, Math.min(W - wh + m, c.y));
+  return c;
 }
+function clampCam() { clampView(cam); }
 function zoomAt(sx, sy, z) { const wx = cam.x + sx / cam.z, wy = cam.y + sy / cam.z; cam.z = z; clampCam(); cam.x = wx - sx / cam.z; cam.y = wy - sy / cam.z; clampCam(); }
 function flyTo(wx, wy, z) {
+  if (!Number.isFinite(wx) || !Number.isFinite(wy)) return;
   const zz = Math.max(minZoom(), Math.min(MAX_ZOOM, z));
-  const tgt = { x: wx - vw / 2 / zz, y: wy - vh / 2 / zz, z: zz };
+  const tgt = clampView({ x: wx - vw / 2 / zz, y: wy - vh / 2 / zz, z: zz }); // a target off the map could never be reached, and the camera would chase it for ever
   if (still) { Object.assign(cam, tgt); clampCam(); } else camTarget = tgt;
 }
 function zoneCentre() { let r = 0, q = 0; zoneSet.forEach(k => { const [a, b] = k.split(",").map(Number); r += a; q += b; }); const n = zoneSet.size || 1; return [(q / n + .5) * ts, (r / n + .5) * ts]; }
