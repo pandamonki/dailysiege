@@ -3,7 +3,8 @@
 // auto camera: stay on your hero, cut to the keep while it is under attack, then follow the hero back out
 const AUTO_ZOOM_STEP = 1.35;
 // how far the viewer has zoomed the auto camera from its own framing; it starts at the camera's regular zoom
-function autoZoomMul() { if (replay.zmul == null) replay.zmul = 1; return replay.zmul; }
+const AUTO_ZOOM_START = 1 / (AUTO_ZOOM_STEP * AUTO_ZOOM_STEP); // replays start two zoom steps further out than the camera's framing, so more of the field is in view
+function autoZoomMul() { if (replay.zmul == null) replay.zmul = AUTO_ZOOM_START; return replay.zmul; }
 function autoZoomBy(k) { const b = replay.zbase || 1.7; replay.zmul = Math.max(minZoom() / b, Math.min(MAX_ZOOM / b, autoZoomMul() * k)); }
 function autoCam() {
   const R = replay.res, f = replayFrameAt(replay.time); if (!f) return;
@@ -20,7 +21,7 @@ function autoCam() {
     const E = 3 + R.order.length * .4 + 4.2, fit = Math.min(vw, vh * .7) / (2 * E * ts); z = Math.max(minZoom(), Math.min(2.4, fit)); x = N / 2; y = N / 2 - vh * .1 / z / ts + .3; }
   else if (mode === "base") { x = f.d[cb]; y = f.d[cb + 1]; z = 1.35; } else if (mode === "hero") { x = f.d[hb]; y = f.d[hb + 1]; } else if (mode === "other") { x = f.d[fi * 4]; y = f.d[fi * 4 + 1]; } else { x = y = 0; z = 0; }
   if (mode !== "field" && !(Number.isFinite(x) && Number.isFinite(y))) return; // nothing to follow yet (the first frame has no positions)
-  if (z) { replay.zbase = z; z *= autoZoomMul(); } // the viewer's own zoom is kept on top of the camera's, so zooming does not break the auto camera
+  if (z) { replay.zbase = z; z *= mode === "arena" ? autoZoomMul() / AUTO_ZOOM_START : autoZoomMul(); } // the arena already fits the whole ring // the viewer's own zoom is kept on top of the camera's, so zooming does not break the auto camera
   if (mode === "field") { flyTo(W / 2, W / 2, 0); } else if (mode !== replay.camMode) { const zz = Math.max(minZoom(), Math.min(MAX_ZOOM, z)); camTarget = null; Object.assign(cam, { x: x * ts - vw / 2 / zz, y: (y - .3) * ts - vh / 2 / zz, z: zz }); clampCam(); }
   else flyTo(x * ts, (y - .3) * ts, z);
   replay.camMode = mode;
@@ -41,7 +42,20 @@ function buildReplayUI() {
     <ol class="ticker" id="ticker"></ol>`;
   replay.logN = -1; updateReplayUI();
 }
+// a small castle for every lord down the side of the replay, crossed out when it falls, so the match can be followed without the whole map in view
+const CASTLE_SVG = c => `<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 15V6h2V4h2v2h1V3h2v3h1V4h2v2h2v9H9.5v-3a1.5 1.5 0 0 0-3 0v3z" fill="${c}" stroke="#1e140c" stroke-width="1" stroke-linejoin="round"/></svg>`;
+function updateCastleTrack() {
+  const el = document.getElementById("ctrack"); if (!el) return;
+  if (!replay || mode !== "replay") { el.hidden = true; replay && (replay.ctKey = null); return; }
+  const R = replay.res, f = replayFrameAt(replay.time); if (!f) return;
+  if (!replay.ctIdx) replay.ctIdx = R.order.map(pid => [pid, R.meta.findIndex(m => m.pid === pid && m.kind === "castle")]).filter(x => x[1] >= 0);
+  const st = replay.ctIdx.map(([pid, i]) => [pid, i * 4 + 2 < f.d.length && f.d[i * 4 + 2] > 0]), key = st.map(x => +x[1]).join("");
+  el.hidden = false; if (replay.ctKey === key) return; replay.ctKey = key;
+  const nm = pid => (R.names && R.names[pid]) || (R.results.find(r => r.pid === pid) || {}).name || "";
+  el.innerHTML = st.map(([pid, up]) => `<span class="ct${up ? "" : " down"}${pid === R.me ? " me" : ""}" title="${esc(nm(pid))}${up ? "" : " · castle fallen"}">${CASTLE_SVG((R.colors || {})[pid] || "#888")}</span>`).join("");
+}
 function updateReplayUI() {
+  updateCastleTrack();
   if (!replay) return;
   replay.time = Math.max(0, Math.min(replay.res.duration, replay.time));
   const el = document.getElementById("rtime"); if (!el) return;

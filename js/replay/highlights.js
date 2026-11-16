@@ -53,7 +53,7 @@ function buildReel(R) {
     return { h, a: Math.max(0, a), b: Math.min(R.duration, b), key, title, sub, follow, color: R.colors[h.kind === "fall" || h.kind === "upset" ? (h.other || h.pid) : h.kind === "revenge" ? h.other : h.pid] || "#ffe082" }; });
 }
 const REEL_CARD = 1.3, REEL_INTRO = 2.2, REEL_OUTRO = 4;
-const REEL_ZOOM_OUT = 1.35; // the reel's camera sits one zoom step (the zoom buttons' x1.35) further out than it used to, so more of the action is in view
+const REEL_ZOOM_OUT = 1.35 ** 3; // the reel's camera sits three zoom steps (the zoom buttons' x1.35) further out than it first did, so more of the action is in view
 function startReel(record) {
   if (!replay) return; const clips = buildReel(replay.res);
   if (!clips.length) { toast("Nothing big happened in this battle."); return; }
