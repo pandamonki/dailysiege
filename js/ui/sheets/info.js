@@ -441,5 +441,6 @@ function daySheet() {
   const ck = isLive() ? liveClock() : null, m = ck ? ck.minsToLock : null, left = m != null ? `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, "0")}m` : countdown();
   return head(null, `Day ${DAY} of 7`, "The war runs for seven daily battles") + `<div class="body"><div class="stats"><div class="stat"><b>⏳ ${left}</b><span>until orders lock and the battle is fought${isLive() ? ` (${lockLabel(LIVE.config)})` : ""}</span></div><div class="stat"><b>${S.locked ? "✓ Sealed" : "Open"}</b><span>your orders</span></div></div>
     <p class="muted">Each day: spend gold, place your soldiers, give orders, then seal. The battle plays out when the timer ends and the replay is waiting for you the next time you open the game.</p>
+    ${testSkipHTML()}
     <div class="row"><button class="btn" data-act="close">Close</button></div></div>`;
 }

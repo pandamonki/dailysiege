@@ -347,6 +347,7 @@ function sealSheet() {
     <div class="sec tight"><h3>${ultBolt()}Ultimate</h3>${ultPlanHTML()}</div>
     <div class="sec tight"><h3>Weekly ritual</h3>${blessPlanHTML()}</div>
     <div class="sec tight"><h3>Rehearse</h3><p class="muted">${isLive() ? "Fight your current orders against your rivals' last known orders and see your battle report. Nothing counts." : "Run a practice battle with these orders. Nothing counts."}</p><button class="btn wood" data-act="battle" ${isLive() && LIVE.readOnly ? "disabled" : ""}>⚔ Rehearse the battle</button></div>
+    ${testSkipHTML()}
     ${abar(`<button class="btn wax" data-act="seal" ${canSeal ? "" : "disabled"}>${canSeal ? "Press the seal" : "Fix the marked items to seal"}</button>`)}
     <p class="muted">${isLive() ? "Orders save to the shared game as you go. If you never seal, your latest draft is used. Once you have sealed, those orders stay in effect until you seal new ones." : ""}</p></div>`;
 }
