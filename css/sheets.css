@@ -5,7 +5,7 @@
 @media (prefers-reduced-motion: no-preference) { .sheet .paper { animation: rise .2s ease-out; } @keyframes rise { from { transform: translateY(40px); opacity: .4; } } }
 .sheet header { display: flex; align-items: center; gap: 10px; padding: 12px max(16px, env(safe-area-inset-right, 0px)) 8px max(16px, env(safe-area-inset-left, 0px)); border-bottom: 1px solid rgba(90,58,32,.3); }
 .sheet header img { width: 40px; height: 50px; image-rendering: pixelated; flex: none; }
-.sheet header img[src^="icons/skills"] { width: 44px; height: 44px; image-rendering: auto; border-radius: 8px; }
+.sheet header img[src^="icons/"] { width: 44px; height: 44px; image-rendering: auto; border-radius: 8px; }
 .sheet header h2 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: 24px; line-height: 1.1; text-wrap: balance; }
 .sheet header .sub { font-size: 14px; color: var(--ink-soft); font-style: italic; }
 .sheet header .x { margin-left: auto; flex: none; width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--wood-dark); background: var(--parchment-2); color: var(--ink); cursor: pointer; font-size: 18px; line-height: 1; }

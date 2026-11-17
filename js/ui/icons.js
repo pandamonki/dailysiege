@@ -8,8 +8,8 @@ const IC = {
 // Painted icons reused across screens (shop, skills and UI art), so every tile has a picture rather than a glyph
 const SK = n => `icons/skills/${n}.webp`;
 const ART = {
-  trap: { spike: SK("rogue_b2_t2"), snare: SK("archer_b2_t2b"), blade: SK("rogue_b3_t3"), bomb: SK("rogue_b1_t2b"), sand: SK("rogue_b3_t3b"), tower: SK("warrior_b3_t2b") },
-  tower: { tower: SK("warrior_b3_t2b"), tower2: SK("archer_b1_t2"), towerA: SK("archer_b1_t4"), towerB: SK("mage_b1_t2b"), towerM: SK("mage_b3_t3b"), towerF: SK("mage_b1_t1"), towerS: SK("archer_b3_t1") },
+  trap: { spike: "icons/ui/trap_spike.webp", snare: "icons/ui/trap_snare.webp", blade: "icons/ui/trap_blade.webp", bomb: "icons/ui/trap_bomb.webp", sand: "icons/ui/trap_sand.webp", tower: "icons/ui/tower_guard.webp" },
+  tower: { tower: "icons/ui/tower_guard.webp", tower2: "icons/ui/tower_arrow.webp", towerA: "icons/ui/tower_arrow3.webp", towerB: "icons/ui/tower_bomb.webp", towerM: "icons/ui/tower_magic.webp", towerF: "icons/ui/tower_fire.webp", towerS: "icons/ui/tower_sniper.webp" },
   wave: SK("warrior_b3_t1"),
   gear: { weapon: "items/whetstone.webp", armour: SK("warrior_b1_t1"), charm: "items/evasion.webp", walls: "icons/ui/wall3.webp", tower: SK("archer_b1_t2") },
   bless: { vamp: SK("shaman_b3_t3"), ward: SK("warrior_b1_t2b") },
