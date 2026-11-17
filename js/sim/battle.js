@@ -69,6 +69,9 @@ function runBattle(plans, seed, opts = {}) {
     for (const c of TG.clumps) { const ex = x - c.x, ey = y - c.y; if (ex > c.r + .3 || ex < -c.r - .3 || ey > c.r + .3 || ey < -c.r - .3) continue; const dd = hyp(ex, ey), lim = c.r + .22; if (dd < lim) return { nx: dd ? ex / dd : 1, ny: dd ? ey / dd : 0, d: lim - dd }; }
     const dx = x - TG.cc, dy = y - TG.cc, r = hyp(dx, dy); if (r > TG.half - 1.5) { const lim = TG.rim(datan2(dy, dx)) - .12; if (r > lim) return { nx: -dx / r, ny: -dy / r, d: r - lim }; }
     return null; };
+  // steering round trees: look this far ahead along a heading, and try headings turned by 15°, 30° … 165° off the way to the goal
+  const TREE_LOOK = 1.2, TREE_TURNS = Array.from({ length: 11 }, (_, i) => { const a = (i + 1) * Math.PI / 12; return [dcos(a), dsin(a)]; });
+  const treeRayClear = (x, y, ux, uy, L) => { for (let s = .3; s < L + .01; s += .3) if (treeHit(x + ux * s, y + uy * s)) return false; return true; };
   const settle = e => { for (let i = 0; i < 5; i++) { const h = treeHit(e.x, e.y); if (!h) return; e.x += h.nx * (h.d + .01); e.y += h.ny * (h.d + .01); } }; // step clear of the trees (a few passes: a blockade's trees overlap)
   let sd = null; // sudden death: null until SD_AT, then { t0, go, skip, winners }
   const sdOn = () => !!sd && !sd.skip, tmax = () => (sdOn() ? SD_AT + SD_COUNT + SD_LEN : TMAX);
@@ -602,15 +605,17 @@ function runBattle(plans, seed, opts = {}) {
     if (fxv(e, "stun") || fxv(e, "root") || fxv(e, "aim")) return;
     const dx = x - e.x, dy = y - e.y, dd = hyp(dx, dy); if (dd <= stop) return;
     const sp = e.kind === "unit" && !e.cart && !e.ram && P[e.pid] && P[e.pid].hold && (e.order || "army") === "army" ? Math.min(e.spd, P[e.pid].slow) : e.spd, step = Math.min(dd - stop, sp * (1 - fxv(e, "slow")) * (1 + (e.v3ms || 0)) * DT), nx = e.x + dx / dd * step, ny = e.y + dy / dd * step;
-    if (TG && e.kind !== "totem") { const h = treeHit(nx, ny); if (h) { // trees in the way: slide along them, to whichever side the way on lies (or by turns when dead ahead)
-      // a soldier commits to one side for a couple of seconds so it walks round a tree instead of flip-flopping in front of it; if that way is shut (overlapping trunks, the forest rim) it tries the other side, then steps out
-      const vx = dx / dd, vy = dy / dd, cr = h.nx * vy - h.ny * vx;
-      let sg = e.treeSide && e.treeUntil > t ? e.treeSide : (Math.abs(cr) < .25 ? (e.id % 2 ? 1 : -1) : (cr > 0 ? 1 : -1));
-      for (const s of [sg, -sg]) {
-        const ux = -h.ny * s, uy = h.nx * s, tx = e.x + ux * step, ty = e.y + uy * step;
-        if (!treeHit(tx, ty)) { e.x = tx; e.y = ty; e.treeSide = s; if (s === sg) { if (!(e.treeUntil > t)) e.treeUntil = t + 2.5; } else e.treeUntil = t + 2.5; return; }
-      }
-      e.x += h.nx * (h.d + .01); e.y += h.ny * (h.d + .01); e.treeSide = -sg; e.treeUntil = t + 2.5; return; } }
+    if (TG && e.kind !== "totem") { const vx = dx / dd, vy = dy / dd, L = Math.min(TREE_LOOK, dd);
+      if (treeHit(nx, ny) || !treeRayClear(e.x, e.y, vx, vy, L)) { // trees ahead: steer round them early, rather than walking into the trunks
+        // turn the fewest degrees that give a clear way ahead, then keep turning that same way until past the trees, so a soldier never dithers in front of them
+        const keep = e.treeSide && e.treeUntil > t ? e.treeSide : 0, sides = keep ? [keep, -keep] : (e.id % 2 ? [1, -1] : [-1, 1]);
+        let pick = null;
+        for (const s of (keep ? [keep] : [0])) for (const [c, sn] of TREE_TURNS) { for (const g of (s ? [s] : sides)) { const rx = vx * c - vy * sn * g, ry = vy * c + vx * sn * g; if (treeRayClear(e.x, e.y, rx, ry, Math.min(TREE_LOOK, dd)) && !treeHit(e.x + rx * step, e.y + ry * step)) { pick = [rx, ry, g]; break; } } if (pick) break; }
+        if (!pick && keep) for (const [c, sn] of TREE_TURNS) { const g = -keep, rx = vx * c - vy * sn * g, ry = vy * c + vx * sn * g; if (!treeHit(e.x + rx * step, e.y + ry * step)) { pick = [rx, ry, g]; break; } } // that way is shut: go the other
+        if (!pick) for (const [c, sn] of TREE_TURNS) { for (const g of sides) { const rx = vx * c - vy * sn * g, ry = vy * c + vx * sn * g; if (!treeHit(e.x + rx * step, e.y + ry * step)) { pick = [rx, ry, g]; break; } } if (pick) break; } // hemmed in: any step that is not into a trunk
+        if (pick) { e.x += pick[0] * step; e.y += pick[1] * step; e.treeSide = pick[2]; e.treeUntil = t + 1; }
+        else { const h = treeHit(e.x, e.y); if (h) { e.x += h.nx * (h.d + .01); e.y += h.ny * (h.d + .01); } }
+        return; } }
     if (walls.length && e.kind !== "totem" && wallAt(e, nx, ny)) { // blocked: slide along the wall if there's room
       e.blk = (e.blk || 0) + 1;
       if (Math.abs(dx) >= Math.abs(dy)) { if (!wallAt(e, nx, e.y)) e.x = nx; else if (!wallAt(e, e.x, ny)) e.y = ny; }
