@@ -10,7 +10,7 @@ const UNITS = {
   sniper:  { name: "Dwarven Sniper", cost: 220, hp: 170, atk: 48, note: "Slow, deadly shots from very far away. Great against light targets and heroes, poor against heavy armour." },
   ram:     { name: "Battering Ram", cost: 300, hp: 750, atk: 125, note: "Pushes slowly at castles and ignores soldiers. Hits castles hard, taking about 5 seconds to bring down a tier 1 castle, then moves on to the next one. Very tough.", engine: true },
   cart:    { name: "Powder Cart", cost: 300, hp: 240, atk: 0, note: "Rolls very slowly at a castle and blows up, enough to flatten a tier 1 castle. The blast hurts every soldier nearby, friend or foe, and also goes off if the cart is destroyed. Can't be trained.", noUpgrade: true, engine: true },
-  tower:   { name: "Guard Tower", cost: 150, hp: 180, atk: 12, note: "A stationary defender. Upgrade it to an Arrow Tower.", tower: true, noUpgrade: true },
+  tower:   { name: "Guard Tower", cost: 150, hp: 270, atk: 15, note: "A stationary defender. Upgrade it to an Arrow Tower.", tower: true, noUpgrade: true },
   catapult: { name: "Catapult", cost: 300, hp: 450, atk: 110, note: "Very slow. Sets up two tiles from a castle, then hurls boulders at it. Hits castles hard from a distance, but cannot fight soldiers, so guard it.", engine: true },
 };
 const UNIT_LVL_GAIN = .3; // each soldier level adds this share of base health and attack
@@ -29,7 +29,7 @@ const TRAPS = {
   blade: { name: "Blade Trap",  cost: 90, note: `Fires a volley of blades across the lane at anyone who steps on it, dealing ${TRAP_DMG.blade} damage, ignoring armour, to each enemy in it. Fires once each battle.` },
   bomb:  { name: "Bomb Trap",  cost: 110, note: `Explodes when an enemy steps on it, dealing ${TRAP_DMG.bomb} damage, ignoring armour, to every enemy within ${BOMB_R} tiles. Best against clumps. Fires once each battle.` },
   sand:  { name: "Sand Pit",   cost: 80, note: `Only siege engines sink into it: a ram, catapult or powder cart is stuck for ${SAND_SECS} seconds. Soldiers walk over it. Sets itself again each battle.` },
-  tower: { name: "Guard Tower", cost: 150, note: "A stone tower that stands where you place it and shoots enemies in range. It never moves, so it holds the ground without pushing out. Upgrade each one: first to an Arrow Tower, then to an Arrow, Bomb, Magic or Sniper Tower. You can own 2." },
+  tower: { name: "Guard Tower", cost: 150, note: "A stone tower that stands where you place it and shoots enemies in range. It never moves, so it holds the ground without pushing out. Upgrade each one: first to an Arrow Tower, then to an Arrow, Bomb, Magic or Sniper Tower. You can own 2. Towers work best close together and near your castle, backed by your soldiers: alone they can pick off a straggler or two but will not stop an army." },
 };
 
 const UNIT_SIM = {
@@ -55,12 +55,12 @@ const bodyOf = e => BODY[e.key] || [.3, 1.5];
 // Towers: each one you own is upgraded on its own. Guard Tower, then Arrow Tower (needs a Fortress), then one of five level 3 branches (needs a Citadel).
 // Each stage is a full unit entry so the battle, replays and sprites treat it like any other body; it just never moves.
 Object.assign(UNITS, {
-  tower2: { name: "Arrow Tower", cost: 250, hp: 230, atk: 20, tower: true, noUpgrade: true, note: "Longer reach and a faster, harder shot than the Guard Tower. Upgrade it again to pick a branch." },
-  towerA: { name: "Arrow Tower III", cost: 400, hp: 320, atk: 30, tower: true, noUpgrade: true, note: "The strongest plain arrow tower: tough, long reach and a quick, hard shot." },
-  towerB: { name: "Bomb Tower", cost: 400, hp: 280, atk: 30, tower: true, noUpgrade: true, note: "Lobs bombs that splash most of their damage on enemies next to the target. Ignores armour. Best against clumps." },
-  towerM: { name: "Magic Tower", cost: 400, hp: 240, atk: 30, tower: true, noUpgrade: true, note: "Fires magic bolts. Magic is good against light and heavy armour, but weak against castles and walls." },
-  towerF: { name: "Fire Tower", cost: 400, hp: 280, atk: 22, tower: true, noUpgrade: true, note: "Fires burning arrows. Weaker than an Arrow Tower III against soldiers, but does four times the damage to siege engines: rams, catapults and powder carts. Build one to guard against siege." },
-  towerS: { name: "Sniper Tower", cost: 400, hp: 220, atk: 65, tower: true, noUpgrade: true, note: "Very long range, very high damage, slow shots. Great against light targets and heroes, poor against heavy armour." },
+  tower2: { name: "Arrow Tower", cost: 250, hp: 345, atk: 25, tower: true, noUpgrade: true, note: "Longer reach and a faster, harder shot than the Guard Tower. Upgrade it again to pick a branch." },
+  towerA: { name: "Arrow Tower III", cost: 400, hp: 480, atk: 38, tower: true, noUpgrade: true, note: "The strongest plain arrow tower: tough, long reach and a quick, hard shot." },
+  towerB: { name: "Bomb Tower", cost: 400, hp: 420, atk: 38, tower: true, noUpgrade: true, note: "Lobs bombs that splash most of their damage on enemies next to the target. Ignores armour. Best against clumps." },
+  towerM: { name: "Magic Tower", cost: 400, hp: 360, atk: 38, tower: true, noUpgrade: true, note: "Fires magic bolts. Magic is good against light and heavy armour, but weak against castles and walls." },
+  towerF: { name: "Fire Tower", cost: 400, hp: 420, atk: 28, tower: true, noUpgrade: true, note: "Fires burning arrows. Weaker than an Arrow Tower III against soldiers, but does four times the damage to siege engines: rams, catapults and powder carts. Build one to guard against siege." },
+  towerS: { name: "Sniper Tower", cost: 400, hp: 330, atk: 81, tower: true, noUpgrade: true, note: "Very long range, very high damage, slow shots. Great against light targets and heroes, poor against heavy armour." },
 });
 Object.assign(UNIT_SIM, {
   tower2: { range: 4, as: 1.2, spd: 0, armor: .25, shot: "#c8d8ff" },
