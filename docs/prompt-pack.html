@@ -122,6 +122,23 @@ document.addEventListener("click",e=>{const t=e.target.closest("[data-t]");if(t)
  const b=e.target.closest("[data-i]");if(b)copy(text(cur().items[+b.dataset.i].prompt));
  if(e.target.id==="copyall")copy("OVERALL STYLE GUIDE (apply to every image below):\n"+$("#style").value.trim()+"\n\nGenerate one image per prompt that follows.\n\n"+cur().items.map(i=>i.name+"\n"+i.prompt.split(OLD).join("").replace(/^[\s.,]+/,"")).join("\n\n"))});
 $("#style").addEventListener("input",draw);draw();
+/* Nov 18 2026: v1.7 defences. Save each image as the file named in brackets (512px WebP); the game picks them up once they are in the repo. */
+(function(){
+ const S=DATA.style, T=(n,f,d)=>({name:n+"  ["+f+"]",prompt:S+". "+d+" One bold central object that reads clearly at 42px and 64px, no text."});
+ DATA.cats.push({c:"defences",t:"Defences (v1.7)",sub:"The new traps and every tower stage, matching the existing trap icons (Spike Pit, Snare, Alarm Bell) and the castle tier art. Towers are pale grey castle stone with a small banner in the owner's blue.",items:[
+  T("Trap: Blade Trap","icons/ui/trap_blade.webp","Trap icon: Blade Trap. A low wooden plank set in the dirt with three steel blades springing up from slots, a flash of motion as they slice across a lane."),
+  T("Trap: Bomb Trap","icons/ui/trap_bomb.webp","Trap icon: Bomb Trap. A round black iron bomb half-buried in a shallow pit, its short fuse just lit with a bright orange spark, scorched earth around it."),
+  T("Trap: Sand Pit","icons/ui/trap_sand.webp","Trap icon: Sand Pit. A swirling pit of golden sand drawing inward like a whirlpool, the wooden wheel of a siege engine sinking into it."),
+  T("Tower: Guard Tower","icons/ui/tower_guard.webp","Building icon: Guard Tower. A short square tower of pale grey dressed stone with crenellations, one arrow slit and a small blue pennant on top, standing on grass."),
+  T("Tower: Arrow Tower","icons/ui/tower_arrow.webp","Building icon: Arrow Tower. A taller pale grey stone tower with a wooden archer's platform and a blue banner, a single arrow loosing from the top."),
+  T("Tower: Arrow Tower III","icons/ui/tower_arrow3.webp","Building icon: Arrow Tower III. A tall, buttressed pale grey stone tower with gold trim and a mounted ballista on top firing a volley of arrows, blue banners."),
+  T("Tower: Bomb Tower","icons/ui/tower_bomb.webp","Building icon: Bomb Tower. A squat pale grey stone tower topped with an iron mortar lobbing a smoking black bomb in an arc, an orange burst below."),
+  T("Tower: Magic Tower","icons/ui/tower_magic.webp","Building icon: Magic Tower. A slender pale grey stone tower crowned by a floating violet crystal crackling with arcane bolts, faint purple glow."),
+  T("Tower: Fire Tower","icons/ui/tower_fire.webp","Building icon: Fire Tower. A pale grey stone tower with a blazing brazier on top, a flaming arrow streaking down at a wooden siege ram."),
+  T("Tower: Sniper Tower","icons/ui/tower_sniper.webp","Building icon: Sniper Tower. A very tall, narrow pale grey stone watchtower with a hooded marksman and a great crossbow, a long gleaming bolt and a faint aiming line."),
+ ]});
+ draw(); // this tab was added after the page first drew
+})();
 </script>
 
 </body></html>
