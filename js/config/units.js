@@ -18,9 +18,9 @@ const trainCost = (type, lvl) => Math.round(UNITS[type].cost * (UNIT_TRAIN_COST[
 const UNIT_TIER = { footman: 1, bowman: 1, knight: 3, raider: 2, healer: 2, mage: 2, sniper: 3, ram: 3, cart: 3, catapult: 3 }; // castle tier that unlocks each soldier
 const UNIT_LVL_TIER = [1, 1, 1]; // soldiers can be trained to any level at any castle tier; only weapon and armour upgrades are gated
 const TRAPS = {
-  spike: { name: "Spike Pit",  cost: 30, note: "Wounds the first enemy to step in." },
-  snare: { name: "Snare",      cost: 25, note: "Holds an enemy in place." },
-  blade: { name: "Blade Trap",  cost: 45, note: "Wall slots snap open and fire a volley of blades across the lane at anyone who steps on it." },
+  spike: { name: "Spike Pit",  cost: 30, note: "Deals 90 damage, ignoring armour, to the first enemy to step in." },
+  snare: { name: "Snare",      cost: 25, note: "Holds the first enemy to step in for 3 seconds. No damage." },
+  blade: { name: "Blade Trap",  cost: 45, note: "Fires a volley of blades across the lane at anyone who steps on it, dealing 60 damage, ignoring armour, to each enemy in it." },
 };
 
 const UNIT_SIM = {
