@@ -1,5 +1,11 @@
 // Turning everyone's orders into battle plans
 
+// a practice rival's traps and towers for the day, by its build (it already has its army and any walls on the map)
+function pracDefences(rv, i) {
+  const build = botBuild(i, botSeed(RIVALS.map(r => r.id).join("|")) % 4), B = BOT_BUILDS[build], zone = zoneFor(rv.pos, N, [CASTLE, ...RIVALS.map(r => r.pos)], true), taken = new Set([rv.pos.join(",")]);
+  RARMY.filter(u => u.rid === rv.id).forEach(u => taken.add(`${u.r},${u.c}`)); RWALLS.filter(w => w.rid === rv.id).forEach(w => taken.add(`${w.r},${w.c}`));
+  return botDefencePieces({ seed: botSeed(rv.id), build, dayNo: DAY, me: rv.pos, N, zone, taken, tier: rv.ctier || 1, lords: RIVALS.length + 1 }).filter(p => p.kind !== "wall" || !RWALLS.some(w => w.rid === rv.id));
+}
 function buildPlans() {
   ensureDip();
   const youPieces = myPieces();
@@ -16,13 +22,13 @@ function buildPlans() {
     const picks = {}; c.abilities.forEach((a, j) => picks[a.key] = a.choice[hash(i, j, 77) > .5 ? 1 : 0][0]);
     const rot = Math.floor(hash(i, 5, 3) * PRIORITIES.length);
     plans.push({
-      pid: rv.id, name: rv.name, color: rv.color, cls: rv.cls, castle: rv.pos, leader: rv.id === LEADER, level: Math.min(heroMaxLvl(heroV3Now()), 2 * DAY - 1), ranks: autoRanks(Math.min(MAX_HERO_LVL, 2 * DAY - 1), i + 3), ...(heroV3Now() ? { tree: autoTree(2 * DAY - 1, i + 3, rv.cls) } : {}), picks, items: botItems(i), castleTier: rv.ctier || 1, banner: rv.banner || null,
+      pid: rv.id, name: rv.name, color: rv.color, cls: rv.cls, castle: rv.pos, leader: rv.id === LEADER, level: Math.min(heroMaxLvl(heroV3Now()), 2 * DAY - 1), ranks: autoRanks(Math.min(MAX_HERO_LVL, 2 * DAY - 1), i + 3), ...(heroV3Now() ? { tree: autoTree(2 * DAY - 1, i + 3, rv.cls) } : {}), picks, items: botItemsN(i, Math.max(0, Math.min(ITEM_SLOTS, Math.floor(hash(i, 6, 31) * 4) + BOT_BUILDS[botBuild(i, botSeed(RIVALS.map(r => r.id).join("|")) % 4)].items))), castleTier: rv.ctier || 1, banner: rv.banner || null,
       triggers: { a1: TRIGGERS[1], a2: TRIGGERS[2], a3: TRIGGERS[0], ult: TRIGGERS[1] },
       gear: { weapon: Math.floor(hash(i, 1, 21) * 3), armour: Math.floor(hash(i, 2, 22) * 3), charm: Math.floor(hash(i, 3, 23) * 2) },
       defences: { walls: hash(i, 4, 24) > .6 ? 1 : 0, tower: hash(i, 5, 25) > .6 ? 1 : 0 },
       stance: ai.stance, prio: PRIORITIES.slice(rot).concat(PRIORITIES.slice(0, rot)),
       rules: [{ if: IFS[0], then: THENS[0] }],
-      pieces: RARMY.filter(u => u.rid === rv.id).map(u => u.champ ? { kind: "champ", r: u.r, c: u.c } : { kind: "unit", type: u.key, lvl: u.lvl, hp: u.hp, r: u.r, c: u.c }).concat(RWALLS.filter(w => w.rid === rv.id).map(w => ({ kind: "wall", r: w.r, c: w.c, dir: w.dir }))),
+      pieces: RARMY.filter(u => u.rid === rv.id).map(u => u.champ ? { kind: "champ", r: u.r, c: u.c } : { kind: "unit", type: u.key, lvl: u.lvl, hp: u.hp, r: u.r, c: u.c }).concat(RWALLS.filter(w => w.rid === rv.id).map(w => ({ kind: "wall", r: w.r, c: w.c, dir: w.dir }))).concat(pracDefences(rv, i)),
       targets: (t => pickV1Now() ? (ai.hostile || []).concat(botPicks(rv.id, botSeed(rv.id), t.filter(q => !(ai.hostile || []).includes(q)), board0)).slice(0, PICK_MAX) : t)((ai.hostile || []).concat(["you", ...RIVALS.map(r => r.id)].filter(q => q !== rv.id && !(ai.hostile || []).includes(q) && !Object.keys(ai.offers || {}).includes(q))
         .sort((x, y) => { const px = x === "you" ? CASTLE : RIVALS.find(r => r.id === x).pos, py = y === "you" ? CASTLE : RIVALS.find(r => r.id === y).pos; return (Math.round(hyp(px[0] - rv.pos[0], px[1] - rv.pos[1]) * 1e6) - Math.round(hyp(py[0] - rv.pos[0], py[1] - rv.pos[1]) * 1e6)) || (hash(botSeed(rv.id), botSeed(x), DAY) - hash(botSeed(rv.id), botSeed(y), DAY)); }))), // equally near rivals: a draw for this rival and day, not list order
       ...botCombat(botSeed(rv.id)), auto: true, offers: Object.fromEntries(Object.entries(ai.offers || {}).map(([k, v]) => [k, Object.assign({}, v, { day: DAY - 1 })])), terms: ai.terms || {},
@@ -34,6 +40,6 @@ function buildPlans() {
   plans.feuds = (S.feuds || []).slice();
   resolveAlliances(plans, { persist: S.pairs || [], final: DAY === 7, prevDay: DAY - 1, feuds: plans.feuds, blocMax: BLOC_MAX });
   if (DAY >= MERC_DAY) { const mer = resolveMercs(plans, { day: DAY, dayNo: DAY, v2: mercV2Now(), N, cool: id => mercWait(id) }); plans.notes = (plans.notes || []).concat(mer.notes); plans.mercs = mer.hires; }
-  plans.forEach(p => { p.itemV5 = true; p.survV1 = true; p.siegeV1 = true; p.trapV2 = true; }); // practice always fights with the flat items
+  plans.forEach(p => { p.itemV5 = true; p.survV1 = true; p.siegeV1 = true; p.trapV2 = true; p.sdV2 = true; p.wallV2 = true; p.engV2 = true; }); // practice always fights with the flat items
   return plans;
 }

@@ -169,6 +169,23 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "Walls, sudden death and defences", date: "18 Nov", fixes: [
+    "Soldiers no longer get stuck in tree clusters on the way to other bases. They look ahead and steer round the trees.",
+    "The unit details strip under the map is laid out side by side again, with its buttons beside the stats.",
+  ], balance: [
+    "From the battle of 19 Nov, walls block everyone, including their owner's and allies' soldiers. They find a way round through the gaps you leave (your castle must always keep one open).",
+    "From the battle of 19 Nov, bot lords spend like players do. Each bot has a build for the war: a warband (more and better-trained reinforcements, few defences), a fortress (up to 4 traps, 2 towers upgraded through the week and a wall line with a trapped gap, but fewer soldiers and items), a champion (more hero items) or a mix of all three.",
+    "From the battle of 19 Nov, the sudden death ring is half the size and nobody can leave it. Everyone drawn into it is topped up to at least half health. A hero who falls in sudden death shows no respawn timer, because heroes don't come back once it starts.",
+  ], changes: [
+    "Defences: traps are bought here and then moved or sold from the map. Walls are built straight onto the map: tap Walls, then tap tile after tile, paying for each. Tower 1 and Tower 2 each have a slot to buy, upgrade or sell them.",
+    "Walls and towers can't be moved. Sell one and build it again elsewhere. A wall can still be turned where it stands.",
+    "Walls built next to each other turn to line up with each other, and joined walls are drawn as one cohesive wall, with proper corners at L-shaped bends.",
+    "Tapping a fence, trap or tower on the map shows its health, damage or range in the strip, with Turn, Move, Upgrade and Sell buttons as they apply. Selling asks you to tap again to be sure.",
+    "The details strip stays small and no longer opens over the map when tapped.",
+    "Sudden death: the camera always swings to the arena, and the countdown sits in the middle of the screen.",
+    "Traps on the map are drawn as pixel sprites, towers are castle stone, and new traps and towers have painted icons. The shop button is a little smaller.",
+    "Skill descriptions lead with what the skill does and end with when it casts itself. Skill rank badges are grey instead of red.",
+  ] },
   { v: "Permanent traps", date: "17 Nov", fixes: [], balance: [
     "Traps are now permanent. Buy one once and it stays where you put it, firing once in every battle. You can own up to 4, and sell one back for half its price.",
     "New prices: Spike Pit 60 gold, Snare 40, Blade Trap 90. Spike Pit damage 90 to 150, Blade Trap 60 to 90 each. Trap descriptions now show their damage.",

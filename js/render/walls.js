@@ -26,14 +26,28 @@ function wallSprite(tier, dir) {
   }, WALL_EDGE);
 }
 const rubbleSprite = () => terrainSprite("wallrubble", 16, 16, (px, rect) => { [[2, 10, 4, 3], [7, 11, 4, 2], [11, 9, 3, 3], [5, 8, 3, 2]].forEach(([x, y, w, h], i) => { rect(x, y, w, h, i % 2 ? "#8a857a" : "#6f6a5f"); rect(x, y, w, 1, "#a39d8f"); }); }, WALL_EDGE);
-function drawWallTile(c, r, q, tier, frac, color, t, dir) {
-  const x = q * ts, y = r * ts, u = ts / 16, V = dir === "v"; tier = Math.max(1, Math.min(3, tier || 1));
+// which neighbouring tiles hold a wall of the same owner, as a bitmask: 1 north, 2 east, 4 south, 8 west (so joined walls draw as one)
+const WL_N = 1, WL_E = 2, WL_S = 4, WL_W = 8;
+function wallLinks(tiles, r, c) { const has = (a, b) => tiles.some(([y, x]) => y === a && x === b); return (has(r - 1, c) ? WL_N : 0) | (has(r, c + 1) ? WL_E : 0) | (has(r + 1, c) ? WL_S : 0) | (has(r, c - 1) ? WL_W : 0); }
+function drawWallTile(c, r, q, tier, frac, color, t, dir, links) {
+  const x = q * ts, y = r * ts, u = ts / 16; tier = Math.max(1, Math.min(3, tier || 1)); links = links || 0;
+  const hl = links & (WL_E | WL_W), vl = links & (WL_N | WL_S), V = vl && !hl ? true : hl && !vl ? false : dir === "v"; // a straight run follows its neighbours
   c.save(); c.imageSmoothingEnabled = false;
   c.fillStyle = "rgba(0,0,0,.28)"; c.beginPath(); c.ellipse(x + ts / 2, y + ts * .82, V ? ts * .2 : ts * .46, V ? ts * .3 : ts * .12, 0, 0, 7); c.fill();
   if (frac <= 0) { c.drawImage(rubbleSprite(), x, y, ts, ts); c.restore(); return; }
-  c.drawImage(wallSprite(tier, V ? "v" : "h"), x, y, ts, ts);
+  if (hl && vl) { // a bend or a junction: an end-on arm for each joined side north or south, a running arm for each side east or west, round a post in the middle
+    const hs = wallSprite(tier, "h"), vs = wallSprite(tier, "v");
+    if (links & WL_N) c.drawImage(vs, 0, 1, 16, 7, x, y, ts, 8 * u);
+    c.drawImage(hs, 4, 0, 8, 16, x + 4 * u, y, 8 * u, ts);
+    if (links & WL_W) c.drawImage(hs, 0, 0, 8, 16, x, y, 8 * u, ts);
+    if (links & WL_E) c.drawImage(hs, 8, 0, 8, 16, x + 8 * u, y, 8 * u, ts);
+    if (links & WL_S) c.drawImage(vs, 0, 5, 16, 6, x, y + 8 * u, ts, 8 * u); // the body only, so no footing shows mid-run
+  } else if (V && vl) { const vs = wallSprite(tier, "v"); // an end-on run: stretch the body to meet the walls above and below
+    c.drawImage(vs, 0, links & WL_N ? 2 : 1, 16, 6, x, y + (links & WL_N ? 0 : u), ts, links & WL_N ? 8 * u : 7 * u);
+    c.drawImage(vs, 0, links & WL_S ? 5 : 7, 16, links & WL_S ? 6 : 7, x, y + 8 * u, ts, links & WL_S ? 8 * u : 7 * u);
+  } else c.drawImage(wallSprite(tier, V ? "v" : "h"), x, y, ts, ts);
   if (frac < .55) { c.fillStyle = "rgba(20,12,6,.85)"; (V ? [[7, 3], [8, 4], [7, 5], [8, 8], [9, 9]] : [[5, 6], [6, 7], [6, 8], [5, 9], [11, 6], [10, 7], [10, 8]]).forEach(([a, b]) => c.fillRect(x + a * u, y + b * u, u, u)); }
-  c.fillStyle = color; if (V) c.fillRect(x + 5 * u, y + 14 * u, 6 * u, u); else c.fillRect(x + u, y + 13 * u, 14 * u, u); // owner trim
+  c.fillStyle = color; if (V) { if (!(links & WL_S)) c.fillRect(x + 5 * u, y + 14 * u, 6 * u, u); } else c.fillRect(x + (links & WL_W ? 0 : u), y + 13 * u, 16 * u - (links & WL_W ? 0 : u) - (links & WL_E ? 0 : u), u); // owner trim, unbroken along a joined run
   if (frac < 1) { const bw = ts * .8; c.fillStyle = "rgba(20,12,6,.85)"; c.fillRect(x + ts * .1 - 1, y + ts * .9 - 1, bw + 2, ts * .07 + 2); c.fillStyle = frac > .5 ? "#47b04b" : "#d4402f"; c.fillRect(x + ts * .1, y + ts * .9, bw * frac, ts * .07); }
   c.restore();
 }

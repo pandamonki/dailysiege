@@ -351,15 +351,5 @@ function sealSheet() {
     ${abar(`<button class="btn wax" data-act="seal" ${canSeal ? "" : "disabled"}>${canSeal ? "Press the seal" : "Fix the marked items to seal"}</button>`)}
     <p class="muted">${isLive() ? "Orders save to the shared game as you go. If you never seal, your latest draft is used. Once you have sealed, those orders stay in effect until you seal new ones." : ""}</p></div>`;
 }
-// the wax seal: a blob of wax in the lord's colour, stamped with their initials
-function waxSealHTML() {
-  const c = MY_COLOR || "#8a1f17", L = esc(sealInitials()), pts = [];
-  for (let i = 0; i < 28; i++) { const a = i / 28 * Math.PI * 2, r = 46 + (i % 2 ? 3.5 : -1) + Math.sin(i * 2.3) * 2; pts.push(`${(60 + Math.cos(a) * r).toFixed(1)},${(60 + Math.sin(a) * r).toFixed(1)}`); }
-  return `<div class="waxseal2" aria-label="Sealed with your initials"><svg viewBox="0 0 120 120"><defs><radialGradient id="wxg" cx="38%" cy="32%" r="75%"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".35" stop-color="${c}" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".5"/></radialGradient></defs>
-    <path d="M70 104 q4 12 -2 14 q-6 1 -5 -12z" fill="${c}"/><path d="M28 88 q-10 8 -6 13 q5 3 10 -9z" fill="${c}"/>
-    <polygon points="${pts.join(" ")}" fill="${c}"/><polygon points="${pts.join(" ")}" fill="url(#wxg)"/>
-    <circle cx="60" cy="60" r="33" fill="none" stroke="#000" stroke-opacity=".28" stroke-width="3"/><circle cx="60" cy="60" r="33" fill="none" stroke="#fff" stroke-opacity=".25" stroke-width="1" transform="translate(-1,-1)"/>
-    <circle cx="60" cy="60" r="28" fill="#000" fill-opacity=".12"/>
-    <text x="60" y="${L.length > 1 ? 71 : 73}" text-anchor="middle" font-family="IM Fell English SC, serif" font-size="${L.length > 1 ? 30 : 38}" fill="#000" fill-opacity=".35" transform="translate(1,1.5)">${L}</text>
-    <text x="60" y="${L.length > 1 ? 71 : 73}" text-anchor="middle" font-family="IM Fell English SC, serif" font-size="${L.length > 1 ? 30 : 38}" fill="#fff" fill-opacity=".55">${L}</text></svg></div>`;
-}
+// the wax seal: a pixel blob of wax in the lord's colour, stamped with their initials
+function waxSealHTML() { return `<div class="waxseal2" aria-label="Sealed with your initials"><img alt="" src="${waxSealURL(MY_COLOR || "#8a1f17", sealInitials())}"></div>`; }

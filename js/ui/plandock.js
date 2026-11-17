@@ -1,8 +1,21 @@
-// Planning screen: a thin unit strip under the map. Tap a unit, your hero, a castle or a rival to see its stats, skills and items;
-// tap the strip to open the full panel (the same one replays use). Read-only apart from the quick buttons for train, move and so on.
+// Planning screen: a thin, fixed unit strip under the map. Tap a unit, your hero, a castle or a rival to see its health and main stats,
+// with quick buttons for train, move and so on. It never expands over the map.
 
-let psel = null, pexp = false, ptip = null; // what is picked on the map, whether the full panel is open, which detail card is open
+let psel = null, PSELL = null; // what is picked on the map; a defence whose Sell button has been tapped once
 
+// a fence's health, or a trap's damage and effect, for the strip (towers are shown like soldiers instead)
+function defenceStats(kind, w) {
+  const sp = (ic, v) => `<span>${ic} <b>${v}</b></span>`;
+  if (kind === "wall") { const hp = WALL_TIERS[Math.max(1, Math.min(3, S.castle || 1)) - 1].hp; return { bar: hp, html: sp("🛡", "Blocks enemies") + sp("⛏", "Can be hacked down") }; }
+  switch (w.type) {
+    case "spike": return { html: sp("⚔", TRAP_DMG.spike) + sp("◎", "First enemy") };
+    case "snare": return { html: sp("⏱", "Holds 3s") + sp("◎", "First enemy") };
+    case "blade": return { html: sp("⚔", `${TRAP_DMG.blade} each`) + sp("◎", "Across the lane") };
+    case "bomb": return { html: sp("⚔", `${TRAP_DMG.bomb} each`) + sp("◎", `${BOMB_R} tiles`) };
+    case "sand": return { html: sp("⏱", `Holds ${SAND_SECS}s`) + sp("◎", "Siege only") };
+  }
+  return { html: "" };
+}
 // The picked thing, as the same kind of object the replay panel reads: { m, color, who, title, role, ranks, cd }
 function planSrc(p) {
   if (!p || !S) return null;
@@ -36,7 +49,11 @@ function planSrc(p) {
   }
   if (p.t === "wall" || p.t === "trap") {
     const w = p.t === "wall" ? findWall(p.id) : findTrap(p.id); if (!w) return null;
-    return { thing: true, title: p.t === "wall" ? "Fence" : trapName(w), role: p.t === "wall" ? "Blocks the way" : (w.type === "tower" ? "Stationary defender" : "Permanent trap"), color: MY_COLOR, img: p.t === "wall" ? wallPortrait(Math.min(3, S.castle || 1)) : w.type === "tower" ? spriteURL(towerKey(w)) : trapURL(w.type), note: p.t === "trap" ? (w.type === "tower" ? UNITS[towerKey(w)].note : TRAPS[w.type].note) : "Enemy soldiers cannot walk through it. They go round, or hack it down." };
+    if (p.t === "trap" && w.type === "tower") { // a tower fights like a soldier that never moves: show its health and stats the same way
+      const k = towerKey(w), b = UNITS[k], sim = UNIT_SIM[k] || {}, ty = UNIT_TYPES[k] || [];
+      return { m: { kind: "unit", key: k, tower: true, maxhp: b.hp, hp: b.hp, atk: b.atk, atype: ty[0], armour: ty[1], armor: sim.armor || 0, as: sim.as || 1, range: sim.range || 3.5, spd: 0 }, color: MY_COLOR, who: "You", title: b.name, role: "Stationary defender", ranks: {}, cd: none };
+    }
+    return { thing: true, stats: defenceStats(p.t, w), title: p.t === "wall" ? "Fence" : trapName(w), role: p.t === "wall" ? "Blocks the way" : (w.type === "tower" ? "Stationary defender" : "Fires once a battle"), color: MY_COLOR, img: p.t === "wall" ? wallPortrait(Math.min(3, S.castle || 1)) : w.type === "tower" ? spriteURL(towerKey(w)) : trapURL(w.type), note: p.t === "trap" ? (w.type === "tower" ? UNITS[towerKey(w)].note : TRAPS[w.type].note) : "Enemy soldiers cannot walk through it. They go round, or hack it down." };
   }
   return null;
 }
@@ -50,7 +67,12 @@ function planActions(p, src) {
   if (p.t === "unit") { const u = findUnit(p.id), maxed = u.lvl >= 3;
     return [A4("trainunit", p.id, null, "⬆", "Train", false, maxed ? "Fully trained: open its training page" : `Open the training page for this soldier (level ${u.lvl + 1} costs ${upgradeCost(u)} gold)`), A4("move", p.id, null, "✥", "Move", lk, "Move to another tile"), A4("open", "uorder", p.id, UIIMG("orders"), "Orders", false, "War orders"), A4("bench", p.id, null, "⌂", "Barracks", lk, "Send back to the barracks")]; }
   if (p.t === "castle") return [A4("opencastle", "keep", null, UIIMG("base"), "Base", false, "Build and upgrade"), A4("opencastle", "recruit", null, UIIMG("army"), "Army", false, "Recruit and train")];
-  return [A4("move", p.id, null, "✥", "Move", lk, "Move"), A4("bench", p.id, null, "⌂", "Pick up", lk, "Pick up")];
+  // defences: walls and towers stay where they stand (sell and rebuild to change them); traps can be moved. Selling takes a second tap.
+  const sellAs = (act, gold) => PSELL === p.id ? A4(act, p.id, null, "✓", `Sure? +${gold}g`, lk, `Sell it for ${gold} gold`) : A4("psell", p.id, null, "🪙", "Sell", lk, `Sell for ${gold} gold`);
+  if (p.t === "wall") return [A4("wrot", p.id, null, "↻", "Turn", lk, "Turn it the other way"), sellAs("wsell", Math.floor(WALL_COST / 2))];
+  const tr = findTrap(p.id);
+  if (tr && tr.type === "tower") { const up = TOWER_UP[towerKey(tr)]; return [A4("opencastle", "traps", p.id, "⬆", "Upgrade", false, up ? "Upgrade this tower" : "Fully upgraded: see its details"), sellAs("tsell", Math.floor(towerSpent(towerKey(tr)) / 2))]; }
+  return [A4("move", p.id, null, "✥", "Move", lk, "Move"), sellAs("tsell", Math.floor(((TRAPS[tr && tr.type] || {}).cost || 0) / 2))];
 }
 const pdBtn = ([act, v, k, ic, lb, off, hint]) => `<button class="pd-b" data-act="${act}" ${v != null ? `data-v="${v}"` : ""} ${k != null ? `data-k="${k}"` : ""} ${off ? "disabled" : ""} title="${esc(hint)}" aria-label="${esc(hint)}"><span>${ic}</span><small>${lb}</small></button>`;
 function renderPlanDock() {
@@ -58,25 +80,19 @@ function renderPlanDock() {
   if (mode !== "plan" || !S) { el.hidden = true; ud.className = "ud"; document.body.classList.remove("pdx"); return; }
   el.hidden = false;
   if (!psel) psel = { t: "champ", dflt: true }; // always show something: the hero until you pick another
+  if (PSELL && psel.id !== PSELL) PSELL = null; // a Sell asked about on one piece is forgotten when another is picked
   let src = planSrc(psel);
   if (!src && !psel.dflt) { psel = { t: "champ", dflt: true }; src = planSrc(psel); }
-  if (!src) { psel = null; pexp = false; ptip = null; el.innerHTML = `<span class="pd-hint">Tap a soldier, your hero, a castle or a rival to inspect it.</span>`; ud.hidden = true; tipEl.hidden = true; document.body.classList.remove("pdx"); return; }
+  if (!src) { psel = null; el.innerHTML = `<span class="pd-hint">Tap a soldier, your hero, a castle or a rival to inspect it.</span>`; ud.hidden = true; tipEl.hidden = true; document.body.classList.remove("pdx"); return; }
   const acts = planActions(psel, src.thing ? { rival: false } : src);
   if (src.thing) {
-    el.innerHTML = `<div class="pd"><div class="pd-main"><span class="pd-por" style="--c:${src.color}">${src.img ? `<img alt="" src="${src.img}">` : `<b class="gl">▦</b>`}</span><span class="pd-info"><span class="pd-nm"><b>${esc(src.title)}</b><small>${src.role}</small></span><span class="pd-note">${esc(src.note)}</span></span></div><div class="pd-act">${acts.map(pdBtn).join("")}</div></div>`;
+    el.innerHTML = `<div class="pd"><div class="pd-main"><span class="pd-por" style="--c:${src.color}">${src.img ? `<img alt="" src="${src.img}">` : `<b class="gl">▦</b>`}</span><span class="pd-info"><span class="pd-nm"><b>${esc(src.title)}</b><small>${src.role}</small></span>${src.stats.bar ? `<span class="pd-bar"><i style="width:100%"></i><span>${src.stats.bar} / ${src.stats.bar}</span></span>` : ""}<span class="pd-stats">${src.stats.html}</span></span></div><div class="pd-act">${acts.map(pdBtn).join("")}</div></div>`;
     ud.hidden = true; tipEl.hidden = true; document.body.classList.remove("pdx"); return;
   }
   const m = src.m, img = portraitFor(m, src.color), hpf = Math.max(0, Math.min(1, m.hp / m.maxhp));
-  const st = `<span>⚔ <b>${Math.round(m.atk)}</b></span><span>🛡 <b>${ARMOUR_TYPES[m.armour] || "–"}</b></span>${m.kind === "castle" ? `<span>➶ <b>${m.range.toFixed(1)}</b></span>` : `<span>👢 <b>${m.spd.toFixed(2)}</b></span>`}`;
-  el.innerHTML = `<div class="pd"><button class="pd-main" data-act="pexp" aria-label="Show full details"><span class="pd-por" style="--c:${src.color}">${img ? `<img alt="" src="${img}">` : m.kind === "castle" ? `<img class="art" alt="" src="icons/ui/castle${m.ctier}.webp">` : `<b class="gl">W</b>`}${m.lvl ? `<i class="lv">${m.lvl}</i>` : ""}</span>
-    <span class="pd-info"><span class="pd-nm"><b>${esc(src.title)}</b>${m.kind === "unit" ? "" : `<small>${esc(src.role)}</small>`}</span><span class="pd-bar${src.rival ? " bad" : ""}"><i style="width:${hpf * 100}%"></i><span>${Math.round(m.hp)} / ${Math.round(m.maxhp)}</span></span><span class="pd-stats">${st}</span></span></button>
+  const st = `<span>⚔ <b>${Math.round(m.atk)}</b></span><span>🛡 <b>${ARMOUR_TYPES[m.armour] || "–"}</b></span>${m.kind === "castle" || m.tower ? `<span>➶ <b>${m.range.toFixed(1)}</b></span>` : `<span>👢 <b>${m.spd.toFixed(2)}</b></span>`}`;
+  el.innerHTML = `<div class="pd"><div class="pd-main"><span class="pd-por" style="--c:${src.color}">${img ? `<img alt="" src="${img}">` : m.kind === "castle" ? `<img class="art" alt="" src="icons/ui/castle${m.ctier}.webp">` : `<b class="gl">W</b>`}${m.lvl ? `<i class="lv">${m.lvl}</i>` : ""}</span>
+    <span class="pd-info"><span class="pd-nm"><b>${esc(src.title)}</b>${m.kind === "unit" ? "" : `<small>${esc(src.role)}</small>`}</span><span class="pd-bar${src.rival ? " bad" : ""}"><i style="width:${hpf * 100}%"></i><span>${Math.round(m.hp)} / ${Math.round(m.maxhp)}</span></span><span class="pd-stats">${st}</span></span></div>
     <div class="pd-act">${acts.map(pdBtn).join("")}</div></div>`;
-  if (!pexp) { ud.hidden = true; tipEl.hidden = true; document.body.classList.remove("pdx"); return; }
-  const act = `<div class="ud-act">${acts.map(pdBtn).join("")}<button class="pd-b" data-act="pexp" title="Close" aria-label="Close"><span>▾</span><small>Close</small></button></div>`;
-  ud.className = "ud udp"; ud.innerHTML = dockHTML(src, { actions: act });
-  const bar = ud.querySelector("#udbar"); bar.firstChild.style.width = hpf * 100 + "%"; bar.lastChild.textContent = `${Math.round(m.hp)} / ${Math.round(m.maxhp)}`; if (src.rival) bar.classList.add("bad");
-  ud.hidden = false; document.body.classList.add("pdx");
-  const t = ptip ? dockTip(src, ptip) : null;
-  if (!t) { tipEl.hidden = true; ptip = null; return; }
-  tipEl.innerHTML = `${t.img ? `<img alt="" src="${t.img}">` : ""}<div><h4>${esc(t.title)}<small>${esc(src.hideRanks ? "" : t.sub || "")}</small></h4><p>${esc(t.body)}</p>${t.meta ? `<div class="meta">${t.meta}</div>` : ""}</div>`; tipEl.className = "ud-tip" + (t.img ? "" : " noimg"); tipEl.hidden = false;
+  ud.hidden = true; tipEl.hidden = true; document.body.classList.remove("pdx"); // the strip stays small and fixed: no tap-to-expand panel over the map
 }

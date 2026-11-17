@@ -10,6 +10,7 @@ function wallRefAt(r, q, except) {
   for (const w of (S.walls || [])) { if (w.id === except) continue; const k = placedAt(w.id); if (!k) continue; const [rr, cc] = k.split(",").map(Number); if (wallTiles(rr, cc, w.dir).some(([a, b]) => a === r && b === q)) return w.id; }
   return null;
 }
+const myWallTiles = () => Object.entries(S.place).filter(([, ref]) => findWall(ref)).map(([k]) => k.split(",").map(Number)); // where my placed walls stand, as [row, col]
 function wallFree(r, c, dir, ref) {
   return wallTiles(r, c, dir).every(([a, b]) => { const k = `${a},${b}`; if (!zoneSet.has(k)) return false; if (S.place[k] && S.place[k] !== ref) return false; return !wallRefAt(a, b, ref); });
 }
@@ -27,6 +28,8 @@ function draw(t) {
   drawFlag(ctx, MID, MID + ts * .1, ts * .55, ts * .95, "#c9962f", t);
   if (mode === "replay" && replay) { drawReplay(t); drawSuddenOverlay(); if (replay.reel) drawReel(); return; }
   const lift = sel;
+  if (WALL_BUILD && !lift) { const pulse = .25 + Math.sin(t * 5) * .12; // wall building: every tile a new fence could go on glows
+    zoneSet.forEach(k => { const [r, q] = k.split(",").map(Number); if (!wallFree(r, q, WALL_BUILD.dir, null)) return; ctx.fillStyle = `rgba(255,224,130,${pulse})`; ctx.fillRect(q * ts + 2, r * ts + 2, ts - 4, ts - 4); }); }
   if (lift) {
     const pulse = .25 + Math.sin(t * 5) * .12, wl = findWall(lift);
     zoneSet.forEach(k => { const [r, q] = k.split(",").map(Number);
@@ -39,7 +42,7 @@ function draw(t) {
   const items = [];
   RIVALS.forEach(rv => items.push([rv.pos[0], () => drawCastle(rv.pos[0], rv.pos[1], rv.color, t, rivalLabel(rv), S.lists ? (bucketOf(rv.id) === "neutral" ? null : bucketOf(rv.id)) : null, null, rv.banner, rv.ctier || 1)]));
   items.push([CASTLE[0], () => drawCastle(CASTLE[0], CASTLE[1], MY_COLOR, t, isLive() ? MY_NAME : "You", null, null, S.banner, S.castle || 1)]);
-  RWALLS.forEach(w => { const rv = RIVALS.find(x => x.id === w.rid); if (!rv) return; wallTiles(w.r, w.c, w.dir).forEach(([a, b]) => items.push([a + .2, () => drawWallTile(ctx, a, b, rv.ctier || 1, 1, rv.color, t, w.dir)])); });
+  RWALLS.forEach(w => { const rv = RIVALS.find(x => x.id === w.rid); if (!rv) return; const mine = RWALLS.filter(o => o.rid === w.rid).map(o => [o.r, o.c]); wallTiles(w.r, w.c, w.dir).forEach(([a, b]) => items.push([a + .2, () => drawWallTile(ctx, a, b, rv.ctier || 1, 1, rv.color, t, w.dir, wallLinks(mine, a, b))])); });
   if (seeArmies()) RARMY.forEach(u => {
     const rv = RIVALS.find(x => x.id === u.rid), friendly = (S.diplo[u.rid] || {}).rel === "ally";
     items.push([u.r + .1, () => drawFigure(u.key, rv.color, u.r, u.c, u.champ, u.hp, friendly, t, { ring: sheet && sheet.type === "rival" && sheet.id === u.rid, name: u.champ ? rivalLabel(rv) : null, lvl: u.champ ? null : u.lvl })]);
@@ -49,10 +52,10 @@ function draw(t) {
     const [r, q] = key.split(",").map(Number), ring = (sheet && sheet.id === ref) || sel === ref;
     if (ref === "champ") items.push([r + .1, Wg(ref, () => drawFigure("c-" + S.cls, MY_COLOR, r, q, true, 1, true, t, { ring, name: myName(), lvl: level(), items: S.items }))]);
     else if (findUnit(ref)) { const u = findUnit(ref); items.push([r + .1, Wg(ref, () => drawFigure(u.type, MY_COLOR, r, q, false, u.hp ?? 1, true, t, { ring, lvl: u.lvl }))]); }
-    else if (findWall(ref)) { const w = findWall(ref); wallTiles(r, q, w.dir).forEach(([a, b]) => items.push([a + .2, Wg(ref, () => { drawWallTile(ctx, a, b, Math.min(3, S.castle || 1), 1, MY_COLOR, t, w.dir); if (ring) { ctx.strokeStyle = "#ffe082"; ctx.lineWidth = ts * .06; ctx.strokeRect(b * ts + 3, a * ts + ts * .2, ts - 6, ts * .66); } })])); }
+    else if (findWall(ref)) { const w = findWall(ref), mine = myWallTiles(); wallTiles(r, q, w.dir).forEach(([a, b]) => items.push([a + .2, Wg(ref, () => { drawWallTile(ctx, a, b, Math.min(3, S.castle || 1), 1, MY_COLOR, t, w.dir, wallLinks(mine, a, b)); if (ring) { ctx.strokeStyle = "#ffe082"; ctx.lineWidth = ts * .06; ctx.strokeRect(b * ts + 3, a * ts + ts * .2, ts - 6, ts * .66); } })])); }
     else if (findTrap(ref)) items.push([r, Wg(ref, () => {
       if (ring) { ctx.strokeStyle = "#ffe082"; ctx.lineWidth = ts * .06; ctx.beginPath(); ctx.ellipse((q + .5) * ts, (r + .62) * ts, ts * .4, ts * .18, 0, 0, 7); ctx.stroke(); }
-      drawTrap(ctx, findTrap(ref).type, (q + .5) * ts, (r + .55) * ts, ts * .9);
+      const tp = findTrap(ref); if (tp.type === "tower") drawSprite(towerKey(tp), MY_COLOR, (q + .5) * ts, (r + .95) * ts, .95); else drawTrap(ctx, tp.type, (q + .5) * ts, (r + .55) * ts, ts * .9); // a tower stands on the map as its own sprite, as in battle
     })]);
   });
   items.sort((a, b) => a[0] - b[0]).forEach(([, fn]) => fn());

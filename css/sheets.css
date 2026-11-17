@@ -5,6 +5,7 @@
 @media (prefers-reduced-motion: no-preference) { .sheet .paper { animation: rise .2s ease-out; } @keyframes rise { from { transform: translateY(40px); opacity: .4; } } }
 .sheet header { display: flex; align-items: center; gap: 10px; padding: 12px max(16px, env(safe-area-inset-right, 0px)) 8px max(16px, env(safe-area-inset-left, 0px)); border-bottom: 1px solid rgba(90,58,32,.3); }
 .sheet header img { width: 40px; height: 50px; image-rendering: pixelated; flex: none; }
+.sheet header img[src^="icons/"] { width: 44px; height: 44px; image-rendering: auto; border-radius: 8px; }
 .sheet header h2 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: 24px; line-height: 1.1; text-wrap: balance; }
 .sheet header .sub { font-size: 14px; color: var(--ink-soft); font-style: italic; }
 .sheet header .x { margin-left: auto; flex: none; width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--wood-dark); background: var(--parchment-2); color: var(--ink); cursor: pointer; font-size: 18px; line-height: 1; }
@@ -278,7 +279,7 @@ button.rrow { width: 100%; text-align: left; font: inherit; color: inherit; curs
 .tn.st-wait .ti img { border-color: #a58a55; }
 .tn.st-locked .ti img { border-color: #8a7a62; filter: grayscale(.75) brightness(.9); }
 .tn.sel .ti img { outline: 3px solid var(--wax); outline-offset: 2px; }
-.tn .rk { position: absolute; right: -5px; bottom: -5px; background: #b3261e; color: #fff; font: 700 10px/1 var(--f-body, serif); font-style: normal; padding: 3px 4px; border-radius: 3px; border: 1px solid rgba(255,255,255,.55); box-shadow: 0 1px 2px rgba(0,0,0,.5); }
+.tn .rk { position: absolute; right: -5px; bottom: -5px; background: #4a4038; color: #f1e6cc; font: 700 10px/1 var(--f-body, serif); font-style: normal; padding: 3px 4px; border-radius: 3px; border: 1px solid rgba(255,255,255,.55); box-shadow: 0 1px 2px rgba(0,0,0,.5); }
 .tn.side .rk { right: -6px; bottom: -6px; font-size: 9px; padding: 2px 3px; }
 .tn .miss { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 1px 5px; border-radius: 9px; background: rgba(20,12,6,.78); color: #ffd9a0; font: 700 13px/1.15 var(--f-body, serif); font-style: normal; white-space: nowrap; }
 .tn.side .miss { font-size: 10px; padding: 0 4px; }
@@ -487,7 +488,7 @@ h3 .cnt { font: 700 13px/1 var(--f-body); font-style: normal; color: var(--parch
 .ritx { display: flex; flex-direction: column; gap: 1px; min-width: 0; font-size: 13px; } .ritx small { text-transform: uppercase; font-size: 10px; letter-spacing: .06em; color: var(--ink-soft); display: flex; align-items: center; gap: 3px; } .ritx b { font-size: 15px; }
 .ritx small .sico { width: 12px; height: 12px; }
 .waxseal2 { width: 120px; height: 120px; margin: 4px auto; filter: drop-shadow(0 3px 3px rgba(0,0,0,.35)); }
-.waxseal2 svg { width: 100%; height: 100%; display: block; }
+.waxseal2 img { width: 100%; height: 100%; display: block; image-rendering: pixelated; object-fit: contain; }
 @media (prefers-reduced-motion: no-preference) { .waxseal2 { animation: stamp .35s ease-out; } }
 /* treasury tiles */
 .trgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 8px; }
@@ -529,3 +530,11 @@ h3 .cnt { font: 700 13px/1 var(--f-body); font-style: normal; color: var(--parch
 .hall { padding: 6px 0; border-bottom: 1px dashed rgba(90,58,32,.35); } .hall h3 { display: flex; justify-content: space-between; align-items: baseline; margin: 0 0 4px; } .hall h3 small { font-size: 12px; color: var(--ink-soft); }
 .hrow { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 6px; align-items: center; padding: 2px 0; } .hrow small { color: var(--ink-soft); }
 .lbox.warcard { border-color: var(--gold); background: rgba(201,162,39,.16); }
+
+/* balance report (Host tools): compact tables that scroll sideways on a phone rather than squeezing */
+.bal-wrap { overflow-x: auto; margin: 0 -2px; }
+.bal { border-collapse: collapse; width: 100%; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.bal th { text-align: left; font-weight: 700; padding: 4px 6px; border-bottom: 2px solid var(--wood-dark); white-space: nowrap; }
+.bal td { padding: 4px 6px; border-bottom: 1px solid rgba(62,39,20,.18); white-space: nowrap; }
+.bal td:first-child { white-space: normal; min-width: 92px; }
+.bal-hi { color: #2f7a2f; font-size: 10px; } .bal-lo { color: #b3261e; font-size: 10px; }

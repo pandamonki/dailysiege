@@ -29,6 +29,7 @@ const A = {
   cfgtz: () => saveConfig({ tz: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC" }),
   watchday: v => { watchLiveBattle(v); },
   lab: () => { if (!isLive()) open("lab"); },
+  balredo: () => { BAL_RPT = null; }, // the balance report: work everything out again
   types: () => { if (isLive()) return; open("lab"); sheet.tab = "types"; },
   labrun: v => { runLab(+v); },
   labcopy: () => { const txt = labCSV(), box = document.getElementById("csvbox");
@@ -45,8 +46,7 @@ const A = {
   reelstop: () => { if (WAR_REEL) { WAR_REEL = null; stopReel(false); leaveBattle(); return; } stopReel(true); },
   rjump: v => { replay.time = +v; replay.playing = true; replay.done = false; sheet = null; },
   unselect: () => { if (replay) { replay.sel = null; replay.tip = null; } },
-  dtip: v => { if (replay) replay.tip = replay.tip === v ? null : v; else ptip = ptip === v ? null : v; },
-  pexp: () => { pexp = !pexp; ptip = null; },
+  dtip: v => { if (replay) replay.tip = replay.tip === v ? null : v; },
   rexit: () => leaveBattle(),
   gear: k => { const nx = GEAR[k][S.gear[k]]; if (nx && avail() >= nx.cost && ctNow() >= UPGRADE_NEEDS[k][S.gear[k]]) { S.gold -= nx.cost; S.gear[k]++; toast(`${nx.name} forged.`); } },
   defend: k => { const nx = DEFENCES[k][S.defences[k]]; if (nx && avail() >= nx.cost && ctNow() >= UPGRADE_NEEDS[k][S.defences[k]]) { S.gold -= nx.cost; S.defences[k]++; toast(`${nx.name} built.`); } },
@@ -54,9 +54,9 @@ const A = {
   zout: () => { if (replay && replay.auto) { autoZoomBy(1 / AUTO_ZOOM_STEP); return; } camTarget = null; zoomAt(vw / 2, vh / 2, cam.z / 1.35); },
   zall: () => { if (replay) replay.auto = false; flyTo(W / 2, W / 2, 0); },
   zhome: () => { if (replay && !replay.reel) { replay.auto = true; replay.camMode = null; return; } home(); }, // in a replay the home button follows your hero again
-  cancel: () => { sel = null; PLACE_Q = []; },
+  cancel: () => { sel = null; PLACE_Q = []; WALL_BUILD = null; },
   trainunit: id => { S.phase = "muster"; sel = null; sheet = { type: "castle", tab: "garrison", grp: "army", tsel: id }; }, // the unit strip's Train button: open the training screen on that soldier
-  opencastle: v => { S.phase = "muster"; sel = null; sheet = { type: "castle", tab: v, grp: v === "recruit" ? "army" : "base" }; if (v === "armoury") sheet.tab = "keep"; },
+  opencastle: (v, k) => { S.phase = "muster"; sel = null; WALL_BUILD = null; sheet = { type: "castle", tab: v, grp: v === "recruit" ? "army" : "base" }; if (v === "armoury") sheet.tab = "keep"; if (k) sheet.dsel = k; }, // k: a tower to open on, from its Upgrade button
   openhero: v => { S.phase = "muster"; sel = null; open("champ", "champ"); if (v === "items" || v === "abilities" || v === "stats") sheet.tab = v; },
   rhero: (v, k) => { sheet = { type: "rhero", id: v, tab: k === "items" ? "items" : "abilities" }; },
   openorders: v => { S.phase = "orders"; sel = null; ensureDip(); sheet = { type: "orders", grp: v === "alli" ? "alli" : "ord" }; },
@@ -68,7 +68,7 @@ const A = {
   bless: v => { S.bless = v || null; },
   ctab: v => { sheet.tab = v; sheet.keep = false; },
   pick: v => { sel = sel === v ? null : v; },
-  move: v => { psel = null; pexp = false; if (inGarrison(v)) { if (fieldCount() >= S.slots) { toast("Your field supply is full."); return; } unGarrison(v); } sel = v; sheet = null; toast("Tap a glowing tile."); },
+  move: v => { psel = null; if (inGarrison(v)) { if (fieldCount() >= S.slots) { toast("Your field supply is full."); return; } unGarrison(v); } sel = v; sheet = null; toast("Tap a glowing tile."); },
   usell: id => { const u = findUnit(id); if (!u) return; S.sells = (S.sells || 0) + 1; const k = placedAt(id); if (k) delete S.place[k]; unGarrison(id); S.owned = S.owned.filter(x => x.id !== id); S.gold += unitSellPrice(u); if (!sheet || sheet.type !== "castle") sheet = null; toast(`${UNITS[u.type].name} sold for ${unitSellPrice(u)}g.`); },
   bench: v => { const k = placedAt(v); if (k) delete S.place[k]; if (!sheet || sheet.type !== "castle") sheet = null; },
   deploy: (v, k) => { { const cu = findUnit(v); if (cu && UNITS[cu.type].cool && cu.cool > 0) { toast(`${UNITS[cu.type].name} is recharging for ${cu.cool} more day${cu.cool > 1 ? "s" : ""}.`); return; } }
@@ -115,6 +115,10 @@ const A = {
     for (let i = 0; i < n; i++) { S.gold -= WALL_COST; const id = "w" + idc++; S.walls.push({ id, dir: "h" }); ids.push(id); }
     sel = ids.shift(); PLACE_Q = ids; sheet = null; toast(n > 1 ? `${n} walls built. Tap a glowing tile for each one in turn.` : "Wall built. Tap a glowing tile to place it. Tap it afterwards to turn it."); },
   wn: v => { sheet.wn = Math.max(1, (sheet.wn || 1) + +v); },
+  wbuild: () => { if (S.locked) return; sel = null; psel = null; sheet = null; WALL_BUILD = { dir: "h" }; toast(`Tap tiles in your field to build walls, ${WALL_COST} gold each.`); },
+  psell: id => { PSELL = id; }, // the map strip's Sell: the first tap asks, the second (Sure?) sells
+  wturn: () => { if (WALL_BUILD) WALL_BUILD.dir = WALL_BUILD.dir === "h" ? "v" : "h"; },
+  wdone: () => { WALL_BUILD = null; },
   wrot: id => { const w = findWall(id), k = placedAt(id), nd = w.dir === "h" ? "v" : "h"; if (k) { const [r, c] = k.split(",").map(Number); if (!wallFree(r, c, nd, id)) { toast("It doesn't fit that way round."); return; } } w.dir = nd; },
   tsell: id => { const t = findTrap(id); if (!t) return; const k = placedAt(id); if (k) delete S.place[k]; S.traps = S.traps.filter(x => x.id !== id); S.gold += Math.floor((t.type === "tower" ? towerSpent(towerKey(t)) : TRAPS[t.type].cost) / 2); if (!sheet || sheet.type !== "castle") sheet = null; },
   tup: (id, to) => { const t = findTrap(id); if (!t || t.type !== "tower" || S.locked) return; const up = TOWER_UP[towerKey(t)]; if (!up || !up.to.includes(to) || avail() < up.cost || ctNow() < up.tier) return; S.gold -= up.cost; t.tk = to; toast(`${UNITS[to].name} built.`); },

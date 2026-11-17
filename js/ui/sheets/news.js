@@ -3,6 +3,20 @@
 // Each item is [icon, headline, one short sentence]. Players who have not seen the newest id get the pop-up the next time they plan;
 // the id is remembered on their device, so changing the id is all it takes to show it again. Keep about 8 to 14 items.
 const RELEASES = [
+  { id: "1.7", title: "What's new in v1.7", sub: "Walls that matter, a tighter sudden death, and easier defences", items: [
+    ["🧱", "Walls block everyone", "From the 19 Nov battle your own soldiers walk round your walls too, through the gaps you leave. No more free shield to fight from."],
+    ["🔨", "Build walls on the map", "Base, Defences, Walls: tap tile after tile to build, paying for each one. Walls next to each other line up and join into one wall, corners included."],
+    ["🗼", "Tower 1 and Tower 2", "Buy, upgrade and sell each tower from its own slot in Defences, or tap Upgrade on the tower itself."],
+    ["📌", "Walls and towers stay put", "They can't be moved. Sell one and build it again somewhere else. Traps can still be moved."],
+    ["🔍", "Defence details", "Tap a fence, trap or tower on the map to see its health, damage and range."],
+    ["⚔", "Sudden death arena", "From the 19 Nov battle the ring is half the size and nobody can leave it."],
+    ["❤", "A fair last stand", "Everyone drawn into sudden death is topped up to at least half health, and fallen heroes show no respawn timer."],
+    ["🎥", "Arena camera", "The camera swings to the arena when sudden death begins, with the countdown in the middle of the screen."],
+    ["🤖", "Bots build defences", "Bot lords now buy traps, towers and walls, and upgrade their towers. Each picks a style: a big army, strong items, a fortress, or a mix."],
+    ["🌲", "Smarter around trees", "Soldiers steer round trees and tree clusters instead of getting stuck in them."],
+    ["🎨", "New looks", "Pixel sprites for traps, stone towers that stand out from the grass, and painted icons for every trap and tower."],
+    ["📖", "Clearer skills", "Ability descriptions now say what the skill does first, then when it casts itself."],
+  ] },
   { id: "1.6", title: "What's new in v1.6", sub: "Permanent traps, new traps, and upgradeable towers", items: [
     ["🪤", "Traps stay put", "Buy a trap once and it re-arms free every day. Own up to 4, move them, or sell one for half price."],
     ["💰", "New trap prices", "Spike Pit 60 gold, Snare 40, Blade Trap 90. Spike Pit now hits for 150 and the Blade Trap for 90 each."],

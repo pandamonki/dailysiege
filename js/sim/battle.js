@@ -73,6 +73,9 @@ function runBattle(plans, seed, opts = {}) {
   const TREE_LOOK = 1.2, TREE_TURNS = Array.from({ length: 11 }, (_, i) => { const a = (i + 1) * Math.PI / 12; return [dcos(a), dsin(a)]; });
   const treeRayClear = (x, y, ux, uy, L) => { for (let s = .3; s < L + .01; s += .3) if (treeHit(x + ux * s, y + uy * s)) return false; return true; };
   const settle = e => { for (let i = 0; i < 5; i++) { const h = treeHit(e.x, e.y); if (!h) return; e.x += h.nx * (h.d + .01); e.y += h.ny * (h.d + .01); } }; // step clear of the trees (a few passes: a blockade's trees overlap)
+  const EV2 = plans.some(p => p.engV2); // engines v2: heroes and soldiers drop what they are doing for an enemy siege engine near their own castle
+  const WV2 = plans.some(p => p.wallV2); // walls v2: every fence blocks everyone, its owner's soldiers too, so they route round through the gaps
+  const SD2 = plans.some(p => p.sdV2); // sudden death v2: a half-size arena nobody can leave, and no respawn timers inside it
   let sd = null; // sudden death: null until SD_AT, then { t0, go, skip, winners }
   const sdOn = () => !!sd && !sd.skip, tmax = () => (sdOn() ? SD_AT + SD_COUNT + SD_LEN : TMAX);
   let ctrHolder = null, teamWin = null; const finalDay = !!opts.finalDay;
@@ -307,8 +310,37 @@ function runBattle(plans, seed, opts = {}) {
     (e.cons || []).forEach(c => { if (c.lr !== c.ready) { if (c.lr !== undefined) cdNote(e, "i:" + c.k, c.ready); c.lr = c.ready; } }); // note each use for the replay panel
   }
   // fences: soldiers can't walk through an enemy wall. They slide round it, and hack through if they get stuck
-  const wallAt = (e, x, y) => { for (const w of walls) { if (w.hp <= 0 || !hostile(e.pid, w.pid)) continue; const lx = w.dir === "v" ? .3 : .72, ly = w.dir === "v" ? .72 : .3; if (Math.abs(x - w.x0 - .5) < lx && Math.abs(y - w.y0 - .5) < ly) return w; } return null; };
+  const wallAt = (e, x, y) => { for (const w of walls) { if (w.hp <= 0 || ((!WV2 || e.ghostT > t) && !hostile(e.pid, w.pid))) continue; const lx = w.dir === "v" ? .3 : .72, ly = w.dir === "v" ? .72 : .3; if (Math.abs(x - w.x0 - .5) < lx && Math.abs(y - w.y0 - .5) < ly) return w; } return null; };
   const nearestWall = e => minBy(walls.filter(w => w.hp > 0 && hostile(e.pid, w.pid) && hyp(w.x0 + .5 - e.x, w.y0 + .5 - e.y) <= 2), w => hyp(w.x0 + .5 - e.x, w.y0 + .5 - e.y));
+  // walls v2: a soldier whose straight line home or to its target runs into a friendly fence finds a way round on the tile grid (fences and trees block; enemy fences are left to be hacked)
+  const treeTileAt = TG ? Array.from({ length: NN }, (_, r) => Array.from({ length: NN }, (_, c) => !!treeHit(c + .5, r + .5))) : null;
+  const friendWallOn = (e, x, y) => walls.some(w => w.hp > 0 && !hostile(e.pid, w.pid) && Math.abs(x - w.x0 - .5) < (w.dir === "v" ? .3 : .72) && Math.abs(y - w.y0 - .5) < (w.dir === "v" ? .72 : .3));
+  const segBox = (x0, y0, x1, y1, cx, cy, lx, ly) => { // does the segment pass through the box (slab test)?
+    let lo = 0, hi = 1; const d = [x1 - x0, y1 - y0], o = [x0 - cx, y0 - cy], h = [lx, ly];
+    for (let a = 0; a < 2; a++) { if (Math.abs(d[a]) < 1e-9) { if (Math.abs(o[a]) >= h[a]) return false; continue; } let t1 = (-h[a] - o[a]) / d[a], t2 = (h[a] - o[a]) / d[a]; if (t1 > t2) [t1, t2] = [t2, t1]; lo = Math.max(lo, t1); hi = Math.min(hi, t2); if (lo >= hi) return false; }
+    return true; };
+  const lineHitsFriendWall = (e, x0, y0, x1, y1) => walls.some(w => w.hp > 0 && !hostile(e.pid, w.pid) && segBox(x0, y0, x1, y1, w.x0 + .5, w.y0 + .5, w.dir === "v" ? .3 : .72, w.dir === "v" ? .72 : .3));
+  function wallPath(e, gx, gy) { // breadth-first over tiles from the soldier's tile to the goal's; returns tile centres, or null if there is no way
+    const cl = v => Math.max(0, Math.min(NN - 1, Math.floor(v))), sr = cl(e.y), sc = cl(e.x), tr = cl(gy), tc = cl(gx), blocked = new Set();
+    walls.forEach(w => { if (w.hp > 0 && !hostile(e.pid, w.pid)) blocked.add(w.y0 * NN + w.x0); });
+    const lo = TG ? 1 : 0, free = (r, c) => r >= lo && c >= lo && r < NN - lo && c < NN - lo && !blocked.has(r * NN + c) && !(treeTileAt && treeTileAt[r][c]); // with the forest rim, the outermost ring of tiles can't be stood in
+    const prev = new Map(), q = []; // start from the soldier's tile, or, if a fence stands in it, from the neighbouring tiles it can walk straight into
+    if (free(sr, sc)) { prev.set(sr * NN + sc, -1); q.push(sr * NN + sc); }
+    else for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) { const r2 = sr + dr, c2 = sc + dc; if ((dr || dc) && free(r2, c2) && !lineHitsFriendWall(e, e.x, e.y, c2 + .5, r2 + .5)) { prev.set(r2 * NN + c2, -1); q.push(r2 * NN + c2); } }
+    for (let qi = 0; qi < q.length; qi++) { const k = q[qi], r = Math.floor(k / NN), c = k % NN; if (r === tr && c === tc) break;
+      for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const r2 = r + dr, c2 = c + dc, k2 = r2 * NN + c2; if (!prev.has(k2) && (free(r2, c2) || (r2 === tr && c2 === tc))) { prev.set(k2, k); q.push(k2); } } }
+    const end = tr * NN + tc; if (!prev.has(end)) return null;
+    const out = []; for (let k = end; k !== -1; k = prev.get(k)) out.push([k % NN + .5, Math.floor(k / NN) + .5]); return out.reverse();
+  }
+  function wallWaypoint(e, x, y) { // where to head next instead of (x, y), or null to go straight
+    if (!walls.some(w => w.hp > 0 && !hostile(e.pid, w.pid))) return null;
+    const L0 = hyp(x - e.x, y - e.y), k0 = Math.min(1, 4 / L0); if (!lineHitsFriendWall(e, e.x, e.y, e.x + (x - e.x) * k0, e.y + (y - e.y) * k0)) { e.wp = null; return null; } // only fences in the next few tiles matter
+    const gk = Math.floor(x) + "," + Math.floor(y);
+    if (!e.wp || e.wp.gk !== gk || t >= e.wp.until) { const pth = wallPath(e, x, y); e.wp = pth ? { gk, until: t + 1, pth } : { gk, until: t + 1, pth: null }; }
+    const pth = e.wp.pth; if (!pth || !pth.length) { e.ghostT = t + 1; return null; } // no way round at all: as a last resort it may step through its own side's fence rather than be stuck behind it
+    let best = null; for (let i = pth.length - 1; i >= 0; i--) { const [px, py] = pth[i]; if (!lineHitsFriendWall(e, e.x, e.y, px, py)) { best = pth[i]; break; } } // the furthest point on the way that can be walked to straight
+    return best || pth[Math.min(1, pth.length - 1)];
+  }
   function hitWall(e, w) {
     const wx = w.x0 + .5, wy = w.y0 + .5, wd = e.atk * (1 + fxv(e, "atkbuf")) * (V4 && e.atype === "magic" ? MAGIC_VS_FORT : TYPE_TABLE[e.atype || "blade"].fortified) * (e.key === "raider" ? 1.4 : 1) * (HV3 ? kit.wallMul(e) : 1); st(w.pid).wallHit += Math.min(wd, Math.max(0, w.hp)); w.hp -= wd;
     ev({ ty: "slash", x: wx, y: wy, c: "#d9c9a0" });
@@ -436,7 +468,7 @@ function runBattle(plans, seed, opts = {}) {
         let ti = STREAKS.length - 1; while (ti >= 0 && sum < STREAKS[ti][0]) ti--;
         if (ti > kp.tier) { kp.tier = ti; const nmS = STREAKS[ti][1]; sp.marks.push({ t, name: nmS, n: Math.round(sum) }); sp.streak = nmS; log(`${nm(kc.pid)}: ${nmS.toUpperCase()}! ${Math.round(sum)} kills in a row.`, "big"); } } }
     if (e.kind === "champ" && e.rapier) { e.rapier = false; rapierDrop = { x: e.x, y: e.y, ev: null }; H({ kind: "rapierdrop", pid: e.pid, other: src ? (src.owner || src).pid : null, x: e.x, y: e.y, score: 54 }); ev({ ty: "rapier", x: e.x, y: e.y, until: null }); if (!fast) rapierDrop.ev = events[events.length - 1]; txt(e, "Rapier dropped!", "#ffd34d"); log(`${poss(e.pid)} hero drops the Divine Rapier.`, "big"); }
-    if (e.kind === "champ" && P[e.pid].alive && e.respawns > 0) { e.respawns--; const rt = respawnTime(e.heroLvl) * (e.phoenix ? .5 : 1); e.respawnAt = t + rt; e.respawnLen = rt; const c = P[e.pid].castle; const rv = { ty: "respawn", pid: e.pid, id: e.id, x: c.x, y: c.y, t0: t, t1: t + rt }; ev(rv); e.respawnEv = rv; }
+    if (e.kind === "champ" && P[e.pid].alive && e.respawns > 0 && !(SD2 && sdOn())) { e.respawns--; const rt = respawnTime(e.heroLvl) * (e.phoenix ? .5 : 1); e.respawnAt = t + rt; e.respawnLen = rt; const c = P[e.pid].castle; const rv = { ty: "respawn", pid: e.pid, id: e.id, x: c.x, y: c.y, t0: t, t1: t + rt }; ev(rv); e.respawnEv = rv; }
     if (e.kind === "castle") eliminate(e.pid, src ? src.pid : e.lastBy);
   }
   function eliminate(pid, by) {
@@ -561,6 +593,7 @@ function runBattle(plans, seed, opts = {}) {
     if (e.hunter) { const hs = ents.filter(x => !x.dead && x.kind === "champ" && hostile(e.pid, x.pid) && vis(x, e)); if (hs.length) return minBy(hs, x => d(x, e)); }
     const p = P[e.pid], guard = e.order === "guard", escort = e.order === "escort" && live(p.champ);
     if (!e.cart && !e.ram && ((UNIT_TYPES[e.key] || [])[0] !== "siege" || e.order === "guard")) { const carts = ents.filter(o => o.cart && !o.dead && hostile(e.pid, o.pid) && ents.some(c => c.kind === "castle" && !c.dead && !hostile(e.pid, c.pid) && d(c, o) <= 4) && d(o, e) <= 9); if (carts.length) return minBy(carts, o => d(o, e)); } // a powder cart within 4 tiles of a friendly castle: stop it
+    if (EV2 && !e.cart && !e.ram && !e.cat && P[e.pid].castle && !P[e.pid].castle.dead) { const home = P[e.pid].castle, eng = ents.filter(o => (o.cart || o.ram || o.cat) && !o.dead && hostile(e.pid, o.pid) && vis(o, e) && d(o, home) <= ENGINE_ALERT && d(o, e) <= 9); if (eng.length) return minBy(eng, o => d(o, home)); } // a ram, catapult or powder cart within 3 tiles of home: everyone near enough turns on it, the one closest to the walls first
     // raiders (from 12 Nov 2026) make for a castle: struck by a melee fighter they turn and fight it, struck from range they keep going
     if (V3 && (e.key === "raider" || e.purpose === "castle") && !guard && !escort) { const ag = e.aggro; if (ag && ag.until > t && live(ag.src) && hostile(e.pid, ag.src.pid) && vis(ag.src, e) && (ag.src.range || 1.1) <= 1.5 && d(ag.src, e) <= 6) return ag.src;
       const g = goalPid(e), c = g && ents.find(o => !o.dead && o.kind === "castle" && o.pid === g); if (c) return c; }
@@ -604,6 +637,7 @@ function runBattle(plans, seed, opts = {}) {
   function moveToward(e, x, y, stop) {
     if (fxv(e, "stun") || fxv(e, "root") || fxv(e, "aim")) return;
     if (TG && e.kind !== "totem") { const g = treeHit(x, y); if (g) { x += g.nx * (g.d + .05); y += g.ny * (g.d + .05); } } // a spot inside the trees can never be reached: aim just outside them instead of circling the trunk
+    if (WV2 && walls.length && e.kind !== "totem" && hyp(x - e.x, y - e.y) > stop) { const wp = wallWaypoint(e, x, y); if (wp) { x = wp[0]; y = wp[1]; stop = Math.min(stop, .05); } }
     const dx = x - e.x, dy = y - e.y, dd = hyp(dx, dy); if (dd <= stop) return;
     const sp = e.kind === "unit" && !e.cart && !e.ram && P[e.pid] && P[e.pid].hold && (e.order || "army") === "army" ? Math.min(e.spd, P[e.pid].slow) : e.spd, step = Math.min(dd - stop, sp * (1 - fxv(e, "slow")) * (1 + (e.v3ms || 0)) * DT), nx = e.x + dx / dd * step, ny = e.y + dy / dd * step;
     if (TG && e.kind !== "totem") { const vx = dx / dd, vy = dy / dd, L = Math.min(TREE_LOOK, dd);
@@ -619,6 +653,7 @@ function runBattle(plans, seed, opts = {}) {
         return; } }
     if (walls.length && e.kind !== "totem" && wallAt(e, nx, ny)) { // blocked: slide along the wall if there's room
       e.blk = (e.blk || 0) + 1;
+      if (WV2) { const fw = wallAt(e, nx, ny); if (fw && !hostile(e.pid, fw.pid) && (e.fblk = (e.fblk || 0) + 1) > 40) { e.ghostT = t + 1.5; e.fblk = 0; } } // pinned against a friendly fence for 2 seconds: let it through
       if (Math.abs(dx) >= Math.abs(dy)) { if (!wallAt(e, nx, e.y)) e.x = nx; else if (!wallAt(e, e.x, ny)) e.y = ny; }
       else { if (!wallAt(e, e.x, ny)) e.y = ny; else if (!wallAt(e, nx, e.y)) e.x = nx; }
       return;
@@ -970,8 +1005,9 @@ function runBattle(plans, seed, opts = {}) {
       const prog = Math.max(0, Math.min(1, e.respawnLen ? 1 - (e.respawnAt - t) / e.respawnLen : 0)); e.dead = false; e.respawnAt = null; e.hp = Math.max(1, e.maxhp * (.25 + .75 * prog)); e.fx = {}; e.dots = []; e.tgt = null;
       if (e.respawnEv) e.respawnEv.t1 = t; if (HV3) kit.onRespawn(e); });
     fighters = ents.filter(e => mobile(e) && !e.cart && !e.ram && !e.cat);
+    if (SD2) fighters.forEach(e => { if (e.hp < e.maxhp * .5) e.hp = e.maxhp * .5; }); // v2: everyone drawn in is topped up to at least half health
     ents.forEach(e => { if (e.dead) { e.respawnAt = null; return; } if (e.cart || e.ram || e.cat || e.kind === "totem") { e.dead = true; ev({ ty: "die", id: e.id, x: e.x, y: e.y, fx: 0, ex: 1 }); } });
-    const cx = NN / 2, cy = NN / 2, R = 3 + pids.length * .4;
+    const cx = NN / 2, cy = NN / 2, AR = sdArenaR(pids.length, SD2), R = SD2 ? AR - 1 : 3 + pids.length * .4; sd.r = AR; // v2: lines start just inside the smaller ring and stack inward
     // seating: the board's 1st and 2nd face each other, 3rd and 4th face each other, and the weakest lords sit beside the top two so they don't just trade blows and leave the day to the bottom half
     const rk = q => RANKS[q] != null ? RANKS[q] : ((plans.find(p => p.pid === q) || {}).rank || idx[q] + 1), n = pids.length, byRank = pids.slice().sort((a, b) => rk(a) - rk(b) || idx[a] - idx[b]), seat = Array(n).fill(null), h = Math.floor(n / 2);
     const put = (q, s) => { if (q != null && s != null && seat[s] == null) { seat[s] = q; return true; } return false; };
@@ -983,7 +1019,7 @@ function runBattle(plans, seed, opts = {}) {
     pids.forEach(pid => { const i = seat.indexOf(pid), a = -Math.PI / 2 + 2 * Math.PI * i / n, ux = dcos(a), uy = dsin(a), vx = -uy, vy = ux;
       fighters.filter(e => e.pid === pid).sort((x, y) => (y.kind === "champ") - (x.kind === "champ") || x.id - y.id).forEach((e, k) => {
         const row = Math.floor(k / 4), col = (k % 4) - 1.5;
-        e.x = Math.max(.5, Math.min(NN - .5, cx + ux * R + vx * col * .75 + ux * row * .75)); e.y = Math.max(.5, Math.min(NN - .5, cy + uy * R + vy * col * .75 + uy * row * .75));
+        const rw = SD2 ? -Math.min(row * .75, R - .5) : row * .75; e.x = Math.max(.5, Math.min(NN - .5, cx + ux * R + vx * col * .75 + ux * rw)); e.y = Math.max(.5, Math.min(NN - .5, cy + uy * R + vy * col * .75 + uy * rw));
         e.hx = e.x; e.hy = e.y; e.tgt = null; e.retreating = false; e.noRetreat = true; e.aggro = null; if (e.order === "guard" || e.order === "escort") e.order = "army"; }); });
     ev({ ty: "sudden", x: cx, y: cy, go: sd.go }); log("SUDDEN DEATH! Every hero and soldier is drawn to the arena. Fight to the last.", "big");
   }
@@ -1079,10 +1115,15 @@ function runBattle(plans, seed, opts = {}) {
         if (lt) { const s = (lt.id % 2 ? 1 : -1) * gap * .3; lt.x += -ny * s; lt.y += nx * s; }
       }
     }
-    if (walls.length) mob.forEach(e => { for (const w of walls) { if (w.hp <= 0 || !hostile(e.pid, w.pid)) continue;
+    if (WV2 && walls.length) { const mg = TG ? .9 : .3, inside = (x, y) => x < mg || y < mg || x > NN - mg || y > NN - mg || walls.some(w => w.hp > 0 && Math.abs(x - w.x0 - .5) < (w.dir === "v" ? .3 : .72) && Math.abs(y - w.y0 - .5) < (w.dir === "v" ? .72 : .3));
+      mob.forEach(e => { if (!walls.some(w => w.hp > 0 && Math.abs(e.x - w.x0 - .5) < (w.dir === "v" ? .3 : .72) && Math.abs(e.y - w.y0 - .5) < (w.dir === "v" ? .72 : .3)) || e.ghostT > t) return; // v2: a soldier inside a fence (or wedged where two meet) steps to the nearest clear spot
+        for (let r = .08; r <= 1.2; r += .08) { let done = false; for (let k = 0; k < 16; k++) { const a = k * Math.PI / 8, x = e.x + dcos(a) * r, y = e.y + dsin(a) * r; if (!inside(x, y)) { e.x = x; e.y = y; done = true; break; } } if (done) break; } }); }
+    if (walls.length) mob.forEach(e => { for (const w of walls) { if (w.hp <= 0 || (!WV2 && !hostile(e.pid, w.pid))) continue;
+      if (WV2) continue;
       if (e.x > w.x0 && e.x < w.x0 + 1 && e.y > w.y0 && e.y < w.y0 + 1) { const l = e.x - w.x0, r = w.x0 + 1 - e.x, u = e.y - w.y0, b = w.y0 + 1 - e.y, m = Math.min(l, r, u, b);
         if (m === l) e.x = w.x0 - .23; else if (m === r) e.x = w.x0 + 1.23; else if (m === u) e.y = w.y0 - .23; else e.y = w.y0 + 1.23; } } });
     { const mg = TG ? .9 : .3; mob.forEach(e => { e.x = Math.max(mg, Math.min(NN - mg, e.x)); e.y = Math.max(mg, Math.min(NN - mg, e.y)); if (TG) settle(e); }); }
+    if (SD2 && sdOn()) { const lim = sd.r - .35, ax = NN / 2, ay = NN / 2; mob.forEach(e => { const dx = e.x - ax, dy = e.y - ay, rr = hyp(dx, dy); if (rr > lim) { e.x = ax + dx / rr * lim; e.y = ay + dy / rr * lim; if (TG) settle(e); } }); } // nobody leaves the ring
     if (tick % 2 === 0) record();
     const alive = alivePlayers();
     if (sdOn() && t >= sd.go) { // last side standing wins; when time runs out, the side with the most health left
@@ -1142,5 +1183,5 @@ function runBattle(plans, seed, opts = {}) {
     : []; if (!BV) order.forEach(a => order.forEach(b => { if (a < b && P[a].alive && P[b].alive && P[a].pacts.has(b)) pairsEnd.push(a + "|" + b); }));
   const trapsUsed = traps.filter(tr => tr.used && !tr.ranger).map(tr => tr.pid + "|" + Math.round(tr.y - .5) + "," + Math.round(tr.x - .5));
   order.forEach(pid => { const c = P[pid].castle; st(pid).castleEnd = c && c.maxhp ? Math.max(0, c.hp) / c.maxhp : 0; });
-  return { stats: ST, twist: TW, ...(sdOn() ? { sudden: { t0: sd.t0, go: sd.go } } : {}), ...(V3 && !opts.duel ? { waves: true } : {}), me: mePid, feudsNew: [...feudsNew], trapsUsed, awards, ultCast: order.filter(pid => P[pid].ultCast), lvl: lvlOut, rapierEnd: rapierOwner ? rapierHolder : null, rapier: rapierOwner && rapierHolder && rapierHolder !== rapierOwner ? { from: rapierOwner, to: rapierHolder } : null, pairsEnd, team: teamWin, wallMeta: walls.map(w => ({ pid: w.pid, x: w.x0, y: w.y0, dir: w.dir, maxhp: w.maxhp, tier: w.tier, ...(w.born != null ? { born: w.born } : {}) })), tel, frames, events, cdlog, xplog, logs, hl, ranks: RANKS, meta: meta(), results, order, colors: Object.fromEntries(order.map(p => [p, P[p].color])), traps, duration: t };
+  return { stats: ST, twist: TW, ...(sdOn() ? { sudden: { t0: sd.t0, go: sd.go, ...(SD2 ? { r: sd.r } : {}) } } : {}), ...(V3 && !opts.duel ? { waves: true } : {}), me: mePid, feudsNew: [...feudsNew], trapsUsed, awards, ultCast: order.filter(pid => P[pid].ultCast), lvl: lvlOut, rapierEnd: rapierOwner ? rapierHolder : null, rapier: rapierOwner && rapierHolder && rapierHolder !== rapierOwner ? { from: rapierOwner, to: rapierHolder } : null, pairsEnd, team: teamWin, wallMeta: walls.map(w => ({ pid: w.pid, x: w.x0, y: w.y0, dir: w.dir, maxhp: w.maxhp, tier: w.tier, ...(w.born != null ? { born: w.born } : {}) })), tel, frames, events, cdlog, xplog, logs, hl, ranks: RANKS, meta: meta(), results, order, colors: Object.fromEntries(order.map(p => [p, P[p].color])), traps, duration: t };
 }

@@ -73,7 +73,7 @@ function dockStats(m) {
   const S = (id, ic, v, sub = "") => `<button class="ud-stat" data-act="dtip" data-v="s:${id}"><em>${ic}</em><b>${v}</b>${sub ? `<small>${sub}</small>` : ""}</button>`;
   if (m.kind === "totem") return S("heal", "✚", `${Math.round(m.heal)}/s`) + S("arm", "🛡", ARMOUR_TYPES[m.armour] || "Medium");
   return S("atk", "⚔", Math.round(m.atk), m.atype ? ATK_TYPES[m.atype].name : "") + S("arm", "🛡", ARMOUR_TYPES[m.armour] || "–", Math.round(m.armor * 100) + "%") + S("as", "⏱", m.as.toFixed(2) + "s")
-    + S("rng", "➶", m.range > 1.5 ? m.range.toFixed(1) : "Melee") + (m.kind === "castle" ? "" : S("spd", "👢", m.spd.toFixed(2)))
+    + S("rng", "➶", m.range > 1.5 ? m.range.toFixed(1) : "Melee") + (m.kind === "castle" || m.spd === 0 ? "" : S("spd", "👢", m.spd.toFixed(2)))
     + (m.evade ? S("evd", "≋", Math.round(m.evade * 100) + "%") : m.heal && m.kind === "unit" ? S("heal", "✚", Math.round(m.heal)) : m.lvl && m.kind === "champ" ? `<button class="ud-stat" id="udlvl" data-act="dtip" data-v="s:lvl"><em>★</em><b>Level ${m.lvl}</b></button>` : "");
 }
 function replaySrc(k) { const d = dockModel(k); return { m: d.m, color: d.color, who: d.who, title: d.title, role: d.role, ranks: ranksNow(k, d.m), cd: key => cdState(k, key, replay.time), xp: true }; }
@@ -150,9 +150,17 @@ function tickReplay(ms) {
     replay.time += dt * replay.speed;
     if (!replay.reel) { replay.bdone = replay.bdone || {}; const bt = (replay.res.hl || []).find(h => h.kind === "betray" && h.t > t0 && h.t <= replay.time && !replay.bdone[h.t]); // freeze on the betrayal
       if (bt) { replay.bdone[bt.t] = 1; replay.time = bt.t; replay.playing = false; betrayCinematic(bt, replay.res, () => { if (replay) replay.playing = true; }); return; } }
-    try { const E = replay.res.events || [], me = replay.res.me; if (replay.time - t0 < .6) for (let i = lowerBound(E, t0); i < E.length && E[i].t <= replay.time; i++) if (E[i].ty === "lvl" && E[i].t > t0) { const m = replay.res.meta[E[i].id]; MUSIC.sfx("levelup", m && m.pid === me ? 1 : .3); } } catch (e) {}
+    try { const E = replay.res.events || [], me = replay.res.me; if (replay.time - t0 < .6) for (let i = lowerBound(E, t0); i < E.length && E[i].t <= replay.time; i++) if (E[i].t > t0) { const ev = E[i]; // the sounds of the fight: one per kind of event, rate-limited inside MUSIC.sfx
+      if (ev.ty === "lvl") { const m = replay.res.meta[ev.id]; MUSIC.sfx("levelup", m && m.pid === me ? 1 : .3); }
+      else if (ev.ty === "atk") MUSIC.sfx(ev.k === "r" ? "twang" : ev.k === "c" ? "magic" : "clash", .5);
+      else if (ev.ty === "die") { const m = replay.res.meta[ev.id]; MUSIC.sfx(m && m.kind === "castle" ? "castle" : "die", m && m.kind === "champ" ? 1 : .6); }
+      else if (ev.ty === "spell") MUSIC.sfx("magic", .8);
+      else if (ev.ty === "ultfx" || (ev.ty === "aoe" && ev.r >= 1.5)) MUSIC.sfx("boom", .8);
+      else if (ev.ty === "sudden") MUSIC.sfx("horn", 1); } } catch (e) {}
     if (replay.time >= replay.res.duration) { replay.time = replay.res.duration; replay.playing = false; if (!replay.done) { replay.done = true; const fin = () => { if (reportBack) leaveBattle(); else open("results"); }; const R0 = replay.res, board = () => standingsAnim(R0, fin); if (replay.reel) fin(); else if (!R0.awards) board(); else victoryCeremony(R0, board); } }
   }
+  { const sdn = replay.res && replay.res.sudden, inArena = !!(sdn && replay.time >= sdn.t0); // sudden death always swings the camera to the arena once, even if the viewer was steering it themselves
+    if (inArena && !replay.sdCam) { replay.auto = true; replay.camMode = null; } replay.sdCam = inArena; }
   if (replay.auto) autoCam();
   updateReplayUI();
 }

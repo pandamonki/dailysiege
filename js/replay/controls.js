@@ -17,8 +17,8 @@ function autoCam() {
   let fi = -1; if (heroDown && !castleAlive && !arena) { fi = up(replay.fi) ? replay.fi : -1; if (fi < 0) { let bd = 1e9; R.meta.forEach((m, i) => { if (!up(i)) return; const dd = Math.hypot(f.d[i * 4] - N / 2, f.d[i * 4 + 1] - N / 2); if (dd < bd) { bd = dd; fi = i; } }); } replay.fi = fi; }
   const mode = arena ? "arena" : hit ? "base" : heroDown ? (castleAlive ? "base" : fi >= 0 ? "other" : "field") : "hero";
   let x, y, z = 1.7;
-  if (mode === "arena") { // the whole arena in one screen, sitting below the banner
-    const E = 3 + R.order.length * .4 + 4.2, fit = Math.min(vw, vh * .7) / (2 * E * ts); z = Math.max(minZoom(), Math.min(2.4, fit)); x = N / 2; y = N / 2 - vh * .1 / z / ts + .3; }
+  if (mode === "arena") { // the whole arena and every army in one screen
+    const E = (R.sudden.r || sdArenaR(R.order.length, false)) + 1, fit = Math.min(vw, vh * .8) / (2 * E * ts); z = Math.max(minZoom(), Math.min(2.6, fit)); x = N / 2; y = N / 2 + .3; } // centred, so the countdown sits over the middle of the arena
   else if (mode === "base") { x = f.d[cb]; y = f.d[cb + 1]; z = 1.35; } else if (mode === "hero") { x = f.d[hb]; y = f.d[hb + 1]; } else if (mode === "other") { x = f.d[fi * 4]; y = f.d[fi * 4 + 1]; } else { x = y = 0; z = 0; }
   if (mode !== "field" && !(Number.isFinite(x) && Number.isFinite(y))) return; // nothing to follow yet (the first frame has no positions)
   if (z) { replay.zbase = z; z *= mode === "arena" ? autoZoomMul() / AUTO_ZOOM_START : autoZoomMul(); } // the arena already fits the whole ring // the viewer's own zoom is kept on top of the camera's, so zooming does not break the auto camera
@@ -70,7 +70,5 @@ function updateReplayUI() {
     document.getElementById("ticker").innerHTML = L.slice(Math.max(0, n - 1), n).reverse().map((l, j) => `<li class="${l.kind}${j ? "" : " new"}"><span>${fmt(l.t)}</span>${esc(l.msg)}</li>`).join("");
   }
   updateInspector();
-  let big = null; for (let j = n - 1; j >= 0; j--) { if (replay.time - L[j].t > 2.8) break; if (L[j].kind === "big") { big = L[j]; break; } }
-  const bn = document.getElementById("banner");
-  if (big) { bn.textContent = big.msg; bn.hidden = false; } else bn.hidden = true;
+  document.getElementById("banner").hidden = true; // announcements show in the ticker below the map, not over the fighting
 }
