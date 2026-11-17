@@ -5,7 +5,7 @@
 const RELEASES = [
   { id: "1.7", title: "What's new in v1.7", sub: "Walls that matter, a tighter sudden death, and easier defences", items: [
     ["🧱", "Walls block everyone", "From the 19 Nov battle your own soldiers walk round your walls too, through the gaps you leave. No more free shield to fight from."],
-    ["🔨", "Build walls on the map", "Base, Defences, Walls: tap tile after tile to build, paying for each one. Tap Turn to switch which way they run."],
+    ["🔨", "Build walls on the map", "Base, Defences, Walls: tap tile after tile to build, paying for each one. Walls next to each other line up and join into one wall, corners included."],
     ["🗼", "Tower 1 and Tower 2", "Buy, upgrade and sell each tower from its own slot in Defences, or tap Upgrade on the tower itself."],
     ["📌", "Walls and towers stay put", "They can't be moved. Sell one and build it again somewhere else. Traps can still be moved."],
     ["🔍", "Defence details", "Tap a fence, trap or tower on the map to see its health, damage and range."],

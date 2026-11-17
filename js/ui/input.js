@@ -100,7 +100,12 @@ function buildWallAt(r, q) {
   if (!inZone(r, q)) { toast("Walls go inside your fenced field."); return; }
   if (!wallFree(r, q, WALL_BUILD.dir, null)) { toast("That tile isn't free."); return; }
   if (!routeOpen(key, null)) { toast(NO_BLOCK); return; }
-  S.gold -= WALL_COST; const id = "w" + idc++; S.walls.push({ id, dir: WALL_BUILD.dir }); S.place[key] = id;
+  // a wall next to another of yours runs the same way as the join: side by side runs across, one above the other runs up and down; a lone neighbour turns to meet it
+  const at = (a, b) => { const ref = S.place[`${a},${b}`]; return ref && findWall(ref) ? findWall(ref) : null; }, side = [at(r, q - 1), at(r, q + 1)].filter(Boolean), updn = [at(r - 1, q), at(r + 1, q)].filter(Boolean);
+  const dir = side.length ? "h" : updn.length ? "v" : WALL_BUILD.dir;
+  S.gold -= WALL_COST; const id = "w" + idc++; S.walls.push({ id, dir }); S.place[key] = id;
+  const lone = w => { const [a, b] = placedAt(w.id).split(",").map(Number); return [at(a - 1, b), at(a + 1, b), at(a, b - 1), at(a, b + 1)].filter(Boolean).length === 1; };
+  side.forEach(w => { if (lone(w)) w.dir = "h"; }); updn.forEach(w => { if (lone(w)) w.dir = "v"; });
   const left = lim - S.walls.length; toast(left ? `Wall built (−${WALL_COST}g). ${left} more allowed.` : `Wall built. That's all ${lim}.`);
   if (!left || avail() < WALL_COST) WALL_BUILD = null;
 }

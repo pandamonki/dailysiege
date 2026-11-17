@@ -178,6 +178,7 @@ const PATCHES = [
   ], changes: [
     "Defences: traps are bought here and then moved or sold from the map. Walls are built straight onto the map: tap Walls, then tap tile after tile, paying for each. Tower 1 and Tower 2 each have a slot to buy, upgrade or sell them.",
     "Walls and towers can't be moved. Sell one and build it again elsewhere. A wall can still be turned where it stands.",
+    "Walls built next to each other turn to line up with each other, and joined walls are drawn as one cohesive wall, with proper corners at L-shaped bends.",
     "Tapping a fence, trap or tower on the map shows its health, damage or range in the strip, with Turn, Move, Upgrade and Sell buttons as they apply. Selling asks you to tap again to be sure.",
     "The details strip stays small and no longer opens over the map when tapped.",
     "Sudden death: the camera always swings to the arena, and the countdown sits in the middle of the screen.",
