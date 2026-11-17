@@ -506,13 +506,13 @@ h3 .cnt { font: 700 13px/1 var(--f-body); font-style: normal; color: var(--parch
 .ktip small { display: block; color: var(--ink-soft); } .ktip p { margin: 2px 0 0; }
 /* the end of a war: podium, standings with each day's points, prizes, hall of fame */
 .warend .podium { display: grid; grid-template-columns: 1fr 1.15fr 1fr; align-items: end; gap: 6px; margin: 4px 0 10px; }
-.pd { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; min-width: 0; }
-.pd .pdh { width: 56px; height: 70px; image-rendering: pixelated; object-fit: contain; }
-.pd1 .pdh { width: 72px; height: 90px; animation: vbob 1.2s ease-in-out infinite; }
-.pd b { font-size: 14px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .pd small { font-size: 12px; color: var(--ink-soft); }
+.pod { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; min-width: 0; }
+.pod .pdh { width: 56px; height: 70px; image-rendering: pixelated; object-fit: contain; }
+.pod1 .pdh { width: 72px; height: 90px; animation: vbob 1.2s ease-in-out infinite; }
+.pod b { font-size: 14px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .pod small { font-size: 12px; color: var(--ink-soft); }
 .pdb { width: 100%; border-radius: 8px 8px 0 0; background: linear-gradient(var(--c), color-mix(in srgb, var(--c) 55%, #1e140c)); border: 2px solid var(--wood-dark); display: grid; place-items: center; color: #fff; font: 700 22px/1 var(--f-display); text-shadow: 0 2px 0 rgba(0,0,0,.4); }
-.pd1 .pdb { height: 78px; } .pd2 .pdb { height: 56px; } .pd3 .pdb { height: 40px; }
-.pd.empty { visibility: hidden; }
+.pod1 .pdb { height: 78px; } .pod2 .pdb { height: 56px; } .pod3 .pdb { height: 40px; }
+.pod.empty { visibility: hidden; }
 .wbtns .btn { flex: 1; }
 .wrow { display: grid; grid-template-columns: 22px 14px minmax(0, 1fr) 76px 36px; gap: 6px; align-items: center; width: 100%; padding: 5px 4px; border: 0; border-radius: 6px; background: none; font: inherit; color: var(--ink); text-align: left; cursor: pointer; }
 .wrow:nth-of-type(odd) { background: rgba(62,39,20,.06); } .wrow.me { background: rgba(201,150,47,.22); } .wrow.on { outline: 2px solid var(--wood-dark); }
