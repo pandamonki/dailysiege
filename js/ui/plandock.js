@@ -36,6 +36,10 @@ function planSrc(p) {
   }
   if (p.t === "wall" || p.t === "trap") {
     const w = p.t === "wall" ? findWall(p.id) : findTrap(p.id); if (!w) return null;
+    if (p.t === "trap" && w.type === "tower") { // a tower fights like a soldier that never moves: show its health and stats the same way
+      const k = towerKey(w), b = UNITS[k], sim = UNIT_SIM[k] || {}, ty = UNIT_TYPES[k] || [];
+      return { m: { kind: "unit", key: k, tower: true, maxhp: b.hp, hp: b.hp, atk: b.atk, atype: ty[0], armour: ty[1], armor: sim.armor || 0, as: sim.as || 1, range: sim.range || 3.5, spd: 0 }, color: MY_COLOR, who: "You", title: b.name, role: "Stationary defender", ranks: {}, cd: none };
+    }
     return { thing: true, title: p.t === "wall" ? "Fence" : trapName(w), role: p.t === "wall" ? "Blocks the way" : (w.type === "tower" ? "Stationary defender" : "Permanent trap"), color: MY_COLOR, img: p.t === "wall" ? wallPortrait(Math.min(3, S.castle || 1)) : w.type === "tower" ? spriteURL(towerKey(w)) : trapURL(w.type), note: p.t === "trap" ? (w.type === "tower" ? UNITS[towerKey(w)].note : TRAPS[w.type].note) : "Enemy soldiers cannot walk through it. They go round, or hack it down." };
   }
   return null;
@@ -67,7 +71,7 @@ function renderPlanDock() {
     ud.hidden = true; tipEl.hidden = true; document.body.classList.remove("pdx"); return;
   }
   const m = src.m, img = portraitFor(m, src.color), hpf = Math.max(0, Math.min(1, m.hp / m.maxhp));
-  const st = `<span>⚔ <b>${Math.round(m.atk)}</b></span><span>🛡 <b>${ARMOUR_TYPES[m.armour] || "–"}</b></span>${m.kind === "castle" ? `<span>➶ <b>${m.range.toFixed(1)}</b></span>` : `<span>👢 <b>${m.spd.toFixed(2)}</b></span>`}`;
+  const st = `<span>⚔ <b>${Math.round(m.atk)}</b></span><span>🛡 <b>${ARMOUR_TYPES[m.armour] || "–"}</b></span>${m.kind === "castle" || m.tower ? `<span>➶ <b>${m.range.toFixed(1)}</b></span>` : `<span>👢 <b>${m.spd.toFixed(2)}</b></span>`}`;
   el.innerHTML = `<div class="pd"><button class="pd-main" data-act="pexp" aria-label="Show full details"><span class="pd-por" style="--c:${src.color}">${img ? `<img alt="" src="${img}">` : m.kind === "castle" ? `<img class="art" alt="" src="icons/ui/castle${m.ctier}.webp">` : `<b class="gl">W</b>`}${m.lvl ? `<i class="lv">${m.lvl}</i>` : ""}</span>
     <span class="pd-info"><span class="pd-nm"><b>${esc(src.title)}</b>${m.kind === "unit" ? "" : `<small>${esc(src.role)}</small>`}</span><span class="pd-bar${src.rival ? " bad" : ""}"><i style="width:${hpf * 100}%"></i><span>${Math.round(m.hp)} / ${Math.round(m.maxhp)}</span></span><span class="pd-stats">${st}</span></span></button>
     <div class="pd-act">${acts.map(pdBtn).join("")}</div></div>`;

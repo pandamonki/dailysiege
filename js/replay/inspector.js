@@ -73,7 +73,7 @@ function dockStats(m) {
   const S = (id, ic, v, sub = "") => `<button class="ud-stat" data-act="dtip" data-v="s:${id}"><em>${ic}</em><b>${v}</b>${sub ? `<small>${sub}</small>` : ""}</button>`;
   if (m.kind === "totem") return S("heal", "✚", `${Math.round(m.heal)}/s`) + S("arm", "🛡", ARMOUR_TYPES[m.armour] || "Medium");
   return S("atk", "⚔", Math.round(m.atk), m.atype ? ATK_TYPES[m.atype].name : "") + S("arm", "🛡", ARMOUR_TYPES[m.armour] || "–", Math.round(m.armor * 100) + "%") + S("as", "⏱", m.as.toFixed(2) + "s")
-    + S("rng", "➶", m.range > 1.5 ? m.range.toFixed(1) : "Melee") + (m.kind === "castle" ? "" : S("spd", "👢", m.spd.toFixed(2)))
+    + S("rng", "➶", m.range > 1.5 ? m.range.toFixed(1) : "Melee") + (m.kind === "castle" || m.spd === 0 ? "" : S("spd", "👢", m.spd.toFixed(2)))
     + (m.evade ? S("evd", "≋", Math.round(m.evade * 100) + "%") : m.heal && m.kind === "unit" ? S("heal", "✚", Math.round(m.heal)) : m.lvl && m.kind === "champ" ? `<button class="ud-stat" id="udlvl" data-act="dtip" data-v="s:lvl"><em>★</em><b>Level ${m.lvl}</b></button>` : "");
 }
 function replaySrc(k) { const d = dockModel(k); return { m: d.m, color: d.color, who: d.who, title: d.title, role: d.role, ranks: ranksNow(k, d.m), cd: key => cdState(k, key, replay.time), xp: true }; }
