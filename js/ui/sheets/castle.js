@@ -24,7 +24,7 @@ const ISH_PAGE = 12;
 const TRAP_ICON = k => ({ spike: "trap_spike", snare: "trap_snare", bell: "trap_bell" }[k]);
 const trapImg = k => ART.trap[k] || (TRAP_ICON(k) ? `icons/ui/${TRAP_ICON(k)}.webp` : trapURL(k));
 // what each trap does in the battle (the numbers the battle uses)
-const TRAP_STATS = { spike: [["Damage", `${TRAP_DMG.spike}, ignores armour`], ["Hits", "The first enemy to step in"]], snare: [["Damage", "None"], ["Holds", "The first enemy, for 3 seconds"]], blade: [["Damage", `${TRAP_DMG.blade} to each enemy`], ["Hits", "Everyone in a lane 2 to 4 tiles long"]] };
+const TRAP_STATS = { spike: [["Damage", `${TRAP_DMG.spike}, ignores armour`], ["Hits", "The first enemy to step in"]], snare: [["Damage", "None"], ["Holds", "The first enemy, for 3 seconds"]], bomb: [["Damage", `${TRAP_DMG.bomb} to each enemy, ignores armour`], ["Hits", `Everyone within ${BOMB_R} tiles`]], sand: [["Damage", "None"], ["Holds", `Siege engines only, for ${SAND_SECS} seconds`]], tower: [["Health", `${UNITS.tower.hp}, more with castle tier`], ["Damage", `${UNITS.tower.atk} a shot, from ${UNIT_SIM.tower.range} tiles`], ["Moves", "Never"]], blade: [["Damage", `${TRAP_DMG.blade} to each enemy`], ["Hits", "Everyone in a lane 2 to 4 tiles long"]] };
 const canBanner = () => !isLive() || DAY === 1;
 const ctNow = () => S.castle || 1;
 const rapierTaken = k => isLive() && Object.entries(LIVE.players || {}).some(([uid, p]) => uid !== LIVE.uid && p && p.state && (p.state.items || []).includes(k));
@@ -41,7 +41,7 @@ function castleSheet() {
   let body = "";
   if (tab === "recruit") { const pk = sheet.pick || "footman", pu = UNITS[pk], need = UNIT_TIER[pk], lk = ct < need, sCap = false;
     body = `<p class="muted">Field <b>${fieldCount()}/${S.slots}</b> · ${S.owned.filter(u => placedAt(u.id)).length} placed · Garrison <b>${garrisonCount()}/${garrisonCap()}</b>. ${supplyV2Now() ? `You can field ${FIELD_MAX} soldiers. More wait in the reinforcement waves you have unlocked and march out later.` : "Soldiers beyond your field supply wait in the garrison and march out in waves."}</p>
-    <div class="ugrid shopg">${Object.entries(UNITS).filter(([, u]) => !u.merc).map(([k, u]) => tile("upick", k, pk === k, spriteURL(k), u.name, { price: u.cost, lk: ct < UNIT_TIER[k] })).join("")}</div>
+    <div class="ugrid shopg">${Object.entries(UNITS).filter(([, u]) => !u.merc && !u.tower).map(([k, u]) => tile("upick", k, pk === k, spriteURL(k), u.name, { price: u.cost, lk: ct < UNIT_TIER[k] })).join("")}</div>
     ${udet(pu.name, pu.cost, `<p>${pu.note}</p><p>${IC.hp(pu.hp)} ${IC.atk(pu.atk)}</p>${typeInfo(UNIT_TYPES[pk], "u-" + pk)}${lk ? `<p class="muted">Needs a ${tierName(need)}.</p>` : ""}`)}
     ${abar(`<button class="btn wax" data-act="buy" data-v="${pk}" ${dis(lk || full || sCap || avail() < pu.cost)}>${lk ? `Needs a ${tierName(need)}` : full ? (supplyV2Now() ? (wavesOpen() < WAVE_COUNT ? "Field full: unlock a wave" : "Field and waves full") : "Barracks and garrison full") : sCap ? `Siege limit ${SIEGE_MAX}` : `Recruit · ${pu.cost}g`}</button>`)}`; }
   if (tab === "garrison") { // the Train tab: pick a soldier, see its stats now and after training, then train or sell. The picked soldier's panel is always pinned at the bottom.
@@ -115,8 +115,8 @@ function castleSheet() {
       bar = room > 0 ? `<span class="stepper qty"><button class="btn small" data-act="wn" data-v="-1" ${dis(n <= 1)}>−</button><b>×${n}</b><button class="btn small" data-act="wn" data-v="1" ${dis(n >= room || n >= aff)}>+</button></span><button class="btn wax" data-act="wallbuy" data-v="${n}" ${dis(avail() < WALL_COST * n)}>Build ${n} · ${WALL_COST * n}g</button>` : `<button class="btn wax" disabled>All ${lim} walls built</button>`; }
     else if (wm) { const i = S.walls.indexOf(wm); det = udet(`Wall ${i + 1}`, null, `<div class="statrows">${rows([["Health", `${wt.hp} HP`], ["Where", placedAt(wm.id) ? "Standing in your field" : "Waiting to be placed"]])}</div>`);
       bar = `<button class="btn wax" data-act="open" data-v="wall" data-k="${wm.id}">Manage</button>`; }
-    else { const t = TRAPS[dk]; det = udet(t.name, t.cost, `<p>${t.note}</p><div class="statrows">${rows(TRAP_STATS[dk] || [])}</div><p class="muted">Permanent. Buy once, it fires once every battle. You own ${S.traps.length} of ${TRAP_CAP}.</p>`);
-      bar = `<button class="btn wax" data-act="trap" data-v="${dk}" ${dis(avail() < t.cost || S.traps.length >= TRAP_CAP)}>Buy · ${t.cost}g</button>`; }
+    else { const t = TRAPS[dk]; det = udet(t.name, t.cost, `<p>${t.note}</p><div class="statrows">${rows(TRAP_STATS[dk] || [])}</div><p class="muted">${dk === "tower" ? "Permanent. Buy once. It never moves, and grows stronger with your castle tier." : "Permanent. Buy once, it fires once every battle."} You own ${trapCount(dk === "tower")} of ${dk === "tower" ? TOWER_CAP : TRAP_CAP}.</p>`);
+      bar = `<button class="btn wax" data-act="trap" data-v="${dk}" ${dis(avail() < t.cost || !trapRoom(dk))}>Buy · ${t.cost}g</button>`; }
     body = `<div class="ugrid shopg">${Object.entries(TRAPS).map(([k, t]) => tile("dsel", k, dk === k, trapImg(k), t.name, { price: t.cost })).join("")}${tile("dsel", "wall+", isW, `icons/ui/wall${ct}.webp`, "Wall", { price: WALL_COST })}${S.walls.map((w, i) => tile("dsel", w.id, dk === w.id, `icons/ui/wall${ct}.webp`, `Wall ${i + 1}`, { own: 1 })).join("")}</div>${det}${abar(bar)}`;
   }
   if (sheet.lobby) return head(null, "Coat of arms", "Shown on your castle and banner all war") + `<div class="body">${body}<div class="row"><button class="btn wax" data-act="lobbydone">Done</button></div></div>`;

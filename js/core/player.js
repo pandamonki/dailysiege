@@ -84,6 +84,7 @@ const garrisonPlan = () => (S.garrison || []).map((w, i) => !waveOpen(i) ? { whe
 const pieces = () => ["champ", ...S.owned.filter(u => !inGarrison(u.id)).map(u => u.id), ...(S.walls || []).map(w => w.id), ...S.traps.map(t => t.id)];
 const unplaced = () => pieces().filter(p => !placedAt(p));
 const findUnit = id => S.owned.find(u => u.id === id);
+const trapCount = tower => S.traps.filter(t => (t.type === "tower") === tower).length, trapRoom = k => trapCount(k === "tower") < (k === "tower" ? TOWER_CAP : TRAP_CAP);
 const findTrap = id => S.traps.find(t => t.id === id);
 const findWall = id => (S.walls || []).find(w => w.id === id);
 function pieceName(ref) {

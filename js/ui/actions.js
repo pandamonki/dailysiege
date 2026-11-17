@@ -82,7 +82,7 @@ const A = {
   up: id => { const u = findUnit(id), c = upgradeCost(u); if (u.lvl < 3 && avail() >= c && ctNow() >= UNIT_LVL_TIER[u.lvl]) { S.gold -= c; u.lvl++; } },
   wunlock: () => { if (S.locked) { toast("Draft new orders to change your garrison."); return; } ensureGarrison(); const c = waveUnlockCost(); if (!supplyV2Now() || c == null) return; if (avail() < c) { toast("Not enough gold."); return; } S.gold -= c; S.wavesOpen = wavesOpen() + 1; toast(`Wave ${S.wavesOpen} unlocked: ${WAVE_SLOTS} more soldiers can march out later in the battle.`); },
   slot: () => { if (supplyV2Now()) return; const c = slotCost(S.slots); if (avail() >= c && S.slots < SLOT_MAX) { S.gold -= c; S.slots++; } },
-  trap: k => { const t = TRAPS[k]; if (avail() < t.cost) return; if (S.traps.length >= TRAP_CAP) { toast(`You can own ${TRAP_CAP} traps. Sell one first.`); return; } S.gold -= t.cost; const id = "t" + idc++; S.traps.push({ id, type: k }); sel = id; sheet = null; toast(`${t.name} bought. Tap a glowing tile.`); },
+  trap: k => { const t = TRAPS[k]; if (avail() < t.cost) return; if (!trapRoom(k)) { toast(`You can own ${k === "tower" ? TOWER_CAP + " towers" : TRAP_CAP + " traps"}. Sell one first.`); return; } S.gold -= t.cost; const id = "t" + idc++; S.traps.push({ id, type: k }); sel = id; sheet = null; toast(`${t.name} bought. Tap a glowing tile.`); },
   help: () => { sheet.help = !sheet.help; },
   shop: () => { open("castle"); sheet.tab = "shop"; },
   gdone: () => { if (S.ob === 1) { S.ob = 2; sheet = null; showHeroPick(() => { A.obnext(); render(); }); } else sheet = null; },

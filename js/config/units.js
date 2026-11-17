@@ -10,21 +10,26 @@ const UNITS = {
   sniper:  { name: "Dwarven Sniper", cost: 220, hp: 170, atk: 48, note: "Slow, deadly shots from very far away. Great against light targets and heroes, poor against heavy armour." },
   ram:     { name: "Battering Ram", cost: 300, hp: 750, atk: 125, note: "Pushes slowly at castles and ignores soldiers. Hits castles hard, taking about 5 seconds to bring down a tier 1 castle, then moves on to the next one. Very tough.", engine: true },
   cart:    { name: "Powder Cart", cost: 300, hp: 240, atk: 0, note: "Rolls very slowly at a castle and blows up, enough to flatten a tier 1 castle. The blast hurts every soldier nearby, friend or foe, and also goes off if the cart is destroyed. Can't be trained.", noUpgrade: true, engine: true },
+  tower:   { name: "Guard Tower", cost: 150, hp: 400, atk: 12, note: "A stationary defender.", tower: true, noUpgrade: true },
   catapult: { name: "Catapult", cost: 300, hp: 450, atk: 110, note: "Very slow. Sets up two tiles from a castle, then hurls boulders at it. Hits castles hard from a distance, but cannot fight soldiers, so guard it.", engine: true },
 };
 const UNIT_LVL_GAIN = .3; // each soldier level adds this share of base health and attack
 const UNIT_TRAIN_COST = [.3, .4]; // training to level 2 and to level 3 costs this share of the soldier's price
 const trainCost = (type, lvl) => Math.round(UNITS[type].cost * (UNIT_TRAIN_COST[lvl - 1] || 0)); // gold to train a level-lvl soldier one level up
-const UNIT_TIER = { footman: 1, bowman: 1, knight: 3, raider: 2, healer: 2, mage: 2, sniper: 3, ram: 3, cart: 3, catapult: 3 }; // castle tier that unlocks each soldier
+const UNIT_TIER = { tower: 1, footman: 1, bowman: 1, knight: 3, raider: 2, healer: 2, mage: 2, sniper: 3, ram: 3, cart: 3, catapult: 3 }; // castle tier that unlocks each soldier
 const UNIT_LVL_TIER = [1, 1, 1]; // soldiers can be trained to any level at any castle tier; only weapon and armour upgrades are gated
 // Traps are permanent from TRAPS_V2_FROM: you buy one once, it stays where you put it and fires once in every battle. At most TRAP_CAP per lord.
 // Plans fought from that day are stamped trapV2 and use the stronger damage; older battles replay with the old numbers.
 let TRAPS_V2_FROM = "2026-11-17"; const trapsV2For = d => String(d) >= TRAPS_V2_FROM;
-const TRAP_CAP = 4, TRAP_DMG = { spike: 150, blade: 90 }, TRAP_DMG_V1 = { spike: 90, blade: 60 };
+const TRAP_CAP = 4, TOWER_CAP = 2, TRAP_DMG = { spike: 150, blade: 90, bomb: 100 }, TRAP_DMG_V1 = { spike: 90, blade: 60 };
+const BOMB_R = 1.6, SAND_SECS = 6; // the bomb hits everything this close to whoever sets it off; the sand pit holds a siege engine this long
 const TRAPS = {
   spike: { name: "Spike Pit",  cost: 60, note: `Deals ${TRAP_DMG.spike} damage, ignoring armour, to the first enemy to step in. Fires once each battle.` },
   snare: { name: "Snare",      cost: 40, note: "Holds the first enemy to step in for 3 seconds. No damage. Sets itself again each battle." },
   blade: { name: "Blade Trap",  cost: 90, note: `Fires a volley of blades across the lane at anyone who steps on it, dealing ${TRAP_DMG.blade} damage, ignoring armour, to each enemy in it. Fires once each battle.` },
+  bomb:  { name: "Bomb Trap",  cost: 110, note: `Explodes when an enemy steps on it, dealing ${TRAP_DMG.bomb} damage, ignoring armour, to every enemy within ${BOMB_R} tiles. Best against clumps. Fires once each battle.` },
+  sand:  { name: "Sand Pit",   cost: 80, note: `Only siege engines sink into it: a ram, catapult or powder cart is stuck for ${SAND_SECS} seconds. Soldiers walk over it. Sets itself again each battle.` },
+  tower: { name: "Guard Tower", cost: 150, note: "A stone tower that stands where you place it and shoots enemies in range. It never moves, so it holds the ground without pushing out. It gets stronger as your castle is upgraded. You can own 2." },
 };
 
 const UNIT_SIM = {
@@ -37,11 +42,12 @@ const UNIT_SIM = {
   sniper:  { range: 4.5, as: 2.4, spd: 1.0, armor: .1, shot: "#ffd27a" },
   ram:     { range: 1.1, as: 1.25, spd: .8, armor: .1 },
   cart:    { range: 1.0, as: 1, spd: .45, armor: 0 },
+  tower:   { range: 3.5, as: 1.3, spd: 0, armor: .25, shot: "#c8d8ff" },
   catapult: { range: 2, as: 3.5, spd: .5, armor: .05, rammer: 1 }, // sets up two tiles from a castle, then lobs a boulder every 3.5 seconds
 };
 
-const UNIT_TYPES = { catapult: ["siege", "heavy"], footman: ["blade", "medium"], bowman: ["pierce", "light"], knight: ["blade", "heavy"], healer: ["magic", "light"], raider: ["siege", "medium"], mage: ["magic", "light"], sniper: ["precision", "medium"], ram: ["siege", "heavy"], cart: ["siege", "heavy"] };
+const UNIT_TYPES = { tower: ["pierce", "heavy"], catapult: ["siege", "heavy"], footman: ["blade", "medium"], bowman: ["pierce", "light"], knight: ["blade", "heavy"], healer: ["magic", "light"], raider: ["siege", "medium"], mage: ["magic", "light"], sniper: ["precision", "medium"], ram: ["siege", "heavy"], cart: ["siege", "heavy"] };
 
-const BODY = { catapult: [.46, 4], footman: [.38, 3], guard: [.36, 2.6], militia: [.3, 1.5], knight: [.42, 4.5], raider: [.36, 2.2], mage: [.24, 1], sniper: [.28, 1.4], ram: [.46, 4.2], cart: [.42, 3.5], bowman: [.24, 1], healer: [.24, 1], wolf: [.26, 1.2],
+const BODY = { tower: [.4, 3.5], catapult: [.46, 4], footman: [.38, 3], guard: [.36, 2.6], militia: [.3, 1.5], knight: [.42, 4.5], raider: [.36, 2.2], mage: [.24, 1], sniper: [.28, 1.4], ram: [.46, 4.2], cart: [.42, 3.5], bowman: [.24, 1], healer: [.24, 1], wolf: [.26, 1.2],
   "c-warrior": [.38, 3.2], "c-mage": [.26, 1.1], "c-archer": [.26, 1.1], "c-shaman": [.28, 1.3], "c-rogue": [.26, 1.1] };
 const bodyOf = e => BODY[e.key] || [.3, 1.5];

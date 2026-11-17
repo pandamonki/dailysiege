@@ -199,6 +199,13 @@ function drawTrap(c, type, x, y, s) {
   } else if (type === "blade") {
     c.fillStyle = "#4a3a2a"; c.fillRect(x - s * .3, y - s * .12, s * .6, s * .24); c.fillStyle = "#1e140c"; [-.2, 0, .2].forEach(dx => c.fillRect(x + dx * s - s * .035, y - s * .08, s * .07, s * .16));
     c.fillStyle = "#d7dde2"; [-.2, 0, .2].forEach(dx => { c.beginPath(); c.moveTo(x + dx * s - s * .05, y - s * .1); c.lineTo(x + dx * s, y - s * .3); c.lineTo(x + dx * s + s * .05, y - s * .1); c.fill(); });
+  } else if (type === "bomb") {
+    c.fillStyle = "#2a2a2e"; c.beginPath(); c.arc(x, y + s * .06, s * .22, 0, 7); c.fill(); c.strokeStyle = "#c9a46a"; c.lineWidth = s * .05; c.beginPath(); c.moveTo(x + s * .1, y - s * .14); c.quadraticCurveTo(x + s * .2, y - s * .3, x + s * .3, y - s * .26); c.stroke();
+    c.fillStyle = "#ff8a3a"; c.beginPath(); c.arc(x + s * .3, y - s * .26, s * .06, 0, 7); c.fill();
+  } else if (type === "sand") {
+    c.fillStyle = "#c8ac6a"; c.beginPath(); c.ellipse(x, y + s * .08, s * .34, s * .17, 0, 0, 7); c.fill(); c.fillStyle = "#8a7440"; c.beginPath(); c.ellipse(x, y + s * .08, s * .18, s * .09, 0, 0, 7); c.fill();
+  } else if (type === "tower") {
+    c.fillStyle = "#8a8a90"; c.fillRect(x - s * .2, y - s * .18, s * .4, s * .38); c.fillRect(x - s * .26, y - s * .3, s * .52, s * .12); c.fillStyle = "#5a5a60"; [-.2, 0, .2].forEach(dx => c.fillRect(x + dx * s - s * .04, y - s * .36, s * .08, s * .08)); c.fillRect(x - s * .03, y - s * .06, s * .06, s * .16);
   } else {
     c.fillStyle = "#e2b33c"; c.beginPath(); c.moveTo(x - s * .22, y + s * .16); c.quadraticCurveTo(x - s * .2, y - s * .28, x, y - s * .28); c.quadraticCurveTo(x + s * .2, y - s * .28, x + s * .22, y + s * .16); c.closePath(); c.fill();
     c.strokeStyle = "#7a5a10"; c.lineWidth = s * .04; c.stroke();
