@@ -70,8 +70,5 @@ function updateReplayUI() {
     document.getElementById("ticker").innerHTML = L.slice(Math.max(0, n - 1), n).reverse().map((l, j) => `<li class="${l.kind}${j ? "" : " new"}"><span>${fmt(l.t)}</span>${esc(l.msg)}</li>`).join("");
   }
   updateInspector();
-  let big = null; for (let j = n - 1; j >= 0; j--) { if (replay.time - L[j].t > 2.8) break; if (L[j].kind === "big") { big = L[j]; break; } }
-  { const sdn = replay.res.sudden; if (sdn && replay.time >= sdn.t0 && replay.time < sdn.go + 1.4) big = null; } // the sudden death countdown has the middle of the screen to itself
-  const bn = document.getElementById("banner");
-  if (big) { bn.textContent = big.msg; bn.hidden = false; } else bn.hidden = true;
+  document.getElementById("banner").hidden = true; // announcements show in the ticker below the map, not over the fighting
 }

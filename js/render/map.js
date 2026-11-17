@@ -138,6 +138,29 @@ function drawFlag(c, x, y, w, h, color, t, em) {
   if (em && em !== "none") { const ex = x + w * .5, ey = y - h * .81 + Math.sin(t * 4 + 3) * h * .03, es = h * .14, dark = lumOf(color) > .5;
     c.save(); c.fillStyle = dark ? "#1e140c" : "#f4ead0"; c.strokeStyle = dark ? "#f4ead0" : "#1e140c"; c.lineWidth = Math.max(1, ts * .015); c.beginPath(); emblemPath(c, em, ex, ey, es); c.stroke(); c.fill(); c.restore(); }
 }
+// Castles as pixel sprites, in the same design the shape art had: a stone curtain wall with crenels, two corner towers with roofs in the owner's colour and a taller keep
+// (the crest and the flag are painted on top). A Fortress adds side walls with turrets, a Citadel gold trim and finials. 20.8 sprite pixels to a tile.
+const CASTLE_SPR = {};
+function castleSprite(tier, color) {
+  const id = tier + "|" + color; if (CASTLE_SPR[id]) return CASTLE_SPR[id];
+  const W = tier === 1 ? 26 : 34, H = 24, g = Array.from({ length: H }, () => Array(W).fill(null)), Y = 6; // rows are drawn 6 lower than the design grid, which had the flag above
+  const R = (x, y, w, h, c) => { for (let j = y - Y; j < y - Y + h; j++) for (let i = x; i < x + w; i++) if (g[j] && i >= 0 && i < W) g[j][i] = c; }, P = (x, y, c) => R(x, y, 1, 1, c);
+  const st = "#a39d8f", dk = "#6f6a5f", lt = "#bdb7a9", hi = "#d2cdc0", roof = color, roofD = mixHex(color, "#000000", .4), gold = "#e2b33c", door = "#4a2f17";
+  const o = tier === 1 ? 0 : 4, cx = o + 13;
+  if (tier >= 2) { R(0, 19, W, 9, dk); R(0, 19, W, 1, lt); for (let x = 0; x < W; x += 3) R(x, 17, 2, 2, st);
+    [[0, 15], [W - 4, 15]].forEach(([x, y]) => { R(x, y, 4, 13, st); R(x, y, 1, 13, lt); R(x + 3, y, 1, 13, dk); R(x, y - 3, 4, 3, roof); R(x + 1, y - 4, 2, 1, roof); R(x + 3, y - 3, 1, 3, roofD); }); }
+  R(o + 3, 15, 20, 13, st); R(o + 3, 15, 20, 1, lt); for (let x = o + 3; x < o + 23; x += 3) R(x, 13, 2, 2, st);
+  for (let y = 18; y < 28; y += 3) R(o + 3, y, 20, 1, dk);
+  [[o + 1, 11], [o + 19, 11]].forEach(([x, y]) => { R(x, y, 6, 17, st); R(x, y, 1, 17, lt); R(x + 5, y, 1, 17, dk); R(x + 2, y + 5, 2, 3, door);
+    R(x, y - 2, 6, 2, roof); R(x + 1, y - 4, 4, 2, roof); R(x + 2, y - 6, 2, 2, roof); R(x + 4, y - 4, 1, 4, roofD); R(x + 5, y - 2, 1, 2, roofD);
+    if (tier === 3) { P(x + 2, y - 7, gold); P(x + 3, y - 7, gold); } });
+  R(cx - 5, 8, 10, 20, lt); R(cx - 5, 8, 10, 1, hi); R(cx + 4, 8, 1, 20, st); for (let x = cx - 5; x < cx + 5; x += 3) R(x, 6, 2, 2, lt);
+  R(cx - 2, 21, 4, 7, door); R(cx - 1, 20, 2, 1, door);
+  if (tier === 3) { R(o + 3, 16, 20, 1, gold); R(cx - 5, 9, 10, 1, gold); }
+  const cv = document.createElement("canvas"); cv.width = W; cv.height = H; const c = cv.getContext("2d");
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { let col = g[y][x]; if (!col) { if ((g[y - 1] && g[y - 1][x]) || (g[y + 1] && g[y + 1][x]) || g[y][x - 1] || g[y][x + 1]) col = "#1e140c"; else continue; } c.fillStyle = col; c.fillRect(x, y, 1, 1); }
+  return (CASTLE_SPR[id] = cv);
+}
 function drawCastle(r, q, color, t, label, rel, st, ban, tier) {
   const cx = (q + .5) * ts, by = (r + .88) * ts, w = ts * 1.05;
   const stone = "#a39d8f", dark = "#6f6a5f", light = "#bdb7a9";
@@ -150,23 +173,10 @@ function drawCastle(r, q, color, t, label, rel, st, ban, tier) {
   } else {
   glow(cx, by - ts * .45, ts * 1.25, ts * .95, color, .5 + Math.sin(t * 2 + q) * .1);
   ctx.fillStyle = "rgba(0,0,0,.3)"; ctx.beginPath(); ctx.ellipse(cx, by, w * .62, ts * .14, 0, 0, 7); ctx.fill();
-  if (tier >= 2) { const cw = w * (tier >= 3 ? 1.55 : 1.35); ctx.fillStyle = dark; ctx.fillRect(cx - cw / 2, by - ts * .3, cw, ts * .3); ctx.fillStyle = light; for (let i = 0; i < 7; i++) ctx.fillRect(cx - cw / 2 + i * cw / 7 + 1, by - ts * .38, cw / 14, ts * .09); [-1, 1].forEach(sd => { ctx.fillStyle = stone; ctx.fillRect(cx + sd * cw / 2 - ts * .08, by - ts * .5, ts * .16, ts * .5); ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(cx + sd * cw / 2 - ts * .11, by - ts * .5); ctx.lineTo(cx + sd * cw / 2 + ts * .11, by - ts * .5); ctx.lineTo(cx + sd * cw / 2, by - ts * .68); ctx.fill(); }); }
-  ctx.fillStyle = stone; ctx.fillRect(cx - w / 2, by - ts * .5, w, ts * .5);
-  ctx.fillStyle = light; for (let i = 0; i < 5; i++) ctx.fillRect(cx - w / 2 + i * w / 5, by - ts * .58, w / 10, ts * .08);
-  ctx.fillStyle = dark; ctx.fillRect(cx - w / 2, by - ts * .06, w, ts * .06);
-  ctx.fillStyle = stone; ctx.fillRect(cx - ts * .22, by - ts * .85, ts * .44, ts * .4);
-  ctx.fillStyle = light; for (let i = 0; i < 3; i++) ctx.fillRect(cx - ts * .22 + i * ts * .17, by - ts * .92, ts * .1, ts * .08);
-  [-1, 1].forEach(sd => {
-    const tx = cx + sd * w * .46;
-    ctx.fillStyle = stone; ctx.fillRect(tx - ts * .13, by - ts * .72, ts * .26, ts * .72);
-    ctx.fillStyle = dark; ctx.fillRect(tx - ts * .03, by - ts * .55, ts * .06, ts * .1);
-    ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(tx - ts * .17, by - ts * .72); ctx.lineTo(tx + ts * .17, by - ts * .72); ctx.lineTo(tx, by - ts * 1.02); ctx.closePath(); ctx.fill();
-    ctx.strokeStyle = "rgba(0,0,0,.4)"; ctx.lineWidth = 1; ctx.stroke();
-  });
-  ctx.fillStyle = "#3a2614"; ctx.beginPath(); ctx.moveTo(cx - ts * .1, by); ctx.lineTo(cx - ts * .1, by - ts * .2); ctx.arc(cx, by - ts * .2, ts * .1, Math.PI, 0); ctx.lineTo(cx + ts * .1, by); ctx.fill();
-  if (tier >= 3) { ctx.fillStyle = "#e2b33c"; [-1, 1].forEach(sd => { ctx.beginPath(); ctx.arc(cx + sd * w * .46, by - ts * 1.04, ts * .05, 0, 7); ctx.fill(); }); ctx.fillRect(cx - w / 2, by - ts * .52, w, ts * .035); }
-  paintBanner(ctx, ban ? { ...ban, c1: color } : { ...defaultBanner(), c1: color }, color, cx - ts * .14, by - ts * .84, ts * .28, ts * .36);
-  drawFlag(ctx, cx, by - ts * .9, ts * .32, ts * .38, color, t + q, ban && ban.em);
+  { const px = ts / 20.8, sp = castleSprite(tier, color), sm = ctx.imageSmoothingEnabled; ctx.imageSmoothingEnabled = false; // the castle as a pixel sprite, standing on its tile
+    ctx.drawImage(sp, cx - sp.width * px / 2, by - sp.height * px, sp.width * px, sp.height * px); ctx.imageSmoothingEnabled = sm; }
+  paintBanner(ctx, ban ? { ...ban, c1: color } : { ...defaultBanner(), c1: color }, color, cx - ts * .14, by - ts * .96, ts * .28, ts * .38); // the lord's crest on the keep
+  drawFlag(ctx, cx, by - ts * 1.1, ts * .32, ts * .38, color, t + q, ban && ban.em);
   if (!st) { drawSprite("guard", color, cx + ts * .78, by + ts * .02, .62); }
   if (st) {
     const bw = ts * 1.1, bh = ts * .12, bx = cx - bw / 2, byy = by - ts * 1.42;
