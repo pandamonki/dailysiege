@@ -169,6 +169,14 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "Simpler orders", date: "18 Nov", fixes: [], balance: [
+    "From the battle of 20 Nov, soldiers no longer fall back to heal on their own. Only the hero does, at the health its stance sets (aggressive 12%, skirmish 30%, cautious 45%).",
+  ], changes: [
+    "Army plan replaces the old heading: Conquest (hero, then army, then castle, then the next lord), Hero hunt (hero to hero; soldiers only when in the way), Siege (castle to castle, stopping only for what blocks it) or Army slayer (soldiers, then hero, then castle). The target list still decides which lord comes first. Holding the central hill first is now a tick box.",
+    "Fall back when: one setting for the whole army. Never, castle under attack (3 or more enemies within 3 tiles), a siege engine within 5 tiles of your castle, your hero falls, or your hero falls back. The army goes home, fights what is there, and returns to its plan 4 seconds after the danger has passed.",
+    "Battle commands (if-then rules) and each soldier's own orders (escort, attack a lord) are removed from the battle of 20 Nov. The castle guard stays, set from the Deploy tab. Battles before then replay exactly as they were fought.",
+    "Bots now march to a plan that suits their build: warbands slay armies, champions hunt heroes, fortresses conquer and defend their castle, and mixed lords lay siege.",
+  ] },
   { v: "Walls, sudden death and defences", date: "18 Nov", fixes: [
     "Soldiers no longer get stuck in tree clusters on the way to other bases. They look ahead and steer round the trees.",
     "The unit details strip under the map is laid out side by side again, with its buttons beside the stats.",

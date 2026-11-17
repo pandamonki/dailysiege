@@ -132,7 +132,7 @@ function runBattle(plans, seed, opts = {}) {
   // one soldier of a lord's, from a plan piece: used for the army at the start and for reinforcement waves
   function makeUnit(pl, pc, x, y) {
     const g = pl.gear || {}, base = UNITS[pc.type], s = UNIT_SIM[pc.type], isCart = pc.type === "cart", isTower = !!base.tower, tm = 1, fixed = isCart || !!base.merc || isTower, m = fixed ? 1 : 1 + UNIT_LVL_GAIN * (pc.lvl - 1), gm = fixed ? 1 : 1 + .15 * (g.armour || 0), ga = fixed ? 1 : 1 + .15 * (g.weapon || 0);
-    const e = add({ order: pc.order || "army", pid: pl.pid, kind: "unit", key: pc.type, lvl: pc.lvl, ref: pc.id || null, x, y, maxhp: base.hp * m * gm * tm, atk: base.atk * m * ga * tm, cart: isCart, ram: pc.type === "ram" || !!s.rammer, cat: pc.type === "catapult", merc: !!base.merc, regen: s.regen || 0, hunter: !!s.hunter, dmgRed: fixed ? 0 : [0, 0, .1, .2][g.armour || 0], lifesteal: s.lifesteal || (!fixed && (g.weapon || 0) >= 3 ? .1 : 0), range: s.range, as: s.as, spd: s.spd, armor: s.armor, shot: s.shot, siege: s.siege, splash: s.splash || 0, healer: s.heal ? s.heal * m : 0 });
+    const e = add({ order: pl.ordV2 && pc.order !== "guard" ? "army" : pc.order || "army", pid: pl.pid, kind: "unit", key: pc.type, lvl: pc.lvl, ref: pc.id || null, x, y, maxhp: base.hp * m * gm * tm, atk: base.atk * m * ga * tm, cart: isCart, ram: pc.type === "ram" || !!s.rammer, cat: pc.type === "catapult", merc: !!base.merc, regen: s.regen || 0, hunter: !!s.hunter, dmgRed: fixed ? 0 : [0, 0, .1, .2][g.armour || 0], lifesteal: s.lifesteal || (!fixed && (g.weapon || 0) >= 3 ? .1 : 0), range: s.range, as: s.as, spd: s.spd, armor: s.armor, shot: s.shot, siege: s.siege, splash: s.splash || 0, healer: s.heal ? s.heal * m : 0 });
     e.hp = e.maxhp * (pc.hp ?? 1); [e.atype, e.armour] = UNIT_TYPES[pc.type]; if (pl.siegeV1 && e.ram) e.breaker = true; // rams, catapults and the Ogre Breaker smash walls in their way
     return e;
   }
@@ -149,7 +149,7 @@ function runBattle(plans, seed, opts = {}) {
   // ----- set up players and armies -----
   plans.forEach(pl => {
     P[pl.pid] = { ...pl, stance: STANCE_FIX[pl.stance] || pl.stance, bombs: (pl.bombs || []).map(b => ({ ...b })), alive: true, place: 0, kills: 0, ukills: 0, castles: 0, gold: 0, fired: new Set(), retreat: false, defendAll: false, focusLeader: false, helpPid: null, helpUntil: 0,
-      targets: (pl.targets || []).slice(), fallbackUntil: 0, hitT: -9, castleHitT: -9, castleHitBy: null, trapT: -9, pacts: new Set(), hostileTo: new Set(pl.hostile), revenge: new Set(), feud: new Set(), bell: false, retreatT: -99, elimT: null };
+      targets: (pl.targets || []).slice(), ordV2: !!pl.ordV2, armyPlan: ARMY_PLANS.includes(pl.armyPlan) ? pl.armyPlan : "conquest", fallback: FALL_BACKS.includes(pl.fallback) ? pl.fallback : "none", fallbackUntil: 0, hitT: -9, castleHitT: -9, castleHitBy: null, trapT: -9, pacts: new Set(), hostileTo: new Set(pl.hostile), revenge: new Set(), feud: new Set(), bell: false, retreatT: -99, elimT: null };
   });
   plans.forEach(pl => pl.pacts.forEach(o => { if (P[o]) { P[pl.pid].pacts.add(o); P[o].pacts.add(pl.pid); } }));
   (plans.feuds || []).forEach(k => { const [a, b] = k.split("|"); if (P[a] && P[b]) { P[a].feud.add(b); P[b].feud.add(a); P[a].hostileTo.add(b); P[b].hostileTo.add(a); P[a].pacts.delete(b); P[b].pacts.delete(a); } }); // betrayers and their victims stay rivals for the rest of the war
@@ -162,7 +162,7 @@ function runBattle(plans, seed, opts = {}) {
     pl.pieces.forEach(pc => {
       if (pc.kind === "champ") {
         const b = HV3 ? CHAMP_V3[pl.cls] : CHAMP[pl.cls], hpMul = HV3 ? hpLvV3(lvl) : (1 + .08 * (lvl - 1)) * vigMul(pl.ranks.a4), atkMul = HV3 ? atkLvV3(lvl) : (1 + .06 * (lvl - 1)) * vigMul(pl.ranks.a4);
-        const e = add({ order: pc.order || "army", pid: pl.pid, kind: "champ", cls: pl.cls, key: "c-" + pl.cls, x: pc.c + .5, y: pc.r + .5, maxhp: b.hp * hpMul, atk: b.atk * atkMul, range: b.range, as: b.as,
+        const e = add({ order: pl.ordV2 ? "army" : pc.order || "army", pid: pl.pid, kind: "champ", cls: pl.cls, key: "c-" + pl.cls, x: pc.c + .5, y: pc.r + .5, maxhp: b.hp * hpMul, atk: b.atk * atkMul, range: b.range, as: b.as,
           spd: b.spd * ((g.charm || 0) >= 1 ? 1.15 : 1), armor: b.armor,
           cdMul: (g.charm || 0) >= 2 ? .8 : 1, phoenix: (g.charm || 0) >= 3, respawns: opts.duel ? 0 : 2, shot: b.shot, ranks: { ...pl.ranks }, ranks0: { ...pl.ranks }, picks: pl.picks, triggers: pl.triggers, cds: {} });
         e.hp = e.maxhp; if (!HV3) { ["a1", "a2", "a3"].forEach(k => e.cds[k] = 2 + rng() * 3); e.cds.ult = 10 + rng() * 8; }
@@ -569,11 +569,13 @@ function runBattle(plans, seed, opts = {}) {
   const soldier = o => o.kind === "unit" || o.kind === "summon";
   const catOf = o => o.kind === "champ" ? "hero" : !soldier(o) ? null : o.healer ? "healer" : (o.cart || o.ram) ? "siege" : (o.range || 1.1) > 1.5 ? "ranged" : "melee";
   const grpOf = e => e.kind === "champ" ? "hero" : (e.range || 1.1) > 1.5 ? "ranged" : "melee"; // a cleric's own attacks follow the ranged list
+  // orders v2: how close an enemy must be before this soldier stops for it. A siege army only stops for what is in its way; a hero hunt still turns for heroes
+  const planReach = (e, o, reach) => { const p = P[e.pid]; if (!p.ordV2 || e.order === "guard") return reach; return p.armyPlan === "siege" || (p.armyPlan === "hunt" && o.kind !== "champ") ? Math.min(reach, SIEGE_REACH) : reach; };
   function groupPick(e) {
     const list = P[e.pid].gprio[grpOf(e)]; if (!list) return null;
     for (const cat of list) {
       if (cat === "castle") { const g = goalPid(e), c = g && ents.find(o => !o.dead && o.kind === "castle" && o.pid === g); if (c) return c; continue; }
-      const reach = P[e.pid].engage || ENGAGE, pool = ents.filter(o => !o.dead && hostile(e.pid, o.pid) && fighting(o.pid) && vis(o, e) && d(o, e) <= reach && (cat === "any" ? soldier(o) : cat === "lowhp" ? (soldier(o) || o.kind === "champ") : catOf(o) === cat));
+      const reach = P[e.pid].engage || ENGAGE, pool = ents.filter(o => !o.dead && hostile(e.pid, o.pid) && fighting(o.pid) && vis(o, e) && d(o, e) <= planReach(e, o, reach) && (cat === "any" ? soldier(o) : cat === "lowhp" ? (soldier(o) || o.kind === "champ") : catOf(o) === cat));
       if (pool.length) return minBy(pool, cat === "lowhp" ? (o => o.hp / o.maxhp + d(o, e) * .03) : (o => d(o, e)));
     }
     return null;
@@ -603,23 +605,31 @@ function runBattle(plans, seed, opts = {}) {
     // V4: a unit that already has an enemy in reach finishes that fight instead of being pulled across the field by a provoker, and a provoker is only
     // answered when it is within AGGRO_R tiles (was 6). Heroes and soldiers used to drop a fight to chase a distant archer, then walk back.
     const hasFoe = V4 && live(e.tgt) && e.tgt.kind !== "castle" && hostile(e.pid, e.tgt.pid) && vis(e.tgt, e) && d(e.tgt, e) <= e.range + .3;
-    if (e.aggro && e.aggro.until > t && live(e.aggro.src) && hostile(e.pid, e.aggro.src.pid) && vis(e.aggro.src, e) && d(e.aggro.src, e) <= (V4 ? AGGRO_R : 6) && !hasFoe && (!guard || d(e.aggro.src, p.castle) <= 8)) return e.aggro.src;
+    if (e.aggro && e.aggro.until > t && live(e.aggro.src) && hostile(e.pid, e.aggro.src.pid) && vis(e.aggro.src, e) && d(e.aggro.src, e) <= planReach(e, e.aggro.src, V4 ? AGGRO_R : 6) && !hasFoe && (!guard || d(e.aggro.src, p.castle) <= 8)) return e.aggro.src;
     if (hasFoe && e.aggro && e.aggro.until > t) return e.tgt;
     // pursuit: stay on a target that is fleeing or badly hurt, unless it has escaped far away
     const cur = e.tgt;
-    if (live(cur) && cur.kind !== "castle" && hostile(e.pid, cur.pid) && vis(cur, e) && (cur.retreating || cur.hp / cur.maxhp < .35) && d(cur, e) <= (guard ? 4.5 : 7)) return cur;
-    const runners = ents.filter(o => !o.dead && o.retreating && o.kind !== "castle" && hostile(e.pid, o.pid) && vis(o, e) && d(o, e) <= ENGAGE + 1.5);
+    if (live(cur) && cur.kind !== "castle" && hostile(e.pid, cur.pid) && vis(cur, e) && (cur.retreating || cur.hp / cur.maxhp < .35) && d(cur, e) <= (guard ? 4.5 : planReach(e, cur, 7))) return cur;
+    const runners = ents.filter(o => !o.dead && o.retreating && o.kind !== "castle" && hostile(e.pid, o.pid) && vis(o, e) && d(o, e) <= planReach(e, o, ENGAGE + 1.5));
     if (runners.length && !guard) return minBy(runners, o => o.hp / o.maxhp + d(o, e) * .1);
     if (V3 && p.gprio && !guard && !escort) { const t2 = groupPick(e); if (t2) return t2; } // per-group priorities: the lord's order of what this kind of fighter goes for
     const anchor = guard ? p.castle : escort ? p.champ : e, radius = guard ? (t - p.castleHitT < 6 ? 7 : 4) : (V3 && p.engage) || ENGAGE;
-    const near = ents.filter(o => !o.dead && o.kind !== "castle" && hostile(e.pid, o.pid) && fighting(o.pid) && vis(o, e) && d(o, anchor) <= radius);
+    const near = ents.filter(o => !o.dead && o.kind !== "castle" && hostile(e.pid, o.pid) && fighting(o.pid) && vis(o, e) && d(o, anchor) <= (guard || escort ? radius : planReach(e, o, radius)));
     if (near.length) return byPrio(e, near);
     if (guard || escort) return null;
-    if (PV) { const cs = ents.filter(o => !o.dead && o.kind === "castle" && hostile(e.pid, o.pid) && d(o, e) <= PASSING_CASTLE); if (cs.length) return minBy(cs, o => Math.round(d(o, e) * 1e3) + fairTie(seed, e.pid, o.pid)); } // a rival castle on the way
+    if (PV && !(p.ordV2 && (p.armyPlan === "hunt" || p.armyPlan === "slayer"))) { const cs = ents.filter(o => !o.dead && o.kind === "castle" && hostile(e.pid, o.pid) && d(o, e) <= PASSING_CASTLE); if (cs.length) return minBy(cs, o => Math.round(d(o, e) * 1e3) + fairTie(seed, e.pid, o.pid)); } // a rival castle on the way
     { const rv = [...p.revenge].filter(q => P[q] && fighting(q) && hostile(e.pid, q)).map(q => ents.find(o => !o.dead && o.kind === "champ" && o.pid === q && vis(o, e))).filter(Boolean); if (rv.length) return minBy(rv, o => d(o, e)); }
     if (p.heading === "centre" && t < HOLD_END) { // contest the battleground: only fight what stands on the hill
       const onHill = ents.filter(o => !o.dead && o.kind !== "castle" && o.kind !== "totem" && hostile(e.pid, o.pid) && fighting(o.pid) && vis(o, e) && inCentre(o.x, o.y));
       return onHill.length ? minBy(onHill, o => d(o, e)) : null;
+    }
+    if (p.ordV2) { // orders v2: the army plan says what comes next once the fight in front of it is over
+      const g = goalPid(e), pl = p.armyPlan;
+      if (pl === "hunt") { const hs = ents.filter(o => !o.dead && o.kind === "champ" && hostile(e.pid, o.pid) && fighting(o.pid) && vis(o, e)); if (hs.length) return hs.find(o => o.pid === g) || minBy(hs, o => d(o, e)); } // hero to hero: the target lord's first, else the nearest still standing
+      if (!g) return null;
+      const theirs = ents.filter(o => !o.dead && o.pid === g && o.kind !== "totem" && vis(o, e)); if (!theirs.length) return null;
+      const rank = pl === "siege" ? (o => o.kind === "castle" ? 0 : 1) : pl === "slayer" ? (o => o.kind === "champ" ? 1 : o.kind === "castle" ? 2 : 0) : (o => o.kind === "champ" ? 0 : o.kind === "castle" ? 2 : 1); // conquest (and a hunt with no hero left): hero, army, castle
+      const top = Math.min(...theirs.map(rank)); return minBy(theirs.filter(o => rank(o) === top), o => d(o, e));
     }
     const g = goalPid(e); if (!g) return null;
     const theirs = ents.filter(o => !o.dead && o.pid === g && vis(o, e)), hd = P[e.pid].heading;
@@ -783,7 +793,15 @@ function runBattle(plans, seed, opts = {}) {
     const alive = alivePlayers();
     order.forEach(pid => {
       const p = P[pid]; if (!p.alive) return;
-      p.rules.forEach((r, i) => {
+      if (p.ordV2 && p.fallback !== "none" && !sdOn() && p.castle && p.castle.hp > 0) { // orders v2: the army's one fall-back condition
+        const home = p.castle, hero = champOf(pid), fb = p.fallback;
+        const hit = fb === "castle" ? ents.filter(o => !o.dead && (o.kind === "unit" || o.kind === "champ") && hostile(pid, o.pid) && d(o, home) <= 3).length >= CASTLE_ALERT_N
+          : fb === "siege" ? ents.some(o => (o.cart || o.ram || o.cat) && !o.dead && hostile(pid, o.pid) && d(o, home) <= TERRITORY_R)
+          : fb === "herodies" ? !!hero && hero.dead
+          : fb === "heroback" ? !!hero && !hero.dead && !!hero.retreating : false;
+        if (hit) { if (!(p.fallbackUntil > t) && pid === mePid) log("Your army falls back to the castle.", "you"); p.fallbackUntil = t + FALLBACK_LINGER; } // it stays home a few seconds after the danger passes, so it doesn't bounce
+      }
+      if (!p.ordV2) p.rules.forEach((r, i) => {
         const repeat = r.then === "Retreat hero to castle";
         if (p.fired.has(i) && !repeat) return;
         let ok = false, ally = null;
@@ -888,12 +906,16 @@ function runBattle(plans, seed, opts = {}) {
       return;
     }
     // falling back to heal: every stance retreats when hurt enough, then returns to the fight
-    if ((e.kind === "champ" || e.kind === "unit") && !e.noRetreat) {
+    if (p.ordV2 && (e.kind === "unit" || (e.kind === "champ" && !e.retreating)) && !e.noRetreat && !e.cart && !e.ram && !e.cat && e.order !== "guard" && p.fallbackUntil > t && p.castle && p.castle.hp > 0) { // orders v2: the whole army falls back home and defends it
+      const home = p.castle, foe = minBy(enemiesNear(e, home.x, home.y, 4.5), x => d(x, e));
+      if (foe) { e.tgt = foe; e.rt = .6; } else { if (d(e, home) > 1.8) moveToward(e, home.x, home.y - .9, 1.5); if (e.kind === "champ") tryAbilities(e); return; }
+    }
+    if ((e.kind === "champ" || e.kind === "unit") && !e.noRetreat && !(p.ordV2 && e.kind === "unit")) { // orders v2: only the hero falls back to heal (when its stance says); soldiers fight on
       const thr = RETREAT_AT[p.stance] ?? .45;
       const left = e.kind === "champ" ? 2 : 1; // soldiers fall back once, champions twice; after that they fight to the end
-      if (!e.retreating && (e.retreats || 0) < left && ((e.hp / e.maxhp < thr && (!V4 || t - e.hitT < HIT_WINDOW)) || p.fallbackUntil > t)) { e.retreating = true; e.retreats = (e.retreats || 0) + 1; e.tgt = null; }
+      if (!e.retreating && (e.retreats || 0) < left && ((e.hp / e.maxhp < thr && (!V4 || t - e.hitT < HIT_WINDOW)) || (!p.ordV2 && p.fallbackUntil > t))) { e.retreating = true; e.retreats = (e.retreats || 0) + 1; e.tgt = null; }
       if (e.retreating) {
-        if (e.hp / e.maxhp >= (V4 ? BACK_AT : .8) && !(p.fallbackUntil > t)) e.retreating = false;
+        if (e.hp / e.maxhp >= (V4 ? BACK_AT : .8) && !(!p.ordV2 && p.fallbackUntil > t)) e.retreating = false;
         else {
           const atHome = d(e, p.castle) < 1.8;
           if (atHome) heal(e, e.maxhp * .1 * DT, true); else { setFx(e, "slow", .2, .45); moveToward(e, p.castle.x, p.castle.y - .9, 1); }

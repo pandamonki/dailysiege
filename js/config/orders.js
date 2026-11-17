@@ -39,3 +39,13 @@ function cleanWaves(w) { // exactly WAVE_COUNT waves; unknown conditions fall ba
     return { when: WAVE_WHEN.some(o => o[0] === x.when) ? x.when : d.when, at: WAVE_TIMES.includes(+x.at) ? +x.at : d.at, order: WAVE_ORDERS.some(o => o[0] === x.order) ? x.order : "default",
       units: (Array.isArray(x.units) ? x.units : []).filter(u => u && UNITS[u.type] && !UNITS[u.type].merc).slice(0, WAVE_SLOTS).map(u => ({ type: u.type, lvl: Math.max(1, Math.min(3, Math.round(u.lvl) || 1)), id: u.id || null, hp: 1 })) }; });
 }
+
+// Orders v2 (plans stamped ordV2, battles from ORDERS_V2_FROM): one army plan and one fall-back condition replace the heading, the if-then
+// battle commands and each soldier's own orders (the castle guard stays). Only the hero falls back to heal, when its stance says; soldiers fight on.
+let ORDERS_V2_FROM = "2026-11-20"; const ordersV2For = d => String(d) >= ORDERS_V2_FROM;
+const ARMY_PLANS = ["conquest", "hunt", "siege", "slayer"], FALL_BACKS = ["none", "castle", "siege", "herodies", "heroback"];
+const ARMY_PLAN_INFO = { conquest: ["Conquest", "Kill their hero, clear their army, raze their castle, then move on to the next lord"], hunt: ["Hero hunt", "Go from one enemy hero to the next. Castles wait until no hero is left to chase"],
+  siege: ["Siege", "March from castle to castle, fighting only what gets in the way"], slayer: ["Army slayer", "Wipe out their soldiers first, then their hero, then their castle"] };
+const FALL_BACK_INFO = { none: ["Never", "The army never turns back"], castle: ["Castle under attack", "3 or more enemies at your castle"], siege: ["Siege engine nears", "A ram, catapult or powder cart enters your land"],
+  herodies: ["Hero falls", "Until your hero is back on its feet"], heroback: ["Hero falls back", "The army goes home with your hero"] };
+const CASTLE_ALERT_N = 3, TERRITORY_R = 5, FALLBACK_LINGER = 4, SIEGE_REACH = 1.5; // enemies at the castle (within 3 tiles) that count as an attack; how near an engine is "in your land"; seconds the army stays home after the danger passes; how close an enemy must be for a siege army to stop for it

@@ -3,6 +3,18 @@
 // Each item is [icon, headline, one short sentence]. Players who have not seen the newest id get the pop-up the next time they plan;
 // the id is remembered on their device, so changing the id is all it takes to show it again. Keep about 8 to 14 items.
 const RELEASES = [
+  { id: "1.8", title: "What's new in v1.8", sub: "Simpler orders: one army plan, one fall-back, and soldiers that fight on", items: [
+    ["🗺", "Army plans", "From the 20 Nov battle, choose what your army does once a fight is over: Conquest, Hero hunt, Siege or Army slayer."],
+    ["⚔", "Conquest", "Kill their hero, clear their army, raze their castle, then move on. The default, and closest to how armies fought before."],
+    ["🎯", "Hero hunt", "Go hero to hero, turning only for soldiers that block the way."],
+    ["🏰", "Siege", "March castle to castle, stopping only for what stands in the way."],
+    ["🩸", "Army slayer", "Wipe out their soldiers first, then their hero, then their castle."],
+    ["↩", "Fall back when", "One setting for the whole army: never, castle under attack, siege engine nears, hero falls, or hero falls back."],
+    ["🛡", "Home to defend", "When it falls back, the army fights whatever is at your castle, then returns to its plan."],
+    ["❤", "Hero stance", "Stance now only sets when your hero goes home to heal. Soldiers fight on to the end."],
+    ["🧹", "Fewer settings", "Battle commands and each soldier's own orders are gone. The castle guard stays."],
+    ["🤖", "Bots with plans", "Each bot build marches to its own plan, so armies play differently."],
+  ] },
   { id: "1.7", title: "What's new in v1.7", sub: "Walls that matter, a tighter sudden death, and easier defences", items: [
     ["🧱", "Walls block everyone", "From the 19 Nov battle your own soldiers walk round your walls too, through the gaps you leave. No more free shield to fight from."],
     ["🔨", "Build walls on the map", "Base, Defences, Walls: tap tile after tile to build, paying for each one. Walls next to each other line up and join into one wall, corners included."],
