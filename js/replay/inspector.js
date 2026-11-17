@@ -153,6 +153,8 @@ function tickReplay(ms) {
     try { const E = replay.res.events || [], me = replay.res.me; if (replay.time - t0 < .6) for (let i = lowerBound(E, t0); i < E.length && E[i].t <= replay.time; i++) if (E[i].ty === "lvl" && E[i].t > t0) { const m = replay.res.meta[E[i].id]; MUSIC.sfx("levelup", m && m.pid === me ? 1 : .3); } } catch (e) {}
     if (replay.time >= replay.res.duration) { replay.time = replay.res.duration; replay.playing = false; if (!replay.done) { replay.done = true; const fin = () => { if (reportBack) leaveBattle(); else open("results"); }; const R0 = replay.res, board = () => standingsAnim(R0, fin); if (replay.reel) fin(); else if (!R0.awards) board(); else victoryCeremony(R0, board); } }
   }
+  { const sdn = replay.res && replay.res.sudden, inArena = !!(sdn && replay.time >= sdn.t0); // sudden death always swings the camera to the arena once, even if the viewer was steering it themselves
+    if (inArena && !replay.sdCam) { replay.auto = true; replay.camMode = null; } replay.sdCam = inArena; }
   if (replay.auto) autoCam();
   updateReplayUI();
 }

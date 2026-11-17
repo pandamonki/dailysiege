@@ -73,6 +73,7 @@ function runBattle(plans, seed, opts = {}) {
   const TREE_LOOK = 1.2, TREE_TURNS = Array.from({ length: 11 }, (_, i) => { const a = (i + 1) * Math.PI / 12; return [dcos(a), dsin(a)]; });
   const treeRayClear = (x, y, ux, uy, L) => { for (let s = .3; s < L + .01; s += .3) if (treeHit(x + ux * s, y + uy * s)) return false; return true; };
   const settle = e => { for (let i = 0; i < 5; i++) { const h = treeHit(e.x, e.y); if (!h) return; e.x += h.nx * (h.d + .01); e.y += h.ny * (h.d + .01); } }; // step clear of the trees (a few passes: a blockade's trees overlap)
+  const SD2 = plans.some(p => p.sdV2); // sudden death v2: a half-size arena nobody can leave, and no respawn timers inside it
   let sd = null; // sudden death: null until SD_AT, then { t0, go, skip, winners }
   const sdOn = () => !!sd && !sd.skip, tmax = () => (sdOn() ? SD_AT + SD_COUNT + SD_LEN : TMAX);
   let ctrHolder = null, teamWin = null; const finalDay = !!opts.finalDay;
@@ -436,7 +437,7 @@ function runBattle(plans, seed, opts = {}) {
         let ti = STREAKS.length - 1; while (ti >= 0 && sum < STREAKS[ti][0]) ti--;
         if (ti > kp.tier) { kp.tier = ti; const nmS = STREAKS[ti][1]; sp.marks.push({ t, name: nmS, n: Math.round(sum) }); sp.streak = nmS; log(`${nm(kc.pid)}: ${nmS.toUpperCase()}! ${Math.round(sum)} kills in a row.`, "big"); } } }
     if (e.kind === "champ" && e.rapier) { e.rapier = false; rapierDrop = { x: e.x, y: e.y, ev: null }; H({ kind: "rapierdrop", pid: e.pid, other: src ? (src.owner || src).pid : null, x: e.x, y: e.y, score: 54 }); ev({ ty: "rapier", x: e.x, y: e.y, until: null }); if (!fast) rapierDrop.ev = events[events.length - 1]; txt(e, "Rapier dropped!", "#ffd34d"); log(`${poss(e.pid)} hero drops the Divine Rapier.`, "big"); }
-    if (e.kind === "champ" && P[e.pid].alive && e.respawns > 0) { e.respawns--; const rt = respawnTime(e.heroLvl) * (e.phoenix ? .5 : 1); e.respawnAt = t + rt; e.respawnLen = rt; const c = P[e.pid].castle; const rv = { ty: "respawn", pid: e.pid, id: e.id, x: c.x, y: c.y, t0: t, t1: t + rt }; ev(rv); e.respawnEv = rv; }
+    if (e.kind === "champ" && P[e.pid].alive && e.respawns > 0 && !(SD2 && sdOn())) { e.respawns--; const rt = respawnTime(e.heroLvl) * (e.phoenix ? .5 : 1); e.respawnAt = t + rt; e.respawnLen = rt; const c = P[e.pid].castle; const rv = { ty: "respawn", pid: e.pid, id: e.id, x: c.x, y: c.y, t0: t, t1: t + rt }; ev(rv); e.respawnEv = rv; }
     if (e.kind === "castle") eliminate(e.pid, src ? src.pid : e.lastBy);
   }
   function eliminate(pid, by) {
@@ -971,7 +972,7 @@ function runBattle(plans, seed, opts = {}) {
       if (e.respawnEv) e.respawnEv.t1 = t; if (HV3) kit.onRespawn(e); });
     fighters = ents.filter(e => mobile(e) && !e.cart && !e.ram && !e.cat);
     ents.forEach(e => { if (e.dead) { e.respawnAt = null; return; } if (e.cart || e.ram || e.cat || e.kind === "totem") { e.dead = true; ev({ ty: "die", id: e.id, x: e.x, y: e.y, fx: 0, ex: 1 }); } });
-    const cx = NN / 2, cy = NN / 2, R = 3 + pids.length * .4;
+    const cx = NN / 2, cy = NN / 2, AR = sdArenaR(pids.length, SD2), R = SD2 ? AR - 1 : 3 + pids.length * .4; sd.r = AR; // v2: lines start just inside the smaller ring and stack inward
     // seating: the board's 1st and 2nd face each other, 3rd and 4th face each other, and the weakest lords sit beside the top two so they don't just trade blows and leave the day to the bottom half
     const rk = q => RANKS[q] != null ? RANKS[q] : ((plans.find(p => p.pid === q) || {}).rank || idx[q] + 1), n = pids.length, byRank = pids.slice().sort((a, b) => rk(a) - rk(b) || idx[a] - idx[b]), seat = Array(n).fill(null), h = Math.floor(n / 2);
     const put = (q, s) => { if (q != null && s != null && seat[s] == null) { seat[s] = q; return true; } return false; };
@@ -983,7 +984,7 @@ function runBattle(plans, seed, opts = {}) {
     pids.forEach(pid => { const i = seat.indexOf(pid), a = -Math.PI / 2 + 2 * Math.PI * i / n, ux = dcos(a), uy = dsin(a), vx = -uy, vy = ux;
       fighters.filter(e => e.pid === pid).sort((x, y) => (y.kind === "champ") - (x.kind === "champ") || x.id - y.id).forEach((e, k) => {
         const row = Math.floor(k / 4), col = (k % 4) - 1.5;
-        e.x = Math.max(.5, Math.min(NN - .5, cx + ux * R + vx * col * .75 + ux * row * .75)); e.y = Math.max(.5, Math.min(NN - .5, cy + uy * R + vy * col * .75 + uy * row * .75));
+        const rw = SD2 ? -Math.min(row * .75, R - .5) : row * .75; e.x = Math.max(.5, Math.min(NN - .5, cx + ux * R + vx * col * .75 + ux * rw)); e.y = Math.max(.5, Math.min(NN - .5, cy + uy * R + vy * col * .75 + uy * rw));
         e.hx = e.x; e.hy = e.y; e.tgt = null; e.retreating = false; e.noRetreat = true; e.aggro = null; if (e.order === "guard" || e.order === "escort") e.order = "army"; }); });
     ev({ ty: "sudden", x: cx, y: cy, go: sd.go }); log("SUDDEN DEATH! Every hero and soldier is drawn to the arena. Fight to the last.", "big");
   }
@@ -1083,6 +1084,7 @@ function runBattle(plans, seed, opts = {}) {
       if (e.x > w.x0 && e.x < w.x0 + 1 && e.y > w.y0 && e.y < w.y0 + 1) { const l = e.x - w.x0, r = w.x0 + 1 - e.x, u = e.y - w.y0, b = w.y0 + 1 - e.y, m = Math.min(l, r, u, b);
         if (m === l) e.x = w.x0 - .23; else if (m === r) e.x = w.x0 + 1.23; else if (m === u) e.y = w.y0 - .23; else e.y = w.y0 + 1.23; } } });
     { const mg = TG ? .9 : .3; mob.forEach(e => { e.x = Math.max(mg, Math.min(NN - mg, e.x)); e.y = Math.max(mg, Math.min(NN - mg, e.y)); if (TG) settle(e); }); }
+    if (SD2 && sdOn()) { const lim = sd.r - .35, ax = NN / 2, ay = NN / 2; mob.forEach(e => { const dx = e.x - ax, dy = e.y - ay, rr = hyp(dx, dy); if (rr > lim) { e.x = ax + dx / rr * lim; e.y = ay + dy / rr * lim; if (TG) settle(e); } }); } // nobody leaves the ring
     if (tick % 2 === 0) record();
     const alive = alivePlayers();
     if (sdOn() && t >= sd.go) { // last side standing wins; when time runs out, the side with the most health left
@@ -1142,5 +1144,5 @@ function runBattle(plans, seed, opts = {}) {
     : []; if (!BV) order.forEach(a => order.forEach(b => { if (a < b && P[a].alive && P[b].alive && P[a].pacts.has(b)) pairsEnd.push(a + "|" + b); }));
   const trapsUsed = traps.filter(tr => tr.used && !tr.ranger).map(tr => tr.pid + "|" + Math.round(tr.y - .5) + "," + Math.round(tr.x - .5));
   order.forEach(pid => { const c = P[pid].castle; st(pid).castleEnd = c && c.maxhp ? Math.max(0, c.hp) / c.maxhp : 0; });
-  return { stats: ST, twist: TW, ...(sdOn() ? { sudden: { t0: sd.t0, go: sd.go } } : {}), ...(V3 && !opts.duel ? { waves: true } : {}), me: mePid, feudsNew: [...feudsNew], trapsUsed, awards, ultCast: order.filter(pid => P[pid].ultCast), lvl: lvlOut, rapierEnd: rapierOwner ? rapierHolder : null, rapier: rapierOwner && rapierHolder && rapierHolder !== rapierOwner ? { from: rapierOwner, to: rapierHolder } : null, pairsEnd, team: teamWin, wallMeta: walls.map(w => ({ pid: w.pid, x: w.x0, y: w.y0, dir: w.dir, maxhp: w.maxhp, tier: w.tier, ...(w.born != null ? { born: w.born } : {}) })), tel, frames, events, cdlog, xplog, logs, hl, ranks: RANKS, meta: meta(), results, order, colors: Object.fromEntries(order.map(p => [p, P[p].color])), traps, duration: t };
+  return { stats: ST, twist: TW, ...(sdOn() ? { sudden: { t0: sd.t0, go: sd.go, ...(SD2 ? { r: sd.r } : {}) } } : {}), ...(V3 && !opts.duel ? { waves: true } : {}), me: mePid, feudsNew: [...feudsNew], trapsUsed, awards, ultCast: order.filter(pid => P[pid].ultCast), lvl: lvlOut, rapierEnd: rapierOwner ? rapierHolder : null, rapier: rapierOwner && rapierHolder && rapierHolder !== rapierOwner ? { from: rapierOwner, to: rapierHolder } : null, pairsEnd, team: teamWin, wallMeta: walls.map(w => ({ pid: w.pid, x: w.x0, y: w.y0, dir: w.dir, maxhp: w.maxhp, tier: w.tier, ...(w.born != null ? { born: w.born } : {}) })), tel, frames, events, cdlog, xplog, logs, hl, ranks: RANKS, meta: meta(), results, order, colors: Object.fromEntries(order.map(p => [p, P[p].color])), traps, duration: t };
 }
