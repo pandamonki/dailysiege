@@ -30,7 +30,7 @@ test("survivor: a lord whose hero lives to the end scores 1 more point, only wit
 });
 
 test("bigger fields (MAP_V2): the map is 4 tiles larger and the field grows; earlier wars keep the old layout", () => {
-  const r = JSON.parse(sim.run(`JSON.stringify((() => { const a = seatLayout(8), b = seatLayout(8, true); return { a: a.N, b: b.N, za: zoneFor(a.castles[0], a.N, a.castles).size, zb: zoneFor(b.castles[0], b.N, b.castles, true).size, v: [mapV2For("2026-11-16"), mapV2For("2026-11-23")] }; })())`));
+  const r = JSON.parse(sim.run(`JSON.stringify((() => { const a = seatLayout(8), b = seatLayout(8, true); return { a: a.N, b: b.N, za: [...zoneFor(a.castles[0], a.N, a.castles)].filter(k => { const [x, y] = k.split(",").map(Number); return !treeTile(x, y, 8, a.N); }).length, zb: zoneFor(b.castles[0], b.N, b.castles, true).size, v: [mapV2For("2026-11-16"), mapV2For("2026-11-23")] }; })())`));
   assert.equal(r.a, 17); assert.equal(r.b, 21); assert.ok(r.zb > r.za + 5, `field ${r.za} -> ${r.zb}`); assert.deepEqual(r.v, [false, true]);
 });
 test("siege engines (plans stamped siegeV1) batter down walls in their way", () => {
@@ -40,4 +40,8 @@ test("siege engines (plans stamped siegeV1) batter down walls in their way", () 
       const [rr, rc] = at(2.6, 0); p.pieces.push({ kind: "unit", type: "ram", lvl: 1, hp: 1, r: rr, c: rc }); if (${st}) p.siegeV1 = true; });
     const r = runBattle(pl, c.seed, Object.assign({}, c.opts, { fast: true })); let w = 0; Object.values(r.stats || {}).forEach(s => { w += s.wallHit || 0; }); return w; })()`);
   assert.ok(wh(true) > wh(false) * 1.5, `wall damage ${wh(false)} -> ${wh(true)}`);
+});
+test("bigger fields are equal: every lord in a war has the same number of tiles to build on", () => {
+  const r = JSON.parse(sim.run(`JSON.stringify([...Array(11)].map((_, i) => { const n = i + 2, L = seatLayout(n, true); return new Set(L.castles.map(c => [...zoneFor(c, L.N, L.castles, true)].filter(k => { const [a, b] = k.split(",").map(Number); return !treeTile(a, b, n, L.N); }).length)).size; }))`));
+  assert.ok(r.every(x => x === 1), JSON.stringify(r));
 });

@@ -32,7 +32,20 @@ function treeTile(r, c, n, size) {
   if (G.clumps.some(k => hyp(x - k.x, y - k.y) < k.r + .2)) return true; // only the tiles a trunk stands on
   const dx = x - G.cc, dy = y - G.cc, rr = hyp(dx, dy); return rr > G.half - 1.5 && rr > G.rim(datan2(dy, dx)) - .2;
 }
-function zoneFor([r, c], size, all, v2) {
+// Equal fields (v2): every lord in a war gets the same number of tiles. Each field (minus tiles a tree trunk stands on) is trimmed to the size of
+// the smallest one, dropping first the tiles furthest from a point just in front of the castle, so the back corners go before the road.
+// Only where lords may build changes; the map, castles, roads and trees stay where they are.
+const ZONE_EQ = new Map();
+function zoneFor(castle, size, all, v2) {
+  const raw = zoneRaw(castle, size, all, v2); if (!v2 || !all || all.length < 2) return raw;
+  const n = all.length, usable = (cs) => [...zoneRaw(cs, size, all, true)].filter(k => { const [a, b] = k.split(",").map(Number); return !treeTile(a, b, n, size); });
+  const key = size + "|" + all.map(x => x.join(",")).join(";");
+  let min = ZONE_EQ.get(key); if (min == null) { min = Math.min(...all.map(cs => usable(cs).length)); ZONE_EQ.set(key, min); if (ZONE_EQ.size > 50) ZONE_EQ.clear(); }
+  const [r, c] = castle, ctr = (size - 1) / 2, dy = ctr - r, dx = ctr - c, L = Math.sqrt(dx * dx + dy * dy) || 1, fy = r + dy / L * 1.5, fx = c + dx / L * 1.5;
+  const keep = usable(castle).map(k => { const [a, b] = k.split(",").map(Number); return [k, hyp(a - fy, b - fx)]; }).sort((p, q) => p[1] - q[1] || (p[0] < q[0] ? -1 : 1)).slice(0, min);
+  return new Set(keep.map(x => x[0]));
+}
+function zoneRaw([r, c], size, all, v2) {
   // the deployment field: a ring around the castle plus the old forward patch, shared fairly with neighbours, never the centre
   const ctr = (size - 1) / 2, dy = ctr - r, dx = ctr - c, L = Math.sqrt(dx * dx + dy * dy) || 1, F = v2 ? 2.1 : 1.7, zy = r + dy / L * F, zx = c + dx / L * F, z = new Set();
   const RF = v2 ? 2.8 : 2.25, RR = v2 ? 4.0 : 3.3, uy = dy / L, ux = dx / L;

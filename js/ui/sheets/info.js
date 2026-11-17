@@ -171,6 +171,7 @@ function abilLines(k, r) {
 const PATCHES = [
   { v: "Bigger fields", date: "17 Nov", fixes: [], balance: [
     "From wars starting on 18 Nov the map is 4 tiles wider and taller (21 by 21 for 8 lords), and each lord's field reaches further round the castle and forward up the road: 27 tiles with 8 lords, up from 18. The trees stay where they were; only tiles a tree trunk stands on are closed to building.",
+    "Equal fields: every lord in a war gets the same number of tiles to build on (27 with 8 lords, 25 with 9 to 12). Castles round a ring don't land evenly on a square grid, so the bigger fields are trimmed to the smallest one, dropping the tiles furthest behind the castle first. The map, castles, roads and trees don't move.",
     "Up to 5 walls (was 6) and 4 traps a battle (no limit before).",
     "Battering rams, catapults and the Ogre Breaker batter down a wall in their way instead of sliding round it. Powder carts still go around.",
   ], changes: [
