@@ -29,6 +29,7 @@ const A = {
   cfgtz: () => saveConfig({ tz: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC" }),
   watchday: v => { watchLiveBattle(v); },
   lab: () => { if (!isLive()) open("lab"); },
+  balredo: () => { BAL_RPT = null; }, // the balance report: work everything out again
   types: () => { if (isLive()) return; open("lab"); sheet.tab = "types"; },
   labrun: v => { runLab(+v); },
   labcopy: () => { const txt = labCSV(), box = document.getElementById("csvbox");

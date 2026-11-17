@@ -530,3 +530,11 @@ h3 .cnt { font: 700 13px/1 var(--f-body); font-style: normal; color: var(--parch
 .hall { padding: 6px 0; border-bottom: 1px dashed rgba(90,58,32,.35); } .hall h3 { display: flex; justify-content: space-between; align-items: baseline; margin: 0 0 4px; } .hall h3 small { font-size: 12px; color: var(--ink-soft); }
 .hrow { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 6px; align-items: center; padding: 2px 0; } .hrow small { color: var(--ink-soft); }
 .lbox.warcard { border-color: var(--gold); background: rgba(201,162,39,.16); }
+
+/* balance report (Host tools): compact tables that scroll sideways on a phone rather than squeezing */
+.bal-wrap { overflow-x: auto; margin: 0 -2px; }
+.bal { border-collapse: collapse; width: 100%; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.bal th { text-align: left; font-weight: 700; padding: 4px 6px; border-bottom: 2px solid var(--wood-dark); white-space: nowrap; }
+.bal td { padding: 4px 6px; border-bottom: 1px solid rgba(62,39,20,.18); white-space: nowrap; }
+.bal td:first-child { white-space: normal; min-width: 92px; }
+.bal-hi { color: #2f7a2f; font-size: 10px; } .bal-lo { color: #b3261e; font-size: 10px; }
