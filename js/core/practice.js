@@ -1,8 +1,8 @@
 // The practice lobby: bot rivals and their armies
 
 const YOU_COLOR = "#2f5fa8";
-// Skill-tree heroes in practice: open the game with ?herov3 (or set localStorage dsHeroV3 = 1). Live games follow HERO_V3_FROM instead.
-const heroV3Flag = () => { try { return /[?&]herov3\b/.test(location.search) || localStorage.getItem("dsHeroV3") === "1"; } catch (e) { return false; } };
+// Skill-tree heroes in practice, as in every real war now: on unless the game is opened with ?herov2 (or localStorage dsHeroV3 = 0) to see the old heroes. Live games follow HERO_V3_FROM.
+const heroV3Flag = () => { try { return !(/[?&]herov2\b/.test(location.search) || localStorage.getItem("dsHeroV3") === "0"); } catch (e) { return true; } };
 // pick your targets (PICK_V1): always on in practice; in a real war from PICK_V1_FROM
 const pickV1Now = () => (typeof isLive === "function" && isLive() ? pickV1For(liveClock().planDay) : true);
 // a new day: nobody is a target until the lord picks again
@@ -30,7 +30,8 @@ function setupPractice() {
   { const ctr0 = (L.N - 1) / 2;
     BOTS.forEach((b, i) => { if (i % 2) return; const dy = ctr0 - b.pos[0], dx = ctr0 - b.pos[1], LL = hyp(dx, dy) || 1, uy = dy / LL, ux = dx / LL;
       const r = Math.round(b.pos[0] + uy * 3), c = Math.round(b.pos[1] + ux * 3), dir = Math.abs(uy) >= Math.abs(ux) ? "h" : "v", z = zoneFor(b.pos, L.N, L.castles, true);
-      (dir === "h" ? [[r, c - 1], [r, c], [r, c + 1]] : [[r - 1, c], [r, c], [r + 1, c]]).forEach(([a, bb]) => { if (z.has(`${a},${bb}`)) RWALLS.push({ rid: b.id, r: a, c: bb, dir }); }); }); }
+      const sp = armySpots(b.pos, L.N), held = new Set([sp.champ, ...sp.units.slice(0, 2)].map(q => q.join(","))); // never build over where the army stands
+      (dir === "h" ? [[r, c - 1], [r, c], [r, c + 1]] : [[r - 1, c], [r, c], [r + 1, c]]).forEach(([a, bb]) => { if (z.has(`${a},${bb}`) && !held.has(`${a},${bb}`)) RWALLS.push({ rid: b.id, r: a, c: bb, dir }); }); }); }
   RIVALS.forEach((rv, i) => { const sp = armySpots(rv.pos, L.N);
     RARMY.push({ rid: rv.id, r: sp.champ[0], c: sp.champ[1], champ: true, key: "c-" + rv.cls, hp: .55 + hash(i, 1, 9) * .45 });
     sp.units.slice(0, 2).forEach((p, j) => RARMY.push({ rid: rv.id, r: p[0], c: p[1], champ: false, key: UTYPES[(i + j * 2) % UTYPES.length], lvl: 1 + (hash(p[0], p[1], 8) > .5 ? 1 : 0), hp: .35 + hash(i, j, 4) * .65 })); });
