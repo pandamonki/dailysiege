@@ -23,16 +23,16 @@ let RIVALS = BOTS, RWALLS = [];
 const BOT_BANNERS = [{ pat: "halves", c1: null, c2: "#ecdcb4", em: "crown" }, { pat: "stripe", c1: null, c2: "#1e140c", em: "skull" }, { pat: "cross", c1: null, c2: "#ecdcb4", em: "star" }, { pat: "chevron", c1: null, c2: "#e2b33c", em: "sun" }, { pat: "quarters", c1: null, c2: "#ecdcb4", em: "none" }, { pat: "solid", c1: null, c2: "#ecdcb4", em: "moon" }, { pat: "stripe", c1: null, c2: "#e2b33c", em: "tower" }];
 
 function setupPractice() {
-  const L = seatLayout(8);
+  const L = seatLayout(8, true); // practice always uses the bigger fields
   BOTS.forEach((b, i) => { b.pos = L.castles[i + 1]; });
   RIVALS = BOTS; RARMY = []; RWALLS = [];
   BOTS.forEach((b, i) => { b.banner = BOT_BANNERS[i % BOT_BANNERS.length]; b.ctier = 1 + (hash(i, 7, 41) > .6 ? 1 : 0); });
   { const ctr0 = (L.N - 1) / 2;
     BOTS.forEach((b, i) => { if (i % 2) return; const dy = ctr0 - b.pos[0], dx = ctr0 - b.pos[1], LL = hyp(dx, dy) || 1, uy = dy / LL, ux = dx / LL;
-      const r = Math.round(b.pos[0] + uy * 3), c = Math.round(b.pos[1] + ux * 3), dir = Math.abs(uy) >= Math.abs(ux) ? "h" : "v", z = zoneFor(b.pos, L.N, L.castles);
+      const r = Math.round(b.pos[0] + uy * 3), c = Math.round(b.pos[1] + ux * 3), dir = Math.abs(uy) >= Math.abs(ux) ? "h" : "v", z = zoneFor(b.pos, L.N, L.castles, true);
       (dir === "h" ? [[r, c - 1], [r, c], [r, c + 1]] : [[r - 1, c], [r, c], [r + 1, c]]).forEach(([a, bb]) => { if (z.has(`${a},${bb}`)) RWALLS.push({ rid: b.id, r: a, c: bb, dir }); }); }); }
   RIVALS.forEach((rv, i) => { const sp = armySpots(rv.pos, L.N);
     RARMY.push({ rid: rv.id, r: sp.champ[0], c: sp.champ[1], champ: true, key: "c-" + rv.cls, hp: .55 + hash(i, 1, 9) * .45 });
     sp.units.slice(0, 2).forEach((p, j) => RARMY.push({ rid: rv.id, r: p[0], c: p[1], champ: false, key: UTYPES[(i + j * 2) % UTYPES.length], lvl: 1 + (hash(p[0], p[1], 8) > .5 ? 1 : 0), hp: .35 + hash(i, j, 4) * .65 })); });
-  applyLayout(L.N, L.castles[0], RIVALS.map(r => r.pos));
+  applyLayout(L.N, L.castles[0], RIVALS.map(r => r.pos), true);
 }

@@ -16,7 +16,7 @@ const A = {
   lobbyhero: () => { showHeroPick(() => { save(); renderLobby(); }); },
   lobbyban: () => { sheet = { type: "castle", tab: "banner", lobby: true }; },
   lobbydone: () => { if (S.ob === 3) S.ob = 0; sheet = null; renderLobby(); },
-  lobbysave: () => { const c = document.getElementById("lobbyclose").value, h = +document.getElementById("lobbyhour").value, patch = { lockHour: h }, seats = +(document.getElementById("lobbyseats") || {}).value; if (c !== "") patch.lobbyEnds = +c ? Date.now() + +c * 36e5 : null; if (seats >= 2 && seats <= MAX_LORDS) patch.maxPlayers = seats; saveConfig(patch); },
+  lobbysave: () => { const c = document.getElementById("lobbyclose").value, h = +document.getElementById("lobbyhour").value, patch = { lockHour: h }, seats = +(document.getElementById("lobbyseats") || {}).value, nx = document.getElementById("lobbynext"); if (nx) patch.nextClose = +nx.value || 0; if (c !== "") patch.lobbyEnds = +c ? Date.now() + +c * 36e5 : null; if (seats >= 2 && seats <= MAX_LORDS) patch.maxPlayers = seats; saveConfig(patch); },
   lobbybegin: () => { if (!LIVE.beginConfirm) { LIVE.beginConfirm = true; renderLobby(); return; } LIVE.beginConfirm = false; saveConfig({ lobbyEnds: Date.now() }, "Registration is locked in."); },
   restartgame: () => { if (!sheet.rconfirm) { sheet.rconfirm = true; return; } restartGame(); },
   joingame: () => { joinGame(); },
@@ -25,7 +25,7 @@ const A = {
   register: () => { registerMe(); },
   lobbyedit: () => { LIVE.lobbyEdit = true; renderLobby(); document.getElementById("lobby")?.scrollTo({ top: 0 }); },
   lobbyback: () => { LIVE.lobbyEdit = false; delete NAME_DRAFT.mynick; delete NAME_DRAFT.myreal; renderLobby(); },
-  cfgsave: () => saveConfig({ lockHour: +document.getElementById("cfghour").value }),
+  cfgsave: () => saveConfig({ lockHour: +document.getElementById("cfghour").value, nextClose: +((document.getElementById("cfgnext") || {}).value || 0) }),
   cfgtz: () => saveConfig({ tz: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC" }),
   watchday: v => { watchLiveBattle(v); },
   lab: () => { if (!isLive()) open("lab"); },
@@ -42,7 +42,7 @@ const A = {
   reel: () => startReel(false),
   reelrec: () => startReel(true),
   reelskip: () => { const r = replay && replay.reel; if (!r) return; if (r.phase === "outro") stopReel(!r.rec); else nextClip(r); },
-  reelstop: () => stopReel(true),
+  reelstop: () => { if (WAR_REEL) { WAR_REEL = null; stopReel(false); leaveBattle(); return; } stopReel(true); },
   rjump: v => { replay.time = +v; replay.playing = true; replay.done = false; sheet = null; },
   unselect: () => { if (replay) { replay.sel = null; replay.tip = null; } },
   dtip: v => { if (replay) replay.tip = replay.tip === v ? null : v; else ptip = ptip === v ? null : v; },
@@ -72,7 +72,7 @@ const A = {
   usell: id => { const u = findUnit(id); if (!u) return; S.sells = (S.sells || 0) + 1; const k = placedAt(id); if (k) delete S.place[k]; unGarrison(id); S.owned = S.owned.filter(x => x.id !== id); S.gold += unitSellPrice(u); if (!sheet || sheet.type !== "castle") sheet = null; toast(`${UNITS[u.type].name} sold for ${unitSellPrice(u)}g.`); },
   bench: v => { const k = placedAt(v); if (k) delete S.place[k]; if (!sheet || sheet.type !== "castle") sheet = null; },
   deploy: (v, k) => { { const cu = findUnit(v); if (cu && UNITS[cu.type].cool && cu.cool > 0) { toast(`${UNITS[cu.type].name} is recharging for ${cu.cool} more day${cu.cool > 1 ? "s" : ""}.`); return; } }
-    { const [r0, c0] = k.split(",").map(Number), wl0 = findWall(v); if (wl0 && !wallFree(r0, c0, wl0.dir, v)) { toast("That tile isn't free."); return; } }
+    { const [r0, c0] = k.split(",").map(Number), wl0 = findWall(v); if (wl0 && !wallFree(r0, c0, wl0.dir, v)) { toast("That tile isn't free."); return; } if (wl0 && !routeOpen(k, v)) { toast(NO_BLOCK); return; } }
     if (inGarrison(v)) { if (fieldCount() >= S.slots) { toast("Your field supply is full."); return; } unGarrison(v); }
     const old = placedAt(v); if (old) delete S.place[old]; S.place[k] = v; sheet = null; },
   cls: v => { if (v === S.cls) return; if (isLive() && DAY > 1) { toast("Your class is set for the week. Pick again next week."); return; } S.cls = v; S.ranks = { a1: 0, a2: 0, a3: 0, ult: 0 }; S.tree = emptyTree(); S.picks = {}; toast(`${CLASSES[v].name} chosen. Skill points refunded.`); },
@@ -82,7 +82,7 @@ const A = {
   up: id => { const u = findUnit(id), c = upgradeCost(u); if (u.lvl < 3 && avail() >= c && ctNow() >= UNIT_LVL_TIER[u.lvl]) { S.gold -= c; u.lvl++; } },
   wunlock: () => { if (S.locked) { toast("Draft new orders to change your garrison."); return; } ensureGarrison(); const c = waveUnlockCost(); if (!supplyV2Now() || c == null) return; if (avail() < c) { toast("Not enough gold."); return; } S.gold -= c; S.wavesOpen = wavesOpen() + 1; toast(`Wave ${S.wavesOpen} unlocked: ${WAVE_SLOTS} more soldiers can march out later in the battle.`); },
   slot: () => { if (supplyV2Now()) return; const c = slotCost(S.slots); if (avail() >= c && S.slots < SLOT_MAX) { S.gold -= c; S.slots++; } },
-  trap: k => { const t = TRAPS[k]; if (avail() < t.cost) return; S.gold -= t.cost; const id = "t" + idc++; S.traps.push({ id, type: k }); sel = id; sheet = null; toast(`${t.name} bought. Tap a glowing tile.`); },
+  trap: k => { const t = TRAPS[k]; if (avail() < t.cost) return; if (S.traps.length >= trapLimit()) { toast(`You can set up to ${trapLimit()} traps a battle.`); return; } S.gold -= t.cost; const id = "t" + idc++; S.traps.push({ id, type: k }); sel = id; sheet = null; toast(`${t.name} bought. Tap a glowing tile.`); },
   help: () => { sheet.help = !sheet.help; },
   shop: () => { open("castle"); sheet.tab = "shop"; },
   gdone: () => { if (S.ob === 1) { S.ob = 2; sheet = null; showHeroPick(() => { A.obnext(); render(); }); } else sheet = null; },

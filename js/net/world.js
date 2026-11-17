@@ -15,10 +15,16 @@ function lordLabel(p) { const n = cleanName(p && p.nick, NICK_MAX), r = cleanNam
 // ----- roster, standings, hero levels -----
 const wWeekOf = (W, dayKey) => addDays(dayKey, -(wWeekdayOf(dayKey, W.config) - 1));
 function wCap(W, week) { const c = W.config || {}; return Math.min(MAX_LORDS, (c.capFrom && week < c.capFrom ? c.capPrev : c.maxPlayers) || 8); } // games made before seats were configurable hold 8
+// Seats are shuffled once registration closes (wars starting on or after SEAT_SHUFFLE_FROM): who gets a seat is still decided by sign-up order
+// (bots give way to people), but where each lord sits round the map is a draw keyed to the war's first day, the same on every phone and the server.
+let SEAT_SHUFFLE_FROM = "2026-11-18";
+const seatDraw = (week, uid) => { let h = 2166136261; const s = week + "|" + uid; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b); h ^= h >>> 13; h = Math.imul(h, 0xc2b2ae35); h ^= h >>> 16; return h >>> 0; }; // FNV-1a, then a full avalanche so every war draws a fresh order
 function wRoster(W, week) {
   // bots take the seats that people leave free: when the war is full, it is the bots that give way
-  return Object.entries(W.players).filter(([, p]) => p.fromWeek && p.fromWeek <= week && !p.left && !p.pending)
+  const r = Object.entries(W.players).filter(([, p]) => p.fromWeek && p.fromWeek <= week && !p.left && !p.pending)
     .sort((a, b) => (!!a[1].bot - !!b[1].bot) || (a[1].joinedAt - b[1].joinedAt) || (a[0] < b[0] ? -1 : 1)).slice(0, wCap(W, week)).map(([uid, p]) => ({ uid, ...p }));
+  if (String(week) >= SEAT_SHUFFLE_FROM) r.sort((a, b) => seatDraw(week, a.uid) - seatDraw(week, b.uid) || (a.uid < b.uid ? -1 : 1));
+  return r;
 }
 function wStandings(W, week, through) {
   const pts = {};
@@ -85,14 +91,14 @@ function battleFoes(res) {
 // opts (phones only): uid = whose device this is; nameOf, colours = how this device shows names and colours;
 // test = { mine } builds a practice fight from my unsaved orders against what is publicly known of my rivals.
 function buildBattleInputs(W, dayKey, opts = {}) {
-  const week = wWeekOf(W, dayKey), roster = wRoster(W, week), L = seatLayout(roster.length), dayNo = wWeekdayOf(dayKey, W.config), final = dayNo === 7;
+  const week = wWeekOf(W, dayKey), roster = wRoster(W, week), L = seatLayout(roster.length, mapV2For(week)), dayNo = wWeekdayOf(dayKey, W.config), final = dayNo === 7;
   const pts = wStandings(W, week, addDays(dayKey, -1)), lead = Object.entries(pts).sort((a, b) => b[1] - a[1])[0];
   const TC = opts.colours || wTeamColours(roster.map(p => [p.uid, p]), (uid, p) => p.state && p.state.banner);
   const nameOf = opts.nameOf || (uid => lordLabel(W.players[uid]) || "A lord");
   const rkm0 = rankMap(dayNo > 1 ? wStandings(W, week, addDays(dayKey, -1)) : {}, roster.map(q => q.uid));
   const raw = roster.map((p, i) => {
     let plan;
-    const hs = wHeroState(W, p.uid, week, dayKey), lvl = hs.lvl, z = zoneFor(L.castles[i], L.N, L.castles), sp = armySpots(L.castles[i], L.N);
+    const hs = wHeroState(W, p.uid, week, dayKey), lvl = hs.lvl, z = zoneFor(L.castles[i], L.N, L.castles, L.v2), sp = armySpots(L.castles[i], L.N);
     const botDay = n => lordBotPlan({ uid: p.uid, cls: (p.state && p.state.cls) || "warrior", i, ids: roster.map(q => q.uid), L, zone: z, dayNo: n, lvl: wHeroState(W, p.uid, week, addDays(week, n - 1)).lvl, v2: balV3For(dayKey), sup: supplyV2For(dayKey), fair: fairV1For(dayKey), pick: pickV1For(dayKey), ranks: rkm0, v3: heroV3For(dayKey) });
     if (opts.test && p.uid === opts.uid) plan = opts.test.mine;
     else if (p.bot) plan = opts.test ? (dayNo > 1 ? botDay(dayNo - 1) : null) : botDay(dayNo); // bots have no saved orders: theirs are worked out. In a test only yesterday's are known
@@ -111,7 +117,7 @@ function buildBattleInputs(W, dayKey, opts = {}) {
   const plans = raw.map(({ uid, i, plan, pieces, hs, noOrders }) => ({
     pid: uid, me: uid === opts.uid, name: nameOf(uid), color: TC[uid] || SEAT_COLORS[i], cls: plan.cls, level: hs.lvl, xp0: hs.xp, ultArm: plan.ultArm, shellAt: plan.shellAt, blessing: plan.blessing || null, items: wRapierItems(W, plan.items || [], uid, week, dayKey), castleTier: plan.castleTier || 1, banner: plan.banner || null, breaks: plan.breaks || [], pbetray: plan.pbetray || {}, castle: L.castles[i], leader: !!(lead && lead[1] > 0 && lead[0] === uid),
     ranks: heroV3For(dayKey) ? { a1: 0, a2: 0, a3: 0, ult: 0 } : plan.ranks || { a1: 0, a2: 0, a3: 0, ult: 0 }, ...(heroV3For(dayKey) ? { tree: cleanTree(plan.tree) } : {}), picks: plan.picks || {}, triggers: plan.triggers || {}, gear: plan.gear || {}, defences: plan.defences || {},
-    ...(itemsV5For(dayKey) ? { itemV5: true } : {}), formation: plan.formation !== false, stance: plan.stance || "aggressive", gprio: plan.gprio || null, engage: plan.engage || 0, waves: plan.waves || null, prio: plan.prio || PRIORITIES.slice(), rules: plan.rules || [], pieces,
+    ...(itemsV5For(dayKey) ? { itemV5: true } : {}), ...(survFor(dayKey) ? { survV1: true } : {}), ...(L.v2 ? { siegeV1: true } : {}), formation: plan.formation !== false, stance: plan.stance || "aggressive", gprio: plan.gprio || null, engage: plan.engage || 0, waves: plan.waves || null, prio: plan.prio || PRIORITIES.slice(), rules: plan.rules || [], pieces,
     targets: (plan.targets || []).filter(q => raw.some(x => x.uid === q) || (pickV1For(dayKey) && !!PICK_ROLES[q])), tmode: plan.tmode || "list", heading: plan.heading || "near", rank: rkm[uid], offers: plan.offers || {}, replies: plan.replies || {}, terms: plan.terms || {}, bids: plan.bids || {},
     ...(noOrders && !opts.test ? { noOrders: true } : {}) })); // noOrders: this lord sealed nothing all week, so these are the stand-in orders, not theirs
   const feuds0 = wFeudsBefore(W, dayKey, week), { pairs, transfers } = resolveAlliances(plans, { persist: wCarriedPairs(W, dayKey), final, prevDay: addDays(dayKey, -1), feuds: feuds0, blocMax: balV2For(dayKey) ? BLOC_MAX : 0 });

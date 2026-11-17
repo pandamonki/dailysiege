@@ -3,6 +3,20 @@
 // Each item is [icon, headline, one short sentence]. Players who have not seen the newest id get the pop-up the next time they plan;
 // the id is remembered on their device, so changing the id is all it takes to show it again. Keep about 8 to 14 items.
 const RELEASES = [
+  { id: "1.5", title: "What's new in v1.5", sub: "The end of a war, a castle guard and a survivor bonus", items: [
+    ["🏆", "The war ceremony", "After the seventh battle: a podium, final standings with every day's points, war prizes and each lord's week."],
+    ["🎬", "Highlights of the war", "The best moments of all seven battles, played one day after another."],
+    ["🏰", "A Muster Hall between wars", "When a war ends, registration for the next one opens. Change your hero, banner and name before it begins."],
+    ["⏳", "The host decides", "Registration waits for the host to begin, or closes by itself 24 hours after the war. Set it in Game settings."],
+    ["📜", "Hall of fame", "The top three of every war, kept for good. Open it from the menu."],
+    ["🛡", "Castle guard", "The first square on the Deploy tab's field row: one soldier stays home and defends your castle all battle."],
+    ["❤", "Survivor bonus", "+1 point if your hero is alive when the battle ends, even if your castle has fallen."],
+    ["⚖", "Flat items", "Hero items add flat amounts, so they help most early in the week. The Iron Standard's aura is now 18%."],
+    ["🗺", "Bigger fields", "From the next war the map is larger and your field holds 27 tiles, reaching forward to the trees on your road."],
+    ["🧱", "Walls and traps", "Up to 5 walls and 4 traps. Walls can funnel attackers but never seal a castle in, and rams and catapults smash through them."],
+    ["🏯", "Castle tracker", "Small castles down the side of every replay, crossed out as they fall."],
+    ["🔭", "Wider replays", "Replays and the highlight reel start further zoomed out."],
+  ] },
   { id: "1.4", title: "What's new in v1.4", sub: "Fewer, better soldiers, bought waves, and clearer planning screens", items: [
     ["💰", "New prices", "Footmen cost 100, Knights 240 and siege units 300. Training is cheaper (30% then 40%), and the Fortress costs 100, the Citadel 200."],
     ["🔓", "Four on the map, waves you buy", "Supply beds are gone. Everyone fields 4 soldiers and unlocks reinforcement waves for 60, 100 and 150 gold."],

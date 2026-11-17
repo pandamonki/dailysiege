@@ -53,9 +53,9 @@ function buildReel(R) {
     return { h, a: Math.max(0, a), b: Math.min(R.duration, b), key, title, sub, follow, color: R.colors[h.kind === "fall" || h.kind === "upset" ? (h.other || h.pid) : h.kind === "revenge" ? h.other : h.pid] || "#ffe082" }; });
 }
 const REEL_CARD = 1.3, REEL_INTRO = 2.2, REEL_OUTRO = 4;
-const REEL_ZOOM_OUT = 1.35; // the reel's camera sits one zoom step (the zoom buttons' x1.35) further out than it used to, so more of the action is in view
+const REEL_ZOOM_OUT = 1.35 ** 3; // the reel's camera sits three zoom steps (the zoom buttons' x1.35) further out than it first did, so more of the action is in view
 function startReel(record) {
-  if (!replay) return; const clips = buildReel(replay.res);
+  if (!replay) return; const clips = warReelClips(buildReel(replay.res));
   if (!clips.length) { toast("Nothing big happened in this battle."); return; }
   replay.reel = { clips, i: -1, phase: "intro", pt: 0, rec: null }; replay.playing = false; replay.sel = null; sheet = null;
   render(); buildReelUI();
@@ -64,7 +64,7 @@ function startReel(record) {
 function stopReel(toRecap) {
   if (!replay || !replay.reel) return; const rec = replay.reel.rec; replay.reel = null;
   if (rec && rec.mr.state !== "inactive") rec.mr.stop();
-  buildReplayUI(); if (reportBack) leaveBattle(); else if (toRecap) open("results"); else render();
+  buildReplayUI(); if (WAR_REEL && warReelNext()) return; if (reportBack) leaveBattle(); else if (toRecap) open("results"); else render();
 }
 function reelSpeed(c, time) { const d = time - c.key; return d > -.7 && d < .9 ? .4 : 1; }
 function reelFocus(c, time) {
@@ -187,7 +187,7 @@ const WIZARD = [
   [null, "The daily cycle", "Each day has two phases. Planning: spend gold, place your army, level your hero, pick your targets and seal your orders before the timer locks. Battle: everything plays out by itself at the agreed time, and you watch the replay next time you open the game. Your orders are secret: rivals only see what you fielded the day before."],
   ['.topchips', "The top row", "Day and countdown, gold, your army on the field, ultimate, leaderboard, battle report and options. Every page has a small i in its top corner with a short note on what it is for. You can retake this tour from Options, and it opens at the screen you were on."],
   ["#map", "The map", "Drag to pan. Pinch or use + and − to zoom. The ⛶ button fits the whole field and the home button returns to your castle. Your army stands under your colour on the glowing ground round your castle. Trees are solid: nothing can stand in them or march through them."],
-  ['#cmdbar [data-act="opencastle"][data-v="keep"]', "Base", "Raise your castle to a Fortress or Citadel for more health, more gold each day and stronger soldiers. Unlock reinforcement waves (60, 100 and 150 gold). Build walls (several at once) and buy traps under Defences. The Armoury forges weapons and armour for your soldiers."],
+  ['#cmdbar [data-act="opencastle"][data-v="keep"]', "Base", "Raise your castle to a Fortress or Citadel for more health, more gold each day and stronger soldiers. Unlock reinforcement waves (60, 100 and 150 gold). Build up to 5 walls (several at once) and 4 traps under Defences; walls can funnel attackers but never seal the castle in. The Armoury forges weapons and armour for your soldiers."],
   ['#cmdbar [data-act="opencastle"][data-v="recruit"]', "Army", "Recruit soldiers, train them and deploy them. 4 soldiers start on the map; more march out later in the waves you unlock, each with its own trigger and orders. Training is cheap: level 2 costs 30% of a soldier's price and level 3 costs 40%, each level adding 30% health and attack."],
   ['.topchips [data-act="opencastle"][data-v="recruit"]', "Your army", "The shield counts soldiers on the field out of the 4 you can field, with a red dot for any still to place. New recruits wait in a strip under the map: tap one, then tap a glowing tile. Tap a soldier on the map to select and move it."],
   [".pdock", "The unit strip", "Under the map. Tap a soldier, a castle or a rival to see its health and stats here, then tap the strip for full details. The buttons beside it are quick actions like Train and Move. The i beside any attack or armour type shows what it is strong and weak against."],
@@ -204,7 +204,7 @@ const WIZARD = [
     `<div class="mk-row"><b>Sam</b><span class="mk-sel">Allied ▾</span></div><div class="mk-row"><span class="mk-sel">Betray ▾</span><span class="mk-chip bad">Their keep loses half its health</span></div>`],
   [null, "Mercenary camp (day 4+)", "From day 4 each week a Camp bubble appears at the top of the map. Each day a new, stronger headline group arrives at the top, with three regular groups below. You can bid on one group a day. Bids are sealed and the highest bidder fights with that group for one battle, paying their own bid. Place your bid before sealing. A hired group rests for 2 days for everyone.",
     `<div class="mk-row"><b>Troll Warlord</b><span class="mk-chip">from 200g</span></div><div class="mk-row"><span class="mk-step">− 240g +</span><span class="mk-btn">Clear</span></div><p class="mk-cap">Your sealed bid is set aside while you plan. Only the winner pays.</p>`],
-  [null, "Gold and points", "Pay is 225 gold after the first battle and 30 more each day, plus 70 for a Fortress or 130 for a Citadel. Kills pay spoils, the top three carry bounties, and the bottom 30% get catch-up gold. Each battle scores 10 points for first place down to 0, +1 per hero slain and +3 per castle taken; days 5 to 7 count 1.5 times."],
+  [null, "Gold and points", "Pay is 225 gold after the first battle and 30 more each day, plus 70 for a Fortress or 130 for a Citadel. Kills pay spoils, the top three carry bounties, and the bottom 30% get catch-up gold. Each battle scores 10 points for first place down to 0, +1 per hero slain, +3 per castle taken and +1 if your hero is alive when the battle ends; days 5 to 7 count 1.5 times."],
   [null, "The battleground", "The hill in the middle of the map is the battleground. Heroes standing there earn bonus experience and gold, so expect company. You can order your army to hold it for the first two minutes."],
   [".sealbar", "Seal your orders", "The seal screen checks your plan: soldiers placed, skill points spent, targets, contract, castle, alliances and mercenary bids. Rehearse the battle there, then press the seal. You can draft new orders until the timer locks; the orders you sealed stay in effect until you seal new ones. Good luck!"],
 ];

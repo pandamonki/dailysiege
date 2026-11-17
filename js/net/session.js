@@ -4,7 +4,7 @@
 function refreshLiveWorld() {
   const ck = liveClock(), roster = rosterFor(ck.week), me = roster.findIndex(p => p.uid === LIVE.uid);
   DAY = ck.dayNo;
-  const L = seatLayout(roster.length);
+  const L = seatLayout(roster.length, mapV2For(ck.week));
   const TC = teamColours(); MY_COLOR = TC[LIVE.uid] || SEAT_COLORS[me]; MY_NAME = (LIVE.names[LIVE.uid] && LIVE.names[LIVE.uid].name) || "You";
   const prev = ck.dayNo > 1 ? addDays(ck.planDay, -1) : null, pts = standings(ck.week);
   RIVALS = roster.map((p, i) => ({ p, i })).filter(x => x.i !== me).map(({ p, i }) => {
@@ -13,12 +13,12 @@ function refreshLiveWorld() {
     return { id: p.uid, name: nameOf(p.uid), lvl: heroState(p.uid, ck.week, ck.planDay).lvl, cls: seen ? seen.cls : null, pos: L.castles[i], color: TC[p.uid] || SEAT_COLORS[i], trust, seen, points: pts[p.uid] || 0, live: p, banner: (seen && seen.banner) || (p.state && p.state.banner) || null, ctier: seen ? (seen.castleTier || 1) : 1 };
   });
   RARMY = []; RWALLS = [];
-  RIVALS.forEach(rv => { if (!rv.seen) return; const z = zoneFor(rv.pos, L.N, L.castles);
+  RIVALS.forEach(rv => { if (!rv.seen) return; const z = zoneFor(rv.pos, L.N, L.castles, L.v2);
     (rv.seen.pieces || []).forEach(pc => { if (pc.kind === "wall") { if (wallTiles(pc.r, pc.c, pc.dir).every(([a, b]) => z.has(`${a},${b}`))) RWALLS.push({ rid: rv.id, r: pc.r, c: pc.c, dir: pc.dir }); return; }
       if (pc.kind === "trap" || !z.has(`${pc.r},${pc.c}`)) return;
       RARMY.push({ rid: rv.id, r: pc.r, c: pc.c, champ: pc.kind === "champ", key: pc.kind === "champ" ? "c-" + rv.seen.cls : pc.type, lvl: pc.lvl, hp: 1 }); }); });
   ensureDip();
-  applyLayout(L.N, L.castles[me], RIVALS.map(r => r.pos));
+  applyLayout(L.N, L.castles[me], RIVALS.map(r => r.pos), L.v2);
 }
 function payDays(ck) { // base pay once per day; spoils, catch-up, gold transfers and unit health once per battle, even if the result arrives late
   if (!S.paid) { S.paid = {}; for (let d = ck.week; d < S.day; d = addDays(d, 1)) { const b = LIVE.battles[d]; S.paid[d] = b && b.at < PAGE_T0 ? 2 : 1; } }
@@ -141,6 +141,7 @@ async function writeMine(full) {
 // ----- connecting -----
 let liveTimer = null;
 function liveChanged() {
+  if (typeof WAR_VIEW !== "undefined" && WAR_VIEW) return; // a finished war's battle is on screen: catch up when it closes
   syncLobby();
   if (gameMode === "friends" && isLive()) {
     if (!LIVE.stateLoaded) { if (enterLive()) home(); }
