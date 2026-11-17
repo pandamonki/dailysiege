@@ -20,6 +20,15 @@ function garrisonWaveHTML(w, i) {
     <div class="gr-r4"><div class="gr-s free"><img alt="" src="${spriteURL("footman")}"><b>Footman</b><small>free</small></div>${waveOpen(i) ? w.slots.map(slot).join("")
       : `<div class="gr-lock">${i === wavesOpen() ? `<button class="btn small wax" data-act="wunlock" ${dis(avail() < waveUnlockCost())}>🔒 Unlock ${WAVE_SLOTS} slots · ${waveUnlockCost()}g</button>` : `<span>🔒 Unlock Wave ${i} first</span>`}</div>`}</div></div>`;
 }
+// the castle guard: one soldier on the field whose order is to stay home (the "guard" order the battle already knows)
+function guardOf() { const ids = Object.keys(S.uorders || {}).filter(k => S.uorders[k] === "guard"), keep = ids.find(k => findUnit(k) && placedAt(k)) || null;
+  ids.forEach(k => { if (k !== keep) delete S.uorders[k]; }); return keep; }
+function guardUnit(id) {
+  const u = findUnit(id); if (!u) return "No such soldier."; if (UNITS[u.type].engine) return `A ${UNITS[u.type].name} can't guard the castle.`;
+  const err = deployUnit(id); if (err) return err;
+  Object.keys(S.uorders).forEach(k => { if (S.uorders[k] === "guard") delete S.uorders[k]; }); S.uorders[id] = "guard"; return null;
+}
+const unguard = id => { if (S.uorders && S.uorders[id] === "guard") delete S.uorders[id]; };
 // the Deployment tab: five rows, each holding the soldiers in that place: on the map, reserve, and the three waves
 function deploymentTab() {
   ensureGarrison();
@@ -27,19 +36,24 @@ function deploymentTab() {
   const tile = o => `<button class="gr-t${sel === o.id ? " sel" : ""}" data-drag="${o.id}" data-act="tsel" data-v="${o.id}" aria-label="${UNITS[o.type].name} level ${o.lvl}, ${waveStatus(o.id)[1]}"><img alt="" src="${spriteURL(o.type)}"><b>${UNITS[o.type].name}</b><span class="gr-pp">${[1, 2, 3].map(x => `<i class="${x <= o.lvl ? "on" : ""}"></i>`).join("")}</span></button>`;
   const ph = (act, text) => `<button class="gr-t gr-ph" data-act="${act}" ${dis()}><span>${text}</span></button>`;
   const row = (title, count, drop, body) => `<div class="gr-row" data-drop="${drop}"><div class="gr-rh"><b>${title}</b><small>${count}</small></div><div class="gr-r5">${body}</div></div>`;
+  const guard = guardOf(), attackers = placed.filter(o => o.id !== guard);
+  const gslot = guard ? tile(findUnit(guard)).replace('class="gr-t', 'class="gr-t guard').replace('"><img', '" data-drop="guard"><span class="gtag">🏰 Guard</span><img')
+    : `<button class="gr-t gr-ph guard empty" data-act="wguard" data-drop="guard" ${dis()} aria-label="Castle guard slot"><span>🏰<br>guard</span></button>`;
   return `<div class="gr-sum"><span><b>${fieldCount()}/${S.slots}</b>field</span><span class="y"><b>${garrisonCount()}/${garrisonCap()}</b>waves</span><span><b>${reserve.length}</b>reserve</span></div>
     <p class="muted gr-tip">${S.locked ? "Your orders are sealed. Draft new orders to change this." : "Drag a soldier from one row to another, or tap a soldier then tap where it should go."}</p>
     <div class="gr-waves">
-      ${row("Deployed", `${placed.length} on the map`, "dep", placed.map(tile).join("") + (freeField ? [...Array(freeField)].map(() => ph("wdep", "free")).join("") : ph("wdep", "deploy")))}
+      ${row("On the field", `${guard ? "1 guard · " : ""}${attackers.length} attack${attackers.length === 1 ? "s" : ""}`, "dep", gslot + attackers.map(tile).join("") + (freeField ? [...Array(freeField)].map(() => ph("wdep", "free")).join("") : ph("wdep", "deploy")))}
       ${row("Reserve", `${reserve.length} waiting`, "res", reserve.map(tile).join("") + ph("wres", reserve.length ? "bench" : "empty"))}
       ${S.garrison.map(garrisonWaveHTML).join("")}</div>
+    <p class="muted gr-tip">The guard stays home and defends your castle all battle. It is one of your ${FIELD_MAX} soldiers on the field. Drag it back among the attackers to send it out again.</p>
     <p class="muted gr-tip">Tap a chip to change when a wave goes or what it does. Waves are at least ${WAVE_GAP}s apart and one is forced out at each minute mark. Training and selling are on the Garrison tab.</p>`;
 }
 // actions
 Object.assign(A, {
   wsend: (v, k) => { if (S.locked) { toast("Draft new orders to change your garrison."); return; } const err = assignWave(v, +k); if (err) toast(err); else toast(`Sent to Wave ${+k + 1}.`); },
   wback: v => { if (S.locked) return; const err = reserveUnit(v); if (err) toast(err); },
-  wdep: () => { if (S.locked) { toast("Draft new orders to change your garrison."); return; } if (!sheet.tsel) { toast("Tap a soldier first."); return; } const err = deployUnit(sheet.tsel); if (err) toast(err); },
+  wdep: () => { if (S.locked) { toast("Draft new orders to change your garrison."); return; } if (!sheet.tsel) { toast("Tap a soldier first."); return; } const err = deployUnit(sheet.tsel); if (err) toast(err); else unguard(sheet.tsel); },
+  wguard: () => { if (S.locked) { toast("Draft new orders to change your garrison."); return; } if (!sheet.tsel) { toast("Tap a soldier first, then the guard slot."); return; } const err = guardUnit(sheet.tsel); if (err) toast(err); else toast("This soldier will guard your castle."); },
   wres: () => { if (S.locked) { toast("Draft new orders to change your garrison."); return; } if (!sheet.tsel) { toast("Tap a soldier first."); return; } const err = reserveUnit(sheet.tsel); if (err) toast(err); },
   wpop: (v, k) => { if (S.locked) return; const w = +k; sheet.wpop = sheet.wpop && sheet.wpop.w === w && sheet.wpop.kind === v ? null : { w, kind: v }; },
   wopt: (v, k) => { if (S.locked) return; const w = S.garrison[+k], [kind, val] = v.split(":");
@@ -65,7 +79,7 @@ Object.assign(A, {
     if (d.on) { swallow = true; setTimeout(() => { swallow = false; }, 0); const t = under(e), id = d.id; end();
       if (S.locked) { toast("Draft new orders to change your garrison."); return; }
       if (t) { const [kind, w, j] = t.dataset.drop.split(":"); let err = null;
-        if (kind === "dep") err = deployUnit(id); else if (kind === "res") err = reserveUnit(id); else if (kind === "w") err = assignWave(id, +w, j != null ? +j : undefined);
+        if (kind === "guard") err = guardUnit(id); else if (kind === "dep") { err = deployUnit(id); if (!err) unguard(id); } else if (kind === "res") err = reserveUnit(id); else if (kind === "w") err = assignWave(id, +w, j != null ? +j : undefined);
         if (err) toast(err); sheet.tsel = id; render(true); }
     } else end(); });
   document.addEventListener("pointercancel", end);

@@ -23,6 +23,7 @@ const garrisonIds = () => (S.garrison || []).flatMap(w => w.slots).filter(Boolea
 const inGarrison = id => garrisonIds().includes(id);
 const fieldCount = () => S.owned.filter(u => !inGarrison(u.id)).length; // soldiers that go onto the map: limited by supply (beds)
 const garrisonCount = () => garrisonIds().length;
+const mapV2Now = () => (typeof isLive === "function" && isLive() ? mapV2For(liveClock().week) : true); // the bigger fields, wall and trap limits (practice always)
 const supplyV2Now = () => (typeof isLive === "function" && isLive() ? supplyV2For(liveClock().planDay) : true); // practice always uses bought waves
 const wavesOpen = () => (supplyV2Now() ? Math.max(0, Math.min(WAVE_COUNT, S.wavesOpen || 0)) : WAVE_COUNT);
 const waveOpen = i => i < wavesOpen();
@@ -63,9 +64,23 @@ function assignWave(id, w, slot) {
   return null;
 }
 // the first free tile of your field, nearest your army's usual spots first
+// No full blockade: walls may funnel attackers but never seal the castle in. True if, with wall `ref` standing on tile `key` (and every other
+// wall of mine where it is), an enemy can still walk from the centre of the map to a tile beside my castle, round the trees.
+const NO_BLOCK = "You can't seal your castle in. Leave a way through for attackers.";
+function routeOpen(key, ref) {
+  const n = (RIVALS || []).length + 1, blocked = new Set();
+  (S.walls || []).forEach(w => { if (w.id === ref) return; const k = placedAt(w.id); if (k) blocked.add(k); }); if (key) blocked.add(key);
+  const castles = new Set([CASTLE.join(","), ...(RIVALS || []).map(r => r.pos.join(","))]);
+  const ok = (r, c) => r >= 0 && c >= 0 && r < N && c < N && !blocked.has(r + "," + c) && !castles.has(r + "," + c) && !treeTile(r, c, n, N);
+  const goal = (r, c) => Math.abs(r - CASTLE[0]) <= 1 && Math.abs(c - CASTLE[1]) <= 1;
+  const s0 = [Math.round(CENTRE), Math.round(CENTRE)], seen = new Set([s0.join(",")]), q = [s0];
+  while (q.length) { const [r, c] = q.shift(); if (goal(r, c)) return true;
+    for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const rr = r + a, cc = c + b, k = rr + "," + cc; if (!seen.has(k) && ok(rr, cc)) { seen.add(k); q.push([rr, cc]); } } }
+  return false;
+}
 function autoPlace(id) {
   const sp = armySpots(CASTLE, N), pref = sp.units.map(x => x.join(",")), dist = k => { const [r, c] = k.split(",").map(Number); return hyp(r - CASTLE[0], c - CASTLE[1]); };
-  const free = k => zoneSet.has(k) && !S.place[k] && !wallRefAt(...k.split(",").map(Number));
+  const free = k => zoneSet.has(k) && !S.place[k] && !wallRefAt(...k.split(",").map(Number)) && (!findWall(id) || routeOpen(k, id));
   const k = pref.find(free) || [...zoneSet].filter(free).sort((x, y) => dist(x) - dist(y) || (x < y ? -1 : 1))[0];
   if (!k) return false; S.place[k] = id; return true;
 }

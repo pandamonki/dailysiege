@@ -18,7 +18,7 @@ function tapAt(clientX, clientY) {
   if (sel) {
     psel = null; if (S.locked) return;
     const wl = findWall(sel);
-    if (wl) { if (!wallFree(r, q, wl.dir, sel)) { toast("That tile isn't free."); return; } }
+    if (wl) { if (!wallFree(r, q, wl.dir, sel)) { toast("That tile isn't free."); return; } if (!routeOpen(key, sel)) { toast(NO_BLOCK); return; } }
     else { if (wref) { toast("A wall stands there."); return; } if (here && here !== sel) { toast("Someone already holds that ground."); return; } }
     if (inGarrison(sel)) { if (fieldCount() >= S.slots) { toast("Your field supply is full."); return; } unGarrison(sel); }
     const old = placedAt(sel); if (old) delete S.place[old];

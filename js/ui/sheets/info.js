@@ -45,7 +45,7 @@ function boardSheet() {
   return head(null, "Leaderboard", `${isLive() ? "Week standings" : "Test standings"} · day ${DAY} of 7`) + `<div class="body bdbody">
     <div class="bdhead"><span></span><span></span><span>Lord</span><span>Lv</span><span>Pts</span></div>
     ${rows.map((r, i) => `<div class="bd2${r.me ? " me" : ""}"><span class="ord">${i + 1}</span><img class="bmini" alt="" src="${bannerURL(r.banner, r.color, 24, 32)}"><span class="bdn"><b>${esc(r.name)}</b>${r.cls ? `<small>${CLASSES[r.cls].name}</small>` : ""}${i < 3 && n > 3 ? `<i class="tag bty" title="Bounty on their head: base + board position + hero level x 5">♛ ${bountyMap()[r.id] || ""}g</i>` : ""}${i >= n - low && n > 3 ? `<i class="tag cat" title="Earns catch-up gold">◈</i>` : ""}</span><span class="lv">${r.lvl}</span><span class="pts">${r.pts}${r.last != null ? `<small>+${r.last}</small>` : ""}</span></div>`).join("")}
-    <p class="muted bdfoot"><b class="bounty">♛</b> bounty on the top three · <b class="catch">◈</b> catch-up gold for the bottom 30%${catchUp ? ` (you get +${catchUp})` : ""}. Points: 10 for first place down to 0, +1 per hero slain, +${castlePts(isLive() ? fairV1For(liveClock().planDay) : true)} per castle taken.</p></div>`;
+    <p class="muted bdfoot"><b class="bounty">♛</b> bounty on the top three · <b class="catch">◈</b> catch-up gold for the bottom 30%${catchUp ? ` (you get +${catchUp})` : ""}. Points: 10 for first place down to 0, +1 per hero slain, +${castlePts(isLive() ? fairV1For(liveClock().planDay) : true)} per castle taken, +1 if your hero survives the battle.</p></div>`;
 }
 function latestBattleKey() { return Object.keys(LIVE.battles || {}).sort().pop() || null; }
 let LASTP = null, reportBack = null;
@@ -132,7 +132,7 @@ function titleSheet() {
   return `<div class="splash-art" role="img" aria-label="Daily Siege: castles and armies around a hill at sunset"></div><div class="splash-menu">
     <div class="menu3">
       <button class="btn wax big" data-act="playgo">⚔ Play with friends<small>${lobbyOpen(LIVE.config) ? (inGame ? (LIVE.players[LIVE.uid].pending ? "Finish registering for the war" : "Muster hall · registration open") : "Registration is open. Join the war") : inGame ? "Friends game · day " + (live ? DAY : liveClock().dayNo) + " of 7" : LIVE.config ? "Join your friends' next war" : can ? "Host a war and invite friends" : "Daily siege with friends"}</small></button>
-      ${inGame ? `<button class="btn small" data-act="open" data-v="game">⚙ Game settings</button>` : ""}${window.DS && DS.user ? `<button class="btn small" data-act="open" data-v="wars">🏰 Your wars${(DS.wars || []).length > 1 ? ` (${DS.wars.length})` : ""}</button>` : ""}${typeof PWA !== "undefined" && PWA.canOffer() ? `<button class="btn small" data-act="pwainstall">📲 Install app</button>` : ""}<button class="btn small" data-act="open" data-v="patch">📜 Patch notes</button><button class="btn small" data-act="wizard">🧙 How to play (tour)</button>
+      ${inGame ? `<button class="btn small" data-act="open" data-v="game">⚙ Game settings</button>` : ""}${window.DS && DS.user ? `<button class="btn small" data-act="open" data-v="wars">🏰 Your wars${(DS.wars || []).length > 1 ? ` (${DS.wars.length})` : ""}</button>` : ""}${typeof PWA !== "undefined" && PWA.canOffer() ? `<button class="btn small" data-act="pwainstall">📲 Install app</button>` : ""}<button class="btn small" data-act="open" data-v="patch">📜 Patch notes</button>${typeof LIVE === "object" && LIVE.config && (LIVE.config.hall || []).length ? `<button class="btn small" data-act="open" data-v="hall">🏆 Hall of fame</button>` : ""}<button class="btn small" data-act="wizard">🧙 How to play (tour)</button>
     </div></div>`;
 }
 function guideSheet() { // the tour's pages, read as a book (new lords see this before choosing a hero)
@@ -178,6 +178,23 @@ const PATCHES = [
     "New Sand Pit (80 gold): only siege engines sink in. A ram, catapult or powder cart is stuck for 6 seconds. Soldiers walk over it.",
     "New Guard Tower (150 gold, up to 2): a stationary defender with 270 health that shoots enemies within 3.5 tiles but never moves. Upgrade each one on its own: Arrow Tower (100 gold, needs a Fortress), then Arrow Tower III, Fire Tower, Bomb Tower, Magic Tower or Sniper Tower (150 gold, needs a Citadel). The Fire Tower is weaker against soldiers but does four times damage to siege engines. Towers are fragile: 270 to 480 health. Find it with the traps.",
   ] },
+  { v: "Bigger fields", date: "17 Nov", fixes: [], balance: [
+    "From wars starting on 18 Nov the map is 4 tiles wider and taller (21 by 21 for 8 lords), and each lord's field reaches further round the castle and forward up the road: 27 tiles with 8 lords, up from 18. The trees stay where they were; only tiles a tree trunk stands on are closed to building.",
+    "Equal fields: every lord in a war gets the same number of tiles to build on (27 with 8 lords, 25 with 9 to 12). Castles round a ring don't land evenly on a square grid, so the bigger fields are trimmed to the smallest one, dropping the tiles furthest behind the castle first. The map, castles, roads and trees don't move.",
+    "Up to 5 walls (was 6) and 4 traps a battle (no limit before).",
+    "Battering rams, catapults and the Ogre Breaker batter down a wall in their way instead of sliding round it. Powder carts still go around.",
+  ], changes: [
+    "No full blockade: a wall that would close the last way from the middle of the map to your castle is refused, so walls can funnel attackers into traps but never seal a castle in.",
+    "The Defences tab shows Traps set, x of 4.",
+  ] },
+  { v: "The end of a war", date: "17 Nov", fixes: [], balance: [], changes: [
+    "When a war's seventh battle is fought, the war ends: the server writes its top three into the game's hall of fame and opens registration for the next war straight away. Every lord stays registered, keeping their hero and banner, with a fresh army.",
+    "The host chooses in Game settings (or the Muster Hall) whether registration then waits for them to begin, or closes by itself 24 hours after the war.",
+    "The war ceremony opens the first time you come back after a war: a podium for the top three with their heroes, the final standings with each day's points, war prizes (Kingslayer, Hero hunter, Butcher, Oathbreaker, Day winner, Best day, Survivor, Treasurer, Most improved) and each lord's week in detail.",
+    "Highlights of the war plays the two biggest moments of each day, and the final castle falling, one day after another. You can also watch the war's final battle again.",
+    "Seats are shuffled when registration closes: sign-up order still decides who gets a seat, but where each lord's castle stands round the map is a fresh draw every war (from wars starting on 18 Nov).",
+    "The Muster Hall shows a card for the war that just ended, with the ceremony, the highlights and the hall of fame. The hall of fame is also in the main menu.",
+  ] },
   { v: "Flat items and replay fixes", date: "16 Nov", fixes: [
     "Replays: following your hero and your keep works again (it had stopped since sudden death arrived), so the zoom buttons work while following, and when your lord is out the camera follows the fight instead of the whole field.",
     "The map no longer freezes after watching a replay. You can pan, zoom and select units again straight away.",
@@ -186,7 +203,12 @@ const PATCHES = [
     "From the battle of 17 Nov, hero items add flat amounts instead of percentages, so they help most early in the week: Whetstone +6 attack, Gauntlets and Daedalus +12, Leather Jerkin +100 health, Ring of Health +140 health and 10 health a second, Vanguard +260 health, Mending Herbs 5 health a second, Healing Salve heals 300.",
     "Swift Sandals +0.2 and Boots of Speed +0.35 tiles a second. Iron Buckler, Ring of Protection and Shiva's Guard now block 3, 6 and 5 damage from every normal hit. Elixir of Fury: 0.2 seconds faster between attacks.",
     "Lifesteal, crits, dodge, reflect, slows, splash and the area auras stay percentages. The Iron Standard's aura is now 18% less damage taken (was 24%).",
-  ], changes: [] },
+    "Survivor: from the battle of 17 Nov, a lord whose hero is still alive when the battle ends scores 1 more point, even if their castle has fallen. Placement still goes by castles: the battle ends when one castle (or one alliance) is left, and only lords with a castle standing go to the sudden death arena.",
+  ], changes: [
+    "Replays start two zoom steps further out, and the highlight reel two steps further out than before.",
+    "Deploy: the field row starts with a Castle guard square. Put any soldier there (a sniper on the walls, a knight at the gate) and it stays home to defend your castle all battle. It is one of your 4 soldiers on the field; drag it back among the attackers to send it out.",
+    "A column of small castles in each lord's colour runs down the side of every replay and highlight reel. A castle is crossed out the moment it falls, so you can follow the match without the whole map in view.",
+  ] },
   { v: "Clearer planning screens", date: "16 Nov", fixes: [
     "Soldiers, walls and traps can no longer be placed on tiles covered by trees.",
     "Replay camera: zoom in now goes further, zoom works during sudden death, and the home button follows your hero again. The Auto button is now Follow hero.",

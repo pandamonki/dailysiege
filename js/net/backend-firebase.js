@@ -231,6 +231,7 @@
       try { LIVE.isOwner = g.game ? g.game.host === DS.user.uid : LIVE.isOwner; } catch (e) {}
       g.started = true;
       const cfg = snapDoc(configView(g)), bt = snapCol(battlesView(g)), pl = snapCol(playersView(g));
+      { const pw = curWar() - 1, pb = Object.fromEntries(Object.entries(g.battles || {}).filter(([, b]) => (b.war || 1) === pw).map(([k, b]) => [k, copy(b)])); LIVE.prevWar = pw >= 1 && Object.keys(pb).length ? { war: pw, battles: pb } : null; } // the war that just ended, for its ceremony and highlights
       g.cfgCbs.forEach(f => f(cfg)); g.btCbs.forEach(f => f(bt)); g.plCbs.forEach(f => f(pl));
       if (DS.autoEnter && cfg) { DS.autoEnter = false; setTimeout(() => { try { if (typeof A === "object" && A.playgo) { A.playgo(); render(); } } catch (e) {} }, 60); } };
     if (now) run(); else if (!emitT) emitT = setTimeout(run, 0);
