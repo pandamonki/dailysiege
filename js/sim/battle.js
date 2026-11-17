@@ -73,6 +73,7 @@ function runBattle(plans, seed, opts = {}) {
   const TREE_LOOK = 1.2, TREE_TURNS = Array.from({ length: 11 }, (_, i) => { const a = (i + 1) * Math.PI / 12; return [dcos(a), dsin(a)]; });
   const treeRayClear = (x, y, ux, uy, L) => { for (let s = .3; s < L + .01; s += .3) if (treeHit(x + ux * s, y + uy * s)) return false; return true; };
   const settle = e => { for (let i = 0; i < 5; i++) { const h = treeHit(e.x, e.y); if (!h) return; e.x += h.nx * (h.d + .01); e.y += h.ny * (h.d + .01); } }; // step clear of the trees (a few passes: a blockade's trees overlap)
+  const EV2 = plans.some(p => p.engV2); // engines v2: heroes and soldiers drop what they are doing for an enemy siege engine near their own castle
   const WV2 = plans.some(p => p.wallV2); // walls v2: every fence blocks everyone, its owner's soldiers too, so they route round through the gaps
   const SD2 = plans.some(p => p.sdV2); // sudden death v2: a half-size arena nobody can leave, and no respawn timers inside it
   let sd = null; // sudden death: null until SD_AT, then { t0, go, skip, winners }
@@ -592,6 +593,7 @@ function runBattle(plans, seed, opts = {}) {
     if (e.hunter) { const hs = ents.filter(x => !x.dead && x.kind === "champ" && hostile(e.pid, x.pid) && vis(x, e)); if (hs.length) return minBy(hs, x => d(x, e)); }
     const p = P[e.pid], guard = e.order === "guard", escort = e.order === "escort" && live(p.champ);
     if (!e.cart && !e.ram && ((UNIT_TYPES[e.key] || [])[0] !== "siege" || e.order === "guard")) { const carts = ents.filter(o => o.cart && !o.dead && hostile(e.pid, o.pid) && ents.some(c => c.kind === "castle" && !c.dead && !hostile(e.pid, c.pid) && d(c, o) <= 4) && d(o, e) <= 9); if (carts.length) return minBy(carts, o => d(o, e)); } // a powder cart within 4 tiles of a friendly castle: stop it
+    if (EV2 && !e.cart && !e.ram && !e.cat && P[e.pid].castle && !P[e.pid].castle.dead) { const home = P[e.pid].castle, eng = ents.filter(o => (o.cart || o.ram || o.cat) && !o.dead && hostile(e.pid, o.pid) && vis(o, e) && d(o, home) <= ENGINE_ALERT && d(o, e) <= 9); if (eng.length) return minBy(eng, o => d(o, home)); } // a ram, catapult or powder cart within 3 tiles of home: everyone near enough turns on it, the one closest to the walls first
     // raiders (from 12 Nov 2026) make for a castle: struck by a melee fighter they turn and fight it, struck from range they keep going
     if (V3 && (e.key === "raider" || e.purpose === "castle") && !guard && !escort) { const ag = e.aggro; if (ag && ag.until > t && live(ag.src) && hostile(e.pid, ag.src.pid) && vis(ag.src, e) && (ag.src.range || 1.1) <= 1.5 && d(ag.src, e) <= 6) return ag.src;
       const g = goalPid(e), c = g && ents.find(o => !o.dead && o.kind === "castle" && o.pid === g); if (c) return c; }

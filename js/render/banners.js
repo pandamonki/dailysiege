@@ -36,3 +36,19 @@ function bannerURL(b, color, w = 72, h = 96) {
   const id = JSON.stringify(b || {}) + color + w; if (BAN_URL[id]) return BAN_URL[id];
   const cv = document.createElement("canvas"); cv.width = w; cv.height = h; paintBanner(cv.getContext("2d"), b, color, 3, 3, w - 6, h - 6); return (BAN_URL[id] = cv.toDataURL());
 }
+
+// The wax seal on sealed orders, as pixel art: a blob of wax in the lord's colour with two drips, a pressed ring and their initials (one or two letters)
+const SEAL_FONT = { A: "01110100011000111111100011000110001", B: "11110100011111010001100011000111110", C: "01110100011000010000100001000101110", D: "11110100011000110001100011000111110", E: "11111100001111010000100001000011111", F: "11111100001111010000100001000010000", G: "01110100011000010111100011000101111", H: "10001100011111110001100011000110001", I: "01110001000010000100001000010001110", J: "00111000100001000010100101001001100", K: "10001100101110010010100101000110001", L: "10000100001000010000100001000011111", M: "10001110111010110001100011000110001", N: "10001110011010110011100011000110001", O: "01110100011000110001100011000101110", P: "11110100011000111110100001000010000", Q: "01110100011000110001101011001001101", R: "11110100011000111110101001001010001", S: "01111100001000001110000010000111110", T: "11111001000010000100001000010000100", U: "10001100011000110001100011000101110", V: "10001100011000110001100010101000100", W: "10001100011000110101101011101110001", X: "10001100010101000100010101000110001", Y: "10001100010101000100001000010000100", Z: "11111000010001000100010001000011111" };
+const SEAL_URL = {};
+function waxSealURL(color, letters) {
+  const L = String(letters || "").normalize("NFD").replace(/[^A-Za-z]/g, "").toUpperCase().slice(0, 2) || "Y", id = color + "|" + L; if (SEAL_URL[id]) return SEAL_URL[id];
+  const N = 36, H = N + 6, c0 = 18, g = Array.from({ length: H }, () => Array(N).fill(null)), dark = mixHex(color, "#000000", .35), deep = mixHex(color, "#000000", .55), lite = mixHex(color, "#ffffff", .35);
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const dx = x - c0 + .5, dy = y - c0 + .5, a = Math.atan2(dy, dx), r = 15.5 + Math.sin(a * 7) * .9 + Math.sin(a * 3 + 1) * .6, dd = Math.hypot(dx, dy); if (dd < r) g[y][x] = dd > r - 1.6 ? dark : (dx + dy < -14 ? lite : color); }
+  [[22, 34, 3, 4], [9, 32, 2, 3]].forEach(([x, y, w, h]) => { for (let j = 0; j < h; j++) for (let i = 0; i < w - (j === h - 1 ? 1 : 0); i++) g[y + j][x + i] = j === h - 1 ? dark : color; }); // drips
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const dd = Math.hypot(x - c0 + .5, y - c0 + .5); if (dd >= 10.5 && dd < 11.6) g[y][x] = deep; else if (dd >= 11.6 && dd < 12.4 && g[y][x]) g[y][x] = lite; } // the pressed ring
+  const w = L.length * 6 - 1, x0 = c0 - Math.ceil(w / 2), y0 = c0 - 4;
+  [...L].forEach((ch, k) => { const f = SEAL_FONT[ch]; for (let j = 0; j < 7; j++) for (let i = 0; i < 5; i++) if (f[j * 5 + i] === "1") { const x = x0 + k * 6 + i, y = y0 + j; g[y][x] = deep; if (g[y + 1][x] !== deep) g[y + 1][x] = lite; } }); // the initials, pressed in
+  const cv = document.createElement("canvas"); cv.width = N; cv.height = H; const c = cv.getContext("2d");
+  for (let y = 0; y < H; y++) for (let x = 0; x < N; x++) { let col = g[y][x]; if (!col) { if ((g[y - 1] && g[y - 1][x]) || (g[y + 1] && g[y + 1][x]) || g[y][x - 1] || g[y][x + 1]) col = "#1e140c"; else continue; } c.fillStyle = col; c.fillRect(x, y, 1, 1); }
+  return (SEAL_URL[id] = cv.toDataURL());
+}
