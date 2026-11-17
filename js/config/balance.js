@@ -70,7 +70,8 @@ const BAL = { move: .85, swing: 1.15, cd: 1.1, castleHp: 600 };
 // Sudden death (battles on or after SUDDEN_V1_FROM): at SD_AT every surviving hero and soldier is carried to the centre arena, a SD_COUNT second countdown runs, then it is a fight to the death for up to SD_LEN seconds
 const SD_AT = 180, SD_COUNT = 5, SD_LEN = 60;
 let SUDDEN_V1_FROM = "2026-11-15"; const suddenV1For = d => String(d) >= SUDDEN_V1_FROM;
-// Sudden death v2 (plans stamped sdV2, battles from SUDDEN_V2_FROM): the arena is half the size and nobody can leave it, and a hero who falls in it shows no respawn timer (they never come back)
+// Sudden death v2 (plans stamped sdV2, battles from SUDDEN_V2_FROM): the arena is half the size and nobody can leave it, everyone drawn in is topped up to half health, and a hero who falls in it shows no respawn timer (they never come back).
+// The same battles stamp wallV2: every fence blocks everyone, its owner's soldiers too, and they find a way round through the gaps.
 let SUDDEN_V2_FROM = "2026-11-19"; const suddenV2For = d => String(d) >= SUDDEN_V2_FROM;
 const sdArenaR = (n, v2) => (3 + n * .4 + 3.2) * (v2 ? .5 : 1); // the red ring's radius in tiles for n lords
 const SUDDEN = 100, TMAX = 200, FRAME_DT = .2, BURST_MIN = 560;
