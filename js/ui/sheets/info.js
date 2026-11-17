@@ -180,6 +180,7 @@ const PATCHES = [
     "Survivor: from the battle of 17 Nov, a lord whose hero is still alive when the battle ends scores 1 more point, even if their castle has fallen. Placement still goes by castles: the battle ends when one castle (or one alliance) is left, and only lords with a castle standing go to the sudden death arena.",
   ], changes: [
     "Replays start two zoom steps further out, and the highlight reel two steps further out than before.",
+    "Deploy: the field row starts with a Castle guard square. Put any soldier there (a sniper on the walls, a knight at the gate) and it stays home to defend your castle all battle. It is one of your 4 soldiers on the field; drag it back among the attackers to send it out.",
     "A column of small castles in each lord's colour runs down the side of every replay and highlight reel. A castle is crossed out the moment it falls, so you can follow the match without the whole map in view.",
   ] },
   { v: "Clearer planning screens", date: "16 Nov", fixes: [
