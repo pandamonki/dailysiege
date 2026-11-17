@@ -10,7 +10,7 @@ const UNITS = {
   sniper:  { name: "Dwarven Sniper", cost: 220, hp: 170, atk: 48, note: "Slow, deadly shots from very far away. Great against light targets and heroes, poor against heavy armour." },
   ram:     { name: "Battering Ram", cost: 300, hp: 750, atk: 125, note: "Pushes slowly at castles and ignores soldiers. Hits castles hard, taking about 5 seconds to bring down a tier 1 castle, then moves on to the next one. Very tough.", engine: true },
   cart:    { name: "Powder Cart", cost: 300, hp: 240, atk: 0, note: "Rolls very slowly at a castle and blows up, enough to flatten a tier 1 castle. The blast hurts every soldier nearby, friend or foe, and also goes off if the cart is destroyed. Can't be trained.", noUpgrade: true, engine: true },
-  tower:   { name: "Guard Tower", cost: 150, hp: 400, atk: 12, note: "A stationary defender.", tower: true, noUpgrade: true },
+  tower:   { name: "Guard Tower", cost: 150, hp: 400, atk: 12, note: "A stationary defender. Upgrade it to an Arrow Tower.", tower: true, noUpgrade: true },
   catapult: { name: "Catapult", cost: 300, hp: 450, atk: 110, note: "Very slow. Sets up two tiles from a castle, then hurls boulders at it. Hits castles hard from a distance, but cannot fight soldiers, so guard it.", engine: true },
 };
 const UNIT_LVL_GAIN = .3; // each soldier level adds this share of base health and attack
@@ -29,7 +29,7 @@ const TRAPS = {
   blade: { name: "Blade Trap",  cost: 90, note: `Fires a volley of blades across the lane at anyone who steps on it, dealing ${TRAP_DMG.blade} damage, ignoring armour, to each enemy in it. Fires once each battle.` },
   bomb:  { name: "Bomb Trap",  cost: 110, note: `Explodes when an enemy steps on it, dealing ${TRAP_DMG.bomb} damage, ignoring armour, to every enemy within ${BOMB_R} tiles. Best against clumps. Fires once each battle.` },
   sand:  { name: "Sand Pit",   cost: 80, note: `Only siege engines sink into it: a ram, catapult or powder cart is stuck for ${SAND_SECS} seconds. Soldiers walk over it. Sets itself again each battle.` },
-  tower: { name: "Guard Tower", cost: 150, note: "A stone tower that stands where you place it and shoots enemies in range. It never moves, so it holds the ground without pushing out. It gets stronger as your castle is upgraded. You can own 2." },
+  tower: { name: "Guard Tower", cost: 150, note: "A stone tower that stands where you place it and shoots enemies in range. It never moves, so it holds the ground without pushing out. Upgrade each one: first to an Arrow Tower, then to an Arrow, Bomb, Magic or Sniper Tower. You can own 2." },
 };
 
 const UNIT_SIM = {
@@ -51,3 +51,26 @@ const UNIT_TYPES = { tower: ["pierce", "heavy"], catapult: ["siege", "heavy"], f
 const BODY = { tower: [.4, 3.5], catapult: [.46, 4], footman: [.38, 3], guard: [.36, 2.6], militia: [.3, 1.5], knight: [.42, 4.5], raider: [.36, 2.2], mage: [.24, 1], sniper: [.28, 1.4], ram: [.46, 4.2], cart: [.42, 3.5], bowman: [.24, 1], healer: [.24, 1], wolf: [.26, 1.2],
   "c-warrior": [.38, 3.2], "c-mage": [.26, 1.1], "c-archer": [.26, 1.1], "c-shaman": [.28, 1.3], "c-rogue": [.26, 1.1] };
 const bodyOf = e => BODY[e.key] || [.3, 1.5];
+
+// Towers: each one you own is upgraded on its own. Guard Tower, then Arrow Tower (needs a Fortress), then one of four level 3 branches (needs a Citadel).
+// Each stage is a full unit entry so the battle, replays and sprites treat it like any other body; it just never moves.
+Object.assign(UNITS, {
+  tower2: { name: "Arrow Tower", cost: 250, hp: 500, atk: 20, tower: true, noUpgrade: true, note: "Longer reach and a faster, harder shot than the Guard Tower. Upgrade it again to pick a branch." },
+  towerA: { name: "Arrow Tower III", cost: 400, hp: 650, atk: 30, tower: true, noUpgrade: true, note: "The strongest plain arrow tower: tough, long reach and a quick, hard shot." },
+  towerB: { name: "Bomb Tower", cost: 400, hp: 600, atk: 30, tower: true, noUpgrade: true, note: "Lobs bombs that splash most of their damage on enemies next to the target. Ignores armour. Best against clumps." },
+  towerM: { name: "Magic Tower", cost: 400, hp: 500, atk: 30, tower: true, noUpgrade: true, note: "Fires magic bolts. Magic is good against light and heavy armour, but weak against castles and walls." },
+  towerS: { name: "Sniper Tower", cost: 400, hp: 450, atk: 65, tower: true, noUpgrade: true, note: "Very long range, very high damage, slow shots. Great against light targets and heroes, poor against heavy armour." },
+});
+Object.assign(UNIT_SIM, {
+  tower2: { range: 4, as: 1.2, spd: 0, armor: .25, shot: "#c8d8ff" },
+  towerA: { range: 4.5, as: 1.1, spd: 0, armor: .3, shot: "#c8d8ff" },
+  towerB: { range: 3.5, as: 2.0, spd: 0, armor: .3, shot: "#ff9a4a", splash: .7 },
+  towerM: { range: 4, as: 1.5, spd: 0, armor: .25, shot: "#c89aff" },
+  towerS: { range: 7, as: 3.0, spd: 0, armor: .25, shot: "#ffe08a" },
+});
+Object.assign(UNIT_TYPES, { tower2: ["pierce", "heavy"], towerA: ["pierce", "heavy"], towerB: ["pure", "heavy"], towerM: ["magic", "heavy"], towerS: ["precision", "heavy"] });
+Object.assign(UNIT_TIER, { tower2: 1, towerA: 1, towerB: 1, towerM: 1, towerS: 1 });
+Object.assign(BODY, { tower2: [.4, 3.6], towerA: [.4, 3.8], towerB: [.4, 3.6], towerM: [.4, 3.6], towerS: [.38, 3.8] });
+const TOWER_KEYS = ["tower", "tower2", "towerA", "towerB", "towerM", "towerS"];
+const TOWER_UP = { tower: { to: ["tower2"], cost: 100, tier: 2 }, tower2: { to: ["towerA", "towerB", "towerM", "towerS"], cost: 150, tier: 3 } }; // what each stage can become, the gold, and the castle tier it needs
+const towerSpent = k => k === "tower" ? 150 : k === "tower2" ? 250 : 400; // gold put into a tower so far; selling returns half

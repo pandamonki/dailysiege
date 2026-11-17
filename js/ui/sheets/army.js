@@ -12,7 +12,7 @@ function unitSheet(id) {
     <p class="muted">${(u.hp ?? 1) < 1 ? "Still recovering from yesterday's battle. Fallen soldiers return at half health. " : ""}Soldiers follow your War Orders: stance, target priority and if-then commands.</p></div>`;
 }
 function trapSheet(id) {
-  const t = findTrap(id), d = TRAPS[t.type];
-  return head(trapURL(t.type), d.name, "Permanent") + `<div class="body"><p>${esc(d.note)}</p>
+  const t = findTrap(id), d = t.type === "tower" ? { ...UNITS[towerKey(t)], cost: towerSpent(towerKey(t)) } : TRAPS[t.type];
+  return head(t.type === "tower" ? spriteURL(towerKey(t)) : trapURL(t.type), d.name, t.type === "tower" ? "Stationary defender" : "Permanent") + `<div class="body"><p>${esc(d.note)}</p>
     <div class="row"><button class="btn" data-act="move" data-v="${id}" ${dis()}>Move</button><button class="btn" data-act="bench" data-v="${id}" ${dis()}>Pick up</button><button class="btn" data-act="tsell" data-v="${id}" ${dis()}>Sell +${Math.floor(d.cost / 2)}g</button></div></div>`;
 }

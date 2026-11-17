@@ -16,6 +16,11 @@ const SPECS = {
   ram:         { cart: 1, ram: 1, a: "#5a3f24", b: YOU_COLOR },
   cart:        { cart: 1, a: "#6a4a2c", b: YOU_COLOR },
   tower:       { tower: 1, a: "#8a8a90", b: YOU_COLOR },
+  tower2:      { tower: 1, tv: "2", a: "#8f8f96", b: YOU_COLOR },
+  towerA:      { tower: 1, tv: "A", a: "#9a9aa2", b: YOU_COLOR },
+  towerB:      { tower: 1, tv: "B", a: "#7a7068", b: YOU_COLOR },
+  towerM:      { tower: 1, tv: "M", a: "#7a7090", b: YOU_COLOR, f: "#c89aff" },
+  towerS:      { tower: 1, tv: "S", a: "#8a8470", b: YOU_COLOR },
   catapult:    { cat: 1, a: "#5a3f24", b: YOU_COLOR },
   mage:        { a: "#5a3f8f", b: YOU_COLOR, hc: "#42306b", head: "wizard", weapon: "staff", f: "#9fd8ff", robe: 1 },
   sniper:      { a: "#7a5a32", b: YOU_COLOR, hc: "#8a4a22", head: "dwarf", weapon: "rifle" },
@@ -44,6 +49,10 @@ function buildSprite(sp, pose = "") {
   if (sp.tower) { // a guard tower: a stone keep with battlements, an arrow slit and a banner in the owner's colour
     R(3, 6, 12, 15, "a"); R(2, 4, 13, 5, "a"); P(2, 3, "a"); P(5, 3, "a"); P(10, 3, "a"); P(13, 3, "a"); R(3, 4, 4, 4, "bt"); R(11, 4, 12, 4, "bt");
     R(3, 9, 12, 9, "bt"); R(6, 7, 9, 7, "b"); R(7, 11, 8, 13, "bt"); P(7, 6, "m"); P(8, 6, "m");
+    if (sp.tv === "2" || sp.tv === "A") { R(7, 0, 7, 3, "l"); R(8, 0, 10, 1, "b"); if (sp.tv === "A") { R(2, 6, 2, 15, "bt"); R(13, 6, 13, 15, "bt"); } }
+    else if (sp.tv === "B") { R(5, 1, 10, 3, "bt"); R(6, 0, 9, 0, "bt"); P(10, 0, "fe"); P(11, 0, "fe"); }
+    else if (sp.tv === "M") { R(7, 0, 8, 3, "f"); P(7, 0, "fe"); }
+    else if (sp.tv === "S") { R(8, 2, 15, 2, "m"); R(7, 1, 8, 3, "bt"); }
   } else if (sp.ram) { // a battering ram: a roofed frame on wheels with an iron-capped log
     if (odd) DY = -1;
     R(2, 5, 12, 6, "a"); R(1, 7, 13, 10, "w");

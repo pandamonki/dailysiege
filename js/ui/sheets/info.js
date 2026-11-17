@@ -172,10 +172,11 @@ const PATCHES = [
   { v: "Permanent traps", date: "17 Nov", fixes: [], balance: [
     "Traps are now permanent. Buy one once and it stays where you put it, firing once in every battle. You can own up to 4, and sell one back for half its price.",
     "New prices: Spike Pit 60 gold, Snare 40, Blade Trap 90. Spike Pit damage 90 to 150, Blade Trap 60 to 90 each. Trap descriptions now show their damage.",
+    "Walls are about 30% weaker so soldiers can break through them: Palisade 140, Timber 240, Stone 360 health.",
   ], changes: [
     "New Bomb Trap (110 gold): explodes for 100 damage to every enemy within 1.6 tiles of whoever steps on it. Good against clumps.",
     "New Sand Pit (80 gold): only siege engines sink in. A ram, catapult or powder cart is stuck for 6 seconds. Soldiers walk over it.",
-    "New Guard Tower (150 gold, up to 2): a stationary defender with 400 health that shoots enemies within 3.5 tiles but never moves. It grows stronger with your castle tier. Find it with the traps.",
+    "New Guard Tower (150 gold, up to 2): a stationary defender with 400 health that shoots enemies within 3.5 tiles but never moves. Upgrade each one on its own: Arrow Tower (100 gold, needs a Fortress), then Arrow Tower III, Bomb Tower, Magic Tower or Sniper Tower (150 gold, needs a Citadel). Find it with the traps.",
   ] },
   { v: "Flat items and replay fixes", date: "16 Nov", fixes: [
     "Replays: following your hero and your keep works again (it had stopped since sudden death arrived), so the zoom buttons work while following, and when your lord is out the camera follows the fight instead of the whole field.",

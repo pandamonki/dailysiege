@@ -125,7 +125,7 @@ function runBattle(plans, seed, opts = {}) {
     trigOk: (e, key) => !e.triggers || !e.triggers[key] || triggerOk(e, key), poss: pid => poss(pid), isBounty: pid => !!RANKS[pid] && RANKS[pid] <= 3, onUlt: (e, name) => { P[e.pid].ultCast = true; anyUlt = true; if (!hl.some(h => h.kind === "ult" && h.pid === e.pid && h.t === t)) H({ kind: "ult", ab: name, gen: 1, pid: e.pid, x: e.x, y: e.y, score: 50 }); } }) : null;
   // one soldier of a lord's, from a plan piece: used for the army at the start and for reinforcement waves
   function makeUnit(pl, pc, x, y) {
-    const g = pl.gear || {}, base = UNITS[pc.type], s = UNIT_SIM[pc.type], isCart = pc.type === "cart", isTower = pc.type === "tower", tm = isTower ? 1 + UNIT_LVL_GAIN * (Math.max(1, Math.min(3, pl.castleTier || 1)) - 1) : 1, fixed = isCart || !!base.merc || isTower, m = fixed ? 1 : 1 + UNIT_LVL_GAIN * (pc.lvl - 1), gm = fixed ? 1 : 1 + .15 * (g.armour || 0), ga = fixed ? 1 : 1 + .15 * (g.weapon || 0);
+    const g = pl.gear || {}, base = UNITS[pc.type], s = UNIT_SIM[pc.type], isCart = pc.type === "cart", isTower = !!base.tower, tm = 1, fixed = isCart || !!base.merc || isTower, m = fixed ? 1 : 1 + UNIT_LVL_GAIN * (pc.lvl - 1), gm = fixed ? 1 : 1 + .15 * (g.armour || 0), ga = fixed ? 1 : 1 + .15 * (g.weapon || 0);
     const e = add({ order: pc.order || "army", pid: pl.pid, kind: "unit", key: pc.type, lvl: pc.lvl, ref: pc.id || null, x, y, maxhp: base.hp * m * gm * tm, atk: base.atk * m * ga * tm, cart: isCart, ram: pc.type === "ram" || !!s.rammer, cat: pc.type === "catapult", merc: !!base.merc, regen: s.regen || 0, hunter: !!s.hunter, dmgRed: fixed ? 0 : [0, 0, .1, .2][g.armour || 0], lifesteal: s.lifesteal || (!fixed && (g.weapon || 0) >= 3 ? .1 : 0), range: s.range, as: s.as, spd: s.spd, armor: s.armor, shot: s.shot, siege: s.siege, splash: s.splash || 0, healer: s.heal ? s.heal * m : 0 });
     e.hp = e.maxhp * (pc.hp ?? 1); [e.atype, e.armour] = UNIT_TYPES[pc.type];
     return e;
@@ -196,10 +196,10 @@ function runBattle(plans, seed, opts = {}) {
         makeUnit(pl, pc, pc.c + .5, pc.r + .5);
       } else if (pc.kind === "wall") {
         const tier = Math.max(1, Math.min(3, pl.castleTier || 1));
-        wallTiles(pc.r, pc.c, pc.dir).forEach(([r, c]) => { if (r >= 0 && c >= 0 && r < NN && c < NN) walls.push({ id: walls.length, pid: pl.pid, x0: c, y0: r, dir: pc.dir === "v" ? "v" : "h", hp: WALL_TIERS[tier - 1].hp, maxhp: WALL_TIERS[tier - 1].hp, tier }); });
+        wallTiles(pc.r, pc.c, pc.dir).forEach(([r, c]) => { if (r >= 0 && c >= 0 && r < NN && c < NN) walls.push({ id: walls.length, pid: pl.pid, x0: c, y0: r, dir: pc.dir === "v" ? "v" : "h", hp: pl.trapV2 ? WALL_TIERS[tier - 1].hp : WALL_HP_V1[tier - 1], maxhp: pl.trapV2 ? WALL_TIERS[tier - 1].hp : WALL_HP_V1[tier - 1], tier }); });
       } else if (pc.kind === "trap") {
         if (!TRAPS[pc.type]) return;
-        if (pc.type === "tower") { if (pl.towerN >= TOWER_CAP) return; pl.towerN = (pl.towerN || 0) + 1; makeUnit(pl, { kind: "unit", type: "tower", lvl: 1, hp: 1 }, pc.c + .5, pc.r + .5); return; }
+        if (pc.type === "tower") { if (pl.towerN >= TOWER_CAP) return; pl.towerN = (pl.towerN || 0) + 1; makeUnit(pl, { kind: "unit", type: TOWER_KEYS.includes(pc.tk) ? pc.tk : "tower", lvl: 1, hp: 1 }, pc.c + .5, pc.r + .5); return; }
         if (pl.trapV2 && traps.filter(q => q.pid === pl.pid && !q.ranger).length >= TRAP_CAP) return;
         traps.push({ pid: pl.pid, type: pc.type, x: pc.c + .5, y: pc.r + .5, used: false, v2: !!pl.trapV2 });
       }
