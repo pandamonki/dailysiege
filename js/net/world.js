@@ -91,14 +91,14 @@ function battleFoes(res) {
 // opts (phones only): uid = whose device this is; nameOf, colours = how this device shows names and colours;
 // test = { mine } builds a practice fight from my unsaved orders against what is publicly known of my rivals.
 function buildBattleInputs(W, dayKey, opts = {}) {
-  const week = wWeekOf(W, dayKey), roster = wRoster(W, week), L = seatLayout(roster.length), dayNo = wWeekdayOf(dayKey, W.config), final = dayNo === 7;
+  const week = wWeekOf(W, dayKey), roster = wRoster(W, week), L = seatLayout(roster.length, mapV2For(week)), dayNo = wWeekdayOf(dayKey, W.config), final = dayNo === 7;
   const pts = wStandings(W, week, addDays(dayKey, -1)), lead = Object.entries(pts).sort((a, b) => b[1] - a[1])[0];
   const TC = opts.colours || wTeamColours(roster.map(p => [p.uid, p]), (uid, p) => p.state && p.state.banner);
   const nameOf = opts.nameOf || (uid => lordLabel(W.players[uid]) || "A lord");
   const rkm0 = rankMap(dayNo > 1 ? wStandings(W, week, addDays(dayKey, -1)) : {}, roster.map(q => q.uid));
   const raw = roster.map((p, i) => {
     let plan;
-    const hs = wHeroState(W, p.uid, week, dayKey), lvl = hs.lvl, z = zoneFor(L.castles[i], L.N, L.castles), sp = armySpots(L.castles[i], L.N);
+    const hs = wHeroState(W, p.uid, week, dayKey), lvl = hs.lvl, z = zoneFor(L.castles[i], L.N, L.castles, L.v2), sp = armySpots(L.castles[i], L.N);
     const botDay = n => lordBotPlan({ uid: p.uid, cls: (p.state && p.state.cls) || "warrior", i, ids: roster.map(q => q.uid), L, zone: z, dayNo: n, lvl: wHeroState(W, p.uid, week, addDays(week, n - 1)).lvl, v2: balV3For(dayKey), sup: supplyV2For(dayKey), fair: fairV1For(dayKey), pick: pickV1For(dayKey), ranks: rkm0, v3: heroV3For(dayKey) });
     if (opts.test && p.uid === opts.uid) plan = opts.test.mine;
     else if (p.bot) plan = opts.test ? (dayNo > 1 ? botDay(dayNo - 1) : null) : botDay(dayNo); // bots have no saved orders: theirs are worked out. In a test only yesterday's are known
@@ -117,7 +117,7 @@ function buildBattleInputs(W, dayKey, opts = {}) {
   const plans = raw.map(({ uid, i, plan, pieces, hs, noOrders }) => ({
     pid: uid, me: uid === opts.uid, name: nameOf(uid), color: TC[uid] || SEAT_COLORS[i], cls: plan.cls, level: hs.lvl, xp0: hs.xp, ultArm: plan.ultArm, shellAt: plan.shellAt, blessing: plan.blessing || null, items: wRapierItems(W, plan.items || [], uid, week, dayKey), castleTier: plan.castleTier || 1, banner: plan.banner || null, breaks: plan.breaks || [], pbetray: plan.pbetray || {}, castle: L.castles[i], leader: !!(lead && lead[1] > 0 && lead[0] === uid),
     ranks: heroV3For(dayKey) ? { a1: 0, a2: 0, a3: 0, ult: 0 } : plan.ranks || { a1: 0, a2: 0, a3: 0, ult: 0 }, ...(heroV3For(dayKey) ? { tree: cleanTree(plan.tree) } : {}), picks: plan.picks || {}, triggers: plan.triggers || {}, gear: plan.gear || {}, defences: plan.defences || {},
-    ...(itemsV5For(dayKey) ? { itemV5: true } : {}), ...(survFor(dayKey) ? { survV1: true } : {}), formation: plan.formation !== false, stance: plan.stance || "aggressive", gprio: plan.gprio || null, engage: plan.engage || 0, waves: plan.waves || null, prio: plan.prio || PRIORITIES.slice(), rules: plan.rules || [], pieces,
+    ...(itemsV5For(dayKey) ? { itemV5: true } : {}), ...(survFor(dayKey) ? { survV1: true } : {}), ...(L.v2 ? { siegeV1: true } : {}), formation: plan.formation !== false, stance: plan.stance || "aggressive", gprio: plan.gprio || null, engage: plan.engage || 0, waves: plan.waves || null, prio: plan.prio || PRIORITIES.slice(), rules: plan.rules || [], pieces,
     targets: (plan.targets || []).filter(q => raw.some(x => x.uid === q) || (pickV1For(dayKey) && !!PICK_ROLES[q])), tmode: plan.tmode || "list", heading: plan.heading || "near", rank: rkm[uid], offers: plan.offers || {}, replies: plan.replies || {}, terms: plan.terms || {}, bids: plan.bids || {},
     ...(noOrders && !opts.test ? { noOrders: true } : {}) })); // noOrders: this lord sealed nothing all week, so these are the stand-in orders, not theirs
   const feuds0 = wFeudsBefore(W, dayKey, week), { pairs, transfers } = resolveAlliances(plans, { persist: wCarriedPairs(W, dayKey), final, prevDay: addDays(dayKey, -1), feuds: feuds0, blocMax: balV2For(dayKey) ? BLOC_MAX : 0 });

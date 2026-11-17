@@ -65,16 +65,16 @@ let WAR_VIEW = null; // { cfg, battles, days, i, reel } while a finished war's b
 function viewPrevWar(on) {
   const pw = prevWar();
   if (on && pw && !WAR_VIEW) { const days = Object.keys(pw.battles).sort(), b0 = pw.battles[days[0]];
-    WAR_VIEW = { cfg: LIVE.config, battles: LIVE.battles, map: { N, castle: CASTLE, rivals: RIVALS, rwalls: RWALLS, rarmy: RARMY } };
+    WAR_VIEW = { cfg: LIVE.config, battles: LIVE.battles, map: { N, castle: CASTLE, rivals: RIVALS, rwalls: RWALLS, rarmy: RARMY, v2: ZONE_V2 } };
     LIVE.config = Object.assign({}, LIVE.config, { lobby: false, lobbyEnds: null, startDate: b0.week || days[0], war: pw.war, planDay: addDays(days[days.length - 1], 1) }); LIVE.battles = pw.battles; }
   else if (!on && WAR_VIEW) { const m = WAR_VIEW.map; LIVE.config = WAR_VIEW.cfg; LIVE.battles = WAR_VIEW.battles; WAR_VIEW = null; WAR_REEL = null;
-    RIVALS = m.rivals; RWALLS = m.rwalls; RARMY = m.rarmy; try { applyLayout(m.N, m.castle, RIVALS.map(r => r.pos)); } catch (e) {} } // the map exactly as it was
+    RIVALS = m.rivals; RWALLS = m.rwalls; RARMY = m.rarmy; try { applyLayout(m.N, m.castle, RIVALS.map(r => r.pos), m.v2); } catch (e) {} } // the map exactly as it was
 }
 function layoutFor(dayKey) { // the map as it stood for that battle, from its saved castles
   const s = LIVE.battles[dayKey] && LIVE.battles[dayKey].inputs; if (!s) return;
   const mine = s.plans.find(p => p.pid === LIVE.uid) || s.plans[0];
   RWALLS = []; RARMY = []; RIVALS = s.plans.filter(p => p !== mine).map(p => ({ id: p.pid, name: nameOf(p.pid), pos: p.castle, color: p.color, banner: p.banner, cls: p.cls, trust: "Unknown" }));
-  applyLayout(s.N, mine.castle, RIVALS.map(r => r.pos));
+  applyLayout(s.N, mine.castle, RIVALS.map(r => r.pos), mapV2For(LIVE.battles[dayKey].week || dayKey));
 }
 function watchPrevBattle(dayKey, how) { viewPrevWar(true); const lb = document.getElementById("lobby"); if (lb) lb.hidden = true; layoutFor(dayKey); watchLiveBattle(dayKey, how); }
 function endPrevView() { if (!WAR_VIEW) return; viewPrevWar(false); const lb = document.getElementById("lobby"); if (lb) lb.hidden = false; liveChanged(); } // catch up on anything that changed while it played

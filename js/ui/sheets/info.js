@@ -169,6 +169,14 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "Bigger fields", date: "17 Nov", fixes: [], balance: [
+    "From wars starting on 18 Nov the map is 4 tiles wider and taller (21 by 21 for 8 lords), and each lord's field reaches further round the castle and forward up the road: 27 tiles with 8 lords, up from 18. The trees stay where they were; only tiles a tree trunk stands on are closed to building.",
+    "Up to 5 walls (was 6) and 4 traps a battle (no limit before).",
+    "Battering rams, catapults and the Ogre Breaker batter down a wall in their way instead of sliding round it. Powder carts still go around.",
+  ], changes: [
+    "No full blockade: a wall that would close the last way from the middle of the map to your castle is refused, so walls can funnel attackers into traps but never seal a castle in.",
+    "The Defences tab shows Traps set, x of 4.",
+  ] },
   { v: "The end of a war", date: "17 Nov", fixes: [], balance: [], changes: [
     "When a war's seventh battle is fought, the war ends: the server writes its top three into the game's hall of fame and opens registration for the next war straight away. Every lord stays registered, keeping their hero and banner, with a fresh army.",
     "The host chooses in Game settings (or the Muster Hall) whether registration then waits for them to begin, or closes by itself 24 hours after the war.",

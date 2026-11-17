@@ -12,6 +12,8 @@ const RELEASES = [
     ["🛡", "Castle guard", "The first square on the Deploy tab's field row: one soldier stays home and defends your castle all battle."],
     ["❤", "Survivor bonus", "+1 point if your hero is alive when the battle ends, even if your castle has fallen."],
     ["⚖", "Flat items", "Hero items add flat amounts, so they help most early in the week. The Iron Standard's aura is now 18%."],
+    ["🗺", "Bigger fields", "From the next war the map is larger and your field holds 27 tiles, reaching forward to the trees on your road."],
+    ["🧱", "Walls and traps", "Up to 5 walls and 4 traps. Walls can funnel attackers but never seal a castle in, and rams and catapults smash through them."],
     ["🏯", "Castle tracker", "Small castles down the side of every replay, crossed out as they fall."],
     ["🔭", "Wider replays", "Replays and the highlight reel start further zoomed out."],
   ] },

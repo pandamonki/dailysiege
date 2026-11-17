@@ -127,7 +127,7 @@ function runBattle(plans, seed, opts = {}) {
   function makeUnit(pl, pc, x, y) {
     const g = pl.gear || {}, base = UNITS[pc.type], s = UNIT_SIM[pc.type], isCart = pc.type === "cart", fixed = isCart || !!base.merc, m = fixed ? 1 : 1 + UNIT_LVL_GAIN * (pc.lvl - 1), gm = fixed ? 1 : 1 + .15 * (g.armour || 0), ga = fixed ? 1 : 1 + .15 * (g.weapon || 0);
     const e = add({ order: pc.order || "army", pid: pl.pid, kind: "unit", key: pc.type, lvl: pc.lvl, ref: pc.id || null, x, y, maxhp: base.hp * m * gm, atk: base.atk * m * ga, cart: isCart, ram: pc.type === "ram" || !!s.rammer, cat: pc.type === "catapult", merc: !!base.merc, regen: s.regen || 0, hunter: !!s.hunter, dmgRed: fixed ? 0 : [0, 0, .1, .2][g.armour || 0], lifesteal: s.lifesteal || (!fixed && (g.weapon || 0) >= 3 ? .1 : 0), range: s.range, as: s.as, spd: s.spd, armor: s.armor, shot: s.shot, siege: s.siege, splash: s.splash || 0, healer: s.heal ? s.heal * m : 0 });
-    e.hp = e.maxhp * (pc.hp ?? 1); [e.atype, e.armour] = UNIT_TYPES[pc.type];
+    e.hp = e.maxhp * (pc.hp ?? 1); [e.atype, e.armour] = UNIT_TYPES[pc.type]; if (pl.siegeV1 && e.ram) e.breaker = true; // rams, catapults and the Ogre Breaker smash walls in their way
     return e;
   }
   // a wave marches out of the castle gate
@@ -812,6 +812,13 @@ function runBattle(plans, seed, opts = {}) {
       e.rt -= DT;
       if (!live(e.tgt) || e.rt <= 0) { const g = goalPid(e), c = g && P[g] && P[g].alive ? P[g].castle : minBy(order.filter(q => q !== e.pid && P[q].alive && hostile(e.pid, q)).map(q => P[q].castle), x => d(x, e)); e.tgt = c && live(c) ? c : null; e.rt = 1; }
       if (!live(e.tgt)) return;
+      if (e.breaker && walls.length) { // siege engines (plans stamped siegeV1) batter down a wall in their way instead of sliding round it
+        if (e.wallTgt && e.wallTgt.hp <= 0) e.wallTgt = null;
+        if (!e.wallTgt && (e.blk || 0) >= 2) { e.wallTgt = nearestWall(e) || null; e.blk = 0; }
+        if (e.wallTgt) { const w = e.wallTgt, wx = w.x0 + .5, wy = w.y0 + .5;
+          if (hyp(e.x - wx, e.y - wy) > e.range + .85) moveToward(e, wx, wy, .6);
+          else { e.atkT -= DT * (1 + fxv(e, "asbuf")); if (e.atkT <= 0) { e.atkT = e.as; atkEv(e, { x: wx, y: wy }, e.cat ? "r" : "m"); if (e.cat) shot(e, { x: wx, y: wy }, "#8a8478", 1, "rock"); hitWall(e, w); } }
+          return; } }
       if (e.cat) { // catapult: crawls to two tiles from the castle, takes a moment to set up, then hurls a boulder every few seconds
         if (d(e, e.tgt) <= e.range + .05) {
           if (e.setAt == null) { e.setAt = +(t + 2).toFixed(2); log(`${poss(e.pid)} catapult sets up.`); }

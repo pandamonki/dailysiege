@@ -28,3 +28,16 @@ test("survivor: a lord whose hero lives to the end scores 1 more point, only wit
     const a = run(false), b = run(true); return a.map(x => ({ d: b.find(y => y.pid === x.pid).points - x.points, s: !!b.find(y => y.pid === x.pid).survivor })); })()`);
   assert.ok(r.some(x => x.s), "someone survives in this battle"); assert.ok(r.every(x => x.d === (x.s ? 1 : 0)), JSON.stringify(r));
 });
+
+test("bigger fields (MAP_V2): the map is 4 tiles larger and the field grows; earlier wars keep the old layout", () => {
+  const r = JSON.parse(sim.run(`JSON.stringify((() => { const a = seatLayout(8), b = seatLayout(8, true); return { a: a.N, b: b.N, za: zoneFor(a.castles[0], a.N, a.castles).size, zb: zoneFor(b.castles[0], b.N, b.castles, true).size, v: [mapV2For("2026-11-16"), mapV2For("2026-11-23")] }; })())`));
+  assert.equal(r.a, 17); assert.equal(r.b, 21); assert.ok(r.zb > r.za + 5, `field ${r.za} -> ${r.zb}`); assert.deepEqual(r.v, [false, true]);
+});
+test("siege engines (plans stamped siegeV1) batter down walls in their way", () => {
+  const wh = st => sim.run(`(() => { const c = goldenCase(3), N0 = c.opts.N, pl = JSON.parse(JSON.stringify(c.plans));
+    pl.forEach(p => { const ctr = (N0 - 1) / 2, dy = ctr - p.castle[0], dx = ctr - p.castle[1], L = Math.hypot(dx, dy) || 1, uy = dy / L, ux = dx / L, at = (f, s) => [Math.round(p.castle[0] + uy * f - ux * s), Math.round(p.castle[1] + ux * f + uy * s)];
+      p.pieces = p.pieces.filter(q => q.kind !== "wall"); [-1, 0, 1].forEach(s => { const [r, cc] = at(1.6, s); p.pieces.push({ kind: "wall", r, c: cc, dir: Math.abs(uy) >= Math.abs(ux) ? "h" : "v" }); });
+      const [rr, rc] = at(2.6, 0); p.pieces.push({ kind: "unit", type: "ram", lvl: 1, hp: 1, r: rr, c: rc }); if (${st}) p.siegeV1 = true; });
+    const r = runBattle(pl, c.seed, Object.assign({}, c.opts, { fast: true })); let w = 0; Object.values(r.stats || {}).forEach(s => { w += s.wallHit || 0; }); return w; })()`);
+  assert.ok(wh(true) > wh(false) * 1.5, `wall damage ${wh(false)} -> ${wh(true)}`);
+});
