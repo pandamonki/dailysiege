@@ -603,9 +603,14 @@ function runBattle(plans, seed, opts = {}) {
     const dx = x - e.x, dy = y - e.y, dd = hyp(dx, dy); if (dd <= stop) return;
     const sp = e.kind === "unit" && !e.cart && !e.ram && P[e.pid] && P[e.pid].hold && (e.order || "army") === "army" ? Math.min(e.spd, P[e.pid].slow) : e.spd, step = Math.min(dd - stop, sp * (1 - fxv(e, "slow")) * (1 + (e.v3ms || 0)) * DT), nx = e.x + dx / dd * step, ny = e.y + dy / dd * step;
     if (TG && e.kind !== "totem") { const h = treeHit(nx, ny); if (h) { // trees in the way: slide along them, to whichever side the way on lies (or by turns when dead ahead)
-      const vx = dx / dd, vy = dy / dd, dot = vx * h.nx + vy * h.ny; let sx = vx - dot * h.nx, sy = vy - dot * h.ny; const sl = hyp(sx, sy);
-      if (sl < .25) { const sg = e.id % 2 ? 1 : -1; sx = -h.ny * sg; sy = h.nx * sg; } else { sx /= sl; sy /= sl; }
-      const tx = e.x + sx * step, ty = e.y + sy * step; if (!treeHit(tx, ty)) { e.x = tx; e.y = ty; } return; } }
+      // a soldier commits to one side for a couple of seconds so it walks round a tree instead of flip-flopping in front of it; if that way is shut (overlapping trunks, the forest rim) it tries the other side, then steps out
+      const vx = dx / dd, vy = dy / dd, cr = h.nx * vy - h.ny * vx;
+      let sg = e.treeSide && e.treeUntil > t ? e.treeSide : (Math.abs(cr) < .25 ? (e.id % 2 ? 1 : -1) : (cr > 0 ? 1 : -1));
+      for (const s of [sg, -sg]) {
+        const ux = -h.ny * s, uy = h.nx * s, tx = e.x + ux * step, ty = e.y + uy * step;
+        if (!treeHit(tx, ty)) { e.x = tx; e.y = ty; e.treeSide = s; if (s === sg) { if (!(e.treeUntil > t)) e.treeUntil = t + 2.5; } else e.treeUntil = t + 2.5; return; }
+      }
+      e.x += h.nx * (h.d + .01); e.y += h.ny * (h.d + .01); e.treeSide = -sg; e.treeUntil = t + 2.5; return; } }
     if (walls.length && e.kind !== "totem" && wallAt(e, nx, ny)) { // blocked: slide along the wall if there's room
       e.blk = (e.blk || 0) + 1;
       if (Math.abs(dx) >= Math.abs(dy)) { if (!wallAt(e, nx, e.y)) e.x = nx; else if (!wallAt(e, e.x, ny)) e.y = ny; }
