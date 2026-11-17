@@ -199,7 +199,8 @@ function runBattle(plans, seed, opts = {}) {
         wallTiles(pc.r, pc.c, pc.dir).forEach(([r, c]) => { if (r >= 0 && c >= 0 && r < NN && c < NN) walls.push({ id: walls.length, pid: pl.pid, x0: c, y0: r, dir: pc.dir === "v" ? "v" : "h", hp: WALL_TIERS[tier - 1].hp, maxhp: WALL_TIERS[tier - 1].hp, tier }); });
       } else if (pc.kind === "trap") {
         if (!TRAPS[pc.type]) return;
-        traps.push({ pid: pl.pid, type: pc.type, x: pc.c + .5, y: pc.r + .5, used: false });
+        if (pl.trapV2 && traps.filter(q => q.pid === pl.pid && !q.ranger).length >= TRAP_CAP) return;
+        traps.push({ pid: pl.pid, type: pc.type, x: pc.c + .5, y: pc.r + .5, used: false, v2: !!pl.trapV2 });
       }
     });
     // every castle keeps one free guard at home: it holds the gate and chases off raiders
@@ -1026,10 +1027,11 @@ function runBattle(plans, seed, opts = {}) {
       if (!o) return;
       tr.used = true; tr.usedT = t; P[tr.pid].trapT = t;
       if (tr.ranger) { kit.trapFire(tr, o); return; }
-      if (tr.type === "spike") { aoe(tr.x, tr.y, .7, "#c7ccd1", .6); deal(null, o, 90, { aoe: 1, big: 1, trapPid: tr.pid, atype: "pure" }); }
+      const TD = tr.v2 ? TRAP_DMG : TRAP_DMG_V1;
+      if (tr.type === "spike") { aoe(tr.x, tr.y, .7, "#c7ccd1", .6); deal(null, o, TD.spike, { aoe: 1, big: 1, trapPid: tr.pid, atype: "pure" }); }
       else if (tr.type === "blade") { const dx = o.x - tr.x, dy = o.y - tr.y, L = hyp(dx, dy) || 1, ux = dx / L, uy = dy / L, px = -uy, py = ux;
         for (let k = -3; k <= 3; k++) ev({ ty: "shot", x1: tr.x + px * k * .35, y1: tr.y + py * k * .35, x2: tr.x + px * k * .45 + ux * 4, y2: tr.y + py * k * .45 + uy * 4, c: "#d7dde2", w: 2 });
-        aoe(tr.x, tr.y, .8, "#d7dde2", .5); enemiesNear({ pid: tr.pid }, tr.x + ux * 2, tr.y + uy * 2, 2.4).forEach(v => deal(null, v, 60, { aoe: 1, big: 1, trapPid: tr.pid, atype: "pure" })); }
+        aoe(tr.x, tr.y, .8, "#d7dde2", .5); enemiesNear({ pid: tr.pid }, tr.x + ux * 2, tr.y + uy * 2, 2.4).forEach(v => deal(null, v, TD.blade, { aoe: 1, big: 1, trapPid: tr.pid, atype: "pure" })); }
       else { aoe(tr.x, tr.y, .7, "#c9a46a", .6); setFx(o, "root", 3); txt(o, "Snared", "#e8cf9a"); }
       if (tr.pid === mePid) log(`Your ${TRAPS[tr.type].name.toLowerCase()} caught one of ${lposs(o.pid)} soldiers.`, "you");
     });

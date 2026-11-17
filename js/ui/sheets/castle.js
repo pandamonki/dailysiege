@@ -24,7 +24,7 @@ const ISH_PAGE = 12;
 const TRAP_ICON = k => ({ spike: "trap_spike", snare: "trap_snare", bell: "trap_bell" }[k]);
 const trapImg = k => ART.trap[k] || (TRAP_ICON(k) ? `icons/ui/${TRAP_ICON(k)}.webp` : trapURL(k));
 // what each trap does in the battle (the numbers the battle uses)
-const TRAP_STATS = { spike: [["Damage", "90, ignores armour"], ["Hits", "The first enemy to step in"]], snare: [["Damage", "None"], ["Holds", "The first enemy, for 3 seconds"]], blade: [["Damage", "60 to each enemy"], ["Hits", "Everyone in a lane 2 to 4 tiles long"]] };
+const TRAP_STATS = { spike: [["Damage", `${TRAP_DMG.spike}, ignores armour`], ["Hits", "The first enemy to step in"]], snare: [["Damage", "None"], ["Holds", "The first enemy, for 3 seconds"]], blade: [["Damage", `${TRAP_DMG.blade} to each enemy`], ["Hits", "Everyone in a lane 2 to 4 tiles long"]] };
 const canBanner = () => !isLive() || DAY === 1;
 const ctNow = () => S.castle || 1;
 const rapierTaken = k => isLive() && Object.entries(LIVE.players || {}).some(([uid, p]) => uid !== LIVE.uid && p && p.state && (p.state.items || []).includes(k));
@@ -115,8 +115,8 @@ function castleSheet() {
       bar = room > 0 ? `<span class="stepper qty"><button class="btn small" data-act="wn" data-v="-1" ${dis(n <= 1)}>−</button><b>×${n}</b><button class="btn small" data-act="wn" data-v="1" ${dis(n >= room || n >= aff)}>+</button></span><button class="btn wax" data-act="wallbuy" data-v="${n}" ${dis(avail() < WALL_COST * n)}>Build ${n} · ${WALL_COST * n}g</button>` : `<button class="btn wax" disabled>All ${lim} walls built</button>`; }
     else if (wm) { const i = S.walls.indexOf(wm); det = udet(`Wall ${i + 1}`, null, `<div class="statrows">${rows([["Health", `${wt.hp} HP`], ["Where", placedAt(wm.id) ? "Standing in your field" : "Waiting to be placed"]])}</div>`);
       bar = `<button class="btn wax" data-act="open" data-v="wall" data-k="${wm.id}">Manage</button>`; }
-    else { const t = TRAPS[dk]; det = udet(t.name, t.cost, `<p>${t.note}</p><div class="statrows">${rows(TRAP_STATS[dk] || [])}</div><p class="muted">Single use. Only lasts tonight's battle.</p>`);
-      bar = `<button class="btn wax" data-act="trap" data-v="${dk}" ${dis(avail() < t.cost)}>Buy · ${t.cost}g</button>`; }
+    else { const t = TRAPS[dk]; det = udet(t.name, t.cost, `<p>${t.note}</p><div class="statrows">${rows(TRAP_STATS[dk] || [])}</div><p class="muted">Permanent. Buy once, it fires once every battle. You own ${S.traps.length} of ${TRAP_CAP}.</p>`);
+      bar = `<button class="btn wax" data-act="trap" data-v="${dk}" ${dis(avail() < t.cost || S.traps.length >= TRAP_CAP)}>Buy · ${t.cost}g</button>`; }
     body = `<div class="ugrid shopg">${Object.entries(TRAPS).map(([k, t]) => tile("dsel", k, dk === k, trapImg(k), t.name, { price: t.cost })).join("")}${tile("dsel", "wall+", isW, `icons/ui/wall${ct}.webp`, "Wall", { price: WALL_COST })}${S.walls.map((w, i) => tile("dsel", w.id, dk === w.id, `icons/ui/wall${ct}.webp`, `Wall ${i + 1}`, { own: 1 })).join("")}</div>${det}${abar(bar)}`;
   }
   if (sheet.lobby) return head(null, "Coat of arms", "Shown on your castle and banner all war") + `<div class="body">${body}<div class="row"><button class="btn wax" data-act="lobbydone">Done</button></div></div>`;

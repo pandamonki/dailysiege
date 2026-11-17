@@ -13,6 +13,6 @@ function unitSheet(id) {
 }
 function trapSheet(id) {
   const t = findTrap(id), d = TRAPS[t.type];
-  return head(trapURL(t.type), d.name, "Tonight only") + `<div class="body"><p>${esc(d.note)}</p>
-    <div class="row"><button class="btn" data-act="move" data-v="${id}" ${dis()}>Move</button><button class="btn" data-act="bench" data-v="${id}" ${dis()}>Pick up</button></div></div>`;
+  return head(trapURL(t.type), d.name, "Permanent") + `<div class="body"><p>${esc(d.note)}</p>
+    <div class="row"><button class="btn" data-act="move" data-v="${id}" ${dis()}>Move</button><button class="btn" data-act="bench" data-v="${id}" ${dis()}>Pick up</button><button class="btn" data-act="tsell" data-v="${id}" ${dis()}>Sell +${Math.floor(d.cost / 2)}g</button></div></div>`;
 }

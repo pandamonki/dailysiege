@@ -17,10 +17,14 @@ const UNIT_TRAIN_COST = [.3, .4]; // training to level 2 and to level 3 costs th
 const trainCost = (type, lvl) => Math.round(UNITS[type].cost * (UNIT_TRAIN_COST[lvl - 1] || 0)); // gold to train a level-lvl soldier one level up
 const UNIT_TIER = { footman: 1, bowman: 1, knight: 3, raider: 2, healer: 2, mage: 2, sniper: 3, ram: 3, cart: 3, catapult: 3 }; // castle tier that unlocks each soldier
 const UNIT_LVL_TIER = [1, 1, 1]; // soldiers can be trained to any level at any castle tier; only weapon and armour upgrades are gated
+// Traps are permanent from TRAPS_V2_FROM: you buy one once, it stays where you put it and fires once in every battle. At most TRAP_CAP per lord.
+// Plans fought from that day are stamped trapV2 and use the stronger damage; older battles replay with the old numbers.
+let TRAPS_V2_FROM = "2026-11-17"; const trapsV2For = d => String(d) >= TRAPS_V2_FROM;
+const TRAP_CAP = 4, TRAP_DMG = { spike: 150, blade: 90 }, TRAP_DMG_V1 = { spike: 90, blade: 60 };
 const TRAPS = {
-  spike: { name: "Spike Pit",  cost: 30, note: "Deals 90 damage, ignoring armour, to the first enemy to step in." },
-  snare: { name: "Snare",      cost: 25, note: "Holds the first enemy to step in for 3 seconds. No damage." },
-  blade: { name: "Blade Trap",  cost: 45, note: "Fires a volley of blades across the lane at anyone who steps on it, dealing 60 damage, ignoring armour, to each enemy in it." },
+  spike: { name: "Spike Pit",  cost: 60, note: `Deals ${TRAP_DMG.spike} damage, ignoring armour, to the first enemy to step in. Fires once each battle.` },
+  snare: { name: "Snare",      cost: 40, note: "Holds the first enemy to step in for 3 seconds. No damage. Sets itself again each battle." },
+  blade: { name: "Blade Trap",  cost: 90, note: `Fires a volley of blades across the lane at anyone who steps on it, dealing ${TRAP_DMG.blade} damage, ignoring armour, to each enemy in it. Fires once each battle.` },
 };
 
 const UNIT_SIM = {

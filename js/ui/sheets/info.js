@@ -169,6 +169,10 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "Permanent traps", date: "17 Nov", fixes: [], balance: [
+    "Traps are now permanent. Buy one once and it stays where you put it, firing once in every battle. You can own up to 4, and sell one back for half its price.",
+    "New prices: Spike Pit 60 gold, Snare 40, Blade Trap 90. Spike Pit damage 90 to 150, Blade Trap 60 to 90 each. Trap descriptions now show their damage.",
+  ], changes: [] },
   { v: "Flat items and replay fixes", date: "16 Nov", fixes: [
     "Replays: following your hero and your keep works again (it had stopped since sudden death arrived), so the zoom buttons work while following, and when your lord is out the camera follows the fight instead of the whole field.",
     "The map no longer freezes after watching a replay. You can pan, zoom and select units again straight away.",
