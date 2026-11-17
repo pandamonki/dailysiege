@@ -172,7 +172,7 @@ const PATCHES = [
   { v: "Permanent traps", date: "17 Nov", fixes: [], balance: [
     "Traps are now permanent. Buy one once and it stays where you put it, firing once in every battle. You can own up to 4, and sell one back for half its price.",
     "New prices: Spike Pit 60 gold, Snare 40, Blade Trap 90. Spike Pit damage 90 to 150, Blade Trap 60 to 90 each. Trap descriptions now show their damage.",
-    "Walls are about 30% weaker so soldiers can break through them: Palisade 140, Timber 240, Stone 360 health.",
+    "Walls are about 60% weaker so soldiers can break through them: Palisade 100, Timber 170, Stone 250 health.",
   ], changes: [
     "New Bomb Trap (110 gold): explodes for 100 damage to every enemy within 1.6 tiles of whoever steps on it. Good against clumps.",
     "New Sand Pit (80 gold): only siege engines sink in. A ram, catapult or powder cart is stuck for 6 seconds. Soldiers walk over it.",

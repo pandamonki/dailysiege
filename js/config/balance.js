@@ -21,7 +21,7 @@ const CASTLE_TIERS = [
 ];
 const CASTLE_INCOME = [0, 70, 130]; // extra gold a day for each castle tier
 const UPGRADE_NEEDS = { weapon: [1, 2, 3], armour: [1, 2, 3], charm: [1, 2, 3], walls: [1, 2], tower: [2, 3] }; // castle tier each upgrade tier needs
-const WALL_TIERS = [{ name: "Palisade", hp: 140 }, { name: "Timber Wall", hp: 240 }, { name: "Stone Wall", hp: 360 }]; // from the defences update (plans stamped trapV2); earlier battles replay with WALL_HP_V1
+const WALL_TIERS = [{ name: "Palisade", hp: 100 }, { name: "Timber Wall", hp: 170 }, { name: "Stone Wall", hp: 250 }]; // from the defences update (plans stamped trapV2); earlier battles replay with WALL_HP_V1
 const WALL_HP_V1 = [200, 340, 520];
 const WALL_COST = 35, WALL_CAP = 6, wallLimit = tier => WALL_CAP;
 function wallTiles(r, c, dir) { return [[r, c]]; } // one block; dir only sets which way the barrier runs
