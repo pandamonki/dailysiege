@@ -12,6 +12,7 @@ const RELEASES = [
     ["⚔", "Sudden death arena", "From the 19 Nov battle the ring is half the size and nobody can leave it."],
     ["❤", "A fair last stand", "Everyone drawn into sudden death is topped up to at least half health, and fallen heroes show no respawn timer."],
     ["🎥", "Arena camera", "The camera swings to the arena when sudden death begins, with the countdown in the middle of the screen."],
+    ["🤖", "Bots build defences", "Bot lords now buy traps, towers and walls, and upgrade their towers. Each picks a style: a big army, strong items, a fortress, or a mix."],
     ["🌲", "Smarter around trees", "Soldiers steer round trees and tree clusters instead of getting stuck in them."],
     ["🎨", "New looks", "Pixel sprites for traps, stone towers that stand out from the grass, and painted icons for every trap and tower."],
     ["📖", "Clearer skills", "Ability descriptions now say what the skill does first, then when it casts itself."],

@@ -174,6 +174,7 @@ const PATCHES = [
     "The unit details strip under the map is laid out side by side again, with its buttons beside the stats.",
   ], balance: [
     "From the battle of 19 Nov, walls block everyone, including their owner's and allies' soldiers. They find a way round through the gaps you leave (your castle must always keep one open).",
+    "From the battle of 19 Nov, bot lords spend like players do. Each bot has a build for the war: a warband (more and better-trained reinforcements, few defences), a fortress (up to 4 traps, 2 towers upgraded through the week and a wall line with a trapped gap, but fewer soldiers and items), a champion (more hero items) or a mix of all three.",
     "From the battle of 19 Nov, the sudden death ring is half the size and nobody can leave it. Everyone drawn into it is topped up to at least half health. A hero who falls in sudden death shows no respawn timer, because heroes don't come back once it starts.",
   ], changes: [
     "Defences: traps are bought here and then moved or sold from the map. Walls are built straight onto the map: tap Walls, then tap tile after tile, paying for each. Tower 1 and Tower 2 each have a slot to buy, upgrade or sell them.",
