@@ -1,7 +1,7 @@
-// Planning screen: a thin unit strip under the map. Tap a unit, your hero, a castle or a rival to see its stats, skills and items;
-// tap the strip to open the full panel (the same one replays use). Read-only apart from the quick buttons for train, move and so on.
+// Planning screen: a thin, fixed unit strip under the map. Tap a unit, your hero, a castle or a rival to see its health and main stats,
+// with quick buttons for train, move and so on. It never expands over the map.
 
-let psel = null, pexp = false, ptip = null; // what is picked on the map, whether the full panel is open, which detail card is open
+let psel = null; // what is picked on the map
 
 // The picked thing, as the same kind of object the replay panel reads: { m, color, who, title, role, ranks, cd }
 function planSrc(p) {
@@ -64,7 +64,7 @@ function renderPlanDock() {
   if (!psel) psel = { t: "champ", dflt: true }; // always show something: the hero until you pick another
   let src = planSrc(psel);
   if (!src && !psel.dflt) { psel = { t: "champ", dflt: true }; src = planSrc(psel); }
-  if (!src) { psel = null; pexp = false; ptip = null; el.innerHTML = `<span class="pd-hint">Tap a soldier, your hero, a castle or a rival to inspect it.</span>`; ud.hidden = true; tipEl.hidden = true; document.body.classList.remove("pdx"); return; }
+  if (!src) { psel = null; el.innerHTML = `<span class="pd-hint">Tap a soldier, your hero, a castle or a rival to inspect it.</span>`; ud.hidden = true; tipEl.hidden = true; document.body.classList.remove("pdx"); return; }
   const acts = planActions(psel, src.thing ? { rival: false } : src);
   if (src.thing) {
     el.innerHTML = `<div class="pd"><div class="pd-main"><span class="pd-por" style="--c:${src.color}">${src.img ? `<img alt="" src="${src.img}">` : `<b class="gl">▦</b>`}</span><span class="pd-info"><span class="pd-nm"><b>${esc(src.title)}</b><small>${src.role}</small></span><span class="pd-note">${esc(src.note)}</span></span></div><div class="pd-act">${acts.map(pdBtn).join("")}</div></div>`;
@@ -72,15 +72,8 @@ function renderPlanDock() {
   }
   const m = src.m, img = portraitFor(m, src.color), hpf = Math.max(0, Math.min(1, m.hp / m.maxhp));
   const st = `<span>⚔ <b>${Math.round(m.atk)}</b></span><span>🛡 <b>${ARMOUR_TYPES[m.armour] || "–"}</b></span>${m.kind === "castle" || m.tower ? `<span>➶ <b>${m.range.toFixed(1)}</b></span>` : `<span>👢 <b>${m.spd.toFixed(2)}</b></span>`}`;
-  el.innerHTML = `<div class="pd"><button class="pd-main" data-act="pexp" aria-label="Show full details"><span class="pd-por" style="--c:${src.color}">${img ? `<img alt="" src="${img}">` : m.kind === "castle" ? `<img class="art" alt="" src="icons/ui/castle${m.ctier}.webp">` : `<b class="gl">W</b>`}${m.lvl ? `<i class="lv">${m.lvl}</i>` : ""}</span>
-    <span class="pd-info"><span class="pd-nm"><b>${esc(src.title)}</b>${m.kind === "unit" ? "" : `<small>${esc(src.role)}</small>`}</span><span class="pd-bar${src.rival ? " bad" : ""}"><i style="width:${hpf * 100}%"></i><span>${Math.round(m.hp)} / ${Math.round(m.maxhp)}</span></span><span class="pd-stats">${st}</span></span></button>
+  el.innerHTML = `<div class="pd"><div class="pd-main"><span class="pd-por" style="--c:${src.color}">${img ? `<img alt="" src="${img}">` : m.kind === "castle" ? `<img class="art" alt="" src="icons/ui/castle${m.ctier}.webp">` : `<b class="gl">W</b>`}${m.lvl ? `<i class="lv">${m.lvl}</i>` : ""}</span>
+    <span class="pd-info"><span class="pd-nm"><b>${esc(src.title)}</b>${m.kind === "unit" ? "" : `<small>${esc(src.role)}</small>`}</span><span class="pd-bar${src.rival ? " bad" : ""}"><i style="width:${hpf * 100}%"></i><span>${Math.round(m.hp)} / ${Math.round(m.maxhp)}</span></span><span class="pd-stats">${st}</span></span></div>
     <div class="pd-act">${acts.map(pdBtn).join("")}</div></div>`;
-  if (!pexp) { ud.hidden = true; tipEl.hidden = true; document.body.classList.remove("pdx"); return; }
-  const act = `<div class="ud-act">${acts.map(pdBtn).join("")}<button class="pd-b" data-act="pexp" title="Close" aria-label="Close"><span>▾</span><small>Close</small></button></div>`;
-  ud.className = "ud udp"; ud.innerHTML = dockHTML(src, { actions: act });
-  const bar = ud.querySelector("#udbar"); bar.firstChild.style.width = hpf * 100 + "%"; bar.lastChild.textContent = `${Math.round(m.hp)} / ${Math.round(m.maxhp)}`; if (src.rival) bar.classList.add("bad");
-  ud.hidden = false; document.body.classList.add("pdx");
-  const t = ptip ? dockTip(src, ptip) : null;
-  if (!t) { tipEl.hidden = true; ptip = null; return; }
-  tipEl.innerHTML = `${t.img ? `<img alt="" src="${t.img}">` : ""}<div><h4>${esc(t.title)}<small>${esc(src.hideRanks ? "" : t.sub || "")}</small></h4><p>${esc(t.body)}</p>${t.meta ? `<div class="meta">${t.meta}</div>` : ""}</div>`; tipEl.className = "ud-tip" + (t.img ? "" : " noimg"); tipEl.hidden = false;
+  ud.hidden = true; tipEl.hidden = true; document.body.classList.remove("pdx"); // the strip stays small and fixed: no tap-to-expand panel over the map
 }

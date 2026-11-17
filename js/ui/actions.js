@@ -45,8 +45,7 @@ const A = {
   reelstop: () => { if (WAR_REEL) { WAR_REEL = null; stopReel(false); leaveBattle(); return; } stopReel(true); },
   rjump: v => { replay.time = +v; replay.playing = true; replay.done = false; sheet = null; },
   unselect: () => { if (replay) { replay.sel = null; replay.tip = null; } },
-  dtip: v => { if (replay) replay.tip = replay.tip === v ? null : v; else ptip = ptip === v ? null : v; },
-  pexp: () => { pexp = !pexp; ptip = null; },
+  dtip: v => { if (replay) replay.tip = replay.tip === v ? null : v; },
   rexit: () => leaveBattle(),
   gear: k => { const nx = GEAR[k][S.gear[k]]; if (nx && avail() >= nx.cost && ctNow() >= UPGRADE_NEEDS[k][S.gear[k]]) { S.gold -= nx.cost; S.gear[k]++; toast(`${nx.name} forged.`); } },
   defend: k => { const nx = DEFENCES[k][S.defences[k]]; if (nx && avail() >= nx.cost && ctNow() >= UPGRADE_NEEDS[k][S.defences[k]]) { S.gold -= nx.cost; S.defences[k]++; toast(`${nx.name} built.`); } },
@@ -68,7 +67,7 @@ const A = {
   bless: v => { S.bless = v || null; },
   ctab: v => { sheet.tab = v; sheet.keep = false; },
   pick: v => { sel = sel === v ? null : v; },
-  move: v => { psel = null; pexp = false; if (inGarrison(v)) { if (fieldCount() >= S.slots) { toast("Your field supply is full."); return; } unGarrison(v); } sel = v; sheet = null; toast("Tap a glowing tile."); },
+  move: v => { psel = null; if (inGarrison(v)) { if (fieldCount() >= S.slots) { toast("Your field supply is full."); return; } unGarrison(v); } sel = v; sheet = null; toast("Tap a glowing tile."); },
   usell: id => { const u = findUnit(id); if (!u) return; S.sells = (S.sells || 0) + 1; const k = placedAt(id); if (k) delete S.place[k]; unGarrison(id); S.owned = S.owned.filter(x => x.id !== id); S.gold += unitSellPrice(u); if (!sheet || sheet.type !== "castle") sheet = null; toast(`${UNITS[u.type].name} sold for ${unitSellPrice(u)}g.`); },
   bench: v => { const k = placedAt(v); if (k) delete S.place[k]; if (!sheet || sheet.type !== "castle") sheet = null; },
   deploy: (v, k) => { { const cu = findUnit(v); if (cu && UNITS[cu.type].cool && cu.cool > 0) { toast(`${UNITS[cu.type].name} is recharging for ${cu.cool} more day${cu.cool > 1 ? "s" : ""}.`); return; } }
