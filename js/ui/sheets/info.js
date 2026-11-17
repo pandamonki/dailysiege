@@ -174,6 +174,7 @@ const PATCHES = [
     "The host chooses in Game settings (or the Muster Hall) whether registration then waits for them to begin, or closes by itself 24 hours after the war.",
     "The war ceremony opens the first time you come back after a war: a podium for the top three with their heroes, the final standings with each day's points, war prizes (Kingslayer, Hero hunter, Butcher, Oathbreaker, Day winner, Best day, Survivor, Treasurer, Most improved) and each lord's week in detail.",
     "Highlights of the war plays the two biggest moments of each day, and the final castle falling, one day after another. You can also watch the war's final battle again.",
+    "Seats are shuffled when registration closes: sign-up order still decides who gets a seat, but where each lord's castle stands round the map is a fresh draw every war (from wars starting on 18 Nov).",
     "The Muster Hall shows a card for the war that just ended, with the ceremony, the highlights and the hall of fame. The hall of fame is also in the main menu.",
   ] },
   { v: "Flat items and replay fixes", date: "16 Nov", fixes: [

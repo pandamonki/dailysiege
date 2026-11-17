@@ -15,10 +15,16 @@ function lordLabel(p) { const n = cleanName(p && p.nick, NICK_MAX), r = cleanNam
 // ----- roster, standings, hero levels -----
 const wWeekOf = (W, dayKey) => addDays(dayKey, -(wWeekdayOf(dayKey, W.config) - 1));
 function wCap(W, week) { const c = W.config || {}; return Math.min(MAX_LORDS, (c.capFrom && week < c.capFrom ? c.capPrev : c.maxPlayers) || 8); } // games made before seats were configurable hold 8
+// Seats are shuffled once registration closes (wars starting on or after SEAT_SHUFFLE_FROM): who gets a seat is still decided by sign-up order
+// (bots give way to people), but where each lord sits round the map is a draw keyed to the war's first day, the same on every phone and the server.
+let SEAT_SHUFFLE_FROM = "2026-11-18";
+const seatDraw = (week, uid) => { let h = 2166136261; const s = week + "|" + uid; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b); h ^= h >>> 13; h = Math.imul(h, 0xc2b2ae35); h ^= h >>> 16; return h >>> 0; }; // FNV-1a, then a full avalanche so every war draws a fresh order
 function wRoster(W, week) {
   // bots take the seats that people leave free: when the war is full, it is the bots that give way
-  return Object.entries(W.players).filter(([, p]) => p.fromWeek && p.fromWeek <= week && !p.left && !p.pending)
+  const r = Object.entries(W.players).filter(([, p]) => p.fromWeek && p.fromWeek <= week && !p.left && !p.pending)
     .sort((a, b) => (!!a[1].bot - !!b[1].bot) || (a[1].joinedAt - b[1].joinedAt) || (a[0] < b[0] ? -1 : 1)).slice(0, wCap(W, week)).map(([uid, p]) => ({ uid, ...p }));
+  if (String(week) >= SEAT_SHUFFLE_FROM) r.sort((a, b) => seatDraw(week, a.uid) - seatDraw(week, b.uid) || (a.uid < b.uid ? -1 : 1));
+  return r;
 }
 function wStandings(W, week, through) {
   const pts = {};

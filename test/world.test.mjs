@@ -196,3 +196,14 @@ test("from the new supply rules, a bot fields at most 4 soldiers and fills only 
     (bot.waves || []).forEach((w, i) => assert.ok(i < open || w.units.length === 0));
   }
 });
+
+test("seats are shuffled for wars from SEAT_SHUFFLE_FROM: same lords, a fair draw, the same on every device", async () => {
+  const run = week => JSON.parse(sim.run(`(() => { const players = {}; for (let i = 0; i < 10; i++) players["u" + i] = { fromWeek: "0000-00-00", joinedAt: 1000 + i, ...(i >= 8 ? { bot: true } : {}) };
+    return JSON.stringify(wRoster({ config: { maxPlayers: 8 }, players }, ${JSON.stringify(week)}).map(p => p.uid)); })()`));
+  const before = run("2026-11-11"), after = run("2026-11-23"), again = run("2026-11-23"), other = run("2026-11-30");
+  assert.deepEqual(before, ["u0", "u1", "u2", "u3", "u4", "u5", "u6", "u7"], "earlier wars keep sign-up order");
+  assert.deepEqual(after.slice().sort(), before.slice().sort(), "the same lords get seats (the bots give way)");
+  assert.notDeepEqual(after, before, "the order is shuffled");
+  assert.deepEqual(after, again, "the draw is the same every time");
+  assert.notDeepEqual(other, after, "a new war draws again");
+});
