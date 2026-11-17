@@ -27,6 +27,8 @@ function draw(t) {
   drawFlag(ctx, MID, MID + ts * .1, ts * .55, ts * .95, "#c9962f", t);
   if (mode === "replay" && replay) { drawReplay(t); drawSuddenOverlay(); if (replay.reel) drawReel(); return; }
   const lift = sel;
+  if (WALL_BUILD && !lift) { const pulse = .25 + Math.sin(t * 5) * .12; // wall building: every tile a new fence could go on glows
+    zoneSet.forEach(k => { const [r, q] = k.split(",").map(Number); if (!wallFree(r, q, WALL_BUILD.dir, null)) return; ctx.fillStyle = `rgba(255,224,130,${pulse})`; ctx.fillRect(q * ts + 2, r * ts + 2, ts - 4, ts - 4); }); }
   if (lift) {
     const pulse = .25 + Math.sin(t * 5) * .12, wl = findWall(lift);
     zoneSet.forEach(k => { const [r, q] = k.split(",").map(Number);

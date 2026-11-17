@@ -14,5 +14,5 @@ function unitSheet(id) {
 function trapSheet(id) {
   const t = findTrap(id), d = t.type === "tower" ? { ...UNITS[towerKey(t)], cost: towerSpent(towerKey(t)) } : TRAPS[t.type];
   return head(defenceArt(t), d.name, t.type === "tower" ? "Stationary defender" : "Permanent") + `<div class="body"><p>${esc(d.note)}</p>
-    <div class="row"><button class="btn" data-act="move" data-v="${id}" ${dis()}>Move</button><button class="btn" data-act="bench" data-v="${id}" ${dis()}>Pick up</button><button class="btn" data-act="tsell" data-v="${id}" ${dis()}>Sell +${Math.floor(d.cost / 2)}g</button></div></div>`;
+    <div class="row">${t.type === "tower" ? `<button class="btn wax" data-act="opencastle" data-v="traps" data-k="${id}">Upgrade</button>` : `<button class="btn" data-act="move" data-v="${id}" ${dis()}>Move</button>`}<button class="btn" data-act="tsell" data-v="${id}" ${dis()}>Sell +${Math.floor(d.cost / 2)}g</button></div>${t.type === "tower" ? `<p class="muted">Towers can't be moved: sell it and buy it again to stand it somewhere else.</p>` : ""}</div>`;
 }

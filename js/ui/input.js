@@ -7,6 +7,7 @@ function tapAt(clientX, clientY) {
   if (mode === "replay") { pickInReplay(wx / ts, wy / ts); return; }
   const q = Math.floor(wx / ts), r = Math.floor(wy / ts);
   if (r < 0 || q < 0 || r >= N || q >= N) return;
+  if (WALL_BUILD && !sel) { buildWallAt(r, q); render(); return; } // wall building: each tap puts down a new fence and pays for it
   const key = `${r},${q}`, near = sel ? null : pieceNear(wx / ts, wy / ts);
   if (!near && r === CASTLE[0] && q === CASTLE[1]) { sel = null; if (!psel || psel.t !== "castle") { psel = { t: "castle" }; render(); return; } S.phase = "muster"; open("castle"); return; } // first tap shows it in the strip, the next opens it
   const rv = near ? null : RIVALS.find(x => x.pos[0] === r && x.pos[1] === q) || RIVALS.find(x => RARMY.some(u => u.rid === x.id && u.r === r && u.c === q));
@@ -88,3 +89,18 @@ cvs.addEventListener("keydown", e => {
   else return;
   e.preventDefault(); clampCam();
 });
+
+// wall building mode (from Base, Defences, Walls): every tap on a free tile in your field builds and places one fence for its price
+let WALL_BUILD = null; // { dir: "h" | "v" } while building
+function buildWallAt(r, q) {
+  if (S.locked) { WALL_BUILD = null; return; }
+  const key = `${r},${q}`, lim = wallLimit(ctNow());
+  if (S.walls.length >= lim) { toast(`You have all ${lim} walls. Sell one on the map to build another.`); return; }
+  if (avail() < WALL_COST) { toast(`A wall costs ${WALL_COST} gold.`); return; }
+  if (!inZone(r, q)) { toast("Walls go inside your fenced field."); return; }
+  if (!wallFree(r, q, WALL_BUILD.dir, null)) { toast("That tile isn't free."); return; }
+  if (!routeOpen(key, null)) { toast(NO_BLOCK); return; }
+  S.gold -= WALL_COST; const id = "w" + idc++; S.walls.push({ id, dir: WALL_BUILD.dir }); S.place[key] = id;
+  const left = lim - S.walls.length; toast(left ? `Wall built (−${WALL_COST}g). ${left} more allowed.` : `Wall built. That's all ${lim}.`);
+  if (!left || avail() < WALL_COST) WALL_BUILD = null;
+}
