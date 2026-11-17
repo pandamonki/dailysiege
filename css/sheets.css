@@ -5,6 +5,7 @@
 @media (prefers-reduced-motion: no-preference) { .sheet .paper { animation: rise .2s ease-out; } @keyframes rise { from { transform: translateY(40px); opacity: .4; } } }
 .sheet header { display: flex; align-items: center; gap: 10px; padding: 12px max(16px, env(safe-area-inset-right, 0px)) 8px max(16px, env(safe-area-inset-left, 0px)); border-bottom: 1px solid rgba(90,58,32,.3); }
 .sheet header img { width: 40px; height: 50px; image-rendering: pixelated; flex: none; }
+.sheet header img[src^="icons/skills"] { width: 44px; height: 44px; image-rendering: auto; border-radius: 8px; }
 .sheet header h2 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: 24px; line-height: 1.1; text-wrap: balance; }
 .sheet header .sub { font-size: 14px; color: var(--ink-soft); font-style: italic; }
 .sheet header .x { margin-left: auto; flex: none; width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--wood-dark); background: var(--parchment-2); color: var(--ink); cursor: pointer; font-size: 18px; line-height: 1; }
@@ -278,7 +279,7 @@ button.rrow { width: 100%; text-align: left; font: inherit; color: inherit; curs
 .tn.st-wait .ti img { border-color: #a58a55; }
 .tn.st-locked .ti img { border-color: #8a7a62; filter: grayscale(.75) brightness(.9); }
 .tn.sel .ti img { outline: 3px solid var(--wax); outline-offset: 2px; }
-.tn .rk { position: absolute; right: -5px; bottom: -5px; background: #b3261e; color: #fff; font: 700 10px/1 var(--f-body, serif); font-style: normal; padding: 3px 4px; border-radius: 3px; border: 1px solid rgba(255,255,255,.55); box-shadow: 0 1px 2px rgba(0,0,0,.5); }
+.tn .rk { position: absolute; right: -5px; bottom: -5px; background: #4a4038; color: #f1e6cc; font: 700 10px/1 var(--f-body, serif); font-style: normal; padding: 3px 4px; border-radius: 3px; border: 1px solid rgba(255,255,255,.55); box-shadow: 0 1px 2px rgba(0,0,0,.5); }
 .tn.side .rk { right: -6px; bottom: -6px; font-size: 9px; padding: 2px 3px; }
 .tn .miss { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 1px 5px; border-radius: 9px; background: rgba(20,12,6,.78); color: #ffd9a0; font: 700 13px/1.15 var(--f-body, serif); font-style: normal; white-space: nowrap; }
 .tn.side .miss { font-size: 10px; padding: 0 4px; }

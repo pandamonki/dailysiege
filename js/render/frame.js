@@ -52,7 +52,7 @@ function draw(t) {
     else if (findWall(ref)) { const w = findWall(ref); wallTiles(r, q, w.dir).forEach(([a, b]) => items.push([a + .2, Wg(ref, () => { drawWallTile(ctx, a, b, Math.min(3, S.castle || 1), 1, MY_COLOR, t, w.dir); if (ring) { ctx.strokeStyle = "#ffe082"; ctx.lineWidth = ts * .06; ctx.strokeRect(b * ts + 3, a * ts + ts * .2, ts - 6, ts * .66); } })])); }
     else if (findTrap(ref)) items.push([r, Wg(ref, () => {
       if (ring) { ctx.strokeStyle = "#ffe082"; ctx.lineWidth = ts * .06; ctx.beginPath(); ctx.ellipse((q + .5) * ts, (r + .62) * ts, ts * .4, ts * .18, 0, 0, 7); ctx.stroke(); }
-      drawTrap(ctx, findTrap(ref).type, (q + .5) * ts, (r + .55) * ts, ts * .9);
+      const tp = findTrap(ref); if (tp.type === "tower") drawSprite(towerKey(tp), MY_COLOR, (q + .5) * ts, (r + .95) * ts, .95); else drawTrap(ctx, tp.type, (q + .5) * ts, (r + .55) * ts, ts * .9); // a tower stands on the map as its own sprite, as in battle
     })]);
   });
   items.sort((a, b) => a[0] - b[0]).forEach(([, fn]) => fn());

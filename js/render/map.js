@@ -189,28 +189,34 @@ function drawCastle(r, q, color, t, label, rel, st, ban, tier) {
     ctx.fillStyle = "#3a2614"; ctx.textBaseline = "middle"; ctx.textAlign = "start"; ctx.fillText(label, tx, ly + ts * .18);
   }
 }
-function drawTrap(c, type, x, y, s) {
-  if (type === "spike") {
-    c.fillStyle = "#3a2614"; c.beginPath(); c.ellipse(x, y + s * .1, s * .32, s * .16, 0, 0, 7); c.fill();
-    c.fillStyle = "#c7ccd1"; [-.16, 0, .16].forEach(dx => { c.beginPath(); c.moveTo(x + dx * s - s * .06, y + s * .14); c.lineTo(x + dx * s, y - s * .14); c.lineTo(x + dx * s + s * .06, y + s * .14); c.fill(); });
-  } else if (type === "snare") {
-    c.strokeStyle = "#c9a46a"; c.lineWidth = s * .07; c.beginPath(); c.ellipse(x, y + s * .06, s * .26, s * .13, 0, 0, 7); c.stroke();
-    c.beginPath(); c.moveTo(x + s * .24, y + s * .02); c.quadraticCurveTo(x + s * .38, y - s * .2, x + s * .2, y - s * .3); c.stroke();
-  } else if (type === "blade") {
-    c.fillStyle = "#4a3a2a"; c.fillRect(x - s * .3, y - s * .12, s * .6, s * .24); c.fillStyle = "#1e140c"; [-.2, 0, .2].forEach(dx => c.fillRect(x + dx * s - s * .035, y - s * .08, s * .07, s * .16));
-    c.fillStyle = "#d7dde2"; [-.2, 0, .2].forEach(dx => { c.beginPath(); c.moveTo(x + dx * s - s * .05, y - s * .1); c.lineTo(x + dx * s, y - s * .3); c.lineTo(x + dx * s + s * .05, y - s * .1); c.fill(); });
-  } else if (type === "bomb") {
-    c.fillStyle = "#2a2a2e"; c.beginPath(); c.arc(x, y + s * .06, s * .22, 0, 7); c.fill(); c.strokeStyle = "#c9a46a"; c.lineWidth = s * .05; c.beginPath(); c.moveTo(x + s * .1, y - s * .14); c.quadraticCurveTo(x + s * .2, y - s * .3, x + s * .3, y - s * .26); c.stroke();
-    c.fillStyle = "#ff8a3a"; c.beginPath(); c.arc(x + s * .3, y - s * .26, s * .06, 0, 7); c.fill();
-  } else if (type === "sand") {
-    c.fillStyle = "#c8ac6a"; c.beginPath(); c.ellipse(x, y + s * .08, s * .34, s * .17, 0, 0, 7); c.fill(); c.fillStyle = "#8a7440"; c.beginPath(); c.ellipse(x, y + s * .08, s * .18, s * .09, 0, 0, 7); c.fill();
-  } else if (type === "tower") {
-    c.fillStyle = "#8a8a90"; c.fillRect(x - s * .2, y - s * .18, s * .4, s * .38); c.fillRect(x - s * .26, y - s * .3, s * .52, s * .12); c.fillStyle = "#5a5a60"; [-.2, 0, .2].forEach(dx => c.fillRect(x + dx * s - s * .04, y - s * .36, s * .08, s * .08)); c.fillRect(x - s * .03, y - s * .06, s * .06, s * .16);
-  } else {
-    c.fillStyle = "#e2b33c"; c.beginPath(); c.moveTo(x - s * .22, y + s * .16); c.quadraticCurveTo(x - s * .2, y - s * .28, x, y - s * .28); c.quadraticCurveTo(x + s * .2, y - s * .28, x + s * .22, y + s * .16); c.closePath(); c.fill();
-    c.strokeStyle = "#7a5a10"; c.lineWidth = s * .04; c.stroke();
-    c.fillStyle = "#7a5a10"; c.beginPath(); c.arc(x, y + s * .2, s * .06, 0, 7); c.fill();
+// Traps as pixel sprites in the same style as the soldiers: each is a small grid of palette letters, outlined and scaled up with hard edges
+const TRAP_PAL = { k: "#3a2614", d: "#6b4a2a", s: "#d7dde2", S: "#8d949b", r: "#c9a46a", R: "#8a6a3a", w: "#8a5a2b", W: "#5a3a1e", b: "#2a2a2e", B: "#5c5c64", f: "#ff8a3a", y: "#ffd34d", a: "#dcc287", A: "#b09356", g: "#e2b33c", G: "#7a5a10" };
+const TRAP_PX = {
+  spike: ["................", "....s...s...s...", "...sS..sS..sS...", "...sS..sS..sS...", "..dsSddsSddsSd..", ".dkkkkkkkkkkkkd.", "dkkkkkkkkkkkkkkd", "dkkkkkkkkkkkkkkd", ".dkkkkkkkkkkkkd.", "..dddddddddddd.."],
+  snare: ["..........WW....", "..........Ww....", "..........Ww....", "....rrrrrrRw....", "..rR......rW....", ".r..........r...", ".r..........r...", "..rR......Rr....", "....rrrrrr......", "................"],
+  blade: ["...s....s....s..", "..sS...sS...sS..", "..sS...sS...sS..", ".WsSWWWsSWWWsSW.", ".wwwwwwwwwwwwww.", ".wkwwwwkwwwwkww.", ".wwwwwwwwwwwwww.", ".WWWWWWWWWWWWWW.", "................", "................"],
+  bomb:  ["..........yf....", ".........fRy....", "........R.......", ".......R........", ".....bbbbb......", "....bBBbbbb.....", "...bBbbbbbbb....", "...bbbbbbbbb....", "...bbbbbbbbb....", "....bbbbbbb.....", ".....bbbbb......"],
+  sand:  ["................", "....aaaaaaaa....", "..aaaAAAAAAaaa..", ".aaAAAkkkkAAAaa.", ".aaAAkkkkkkAAaa.", ".aaAAAkkkkAAAaa.", "..aaaAAAAAAaaa..", "....aaaaaaaa....", "................", "................"],
+  bell:  [".......G........", "......gGg.......", ".....ggggg......", "....gyggggg.....", "....gyggggg.....", "....gyggggg.....", "...gggggggGg....", "..GGGGGGGGGGG...", ".......G........", "......GGG......."],
+};
+const TRAP_CV = {};
+function trapPixels(type) {
+  if (TRAP_CV[type]) return TRAP_CV[type];
+  const rows = TRAP_PX[type] || TRAP_PX.bell, W = 16, H = rows.length + 2, g = Array.from({ length: H }, (_, y) => Array.from({ length: W }, (_, x) => { const ch = (rows[y - 1] || "")[x]; return ch && ch !== "." ? TRAP_PAL[ch] : null; }));
+  const cv = document.createElement("canvas"); cv.width = W; cv.height = H; const cx = cv.getContext("2d");
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const c = g[y][x] || (((g[y - 1] && g[y - 1][x]) || (g[y + 1] && g[y + 1][x]) || g[y][x - 1] || g[y][x + 1]) ? "#1e140c" : null);
+    if (c) { cx.fillStyle = c; cx.fillRect(x, y, 1, 1); }
   }
+  return (TRAP_CV[type] = cv);
+}
+function drawTrap(c, type, x, y, s) {
+  if (type === "tower") {
+    c.fillStyle = "#bdb7a9"; c.fillRect(x - s * .2, y - s * .18, s * .4, s * .38); c.fillRect(x - s * .26, y - s * .3, s * .52, s * .12); c.fillStyle = "#6f6a5f"; [-.2, 0, .2].forEach(dx => c.fillRect(x + dx * s - s * .04, y - s * .36, s * .08, s * .08)); c.fillRect(x - s * .03, y - s * .06, s * .06, s * .16);
+    return;
+  }
+  const px = trapPixels(type), k = s * .7 / px.width, w = px.width * k, h = px.height * k, sm = c.imageSmoothingEnabled;
+  c.imageSmoothingEnabled = false; c.drawImage(px, x - w / 2, y - h / 2 + s * .04, w, h); c.imageSmoothingEnabled = sm;
 }
 function drawSprite(key, color, cx, by, scale, o) {
   const s = spr(key, color, o && o.pose), h0 = ts * scale, w = h0 * SW / SH; o = o || {};

@@ -3,6 +3,19 @@
 
 let psel = null; // what is picked on the map
 
+// a fence's health, or a trap's damage and effect, for the strip (towers are shown like soldiers instead)
+function defenceStats(kind, w) {
+  const sp = (ic, v) => `<span>${ic} <b>${v}</b></span>`;
+  if (kind === "wall") { const hp = WALL_TIERS[Math.max(1, Math.min(3, S.castle || 1)) - 1].hp; return { bar: hp, html: sp("🛡", "Blocks enemies") + sp("⛏", "Can be hacked down") }; }
+  switch (w.type) {
+    case "spike": return { html: sp("⚔", TRAP_DMG.spike) + sp("◎", "First enemy") };
+    case "snare": return { html: sp("⏱", "Holds 3s") + sp("◎", "First enemy") };
+    case "blade": return { html: sp("⚔", `${TRAP_DMG.blade} each`) + sp("◎", "Across the lane") };
+    case "bomb": return { html: sp("⚔", `${TRAP_DMG.bomb} each`) + sp("◎", `${BOMB_R} tiles`) };
+    case "sand": return { html: sp("⏱", `Holds ${SAND_SECS}s`) + sp("◎", "Siege only") };
+  }
+  return { html: "" };
+}
 // The picked thing, as the same kind of object the replay panel reads: { m, color, who, title, role, ranks, cd }
 function planSrc(p) {
   if (!p || !S) return null;
@@ -40,7 +53,7 @@ function planSrc(p) {
       const k = towerKey(w), b = UNITS[k], sim = UNIT_SIM[k] || {}, ty = UNIT_TYPES[k] || [];
       return { m: { kind: "unit", key: k, tower: true, maxhp: b.hp, hp: b.hp, atk: b.atk, atype: ty[0], armour: ty[1], armor: sim.armor || 0, as: sim.as || 1, range: sim.range || 3.5, spd: 0 }, color: MY_COLOR, who: "You", title: b.name, role: "Stationary defender", ranks: {}, cd: none };
     }
-    return { thing: true, title: p.t === "wall" ? "Fence" : trapName(w), role: p.t === "wall" ? "Blocks the way" : (w.type === "tower" ? "Stationary defender" : "Permanent trap"), color: MY_COLOR, img: p.t === "wall" ? wallPortrait(Math.min(3, S.castle || 1)) : w.type === "tower" ? spriteURL(towerKey(w)) : trapURL(w.type), note: p.t === "trap" ? (w.type === "tower" ? UNITS[towerKey(w)].note : TRAPS[w.type].note) : "Enemy soldiers cannot walk through it. They go round, or hack it down." };
+    return { thing: true, stats: defenceStats(p.t, w), title: p.t === "wall" ? "Fence" : trapName(w), role: p.t === "wall" ? "Blocks the way" : (w.type === "tower" ? "Stationary defender" : "Fires once a battle"), color: MY_COLOR, img: p.t === "wall" ? wallPortrait(Math.min(3, S.castle || 1)) : w.type === "tower" ? spriteURL(towerKey(w)) : trapURL(w.type), note: p.t === "trap" ? (w.type === "tower" ? UNITS[towerKey(w)].note : TRAPS[w.type].note) : "Enemy soldiers cannot walk through it. They go round, or hack it down." };
   }
   return null;
 }
@@ -67,7 +80,7 @@ function renderPlanDock() {
   if (!src) { psel = null; el.innerHTML = `<span class="pd-hint">Tap a soldier, your hero, a castle or a rival to inspect it.</span>`; ud.hidden = true; tipEl.hidden = true; document.body.classList.remove("pdx"); return; }
   const acts = planActions(psel, src.thing ? { rival: false } : src);
   if (src.thing) {
-    el.innerHTML = `<div class="pd"><div class="pd-main"><span class="pd-por" style="--c:${src.color}">${src.img ? `<img alt="" src="${src.img}">` : `<b class="gl">▦</b>`}</span><span class="pd-info"><span class="pd-nm"><b>${esc(src.title)}</b><small>${src.role}</small></span><span class="pd-note">${esc(src.note)}</span></span></div><div class="pd-act">${acts.map(pdBtn).join("")}</div></div>`;
+    el.innerHTML = `<div class="pd"><div class="pd-main"><span class="pd-por" style="--c:${src.color}">${src.img ? `<img alt="" src="${src.img}">` : `<b class="gl">▦</b>`}</span><span class="pd-info"><span class="pd-nm"><b>${esc(src.title)}</b><small>${src.role}</small></span>${src.stats.bar ? `<span class="pd-bar"><i style="width:100%"></i><span>${src.stats.bar} / ${src.stats.bar}</span></span>` : ""}<span class="pd-stats">${src.stats.html}</span></span></div><div class="pd-act">${acts.map(pdBtn).join("")}</div></div>`;
     ud.hidden = true; tipEl.hidden = true; document.body.classList.remove("pdx"); return;
   }
   const m = src.m, img = portraitFor(m, src.color), hpf = Math.max(0, Math.min(1, m.hp / m.maxhp));

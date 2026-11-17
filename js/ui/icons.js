@@ -8,7 +8,8 @@ const IC = {
 // Painted icons reused across screens (shop, skills and UI art), so every tile has a picture rather than a glyph
 const SK = n => `icons/skills/${n}.webp`;
 const ART = {
-  trap: { spike: SK("rogue_b2_t2"), snare: SK("archer_b2_t2b"), blade: SK("rogue_b3_t3") },
+  trap: { spike: SK("rogue_b2_t2"), snare: SK("archer_b2_t2b"), blade: SK("rogue_b3_t3"), bomb: SK("rogue_b1_t2b"), sand: SK("rogue_b3_t3b"), tower: SK("warrior_b3_t2b") },
+  tower: { tower: SK("warrior_b3_t2b"), tower2: SK("archer_b1_t2"), towerA: SK("archer_b1_t4"), towerB: SK("mage_b1_t2b"), towerM: SK("mage_b3_t3b"), towerF: SK("mage_b1_t1"), towerS: SK("archer_b3_t1") },
   wave: SK("warrior_b3_t1"),
   gear: { weapon: "items/whetstone.webp", armour: SK("warrior_b1_t1"), charm: "items/evasion.webp", walls: "icons/ui/wall3.webp", tower: SK("archer_b1_t2") },
   bless: { vamp: SK("shaman_b3_t3"), ward: SK("warrior_b1_t2b") },
@@ -16,4 +17,6 @@ const ART = {
     podium: SK("archer_b3_t3b"), fortress: SK("warrior_b3_t2b"), hunt: SK("archer_b3_t2b"), sack: SK("rogue_b3_t2"), revenge: SK("shaman_b3_t1"), topple: "icons/ui/board.webp" },
   twist: { market: "icons/ui/shop.webp", bloodmoon: SK("shaman_b3_t1"), siege: SK("mage_b1_t3"), iron: "icons/ui/wall3.webp", hill: "icons/ui/deployed.webp", goldrush: "icons/ui/gold.webp", glory: SK("warrior_b2_t4"), calm: "icons/ui/day.webp" },
 };
+// a bought trap or tower's painted icon for the menus (the map draws them as pixel sprites)
+const defenceArt = t => t.type === "tower" ? ART.tower[towerKey(t)] || ART.trap.tower : ART.trap[t.type] || trapURL(t.type);
 const artImg = (src, cls = "art") => src ? `<img class="${cls}" alt="" src="${src}">` : "";
