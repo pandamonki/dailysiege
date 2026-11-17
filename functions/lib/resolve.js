@@ -2,7 +2,7 @@
 //
 // When a game's lock time has passed, read everyone's orders (which only the server can do), fight
 // the battle with the game's own code, save the result, and move the game on to the next day.
-const { Timestamp, FieldPath } = require("firebase-admin/firestore");
+const { Timestamp, FieldPath, FieldValue } = require("firebase-admin/firestore");
 const { loadGame, SIM_FILES, WORLD_FILES } = require("./game");
 const { startDate } = require("./clock");
 const { notifyBattle, remindUnsealed } = require("./notify");
@@ -61,12 +61,33 @@ async function resolveDue(db, gameId, { now = Date.now(), maxDays = 8, send = nu
       return true;
     });
     if (!claimed) break;
-    if (force) { done.push({ day, fought: !!doc, lords }); break; }
+    const last = g().get("wWeekdayOf")(day, Object.assign({}, cfg, { startDate: startDate(cfg) })) === 7;
+    if (force) { done.push({ day, fought: !!doc, lords }); if (last) await endWar(db, gameRef, now).catch(e => console.error("Daily Siege: ending the war failed", gameId, e)); break; }
     done.push({ day, fought: !!doc, lords });
     // tell the lords (only the newest battle when catching up on several days); a failed notification never fails the battle
     if (doc && send && now < lockInstant(next, cfg.tz, cfg.lockHour) - ((cfg.testSkew || 0) + (force ? 1 : 0)) * 864e5) await notifyBattle(db, gameRef, day, doc, send).catch(e => console.error("Daily Siege: notifications failed", gameId, e));
+    if (last) { await endWar(db, gameRef, now).catch(e => console.error("Daily Siege: ending the war failed", gameId, e)); break; } // day 7 was the last battle of the war
   }
   return done;
+}
+
+/**
+ * The war is over (its 7th battle has been fought): record the winner in the game's hall of fame and open registration for the next war,
+ * the same way the host's "Start a new war" does. Everyone stays registered (with their hero and banner); the host decides whether
+ * registration closes by itself (cfg.nextClose hours after the war, e.g. 24) or when they press Begin (0, the default).
+ */
+async function endWar(db, gameRef, now) {
+  const snap = await gameRef.get(); if (!snap.exists) return; const cfg = snap.data(), war = cfg.war || 1;
+  if ((cfg.hall || []).some(h => h.war === war)) return; // already ended
+  const [battles, pubs] = await Promise.all([gameRef.collection("battles").get(), gameRef.collection("players").get()]);
+  const pts = {}; battles.forEach(d => { const b = d.data(); if ((b.war || 1) !== war) return; (b.results || []).forEach(r => { pts[r.pid] = (pts[r.pid] || 0) + (r.points || 0); }); });
+  const names = {}; pubs.forEach(d => { const p = d.data(); names[d.id] = p.nick || p.real || "A lord"; });
+  const top = Object.keys(pts).sort((a, b) => pts[b] - pts[a] || (a < b ? -1 : 1)).slice(0, 3).map(pid => ({ pid, name: names[pid] || "A lord", pts: pts[pid] }));
+  const hall = (cfg.hall || []).concat(top.length ? [{ war, at: now, top }] : []).slice(-50);
+  const close = +cfg.nextClose > 0 ? +cfg.nextClose : 0, b = db.batch();
+  b.update(gameRef, { war: war + 1, lobby: true, lobbyEnds: close ? now + close * 36e5 : FieldValue.delete(), createdAt: now, hall });
+  pubs.forEach(d => { const p = d.data(); if (!p.left) b.update(d.ref, { fromWeek: "0000-00-00" }); });
+  await b.commit();
 }
 
 // Every game whose lock time has passed.
@@ -131,4 +152,4 @@ async function explainNotDue(db, gameId, { now = Date.now() } = {}) {
 }
 
 const testMode = () => !!g().get("TEST_MODE");
-module.exports = { testMode, fightMissing, explainNotDue, resolveDue, resolveAllDue, reassignSeat, loadWorld, remindAll };
+module.exports = { endWar, testMode, fightMissing, explainNotDue, resolveDue, resolveAllDue, reassignSeat, loadWorld, remindAll };

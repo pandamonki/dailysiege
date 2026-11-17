@@ -9,9 +9,9 @@ async function connectLive() {
   if (!db || !user) { render(); return; }
   LIVE.uid = await user.id(); LIVE.isOwner = await user.isOwner();
   if (!LIVE.uid) { render(); return; }
-  db.doc("game/config").onSnapshot(s => { if (PREVIEW) { PREVIEW.keep.config = s.exists ? s.data() : null; PREVIEW.keep.configLoaded = true; return; } LIVE.config = s.exists ? s.data() : null; LIVE.configLoaded = true; liveChanged(); }, () => { LIVE.configLoaded = true; render(); });
+  db.doc("game/config").onSnapshot(s => { if (WAR_VIEW) { WAR_VIEW.cfg = s.exists ? s.data() : null; return; } if (PREVIEW) { PREVIEW.keep.config = s.exists ? s.data() : null; PREVIEW.keep.configLoaded = true; return; } LIVE.config = s.exists ? s.data() : null; LIVE.configLoaded = true; liveChanged(); }, () => { LIVE.configLoaded = true; render(); });
   db.collection("players").onSnapshot(q => { const pl = {}; q.docs.forEach(d => { pl[d.id] = d.data(); }); if (PREVIEW) { PREVIEW.keep.players = pl; PREVIEW.keep.playersLoaded = true; return; } LIVE.players = pl; LIVE.playersLoaded = true; refreshNames(); liveChanged(); }, () => render());
-  db.collection("battles").onSnapshot(q => { const bt = {}; q.docs.forEach(d => { bt[d.id] = d.data(); }); if (PREVIEW) { PREVIEW.keep.battles = bt; return; } LIVE.battles = withLocalBattles(bt); liveChanged(); }, () => {});
+  db.collection("battles").onSnapshot(q => { const bt = {}; q.docs.forEach(d => { bt[d.id] = d.data(); }); if (WAR_VIEW) { WAR_VIEW.battles = withLocalBattles(bt); return; } if (PREVIEW) { PREVIEW.keep.battles = bt; return; } LIVE.battles = withLocalBattles(bt); liveChanged(); }, () => {});
   clearInterval(liveTimer); liveTimer = setInterval(() => { if (isLive() || inLobby() || LIVE.wasLobby) liveChanged(); }, 30000);
 }
 async function createGame(lockHour, closeHours) {
@@ -41,6 +41,7 @@ async function joinGame() {
 }
 const hrsLabel = m => m >= 1440 ? `${Math.floor(m / 1440)}d ${Math.floor(m % 1440 / 60)}h` : `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, "0")}m`;
 function syncLobby() {
+  if (WAR_VIEW) return; // a finished war's battle is on screen
   if (PREVIEW) setTimeout(renderPvBar);
   const el = document.getElementById("lobby");
   if (inLobby()) { if (!S || !S.lobbyPrep) enterLive(); LIVE.wasLobby = true; renderLobby(); return; }
@@ -89,7 +90,7 @@ function renderLobby() {
   }
   const own = LIVE.isOwner;
   if (own && !cfg.host && LIVE.db) { cfg.host = LIVE.uid; LIVE.db.doc("game/config").update({ host: LIVE.uid }).catch(() => {}); } // older games: record the host
-  el.innerHTML = `<div class="lwrap"><h2>The Muster Hall</h2><p class="lsub">${closes} · hosted by ${esc(hostLabel() === "you" ? "you" : hostLabel())}</p>
+  el.innerHTML = `<div class="lwrap"><h2>The Muster Hall</h2><p class="lsub">${closes} · hosted by ${esc(hostLabel() === "you" ? "you" : hostLabel())}</p>${warEndCardHTML()}
     <div class="lbox"><h3>${reg.length} of ${seatCap()} lords registered · ${open} seat${open === 1 ? "" : "s"} open</h3>${lordCards(true, isHostLobby())}
       ${isHostLobby() && open ? `<div class="row"><button class="btn wood" data-act="dsbots" data-v="fill"${DS_BUSY() ? " disabled" : ""}>Fill all empty seats with bots</button></div>` : ""}${isHostLobby() ? `<p class="muted">Bots take a seat each and play themselves every day with their own orders. A friend who registers when the war is full takes a bot's seat.</p>` : ""}
       <p class="muted">When registration closes the map is built, every castle is placed, and Day 1 planning begins. Battles are fought daily at ${lockLabel(cfg)} (${esc(cfg.tz)}).</p></div>
@@ -97,6 +98,7 @@ function renderLobby() {
     ${own ? `<div class="lbox"><h3>Host controls</h3>
       <label class="inline">Registration closes<select id="lobbyclose"><option value="">Keep as is</option><option value="0">When I lock it in</option>${[1, 3, 6, 12, 24, 48].map(h => `<option value="${h}">In ${h < 24 ? h + " hour" + (h > 1 ? "s" : "") : h / 24 + " day" + (h > 24 ? "s" : "")}</option>`).join("")}</select></label>
       ${window.DS ? `<label class="inline">Seats<select id="lobbyseats">${Array.from({ length: MAX_LORDS - 1 }, (_, i) => i + 2).filter(k => k >= Math.max(2, reg.length)).map(k => `<option value="${k}"${k === seatCap() ? " selected" : ""}>${k} lords</option>`).join("")}</select></label>` : ""}
+      <label class="inline">After a war ends<select id="lobbynext"><option value="0"${+cfg.nextClose > 0 ? "" : " selected"}>Registration waits for me</option><option value="24"${+cfg.nextClose === 24 ? " selected" : ""}>Registration closes 24 hours later</option></select></label>
       <label class="inline">Battle time<select id="lobbyhour">${[12, 13, 17, 18, 19, 20, 21, 22].map(h => `<option value="${h}"${h === cfg.lockHour ? " selected" : ""}>${hourLabel(h)}</option>`).join("")}</select></label>
       <div class="row"><button class="btn small" data-act="lobbysave">Save</button><button class="btn ${LIVE.beginConfirm ? "wax" : "wood"}" data-act="lobbybegin" ${reg.length < 2 ? "disabled" : ""}>${LIVE.beginConfirm ? "Tap again: lock in and begin" : "Lock in and begin the war"}</button></div>
       ${reg.length < 2 ? `<p class="muted">You need at least two lords to begin.</p>` : ""}</div>` : ""}
@@ -196,6 +198,8 @@ function gameSheet() {
       return `<div class="spread"><span>Day ${b.day} · ${w ? esc(nameOf(w.pid)) + " won" : "fought"}${me ? ` · you ${me.place === 1 ? "won" : "placed " + me.place}` : ""}</span><button class="btn small wood" data-act="watchday" data-v="${k}">Recap</button></div>`; }).join("")}</div>` : ""}
     ${LIVE.isOwner ? `<div class="sec"><h3>Host settings</h3>
       <label class="inline">Battle time<select id="cfghour">${[12, 13, 17, 18, 19, 20, 21, 22].map(h => `<option value="${h}"${h === cfg.lockHour ? " selected" : ""}>${hourLabel(h)}</option>`).join("")}</select></label>
+      <label class="inline">After day 7<select id="cfgnext"><option value="0"${+cfg.nextClose > 0 ? "" : " selected"}>Registration waits for me to begin</option><option value="24"${+cfg.nextClose === 24 ? " selected" : ""}>Registration closes 24 hours later</option></select></label>
+      <p class="muted">When the seventh battle is fought the war ends: everyone sees the ceremony, and registration for the next war opens in the Muster Hall, where lords can change hero, banner and name.</p>
       <p class="muted">Time zone: ${esc(cfg.tz)}${cfg.tz !== (Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC") ? ` <button class="btn small" data-act="cfgtz">Use mine (${esc(Intl.DateTimeFormat().resolvedOptions().timeZone)})</button>` : ""}</p>
       <div><button class="btn small wood" data-act="cfgsave">Save settings</button></div>
       <div class="row"><button class="btn small ${sheet.rconfirm ? "wax" : ""}" data-act="restartgame">${sheet.rconfirm ? "Tap again: start a new war" : "Start a new war"}</button></div>

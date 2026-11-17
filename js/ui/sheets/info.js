@@ -132,7 +132,7 @@ function titleSheet() {
   return `<div class="splash-art" role="img" aria-label="Daily Siege: castles and armies around a hill at sunset"></div><div class="splash-menu">
     <div class="menu3">
       <button class="btn wax big" data-act="playgo">⚔ Play with friends<small>${lobbyOpen(LIVE.config) ? (inGame ? (LIVE.players[LIVE.uid].pending ? "Finish registering for the war" : "Muster hall · registration open") : "Registration is open. Join the war") : inGame ? "Friends game · day " + (live ? DAY : liveClock().dayNo) + " of 7" : LIVE.config ? "Join your friends' next war" : can ? "Host a war and invite friends" : "Daily siege with friends"}</small></button>
-      ${inGame ? `<button class="btn small" data-act="open" data-v="game">⚙ Game settings</button>` : ""}${window.DS && DS.user ? `<button class="btn small" data-act="open" data-v="wars">🏰 Your wars${(DS.wars || []).length > 1 ? ` (${DS.wars.length})` : ""}</button>` : ""}${typeof PWA !== "undefined" && PWA.canOffer() ? `<button class="btn small" data-act="pwainstall">📲 Install app</button>` : ""}<button class="btn small" data-act="open" data-v="patch">📜 Patch notes</button><button class="btn small" data-act="wizard">🧙 How to play (tour)</button>
+      ${inGame ? `<button class="btn small" data-act="open" data-v="game">⚙ Game settings</button>` : ""}${window.DS && DS.user ? `<button class="btn small" data-act="open" data-v="wars">🏰 Your wars${(DS.wars || []).length > 1 ? ` (${DS.wars.length})` : ""}</button>` : ""}${typeof PWA !== "undefined" && PWA.canOffer() ? `<button class="btn small" data-act="pwainstall">📲 Install app</button>` : ""}<button class="btn small" data-act="open" data-v="patch">📜 Patch notes</button>${typeof LIVE === "object" && LIVE.config && (LIVE.config.hall || []).length ? `<button class="btn small" data-act="open" data-v="hall">🏆 Hall of fame</button>` : ""}<button class="btn small" data-act="wizard">🧙 How to play (tour)</button>
     </div></div>`;
 }
 function guideSheet() { // the tour's pages, read as a book (new lords see this before choosing a hero)
@@ -169,6 +169,13 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "The end of a war", date: "17 Nov", fixes: [], balance: [], changes: [
+    "When a war's seventh battle is fought, the war ends: the server writes its top three into the game's hall of fame and opens registration for the next war straight away. Every lord stays registered, keeping their hero and banner, with a fresh army.",
+    "The host chooses in Game settings (or the Muster Hall) whether registration then waits for them to begin, or closes by itself 24 hours after the war.",
+    "The war ceremony opens the first time you come back after a war: a podium for the top three with their heroes, the final standings with each day's points, war prizes (Kingslayer, Hero hunter, Butcher, Oathbreaker, Day winner, Best day, Survivor, Treasurer, Most improved) and each lord's week in detail.",
+    "Highlights of the war plays the two biggest moments of each day, and the final castle falling, one day after another. You can also watch the war's final battle again.",
+    "The Muster Hall shows a card for the war that just ended, with the ceremony, the highlights and the hall of fame. The hall of fame is also in the main menu.",
+  ] },
   { v: "Flat items and replay fixes", date: "16 Nov", fixes: [
     "Replays: following your hero and your keep works again (it had stopped since sudden death arrived), so the zoom buttons work while following, and when your lord is out the camera follows the fight instead of the whole field.",
     "The map no longer freezes after watching a replay. You can pan, zoom and select units again straight away.",

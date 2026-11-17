@@ -141,6 +141,7 @@ async function writeMine(full) {
 // ----- connecting -----
 let liveTimer = null;
 function liveChanged() {
+  if (typeof WAR_VIEW !== "undefined" && WAR_VIEW) return; // a finished war's battle is on screen: catch up when it closes
   syncLobby();
   if (gameMode === "friends" && isLive()) {
     if (!LIVE.stateLoaded) { if (enterLive()) home(); }

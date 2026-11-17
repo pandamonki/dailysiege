@@ -79,15 +79,40 @@ test("two servers racing for the same battle fight it exactly once", async () =>
   assert.equal((await gameRef().get()).get("planDay"), days[1]);
 });
 
-test("the server fights all seven days, each once its lock has passed", async () => {
-  for (let d = 1; d < 7; d++) {
+test("the server fights days 2 to 6, each once its lock has passed", async () => {
+  for (let d = 1; d < 6; d++) {
     await seedOrders(d);
     const now = lockInstant(days[d], "UTC", 0) + 60000;
     assert.deepEqual(await resolveDue(db, GAME, { now, send }), [{ day: days[d], fought: true, lords: SEATS }], "day " + (d + 1));
     assert.deepEqual(await resolveDue(db, GAME, { now }), [], "asking again does nothing");
   }
   const g = (await gameRef().get()).data();
-  assert.equal(g.planDay, addDays(D1, 7)); assert.equal(g.nextLockAt.toMillis(), lockInstant(addDays(D1, 7), "UTC", 0));
+  assert.equal(g.planDay, days[6]); assert.equal(g.nextLockAt.toMillis(), lockInstant(days[6], "UTC", 0));
+});
+
+test("an hour before the lock, only lords who have not sealed are reminded, once", async () => {
+  const D7 = days[6], lock = lockInstant(D7, "UTC", 0), before = pushes.length;
+  assert.deepEqual(await remindAll(db, send, { now: lock - 3 * 3600e3 }), {}, "too early");
+  await gameRef().collection("players").doc("bot02").update({ sealedFor: D7 }); // lord 2 has sealed
+  const out = await remindAll(db, send, { now: lock - 30 * 60e3 }), sent = pushes.slice(before);
+  assert.equal(out[GAME].sent, 2); assert.ok(!out[GAME].reminded.includes("bot02")); assert.equal(out[GAME].reminded.length, SEATS - 1);
+  assert.deepEqual(sent.map(p => p.token).sort(), ["phone-1a", "phone-1b"]);
+  assert.match(sent[0].body, /not sealed yet.*30 minutes/);
+  assert.deepEqual(await remindAll(db, send, { now: lock - 20 * 60e3 }), {}, "never twice for the same day");
+  pushes.splice(before); // the battle-alert counts below are only about results
+});
+
+test("the seventh battle ends the war: the winners go into the hall of fame and registration opens for the next war", async () => {
+  await seedOrders(6);
+  const now = lockInstant(days[6], "UTC", 0) + 60000;
+  assert.deepEqual(await resolveDue(db, GAME, { now, send }), [{ day: days[6], fought: true, lords: SEATS }], "day 7");
+  assert.deepEqual(await resolveDue(db, GAME, { now }), [], "asking again does nothing");
+  const g = (await gameRef().get()).data(), all = (await gameRef().collection("battles").get()).docs.map(d => d.data()), pts = {};
+  all.forEach(b => b.results.forEach(r => { pts[r.pid] = (pts[r.pid] || 0) + r.points; }));
+  assert.equal(g.war, 2); assert.equal(g.lobby, true); assert.equal(g.lobbyEnds, undefined, "registration waits for the host by default");
+  assert.equal(g.hall.length, 1); assert.equal(g.hall[0].war, 1); assert.equal(g.hall[0].top.length, 3);
+  assert.equal(g.hall[0].top[0].pts, Math.max(...Object.values(pts)), "the war's top scorer is first");
+  assert.ok((await gameRef().collection("players").get()).docs.filter(d => !d.data().left).every(d => d.data().fromWeek === "0000-00-00"), "every lord is registered for the next war");
 });
 
 let battles;
@@ -141,16 +166,16 @@ test("a browser signed in as one of the lords replays all seven battles to the s
   await p.waitForFunction(() => window.DS && DS.available === true, null, { timeout: 30000 });
   const token = await getAuth(app).createCustomToken(uids[1]);
   await p.evaluate(t => firebase.auth().signInWithCustomToken(t), token);
-  await p.waitForFunction(() => LIVE.uid && LIVE.playersLoaded && Object.keys(LIVE.battles).length === 7, null, { timeout: 30000 });
-  const got = await p.evaluate(() => Object.keys(LIVE.battles).sort().map(day => { const sv = savedBattle(day), res = runBattle(sv.plans, daySeed(day), { N: sv.N, finalDay: sv.final, ultV2: sv.ultV2, balV2: sv.balV2, balV3: sv.balV3, fairV1: sv.fairV1, pickV1: sv.pickV1, balV4: sv.balV4, suddenV1: sv.suddenV1, treesV1: sv.treesV1, heroV3: sv.heroV3, dayNo: sv.dayNo, ranks: sv.ranks });
-    return { day, same: battleHash(res) === LIVE.battles[day].resultHash, winner: res.results[0].pid === LIVE.battles[day].results[0].pid }; }));
+  // the war is over, so its battles are the last war's (LIVE.prevWar); replays read them as the war they were fought in
+  await p.waitForFunction(() => LIVE.uid && LIVE.playersLoaded && LIVE.prevWar && Object.keys(LIVE.prevWar.battles).length === 7, null, { timeout: 30000 });
+  const got = await p.evaluate(() => { const keep = LIVE.battles; LIVE.battles = LIVE.prevWar.battles; try { return Object.keys(LIVE.battles).sort().map(day => { const sv = savedBattle(day), res = runBattle(sv.plans, daySeed(day), { N: sv.N, finalDay: sv.final, ultV2: sv.ultV2, balV2: sv.balV2, balV3: sv.balV3, fairV1: sv.fairV1, pickV1: sv.pickV1, balV4: sv.balV4, suddenV1: sv.suddenV1, treesV1: sv.treesV1, heroV3: sv.heroV3, dayNo: sv.dayNo, ranks: sv.ranks });
+    return { day, same: battleHash(res) === LIVE.battles[day].resultHash, winner: res.results[0].pid === LIVE.battles[day].results[0].pid }; }); } finally { LIVE.battles = keep; } });
   assert.deepEqual(got, days.map(day => ({ day, same: true, winner: true })));
   // and what this lord's device knows of a rival is exactly what was fought, never today's orders
   const rival = await p.evaluate(u => LIVE.players[u], uids[0]);
-  assert.deepEqual(Object.keys(rival.plans).sort(), days);
-  assert.equal(rival.state.gold, undefined);
+  assert.equal((rival.state || {}).gold, undefined);
   // the game's own "watch the battle" path runs, and raises no mismatch
-  await p.evaluate(day => watchLiveBattle(day, "results"), days[3]);
+  await p.evaluate(day => watchPrevBattle(day, "results"), days[3]);
   await p.waitForFunction(() => replay && replay.res, null, { timeout: 30000 });
   assert.equal(await p.evaluate(() => (window.DS.mismatches || []).length), 0);
   assert.deepEqual(errors, []);
@@ -164,17 +189,6 @@ test("after each battle every lord's devices are told the result, and dead devic
   assert.ok(pushes.some(p => /invited you to an alliance/.test(p.body)), "an alliance invitation is mentioned to its recipient");
   assert.ok(!pushes.find(p => p.title.includes("day 7")).body.includes("Tomorrow"), "the final day does not promise a tomorrow");
   assert.deepEqual((await db.collection("users").doc("bot03").get()).get("fcmTokens"), []);
-});
-
-test("an hour before the lock, only lords who have not sealed are reminded, once", async () => {
-  const D8 = addDays(D1, 7), lock = lockInstant(D8, "UTC", 0); pushes.length = 0;
-  assert.deepEqual(await remindAll(db, send, { now: lock - 3 * 3600e3 }), {}, "too early");
-  await gameRef().collection("players").doc("bot02").update({ sealedFor: D8 }); // lord 2 has sealed
-  const out = await remindAll(db, send, { now: lock - 30 * 60e3 });
-  assert.equal(out[GAME].sent, 2); assert.ok(!out[GAME].reminded.includes("bot02")); assert.equal(out[GAME].reminded.length, SEATS - 1);
-  assert.deepEqual(pushes.map(p => p.token).sort(), ["phone-1a", "phone-1b"]);
-  assert.match(pushes[0].body, /not sealed yet.*30 minutes/);
-  assert.deepEqual(await remindAll(db, send, { now: lock - 20 * 60e3 }), {}, "never twice for the same day");
 });
 
 test("the scheduler's sweep finds only games that are due", async () => {
