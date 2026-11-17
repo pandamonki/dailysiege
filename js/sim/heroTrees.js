@@ -522,7 +522,7 @@ function makeTreeKit(X) {
     const tier = Math.max(1, Math.min(3, P[e.pid].castleTier || 1)), blocked = (tx, ty) => { const c0 = Math.floor(tx), r0 = Math.floor(ty); if (c0 < 0 || r0 < 0 || c0 >= NN || r0 >= NN) return true; if (hyp(tx - NN / 2, ty - NN / 2) <= CTR_R + .5) return true;
       if (walls.some(w => w.x0 === c0 && w.y0 === r0 && w.hp > 0)) return true; if (ents.some(o => !o.dead && o.kind === "castle" && Math.floor(o.x) === c0 && Math.floor(o.y) === r0)) return true; if (ents.some(o => !o.dead && o.kind !== "totem" && hyp(o.x - (c0 + .5), o.y - (r0 + .5)) < .55)) return true; return false; };
     [-.5, .5].forEach(s => { const tx = e.x + ux * 2 + px * s, ty = e.y + uy * 2 + py * s; if (blocked(tx, ty)) return;
-      const w = { id: walls.length, pid: e.pid, x0: Math.floor(tx), y0: Math.floor(ty), dir: Math.abs(uy) >= Math.abs(ux) ? "h" : "v", hp: WALL_TIERS[tier - 1].hp, maxhp: WALL_TIERS[tier - 1].hp, tier, born: T() }; walls.push(w); aoe(w.x0 + .5, w.y0 + .5, .8, "#c9a46a", .6); });
+      const w = { id: walls.length, pid: e.pid, x0: Math.floor(tx), y0: Math.floor(ty), dir: Math.abs(uy) >= Math.abs(ux) ? "h" : "v", hp: WALL_HP_V1[tier - 1], maxhp: WALL_HP_V1[tier - 1], tier, born: T() }; walls.push(w); aoe(w.x0 + .5, w.y0 + .5, .8, "#c9a46a", .6); });
     const rank = Math.max(1, rk(e, 1, 1)); [-1, 0, 1].forEach(s => dropTrap(e, e.x + ux * 3.3 + px * s * 1.1, e.y + uy * 3.3 + py * s * 1.1, rank)); return true;
   };
   FN["archer.2.1"] = (e, r) => {

@@ -36,7 +36,7 @@ function planSrc(p) {
   }
   if (p.t === "wall" || p.t === "trap") {
     const w = p.t === "wall" ? findWall(p.id) : findTrap(p.id); if (!w) return null;
-    return { thing: true, title: p.t === "wall" ? "Fence" : TRAPS[w.type].name, role: p.t === "wall" ? "Blocks the way" : "Tonight only", color: MY_COLOR, img: p.t === "wall" ? wallPortrait(Math.min(3, S.castle || 1)) : trapURL(w.type), note: p.t === "trap" ? TRAPS[w.type].note : "Enemy soldiers cannot walk through it. They go round, or hack it down." };
+    return { thing: true, title: p.t === "wall" ? "Fence" : trapName(w), role: p.t === "wall" ? "Blocks the way" : (w.type === "tower" ? "Stationary defender" : "Permanent trap"), color: MY_COLOR, img: p.t === "wall" ? wallPortrait(Math.min(3, S.castle || 1)) : w.type === "tower" ? spriteURL(towerKey(w)) : trapURL(w.type), note: p.t === "trap" ? (w.type === "tower" ? UNITS[towerKey(w)].note : TRAPS[w.type].note) : "Enemy soldiers cannot walk through it. They go round, or hack it down." };
   }
   return null;
 }

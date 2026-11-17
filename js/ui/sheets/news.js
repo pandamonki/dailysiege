@@ -3,6 +3,18 @@
 // Each item is [icon, headline, one short sentence]. Players who have not seen the newest id get the pop-up the next time they plan;
 // the id is remembered on their device, so changing the id is all it takes to show it again. Keep about 8 to 14 items.
 const RELEASES = [
+  { id: "1.6", title: "What's new in v1.6", sub: "Permanent traps, new traps, and upgradeable towers", items: [
+    ["🪤", "Traps stay put", "Buy a trap once and it re-arms free every day. Own up to 4, move them, or sell one for half price."],
+    ["💰", "New trap prices", "Spike Pit 60 gold, Snare 40, Blade Trap 90. Spike Pit now hits for 150 and the Blade Trap for 90 each."],
+    ["💣", "Bomb Trap", "110 gold. Explodes for 100 damage to every enemy within 1.6 tiles. Great against clumps."],
+    ["🏜", "Sand Pit", "80 gold. Rams, catapults and powder carts sink in and are stuck for 6 seconds. Soldiers walk over it."],
+    ["🗼", "Guard Towers", "150 gold, up to 2. A stationary defender that shoots enemies in range and never moves."],
+    ["🏹", "Arrow Tower", "Upgrade a Guard Tower for 100 gold (needs a Fortress) for more health, reach and damage."],
+    ["🔱", "Five level 3 towers", "For 150 gold more (needs a Citadel): Arrow III, Fire, Bomb, Magic or Sniper. Each tower is upgraded on its own."],
+    ["🔥", "Fire Tower", "Weaker against soldiers, but burning arrows do four times damage to siege engines."],
+    ["🧱", "Weaker walls", "Palisade 100, Timber 170 and Stone 250 health, so soldiers can break through."],
+    ["📍", "Towers work as a team", "Keep them close together and near your castle. Alone, they pick off a straggler or two but won't stop an army."],
+  ] },
   { id: "1.5", title: "What's new in v1.5", sub: "The end of a war, a castle guard and a survivor bonus", items: [
     ["🏆", "The war ceremony", "After the seventh battle: a podium, final standings with every day's points, war prizes and each lord's week."],
     ["🎬", "Highlights of the war", "The best moments of all seven battles, played one day after another."],

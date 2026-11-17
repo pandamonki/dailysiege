@@ -169,6 +169,15 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "Permanent traps", date: "17 Nov", fixes: [], balance: [
+    "Traps are now permanent. Buy one once and it stays where you put it, firing once in every battle. You can own up to 4, and sell one back for half its price.",
+    "New prices: Spike Pit 60 gold, Snare 40, Blade Trap 90. Spike Pit damage 90 to 150, Blade Trap 60 to 90 each. Trap descriptions now show their damage.",
+    "Walls are about 60% weaker so soldiers can break through them: Palisade 100, Timber 170, Stone 250 health.",
+  ], changes: [
+    "New Bomb Trap (110 gold): explodes for 100 damage to every enemy within 1.6 tiles of whoever steps on it. Good against clumps.",
+    "New Sand Pit (80 gold): only siege engines sink in. A ram, catapult or powder cart is stuck for 6 seconds. Soldiers walk over it.",
+    "New Guard Tower (150 gold, up to 2): a stationary defender with 270 health that shoots enemies within 3.5 tiles but never moves. Upgrade each one on its own: Arrow Tower (100 gold, needs a Fortress), then Arrow Tower III, Fire Tower, Bomb Tower, Magic Tower or Sniper Tower (150 gold, needs a Citadel). The Fire Tower is weaker against soldiers but does four times damage to siege engines. Towers are fragile: 270 to 480 health. Find it with the traps.",
+  ] },
   { v: "Bigger fields", date: "17 Nov", fixes: [], balance: [
     "From wars starting on 18 Nov the map is 4 tiles wider and taller (21 by 21 for 8 lords), and each lord's field reaches further round the castle and forward up the road: 27 tiles with 8 lords, up from 18. The trees stay where they were; only tiles a tree trunk stands on are closed to building.",
     "Equal fields: every lord in a war gets the same number of tiles to build on (27 with 8 lords, 25 with 9 to 12). Castles round a ring don't land evenly on a square grid, so the bigger fields are trimmed to the smallest one, dropping the tiles furthest behind the castle first. The map, castles, roads and trees don't move.",

@@ -32,7 +32,6 @@ function payDays(ck) { // base pay once per day; spoils, catch-up, gold transfer
       const mine = b.units && b.units[LIVE.uid];
       (b.transfers || []).forEach(tr => { if (tr.from === LIVE.uid) S.gold -= tr.gold; if (tr.to === LIVE.uid) S.gold += tr.gold; });
       Object.values(b.mercs || {}).forEach(h => { if (h.pid === LIVE.uid) S.gold -= h.gold; });
-      { const used = new Set(b.trapsUsed || []); S.traps = S.traps.filter(t => { const k = placedAt(t.id); if (k && used.has(LIVE.uid + "|" + k)) { delete S.place[k]; return false; } return true; }); }
       if (b.rapier) { // the Divine Rapier changes hands with whoever carried it off the field
         if (b.rapier.from === LIVE.uid) S.items = (S.items || []).filter(k => k !== "rapier");
         if (b.rapier.to === LIVE.uid && !(S.items || []).includes("rapier")) { S.items = S.items || []; if (S.items.length >= ITEM_SLOTS) { const gone = S.items.shift(); S.gold += Math.floor(itemCost(gone) / 2); } S.items.push("rapier"); }

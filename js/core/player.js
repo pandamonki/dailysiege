@@ -99,19 +99,21 @@ const garrisonPlan = () => (S.garrison || []).map((w, i) => !waveOpen(i) ? { whe
 const pieces = () => ["champ", ...S.owned.filter(u => !inGarrison(u.id)).map(u => u.id), ...(S.walls || []).map(w => w.id), ...S.traps.map(t => t.id)];
 const unplaced = () => pieces().filter(p => !placedAt(p));
 const findUnit = id => S.owned.find(u => u.id === id);
+const trapCount = tower => S.traps.filter(t => (t.type === "tower") === tower).length, trapRoom = k => trapCount(k === "tower") < (k === "tower" ? TOWER_CAP : TRAP_CAP);
+const towerKey = t => t && t.tk && UNITS[t.tk] && UNITS[t.tk].tower ? t.tk : "tower", trapName = t => t.type === "tower" ? UNITS[towerKey(t)].name : TRAPS[t.type].name;
 const findTrap = id => S.traps.find(t => t.id === id);
 const findWall = id => (S.walls || []).find(w => w.id === id);
 function pieceName(ref) {
   if (ref === "champ") return `${cls().name} (your hero)`;
   const u = findUnit(ref); if (u) return `${UNITS[u.type].name} Lv${u.lvl}`;
   if (findWall(ref)) return WALL_TIERS[Math.min(2, (S.castle || 1) - 1)].name + " (1 block)";
-  const t = findTrap(ref); return t ? TRAPS[t.type].name : "";
+  const t = findTrap(ref); return t ? trapName(t) : "";
 }
 function pieceImg(ref) {
   if (ref === "champ") return spriteURL("c-" + S.cls);
   const u = findUnit(ref); if (u) return spriteURL(u.type);
   if (findWall(ref)) return wallURL(S.castle || 1);
-  const t = findTrap(ref); return t ? trapURL(t.type) : "";
+  const t = findTrap(ref); return t ? (t.type === "tower" ? spriteURL(towerKey(t)) : trapURL(t.type)) : "";
 }
 function canRank(k) {
   if (freePts() < 1 || S.locked) return false;
@@ -131,7 +133,7 @@ function myPieces() {
     if (ref === "champ") return { kind: "champ", r, c, order: S.uorders.champ || "army" };
     const u = findUnit(ref); if (u) return { kind: "unit", id: u.id, type: u.type, lvl: u.lvl, hp: u.hp ?? 1, r, c, order: S.uorders[u.id] || "army" };
     const w = findWall(ref); if (w) return { kind: "wall", r, c, dir: w.dir };
-    const tr = findTrap(ref); return tr ? { kind: "trap", type: tr.type, r, c } : null;
+    const tr = findTrap(ref); return tr ? { kind: "trap", type: tr.type, r, c, ...(tr.type === "tower" ? { tk: towerKey(tr) } : {}) } : null;
   }).filter(Boolean);
 }
 const finalToday = () => (typeof isLive === "function" && isLive() ? liveClock().dayNo : DAY) === 7;

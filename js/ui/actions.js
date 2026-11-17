@@ -82,7 +82,7 @@ const A = {
   up: id => { const u = findUnit(id), c = upgradeCost(u); if (u.lvl < 3 && avail() >= c && ctNow() >= UNIT_LVL_TIER[u.lvl]) { S.gold -= c; u.lvl++; } },
   wunlock: () => { if (S.locked) { toast("Draft new orders to change your garrison."); return; } ensureGarrison(); const c = waveUnlockCost(); if (!supplyV2Now() || c == null) return; if (avail() < c) { toast("Not enough gold."); return; } S.gold -= c; S.wavesOpen = wavesOpen() + 1; toast(`Wave ${S.wavesOpen} unlocked: ${WAVE_SLOTS} more soldiers can march out later in the battle.`); },
   slot: () => { if (supplyV2Now()) return; const c = slotCost(S.slots); if (avail() >= c && S.slots < SLOT_MAX) { S.gold -= c; S.slots++; } },
-  trap: k => { const t = TRAPS[k]; if (avail() < t.cost) return; if (S.traps.length >= trapLimit()) { toast(`You can set up to ${trapLimit()} traps a battle.`); return; } S.gold -= t.cost; const id = "t" + idc++; S.traps.push({ id, type: k }); sel = id; sheet = null; toast(`${t.name} bought. Tap a glowing tile.`); },
+  trap: k => { const t = TRAPS[k]; if (avail() < t.cost) return; if (!trapRoom(k)) { toast(`You can own ${k === "tower" ? TOWER_CAP + " towers" : TRAP_CAP + " traps"}. Sell one first.`); return; } S.gold -= t.cost; const id = "t" + idc++; S.traps.push({ id, type: k }); sel = id; sheet = null; toast(`${t.name} bought. Tap a glowing tile.`); },
   help: () => { sheet.help = !sheet.help; },
   shop: () => { open("castle"); sheet.tab = "shop"; },
   gdone: () => { if (S.ob === 1) { S.ob = 2; sheet = null; showHeroPick(() => { A.obnext(); render(); }); } else sheet = null; },
@@ -102,7 +102,7 @@ const A = {
     const inc = baseIncome(DAY) + CASTLE_INCOME[ctNow() - 1] + ((LASTP && LASTP.gold && LASTP.gold.you) || 0);
     if (LASTP) { if ((LASTP.ults || []).includes("you")) S.ultLast = DAY; if (LASTP.blessed) S.blessDone = DAY; } S.ultArm = false; S.contract = null; S.gold += inc; S.gain = inc; if (LASTP && LASTP.mercs) { ensureDip(); S.mercHist[DAY] = LASTP.mercs; Object.values(LASTP.mercs).forEach(h => { if (h.pid === "you") S.gold -= h.gold; }); } S.bids = {}; { const g = LASTP && LASTP.gain && LASTP.gain.you != null ? LASTP.gain.you : MIN_GAIN; S.lvl = Math.min(MAX_HERO_LVL, (S.lvl || DAY) + Math.max(MIN_GAIN, g)); S.xp = (LASTP && LASTP.xp && LASTP.xp.you) || 0; } DAY++; pickReset(); S.locked = false; S.phase = "muster"; S.offers = Object.fromEntries(Object.entries(S.offers || {}).filter(([, o]) => o.day === DAY - 1)); S.replies = {}; S.owned.forEach(u => { u.hp = 1; });
     S.owned.forEach(u => { if (UNITS[u.type].cool) { if (placedAt(u.id)) { u.cool = UNITS[u.type].cool; delete S.place[placedAt(u.id)]; } else u.cool = Math.max(0, (u.cool || 0) - 1); } });
-    { const used = new Set((LASTP && LASTP.trapsUsed) || []); S.traps = S.traps.filter(t => { const k = placedAt(t.id); if (k && used.has("you|" + k)) { delete S.place[k]; return false; } return true; }); } LASTP = null;
+    LASTP = null;
     try { localStorage.setItem("lastbanner.pday", String(DAY)); } catch (e) {}
     toast(`Day ${DAY}. +${inc} gold.`); sheet = null; },
   castleup: () => { const nx = CASTLE_TIERS[ctNow()]; if (nx && avail() >= nx.cost) { S.gold -= nx.cost; S.castle = ctNow() + 1; toast(`${nx.name} raised. Daily income is now ${baseIncome(curDayNo()) + CASTLE_INCOME[ctNow() - 1]} gold.`); } },
@@ -116,6 +116,8 @@ const A = {
     sel = ids.shift(); PLACE_Q = ids; sheet = null; toast(n > 1 ? `${n} walls built. Tap a glowing tile for each one in turn.` : "Wall built. Tap a glowing tile to place it. Tap it afterwards to turn it."); },
   wn: v => { sheet.wn = Math.max(1, (sheet.wn || 1) + +v); },
   wrot: id => { const w = findWall(id), k = placedAt(id), nd = w.dir === "h" ? "v" : "h"; if (k) { const [r, c] = k.split(",").map(Number); if (!wallFree(r, c, nd, id)) { toast("It doesn't fit that way round."); return; } } w.dir = nd; },
+  tsell: id => { const t = findTrap(id); if (!t) return; const k = placedAt(id); if (k) delete S.place[k]; S.traps = S.traps.filter(x => x.id !== id); S.gold += Math.floor((t.type === "tower" ? towerSpent(towerKey(t)) : TRAPS[t.type].cost) / 2); if (!sheet || sheet.type !== "castle") sheet = null; },
+  tup: (id, to) => { const t = findTrap(id); if (!t || t.type !== "tower" || S.locked) return; const up = TOWER_UP[towerKey(t)]; if (!up || !up.to.includes(to) || avail() < up.cost || ctNow() < up.tier) return; S.gold -= up.cost; t.tk = to; toast(`${UNITS[to].name} built.`); },
   wsell: id => { const k = placedAt(id); if (k) delete S.place[k]; S.walls = S.walls.filter(w => w.id !== id); S.gold += Math.floor(WALL_COST / 2); sheet = null; },
   shellat: v => { if (!S.locked) S.shellAt = Math.max(1, Math.min(10, (S.shellAt || 2) + +v)); },
   ibuy: k => { const it = ITEMS[k]; if (!it || S.items.includes(k) || S.items.length >= ITEM_SLOTS || avail() < buyCost(k) || (it.unique && rapierTaken(k))) return; S.gold -= buyCost(k); S.items.push(k); toast(`${it.name} bought.`); },
