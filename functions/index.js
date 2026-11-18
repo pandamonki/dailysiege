@@ -13,7 +13,7 @@ const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, Timestamp, FieldValue } = require("firebase-admin/firestore");
 const { clockFor } = require("./lib/clock");
 const { getMessaging } = require("firebase-admin/messaging");
-const { resolveDue, resolveAllDue, explainNotDue, fightMissing, reassignSeat, remindAll, testMode } = require("./lib/resolve");
+const { resolveDue, resolveAllDue, explainNotDue, fightMissing, reassignSeat, remindAll, testMode, revealHeroes, revealAllDue } = require("./lib/resolve");
 const { setBots } = require("./lib/bots");
 const { REGION, TRIGGER_REGION } = require("./region");
 
@@ -38,6 +38,8 @@ exports.keepGameClock = onDocumentWritten({ document: "games/{gameId}", region: 
     for (const k of CLOCK_KEYS) { const v = want[k]; if (v === undefined) { if (k === "startDate" && after[k] !== undefined) patch[k] = FieldValue.delete(); continue; } if (ms(after[k]) !== v) patch[k] = k === "nextLockAt" || k === "lockAfter" ? Timestamp.fromMillis(v) : v; }
   }
   if (Object.keys(patch).length) await getFirestore().doc(event.data.after.ref.path).update(patch); // the follow-up run finds nothing to change
+  // registration just closed (the host locked it in): show every lord's hero. A timed close is caught by the five-minute job.
+  await revealHeroes(getFirestore(), event.data.after.ref, Object.assign({}, after, patch.startDate ? { startDate: want.startDate, clockWar: want.clockWar } : {})).catch(e => console.error("Daily Siege: showing heroes failed", e));
 });
 
 // One push notification to one device. The message is data only; the game's service worker turns it into a notification.
@@ -50,6 +52,8 @@ exports.resolveDueBattles = onSchedule({ schedule: "every 5 minutes", retryCount
   if (Object.keys(out).length) console.log("Daily Siege battles", JSON.stringify(out));
   const rem = await remindAll(getFirestore(), send).catch(e => { console.error("Daily Siege reminders failed", e); return {}; });
   if (Object.keys(rem).length) console.log("Daily Siege reminders", JSON.stringify(rem));
+  const shown = await revealAllDue(getFirestore()).catch(e => { console.error("Daily Siege: showing heroes failed", e); return {}; });
+  if (Object.keys(shown).length) console.log("Daily Siege heroes shown", JSON.stringify(shown));
 });
 
 async function hostOnly(request) {

@@ -11,7 +11,7 @@ const fnRequire = createRequire(new URL("../functions/package.json", import.meta
 const { initializeApp, deleteApp } = fnRequire("firebase-admin/app");
 const { getFirestore, Timestamp } = fnRequire("firebase-admin/firestore");
 const { getAuth } = fnRequire("firebase-admin/auth");
-const { resolveDue, resolveAllDue, remindAll } = createRequire(import.meta.url)("../functions/lib/resolve.js");
+const { resolveDue, resolveAllDue, remindAll, revealAllDue } = createRequire(import.meta.url)("../functions/lib/resolve.js");
 const { clockFor } = createRequire(import.meta.url)("../functions/lib/clock.js");
 let pw; try { pw = createRequire(import.meta.url)("playwright"); } catch { pw = createRequire("/")("playwright"); }
 
@@ -63,6 +63,15 @@ after(async () => { if (browser) await browser.close(); await deleteApp(app); })
 test("the clock starts on day 1", async () => {
   const g = (await gameRef().get()).data();
   assert.equal(g.planDay, D1); assert.equal(g.nextLockAt.toMillis(), Date.parse(D1 + "T00:00:00Z"));
+});
+
+test("once registration has closed, every seated lord's hero is shown to the others, once", async () => {
+  const shown = await revealAllDue(db);
+  assert.ok(shown[GAME] >= SEATS, "every lord's hero is published");
+  const pubs = await gameRef().collection("players").get();
+  pubs.forEach(d => { const i = uids.indexOf(d.id); assert.equal(d.get("cls"), ["warrior", "mage", "archer", "shaman", "rogue"][i % 5], d.id); assert.equal(d.get("clsWar"), 1); });
+  assert.equal((await gameRef().get()).get("heroesShown"), 1);
+  assert.deepEqual(await revealAllDue(db), {}, "a second sweep changes nothing");
 });
 
 test("nothing is fought before the lock", async () => {

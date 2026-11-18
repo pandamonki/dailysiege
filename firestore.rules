@@ -121,14 +121,18 @@ service cloud.firestore {
       // Public profile. Everything here is visible to every lord in the game, so it never holds orders, gold or army.
       match /players/{uid} {
         allow read: if isMember(g);
-        allow create: if signedIn() && me() == uid && isMemberAfter(g) && validProfile();
-        allow update: if (owns(g, uid) && validProfile() && namesOk() && joinedOk())
+        allow create: if signedIn() && me() == uid && isMemberAfter(g) && validProfile() && !request.resource.data.keys().hasAny(['cls', 'clsWar']);
+        allow update: if (owns(g, uid) && validProfile() && namesOk() && joinedOk() && heroKept())
           || (isHost(g) && onlyChanges(['left', 'kicked', 'fromWeek', 'pending']));
         allow delete: if false;
 
+        // the hero shown to rivals (cls, clsWar) is written by the server when registration closes; a lord can keep it but not change it
+        function heroKept() {
+          return request.resource.data.get('cls', null) == resource.data.get('cls', null) && request.resource.data.get('clsWar', null) == resource.data.get('clsWar', null);
+        }
         function validProfile() {
           let d = request.resource.data;
-          return d.keys().hasOnly(['fromWeek', 'joinedAt', 'nick', 'real', 'pending', 'left', 'banner', 'hasRapier', 'sealedFor', 'week', 'war'])
+          return d.keys().hasOnly(['fromWeek', 'joinedAt', 'nick', 'real', 'pending', 'left', 'banner', 'hasRapier', 'sealedFor', 'week', 'war', 'cls', 'clsWar'])
             && d.get('nick', '') is string && d.get('nick', '').size() <= 16
             && d.get('real', '') is string && d.get('real', '').size() <= 20
             && d.joinedAt is number

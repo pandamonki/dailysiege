@@ -30,7 +30,7 @@ function inviteSheet() {
 }
 function targetsHTML() {
   const row = (id, i, list) => { const r = RIVALS.find(x => x.id === id); if (!r) return "";
-    return `<li class="tgt"><i class="sw" style="background:${r.color}"></i><span><b>${esc(r.name)}</b> <span class="muted">${sideOf(r)}${seeArmies() && r.cls ? " · " + clsName(r.cls) : ""}</span></span><span class="row">
+    return `<li class="tgt"><i class="sw" style="background:${r.color}"></i><span><b>${esc(r.name)}</b> <span class="muted">${sideOf(r)}${r.cls ? " · " + clsName(r.cls) : ""}</span></span><span class="row">
       ${list === "hostile" ? `<button class="btn small" data-act="lup" data-k="${id}" aria-label="Attack sooner" ${dis(i === 0)}>▲</button><button class="btn small" data-act="ldown" data-k="${id}" aria-label="Attack later" ${dis(i === S.lists.hostile.length - 1)}>▼</button>` : ""}
       ${list !== "hostile" ? `<button class="btn small hostile" data-act="lmove" data-k="${id}" data-v="hostile" ${dis()}>Hostile</button>` : ""}
       ${list !== "neutral" ? `<button class="btn small" data-act="lmove" data-k="${id}" data-v="neutral" ${dis()}>Neutral</button>` : ""}
@@ -86,7 +86,7 @@ function rivalSheet(id) {
   const r = RIVALS.find(x => x.id === id), d = S.diplo[id];
   const live = isLive(), seen = live ? r.seen : (seeArmies() ? { cls: r.cls } : null);
   let intel = "";
-  if (!seeArmies()) intel = `<p class="muted">It's day 1: all you know is where their castle stands. After tonight's battle you'll see what they fielded.</p>`;
+  if (!seeArmies()) intel = `<p class="muted">It's day 1: ${r.cls ? `their hero is ${/^[AEIOU]/.test(clsName(r.cls)) ? "an" : "a"} <b>${esc(clsName(r.cls))}</b>, and you know` : "all you know is"} where their castle stands. After tonight's battle you'll see what they fielded.</p>`;
   else if (live && r.seen) {
     const g = r.seen.gear || {}, items = GEAR_SLOTS.map(([gk]) => g[gk] ? GEAR[gk][g[gk] - 1].name : null).filter(Boolean);
     const units = (r.seen.pieces || []).filter(p => p.kind === "unit");
@@ -120,7 +120,7 @@ function councilHTML() {
   const battles = live ? Object.keys(LIVE.battles).filter(k => LIVE.battles[k].week === ck.week).sort() : [];
   return `
     <p class="muted">Scores and battle history are in the Leaderboard and Battle report (top bar).</p>
-    <div class="sec"><h3>Rivals</h3>${lords.map(r => `<button class="lord" data-act="open" data-v="rival" data-k="${r.id}"><i style="background:${r.color}"></i><span><b>${esc(r.name)}</b> · ${seeArmies() ? clsName(r.cls) : "Class unknown"}</span><span class="trust t-${r.trust}">${bucketOf(r.id) === "ally" ? "Seeking alliance" : bucketOf(r.id) === "hostile" ? "Hostile" : "Neutral"}</span></button>`).join("") || `<p class="muted">No rivals yet. Invite friends from the Share menu.</p>`}</div>
+    <div class="sec"><h3>Rivals</h3>${lords.map(r => `<button class="lord" data-act="open" data-v="rival" data-k="${r.id}"><i style="background:${r.color}"></i><span><b>${esc(r.name)}</b> · ${r.cls ? clsName(r.cls) : "Class unknown"}</span><span class="trust t-${r.trust}">${bucketOf(r.id) === "ally" ? "Seeking alliance" : bucketOf(r.id) === "hostile" ? "Hostile" : "Neutral"}</span></button>`).join("") || `<p class="muted">No rivals yet. Invite friends from the Share menu.</p>`}</div>
     <div><button class="btn" data-act="open" data-v="game">${live ? "Game settings" : "Play with friends"}</button></div>`;
 }
 function councilSheet() { sheet.tab = sheet.tab || "council"; return ordersSheet(); }

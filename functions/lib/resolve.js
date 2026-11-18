@@ -152,4 +152,28 @@ async function explainNotDue(db, gameId, { now = Date.now() } = {}) {
 }
 
 const testMode = () => !!g().get("TEST_MODE");
-module.exports = { endWar, testMode, fightMissing, explainNotDue, resolveDue, resolveAllDue, reassignSeat, loadWorld, remindAll };
+/**
+ * Once registration closes, every lord's hero is shown to the others: the server copies each lord's class from their private
+ * state into their public profile (cls, with clsWar so a profile left over from an earlier war is ignored), then marks the war
+ * done (heroesShown). Run when the game document changes (the host locking registration in) and every five minutes (a timed close).
+ */
+const warStarted = (cfg, now) => !!((cfg.startDate && (cfg.clockWar || 1) === (cfg.war || 1)) || (cfg.lobby && cfg.lobbyEnds && now >= cfg.lobbyEnds));
+async function revealHeroes(db, gameRef, cfg, now = Date.now()) {
+  const war = cfg.war || 1;
+  if (!warStarted(cfg, now) || cfg.heroesShown === war) return 0;
+  const pubs = await gameRef.collection("players").get(), b = db.batch(); let n = 0;
+  await Promise.all(pubs.docs.map(async d => { const pub = d.data(); if (pub.left || pub.pending) return;
+    let cls = pub.bot ? pub.cls || null : null;
+    if (!pub.bot) { const st = await d.ref.collection("private").doc("state").get(); cls = (st.exists && st.get("cls")) || null; }
+    if (cls) { b.update(d.ref, { cls, clsWar: war }); n++; } }));
+  b.update(gameRef, { heroesShown: war });
+  await b.commit();
+  return n;
+}
+async function revealAllDue(db, now = Date.now()) {
+  const games = await db.collection("games").where("lobby", "==", true).get(), out = {};
+  for (const d of games.docs) { try { const n = await revealHeroes(db, d.ref, d.data(), now); if (n) out[d.id] = n; } catch (e) { console.error("Daily Siege: showing heroes failed for game", d.id, e); } }
+  return out;
+}
+
+module.exports = { revealHeroes, revealAllDue, endWar, testMode, fightMissing, explainNotDue, resolveDue, resolveAllDue, reassignSeat, loadWorld, remindAll };

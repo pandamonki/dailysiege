@@ -212,7 +212,7 @@
         base.plans = Object.fromEntries(Object.entries(g.orders || {}).filter(([, o]) => (o.war || 1) === curWar()).map(([k, o]) => { const p = copy(o); delete p.war; return [k, p]; }));
         if (g.state) base.state = copy(g.state);
       } else { // a rival: public facts, plus the orders they have already fought
-        base.plans = {}; let cls = null;
+        base.plans = {}; let cls = pub.cls && pub.clsWar === curWar() ? pub.cls : null; // shown to everyone once registration closes
         for (const [day, b] of bt) { const pl = b.inputs && (b.inputs.plans || []).find(p => p.pid === id); if (!pl) continue;
           if (b.week === pub.week) cls = pl.cls || cls;
           if (!pl.noOrders) base.plans[day] = Object.assign({}, pl, { pieces: (pl.pieces || []).filter(pc => !pc.merc), sealed: true }); }
@@ -243,6 +243,7 @@
     const pub = { fromWeek: doc.fromWeek || "0000-00-00", joinedAt: doc.joinedAt || Date.now(), nick: doc.nick || "", real: doc.real || "", pending: !!doc.pending,
       banner: st.banner || (cur && cur.banner) || null, hasRapier: (st.items || []).includes("rapier"), week: st.week || null, war: curWar(), sealedFor: last && doc.plans[last] && doc.plans[last].sealed ? last : null };
     if (cur && cur.left !== undefined) pub.left = cur.left;
+    if (cur && cur.cls) { pub.cls = cur.cls; if (cur.clsWar != null) pub.clsWar = cur.clsWar; } // the hero shown to rivals: written by the server when registration closes
     if (!cur || pub.joinedAt !== cur.joinedAt) pub.joinedAt = Math.round(pub.joinedAt + clockSkew); // a new sign-up time is stamped in server time
     return copy(pub);
   }

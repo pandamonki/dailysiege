@@ -27,6 +27,9 @@ practice games always stamp all of them (`js/sim/plans.js`).
 - A war is seven daily battles. Each day lords plan (spend gold, place soldiers, set orders) and seal their orders
   before the lock; the server then fights the battle and everyone watches the replay. Day 7 is worth the most points.
 - Up to 12 lords; new hosted wars default to 10 (`js/config/seats.js`). Empty seats can be filled with bot lords.
+- Rivals' heroes are hidden while registration is open. Once it closes, the server publishes every lord's hero class to
+  the others (`revealHeroes` in `functions/lib/resolve.js`, profile fields `cls` and `clsWar`), so from day 1 everyone
+  knows who they face. Armies, gear and items stay hidden until they have fought (only yesterday's battle is known).
 - Practice is a private sandbox against bots, with every current rule on and skill-tree heroes by default.
 
 ## Gold

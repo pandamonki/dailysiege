@@ -120,6 +120,13 @@ test("a public profile cannot carry anything outside the allowed fields", async 
   await assertFails(updateDoc(doc(db(A), "games", G, "players", A), { gold: 99999 }));
   await assertFails(updateDoc(doc(db(A), "games", G, "players", A), { kicked: false }));
 });
+test("the hero shown to rivals is set by the server: a lord can keep it but not write or change it", async () => {
+  await assertFails(updateDoc(doc(db(A), "games", G, "players", A), { cls: "mage", clsWar: 1 }));
+  await env.withSecurityRulesDisabled(ctx => updateDoc(doc(ctx.firestore(), "games", G, "players", A), { cls: "rogue", clsWar: 1 }));
+  await assertSucceeds(setDoc(doc(db(A), "games", G, "players", A), profile({ pending: false, nick: A, real: A, joinedAt: 1000, cls: "rogue", clsWar: 1, sealedFor: "2026-11-12" })));
+  await assertFails(updateDoc(doc(db(A), "games", G, "players", A), { cls: "mage" }));
+  await assertSucceeds(getDoc(doc(db(B), "games", G, "players", A)));
+});
 test("names are fixed once the war has begun", async () => {
   await assertFails(updateDoc(doc(db(A), "games", G, "players", A), { nick: "Someone Else" }));
   await assertFails(updateDoc(doc(db(A), "games", G, "players", A), { real: "Bob" }));
