@@ -126,7 +126,7 @@ function drawDeath(m, k, color, dv, age, t) {
     ctx.restore(); return;
   }
   // soldiers and heroes
-  const sc = m.champ ? 1.15 : .95, h = ts * sc, w = h * SW / SH, p = cl((age - .1) / .4), ease = 1 + 2 * (p - 1) ** 3 + (p - 1) ** 2;
+  const sc = m.champ ? 1.15 : .95, sp0 = spr(m.key, color), h = ts * sc / SH * sp0.height, w = ts * sc / SH * sp0.width, p = cl((age - .1) / .4), ease = 1 + 2 * (p - 1) ** 3 + (p - 1) ** 2;
   ctx.fillStyle = `rgba(0,0,0,${.3 * fade})`; ctx.beginPath(); ctx.ellipse(cx + dir * ease * ts * .2, by - ts * .02, w * (.32 + .25 * ease), ts * .09, 0, 0, 7); ctx.fill();
   if (m.champ && age < .5) { ctx.strokeStyle = hexA(color, .8 * (1 - age / .5)); ctx.lineWidth = ts * .06; ctx.beginPath(); ctx.arc(cx, by - ts * .4, ts * (.3 + age * 2), 0, 7); ctx.stroke(); }
   ctx.globalAlpha = fade; ctx.imageSmoothingEnabled = false;
