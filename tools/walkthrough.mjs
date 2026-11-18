@@ -74,8 +74,9 @@ for (const name of engines) {
     await page.waitForFunction(() => mode === "replay" && replay && replay.res, null, { timeout: 20000 });
     await js(() => { replay.time = Math.max(0, replay.res.duration - 2); replay.playing = true; }); // skip to the last seconds
     await page.waitForFunction(() => !replay || replay.done, null, { timeout: 30000 }); });
-  await step("the battle report's tabs all open", async () => { await page.waitForTimeout(1500); for (let i = 0; i < 6; i++) { const c = page.locator('button:has-text("Continue"):visible'); if (await c.count()) { await c.first().click(); await page.waitForTimeout(600); } }
-    await closeAll(); await js(() => { sheet = { type: "report" }; render(); }); for (const t of ["ov", "dmg", "gold"]) { await tap(`#sheet [data-act="rtab"][data-v="${t}"]`); if ((await page.locator("#sheet .bsrow").count()) < 2) throw new Error("the scoreboard has no rows on the " + t + " tab"); } await closeAll(); });
+  await step("the battle report shows every lord and opens their builds", async () => { await page.waitForTimeout(1500); for (let i = 0; i < 6; i++) { const c = page.locator('button:has-text("Continue"):visible'); if (await c.count()) { await c.first().click(); await page.waitForTimeout(600); } }
+    await closeAll(); await js(() => { sheet = { type: "report" }; render(); }); if ((await page.locator("#sheet .rrow.hs").count()) < 2) throw new Error("the scoreboard has too few lords");
+    await tap('#sheet [data-act="rkit"][data-v="*"]'); if ((await page.locator("#sheet .kitwrap").count()) < 2) throw new Error("Show all builds opened no builds"); await closeAll(); });
   await step("the results screens appear and close", async () => { await page.waitForTimeout(1500); for (let i = 0; i < 6; i++) { const c = page.locator('button:has-text("Continue"):visible'); if (await c.count()) { await c.first().click(); await page.waitForTimeout(600); } }
     await closeAll(); });
   await step("no script errors anywhere", async () => { if (errors.length) throw new Error(errors.length + " errors: " + errors.slice(0, 3).join(" ; ")); });

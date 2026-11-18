@@ -11,10 +11,10 @@ const RELEASES = [
     ["⚖", "Compare before you buy", "Tap each Lv3 tower to see its stats beside your tower's. Nothing is bought blind."],
     ["📊", "Full tower stats", "Health, damage, shot speed, damage a second, range and damage type for every tower."],
     ["📌", "Towers stay put", "Magic and Fire Towers no longer drift after heroes or shift as they shoot."],
-    ["🏆", "New battle report", "Every lord on one row, with their main skills and items, so the whole battle fits on one screen."],
+    ["🏆", "Battle report", "Each lord's card now shows their hero in their colours, with medals, scores and stats."],
     ["⚔", "K/D/A", "Heroes killed, deaths and assists for every lord, plus soldiers killed, castles taken and gold."],
-    ["💥", "Damage tab", "Total damage, damage to heroes and damage to castles, with bars to compare."],
-    ["💰", "Gold tab", "Gold earned and levels gained in the battle."],
+    ["💥", "Damage dealt", "Each lord's total damage in the battle."],
+    ["🎒", "Builds on tap", "Tap Build on a lord to see their skills and items, or Show all builds."],
     ["📅", "Days on one row", "The day picker now sits on a single row."],
   ] },
   { id: "1.8", title: "What's new in v1.8", sub: "Simpler orders: one army plan, one fall-back, and soldiers that fight on", items: [

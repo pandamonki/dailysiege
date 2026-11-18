@@ -108,9 +108,8 @@ practice games always stamp all of them (`js/sim/plans.js`).
 
 ## Battle report
 
-- A scoreboard: one row per lord with rank, hero, main skills and items, the numbers of the chosen tab, then points.
-- Tabs: Overview (heroes killed / deaths / assists, soldiers killed, castles taken, gold), Damage (in all, to heroes, to
-  castles) and Gold. Deaths, assists and damage are recorded from 20 Nov. An assist is damaging an enemy hero in the
+- A card per lord: medal, colour, hero sprite, name, points, and chips for heroes killed / deaths / assists, soldiers
+  killed, castles taken, damage dealt, levels and gold. Build opens their skills and items. Deaths, assists and damage are recorded from 20 Nov. An assist is damaging an enemy hero in the
   10 seconds (`ASSIST_SECS`) before another lord kills it.
 
 ## Alliances

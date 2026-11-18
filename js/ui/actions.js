@@ -63,7 +63,7 @@ const A = {
   wizard: () => { const at = wizStartStep(); sheet = null; render(); setTimeout(() => startWizard(true, at), 100); },
   ulti: () => { S.phase = "orders"; ensureDip(); sheet = { type: "orders", tab: "rituals", grp: "ord" }; },
   upick: v => { sheet.pick = v; },
-  csel: v => { sheet.csel = v; }, tsel: v => { sheet.tsel = v; }, dsel: v => { sheet.dsel = v; sheet.tpick = null; }, tpick: v => { sheet.tpick = v; }, rtab: v => { sheet.rtab = v; }, ish: v => { sheet.ish = v; sheet.ipg = null; }, ipg: v => { sheet.ipg = +v; },
+  csel: v => { sheet.csel = v; }, tsel: v => { sheet.tsel = v; }, dsel: v => { sheet.dsel = v; sheet.tpick = null; }, tpick: v => { sheet.tpick = v; }, rkit: v => { const o = sheet.rkit || (sheet.rkit = {}); if (v === "*") { const ids = (reportData(sheet.id || (isLive() ? latestBattleKey() : "practice")) || { results: [] }).results.map(r => r.pid), all = ids.every(k => o[k]); ids.forEach(k => { o[k] = !all; }); } else o[v] = !o[v]; }, ish: v => { sheet.ish = v; sheet.ipg = null; }, ipg: v => { sheet.ipg = +v; },
   ultarm: () => { S.ultArm = !S.ultArm; },
   bless: v => { S.bless = v || null; },
   ctab: v => { sheet.tab = v; sheet.keep = false; },

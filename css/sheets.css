@@ -538,19 +538,13 @@ h3 .cnt { font: 700 13px/1 var(--f-body); font-style: normal; color: var(--parch
 .bal td { padding: 4px 6px; border-bottom: 1px solid rgba(62,39,20,.18); white-space: nowrap; }
 .bal td:first-child { white-space: normal; min-width: 92px; }
 .bal-hi { color: #2f7a2f; font-size: 10px; } .bal-lo { color: #b3261e; font-size: 10px; }
-/* battle report scoreboard (Dota style): one row per lord, the tab's numbers on the right, points last */
+/* battle report: day picker on one row, and each lord's card with its hero sprite and a Build button that opens its skills and items */
 .daychips.one { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; } .daychips.one .chip { flex: none; }
-.rhead { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; } .rhead .rsum { flex: 1; margin: 0; display: grid; gap: 2px; } .rhead .rsum b { font-size: 22px; } .rhead .rsum span { font-size: 12px; }
-.rhead .rbtns { margin: 0; display: flex; gap: 6px; } .rhead .rbtns .btn { padding: 6px 9px; font-size: 14px; }
-.bstabs { margin: 0 0 4px; }
-.bshdr { display: flex; justify-content: space-between; padding: 0 6px 2px; font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-soft); font-weight: 700; }
-.bslist { border-top: 1px solid rgba(62,39,20,.2); }
-.bsrow { display: flex; align-items: center; gap: 6px; width: 100%; padding: 5px 6px; border: 0; border-bottom: 1px solid rgba(62,39,20,.15); background: none; font: inherit; color: inherit; text-align: left; }
-button.bsrow { cursor: pointer; } .bsrow.me { background: rgba(47,95,168,.12); }
-.bsrow .rk { width: 16px; font-family: var(--f-display); font-size: 16px; color: var(--ink-soft); text-align: center; flex: none; } .bsrow .rk.g { color: #b8860b; }
-.bsface { width: 26px; height: 26px; border-radius: 5px; border: 2px solid; flex: none; display: block; }
-.bsname { flex: 1; min-width: 0; display: grid; overflow: hidden; } .bsname b { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .bsname small { font-size: 11px; color: var(--ink-soft); }
-.bskit { display: flex; gap: 2px; align-items: center; margin-top: 1px; } .bskit img { width: 17px; height: 17px; border-radius: 3px; border: 1px solid var(--wood-dark); } .bskit img.u { border-color: var(--gold); } .bskit img.it { border-radius: 50%; } .bskit b { width: 3px; }
-.bsnum { display: grid; justify-items: end; padding-left: 4px; font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; flex: none; } .bsnum i { font-style: normal; color: var(--ink-soft); } .bsnum em { font-style: normal; color: var(--ink-soft); }
-.bsnum i.bsbar { display: inline-block; height: 6px; margin-left: 4px; border-radius: 3px; background: var(--wax); vertical-align: middle; }
-.bspts { width: 28px; text-align: right; font-weight: 800; font-size: 16px; flex: none; font-variant-numeric: tabular-nums; }
+.rcard { position: relative; }
+.rrow.hs { display: grid; grid-template-columns: 30px 12px 34px minmax(0, 1fr) auto; } .rrow.hs .rn { grid-area: 1 / 4; } .rrow.hs .pts { grid-area: 1 / 5; } .rrow.hs .rc { grid-area: 2 / 3 / 3 / 6; }
+.rhero { width: 34px; height: 34px; image-rendering: pixelated; object-fit: contain; align-self: center; }
+.rrow.hs .rk { grid-area: 1 / 1 / 3 / 2; } .rrow.hs > i { grid-area: 1 / 2 / 3 / 3; } .rrow.hs .rhero { grid-area: 1 / 3 / 2 / 4; }
+.kitbtn { position: absolute; right: 46px; top: 8px; padding: 1px 8px; border: 1px solid var(--wood-dark); border-radius: 10px; background: var(--parchment-2); color: var(--ink); font: inherit; font-size: 12px; cursor: pointer; }
+.kitbtn.on { background: var(--wood-dark); color: var(--parchment); }
+.kitwrap { margin: -2px 0 8px 42px; } .kitwrap .kit { margin: 2px 0 4px; }
+.rtools { display: flex; justify-content: flex-end; margin: 0 0 6px; }
