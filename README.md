@@ -74,7 +74,7 @@ npm run build      # copy the game into dist/ ready for hosting
 | `js/ui/` | HUD, sheets (castle, info, army, council, results), `render()`, button actions, map input |
 | `js/audio/` | Music player and the list of tracks (`tracks.js`); the audio files are in `audio/` |
 | `js/dev/` | Balance lab (simulates many battles), golden battles for the determinism tests |
-| `icons/`, `items/`, `title.jpg`, `app/` | Images (WebP), and the app icons |
+| `icons/`, `items/`, `title.jpg`, `title-mask.png`, `app/` | Images (WebP), the title picture and its letter mask (used by the moving title in `js/ui/titlefx.js`), and the app icons |
 
 ## Rules for the scripts
 
