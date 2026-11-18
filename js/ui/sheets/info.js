@@ -186,6 +186,7 @@ const PATCHES = [
   { v: "Item rebalance", date: "18 Nov", fixes: [], balance: [
     "From the battle of 20 Nov: Healing Salve heals 220 (was 300) and costs 60 (was 50). Ring of Health gives +120 health and 8 health a second (was 140 and 10) and costs 100 (was 90) before tier pricing.",
     "Talisman of Will: stuns, roots, slows and silences last 75% shorter (was stuns and roots 60%). Orb of Fire splashes 50% within 1.5 tiles (was 35% within 1.3). Crystalys: 25% chance of 1.8x (was 20% of 1.6x). Pipe of Insight: 60% within 4 tiles (was 50% within 3). Boots of Speed: +0.42 move speed (was +0.35).",
+    "Divine Rapier: +100 damage on each weapon hit, and abilities and ultimates are no longer boosted (was double all of the holder's damage).",
   ], changes: [
     "Anti-Magic Shell: no timing setting. It fires the moment your hero engages an enemy hero, whenever it is off cooldown, and for 7.5s (was 5s) makes the hero immune to hero abilities, ultimates and magic attacks (was 70% against abilities).",
     "Rune of Homecoming: no longer once a battle. When your castle is attacked or your hero drops below 30% health, away from home, the hero channels for 1.5s, then it and every ally within 4 tiles are teleported home. 45s cooldown. Not in sudden death.",

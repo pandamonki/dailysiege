@@ -64,7 +64,8 @@ practice games always stamp all of them (`js/sim/plans.js`).
   castle is attacked or the hero drops below 30% health (more than 4 tiles from home), the hero channels for 1.5s, then
   it and every ally within 4 tiles go home; 45s cooldown. Talisman of Will: stuns, roots, slows and silences 75% shorter.
   Orb of Fire splashes 50% within 1.5 tiles. Crystalys: 25% chance of 1.8x. Pipe of Insight: 60% within 4 tiles.
-  Boots of Speed +0.42 move speed (was +0.35).
+  Boots of Speed +0.42 move speed (was +0.35). Divine Rapier: +100 damage on each weapon hit, abilities unaffected
+  (was double all hero damage).
 
 ## Defences (from 17 Nov)
 

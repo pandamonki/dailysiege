@@ -15,6 +15,7 @@ const RELEASES = [
     ["◆", "Crystalys", "25% chance to crit for 1.8x damage."],
     ["⌘", "Pipe of Insight", "60% less damage from hero abilities, for allies within 4 tiles."],
     ["»", "Boots of Speed", "A little faster: +0.42 move speed."],
+    ["⚔", "Divine Rapier", "Now +100 damage on every attack instead of double damage. Abilities are no longer boosted."],
   ] },
   { id: "1.9", title: "What's new in v1.9", sub: "Skills that grow with every point, towers you can compare, and a clearer battle report", items: [
     ["📈", "Every skill point counts", "From the 20 Nov battle each rank of a skill adds about as much as the first. Blood Rage goes 4% then 7%, not 4% then 5%."],

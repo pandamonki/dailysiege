@@ -75,6 +75,7 @@ const ITEM_DESC_V6 = {
   fireorb: "A blazing orb circles you. Your attacks explode: 50% of the damage splashes onto foes within 1.5 tiles of the target.",
   crystalys: "Your attacks have a 25% chance to crit for 1.8x damage.",
   pipe: "Aura: you and allies within 4 tiles take 60% less damage from enemy hero abilities and ultimates.",
+  rapier: "+100 damage on every attack (abilities are not affected). Drops where you fall: any hero can grab it and keep it.",
 };
 const ITEM_DESC_V5 = {
   whetstone: "+6 attack damage.", jerkin: "+100 health.", sandals: "+0.2 tiles a second move speed.", buckler: "Blocks 3 damage from every normal hit you take.",

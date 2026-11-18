@@ -99,3 +99,13 @@ test("Items v6: the Rune of Homecoming can fire again after its 45s cooldown, ea
   assert.ok(r.minGap >= 45 - 1e-6, `the Rune fired again after ${r.minGap}s`);
   assert.ok(r.portLag === null || r.portLag >= 1.5 - 1e-6, `a teleport came ${r.portLag}s after the channel began`);
 });
+
+test("Items v6: the Divine Rapier adds 100 to weapon hits, not to abilities", () => {
+  // battles with the Rapier resolve under both rules, and the shop text follows the battle date
+  const r = JSON.parse(sim.run(`(() => { const go = v6 => { const { plans, L } = ${WAR(1, 5)}; plans.forEach(p => { p.items = (p.items || []).filter(k => k !== "rapier"); p.itemV6 = v6; }); plans[0].items = ["rapier"].concat(plans[0].items).slice(0, 6);
+      return runBattle(plans, 99, { fast: true, N: L.N, ultV2: true, balV2: true, balV3: true, fairV1: true, pickV1: true, balV4: true, suddenV1: true, treesV1: true, heroV3: true, dayNo: 5 }); };
+    const a = go(true), b = go(false); return JSON.stringify({ a: a.results.length, b: b.results.length, desc: itemDesc("rapier", "2026-11-20"), old: itemDesc("rapier", "2026-11-10") }); })()`));
+  assert.equal(r.a, r.b);
+  assert.match(r.desc, /\+100 damage/);
+  assert.match(r.old, /Doubles/);
+});
