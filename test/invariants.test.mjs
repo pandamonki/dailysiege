@@ -11,7 +11,7 @@ const tough = loadSim(); tough.run("BAL.castleHp *= 1000"); // castles that cann
 const WAR = (game, day) => `(() => { const L = seatLayout(8, true), CL = ["warrior", "mage", "rogue", "archer", "shaman"], ids = [...Array(8)].map((_, k) => "g${game}b" + k);
   const plans = ids.map((uid, i) => { const zone = zoneFor(L.castles[i], L.N, L.castles, L.v2), lvl = Math.min(15, 1 + 2 * (${day} - 1));
     const p = lordBotPlan({ uid, cls: CL[(${game} + i) % 5], i, ids, L, zone, dayNo: ${day}, lvl, v2: true, v3: true, fair: true, pick: true, ranks: {}, sup: true, defV2: true });
-    return Object.assign(p, { pid: uid, name: uid, color: "#2f5fa8", castle: L.castles[i], level: lvl, trapV2: true, sdV2: true, wallV2: true, engV2: true, ordV2: true, itemV5: true, survV1: true, siegeV1: true }); });
+    return Object.assign(p, { pid: uid, name: uid, color: "#2f5fa8", castle: L.castles[i], level: lvl, trapV2: true, sdV2: true, wallV2: true, engV2: true, ordV2: true, skV2: true, itemV5: true, survV1: true, siegeV1: true }); });
   const opts = { N: L.N, ultV2: true, balV2: true, balV3: true, fairV1: true, pickV1: true, balV4: true, suddenV1: true, treesV1: true, heroV3: true, dayNo: ${day} };
   const full = runBattle(JSON.parse(JSON.stringify(plans)), 4000 + ${game} * 31 + ${day}, { ...opts, fast: false }), fast = runBattle(JSON.parse(JSON.stringify(plans)), 4000 + ${game} * 31 + ${day}, { ...opts, fast: true });
   return { full, fast, plans, L }; })()`;
@@ -64,5 +64,14 @@ test("towers never move from where they were placed", () => {
         const p = [f.d[i], f.d[i + 1]]; if (!at[j]) { at[j] = p; towers++; } else if (Math.hypot(p[0] - at[j][0], p[1] - at[j][1]) > .02) moved++; }));
       return JSON.stringify({ towers, moved }); })()`));
     assert.equal(r.moved, 0, `game ${g}: a tower moved (${r.moved} frames)`);
+  }
+});
+
+test("the scoreboard adds up: every hero kill is matched by a hero death, and assists never exceed hero deaths", () => {
+  for (const [g, d] of GAMES) {
+    const r = JSON.parse(sim.run(`(() => { const { full } = ${WAR(g, d)}; const s = k => full.results.reduce((a, x) => a + (x[k] || 0), 0);
+      return JSON.stringify({ kills: s("kills"), deaths: s("deaths"), assists: s("assists"), dmg: full.results.every(x => x.dmg >= x.dmgH + x.dmgC - 1 && x.dmgH >= 0 && x.dmgC >= 0) }); })()`));
+    assert.ok(r.kills <= r.deaths, `game ${g}: ${r.kills} hero kills but only ${r.deaths} hero deaths`);
+    assert.ok(r.dmg, `game ${g}: damage to heroes and castles is more than the damage in all`);
   }
 });

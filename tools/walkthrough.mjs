@@ -49,6 +49,11 @@ for (const name of engines) {
   await step("buy, place and inspect a tower", async () => { await tap('#cmdbar [data-v="keep"]'); await tap('#sheet .tabs button:has-text("Defences")'); await tap('#sheet [data-act="dsel"][data-v="tw1"]'); await tap('#sheet [data-act="trap"][data-v="tower"]');
     const [r, q] = (await freeTiles())[2]; await tapTile(r, q); if (!(await js(() => S.traps.some(t => t.type === "tower" && placedAt(t.id))))) throw new Error("the tower is not on the map");
     await tapTile(r, q); await page.waitForTimeout(150); if (!(await js(() => /Upgrade/.test(document.getElementById("pdock").innerText)))) throw new Error("the tower's strip has no Upgrade button"); });
+  await step("compare and buy a tower upgrade", async () => { await closeAll(); await js(() => { S.castle = 3; const t = S.traps.find(x => x.type === "tower"); t.tk = "tower2"; render(); });
+    await tap('#cmdbar [data-v="keep"]'); await tap('#sheet .tabs button:has-text("Defences")'); await tap('#sheet [data-act="dsel"][data-v="tw1"]');
+    if (!(await page.locator("#sheet .cmp").count())) throw new Error("no stats comparison"); await tap('#sheet [data-act="tpick"][data-v="towerS"]');
+    if (!(await js(() => /sniper/i.test(document.querySelector("#sheet .cmp").innerText)))) throw new Error("the comparison did not switch to the Sniper Tower");
+    await tap('#sheet [data-act="tup"]'); if (!(await js(() => S.traps.some(t => t.tk === "towerS")))) throw new Error("the upgrade was not bought"); await closeAll(); });
   await step("build two joined walls on the map", async () => { await closeAll(); await tap('#cmdbar [data-v="keep"]'); await tap('#sheet .tabs button:has-text("Defences")'); await tap('#sheet [data-act="dsel"][data-v="wall+"]'); await tap('#sheet [data-act="wbuild"]');
     const free = await freeTiles(), n0 = await js(() => S.walls.length), pair = free.find(([r, q]) => free.some(([a, b]) => a === r && b === q + 1) && free.length);
     const ok = await js(([r, q]) => routeOpen(`${r},${q}`, null) && routeOpen(`${r},${q + 1}`, null), pair); if (!ok) throw new Error("no room for a wall pair");
@@ -69,6 +74,8 @@ for (const name of engines) {
     await page.waitForFunction(() => mode === "replay" && replay && replay.res, null, { timeout: 20000 });
     await js(() => { replay.time = Math.max(0, replay.res.duration - 2); replay.playing = true; }); // skip to the last seconds
     await page.waitForFunction(() => !replay || replay.done, null, { timeout: 30000 }); });
+  await step("the battle report's tabs all open", async () => { await page.waitForTimeout(1500); for (let i = 0; i < 6; i++) { const c = page.locator('button:has-text("Continue"):visible'); if (await c.count()) { await c.first().click(); await page.waitForTimeout(600); } }
+    await closeAll(); await js(() => { sheet = { type: "report" }; render(); }); for (const t of ["ov", "dmg", "gold"]) { await tap(`#sheet [data-act="rtab"][data-v="${t}"]`); if ((await page.locator("#sheet .bsrow").count()) < 2) throw new Error("the scoreboard has no rows on the " + t + " tab"); } await closeAll(); });
   await step("the results screens appear and close", async () => { await page.waitForTimeout(1500); for (let i = 0; i < 6; i++) { const c = page.locator('button:has-text("Continue"):visible'); if (await c.count()) { await c.first().click(); await page.waitForTimeout(600); } }
     await closeAll(); });
   await step("no script errors anywhere", async () => { if (errors.length) throw new Error(errors.length + " errors: " + errors.slice(0, 3).join(" ; ")); });

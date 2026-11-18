@@ -63,7 +63,7 @@ const A = {
   wizard: () => { const at = wizStartStep(); sheet = null; render(); setTimeout(() => startWizard(true, at), 100); },
   ulti: () => { S.phase = "orders"; ensureDip(); sheet = { type: "orders", tab: "rituals", grp: "ord" }; },
   upick: v => { sheet.pick = v; },
-  csel: v => { sheet.csel = v; }, tsel: v => { sheet.tsel = v; }, dsel: v => { sheet.dsel = v; }, ish: v => { sheet.ish = v; sheet.ipg = null; }, ipg: v => { sheet.ipg = +v; },
+  csel: v => { sheet.csel = v; }, tsel: v => { sheet.tsel = v; }, dsel: v => { sheet.dsel = v; sheet.tpick = null; }, tpick: v => { sheet.tpick = v; }, rtab: v => { sheet.rtab = v; }, ish: v => { sheet.ish = v; sheet.ipg = null; }, ipg: v => { sheet.ipg = +v; },
   ultarm: () => { S.ultArm = !S.ultArm; },
   bless: v => { S.bless = v || null; },
   ctab: v => { sheet.tab = v; sheet.keep = false; },

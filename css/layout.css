@@ -190,3 +190,4 @@ html, body { overflow: hidden; overscroll-behavior: none; }
 #ctrack .ct.me { outline: 2px solid #ffe082; outline-offset: 1px; border-radius: 4px; }
 #ctrack .ct.down svg { filter: grayscale(1) brightness(.55); opacity: .7; }
 #ctrack .ct.down::after { content: ""; position: absolute; inset: -1px; background: linear-gradient(45deg, transparent 44%, #e0392b 44% 56%, transparent 56%), linear-gradient(-45deg, transparent 44%, #e0392b 44% 56%, transparent 56%); }
+.ugrid.tpick { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; margin: 6px 0; } .ugrid.tpick .ucard { padding: 4px 1px; } .ugrid.tpick .ucard b { font-size: 11px; } /* tower upgrade picker: all five Lv3 towers on one row */

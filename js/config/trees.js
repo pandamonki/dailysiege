@@ -154,6 +154,31 @@ const TREES = {
   ],
 };
 
+// Skill scaling v2 (plans stamped skV2, battles from SKILLS_V2_FROM): every rank adds the same step, and each step is worth at
+// least about two thirds of the first rank, so a point spent on rank 2 is worth nearly as much as the point that bought rank 1.
+// Four-rank skills list all four ranks. Older battles keep the values in TREES above.
+let SKILLS_V2_FROM = "2026-11-20"; const skillsV2For = d => String(d) >= SKILLS_V2_FROM;
+const TREE_V2 = {
+  warrior: { "Iron Clad": [[5, 10, 15, 20], [3, 6, 9, 12]], "Taunting Shout": [[6, 10, 14, 18]], "Shield Bash": [[30, 55]], "Unyielding Stance": [[7, 14], [10, 20]],
+    "Cleave": [[15, 25, 35, 45]], "Executioner's Whirlwind": [[20, 30, 40, 50]], "Bloodthirst": [[3, 5]], "Blood Rage": [[4, 7]],
+    "Marching Cadence": [[8, 14, 20, 26]], "Command Banner": [[10, 17, 24, 31]], "Fortify": [[20, 40]], "Sapper Coordination": [[15, 25]] },
+  shaman: { "Static Surge": [[4, 7, 10, 13], [24, 40, 56, 72]], "Chain Lightning": [[3, 4, 4, 5], [60, 100, 140, 180]], "Thunderclap": [[30, 55]], "Conductive Discharge": [[12, 20]],
+    "Grounding Totem": [[5, 9, 13, 17], [4, 8, 12, 16]], "Earthgrab Totem": [[2, 3, 4, 5], [2, 2.5, 3, 3.5]], "Ward Totem": [[1, 2]], "War Drum Pulse": [[12, 20], [10, 17]],
+    "Spirit Leech": [[5, 10, 15, 20]], "Ancestral Grasp": [[40, 70, 100, 130]], "Hex": [[2, 3.5]], "Last Stand Offering": [[1.5, 2], [15, 25]] },
+  rogue: { "Shadowstep": [[10, 17, 24, 31]], "Ambush": [[30, 55, 80, 105], [1, 1.25, 1.5, 1.75]], "Smoke Bomb": [[2, 3.5]], "Vanish": [[12, 9]],
+    "Poisoned Blades": [[3, 5, 7, 9], [15, 25, 35, 45]], "Caltrop Bomb": [[5, 9, 13, 17], [40, 50, 60, 70]], "Crippling Poison": [[10, 18]], "Corrosive Agent": [[8, 14]],
+    "Reflexes": [[8, 14, 20, 26]], "Riposte": [[.75, 1.25, 1.75, 2.25]], "Backstab": [[15, 25]], "Flurry": [[5, 9]] },
+  mage: { "Ignite": [[6, 10, 14, 18]], "Fireball": [[70, 120, 170, 220]], "Combustion": [[30, 55]], "Melt Armour": [[10, 17]],
+    "Chilling Touch": [[6, 10, 14, 18]], "Frost Nova": [[35, 60, 85, 110], [1.5, 2, 2.5, 3]], "Shatter": [[12, 20]], "Ice Barrier": [[12, 20], [6, 10]],
+    "Arcane Mastery": [[.2, .35, .5, .65], [4, 7, 10, 13]], "Blink & Disrupt": [[.8, 1.4, 2, 2.6]], "Mana Shield": [[15, 25]], "Empowered Synergies": [[20, 35], [10, 17]] },
+  archer: { "Eagle Eye": [[.2, .35, .5, .65], [4, 8, 12, 16]], "Arrow Volley": [[25, 45, 65, 85]], "Ricochet": [[15, 25]], "Pinning Shot": [[10, 17]],
+    "Fleet Footed": [[5, 10, 15, 20], [6, 10, 14, 18]], "Spike Trap": [[30, 55, 80, 105], [1.5, 2, 2.5, 3]], "Net Shot": [[1, 1.7]], "Entangling Wire": [[1, 1.5], [30, 50]],
+    "Focused Aim": [[4, 7, 10, 13]], "Headshot": [[60, 105, 150, 195]], "Hunter's Mark": [[8, 14]], "Armour Piercer": [[30, 50]] },
+};
+Object.keys(TREE_V2).forEach(cls => TREES[cls].forEach(tr => tr.nodes.forEach(n => { if (TREE_V2[cls][n.name]) n.w = TREE_V2[cls][n.name]; })));
+// which values the screens show: the coming battle's (live wars before SKILLS_V2_FROM show the old ones; practice always the new)
+const treeV2Now = () => { try { return typeof isLive === "function" && isLive() && typeof liveClock === "function" ? skillsV2For(liveClock().planDay) : true; } catch { return true; } };
+
 // skill icons: every hero has its own art per skill (icons/skills/<class>_<tree>_<node>.webp)
 const TREE_ART_CLASSES = ["warrior", "shaman", "rogue", "mage", "archer"];
 TREE_ART_CLASSES.forEach(cls => TREES[cls].forEach((tr, bi) => tr.nodes.forEach((n, i) => { n.ic = `${cls}_${TREE_BKEY[bi]}_${TREE_NODE[i]}`; })));
@@ -190,8 +215,9 @@ function treeCanLearn(tr, b, i, L) {
   const n = treeNeeds(tr, b, i, L); return !n.maxed && n.list.every(x => x.ok);
 }
 // the value of a node at a rank: nodeVal(cls, treeIndex, nodeIndex, valueIndex, rank)
-const nodeVal = (cls, bi, i, vi, rank) => ext(TREES[cls][bi].nodes[i].v[vi], rank);
-const nodeDesc = (cls, bi, i, rank) => { const n = TREES[cls][bi].nodes[i]; return n.desc.replace(/\{(\d)\}/g, (_, k) => { const a = n.v[+k]; if (!a) return "?"; const x = ext(a, Math.max(1, rank || 1)); return Number.isInteger(x) ? x : +x.toFixed(2); }); };
+const nodeVals = (n, v2) => (v2 && n.w ? n.w : n.v);
+const nodeVal = (cls, bi, i, vi, rank, v2 = treeV2Now()) => ext(nodeVals(TREES[cls][bi].nodes[i], v2)[vi], rank);
+const nodeDesc = (cls, bi, i, rank, v2 = treeV2Now()) => { const n = TREES[cls][bi].nodes[i]; return n.desc.replace(/\{(\d)\}/g, (_, k) => { const a = nodeVals(n, v2)[+k]; if (!a) return "?"; const x = ext(a, Math.max(1, rank || 1)); return Number.isInteger(x) ? x : +x.toFixed(2); }); };
 // spell animations for every active skill: the sim plays "v3_<class>_<tree>_<node>" through the usual SPELL_ART effects
 const treeSp = (cls, bi, i) => `v3_${cls}_${TREE_BKEY[bi]}_${TREE_NODE[i]}`;
 Object.keys(TREES).forEach(cls => TREES[cls].forEach((tr, bi) => tr.nodes.forEach((n, i) => { if (n.art) SPELL_ART[treeSp(cls, bi, i)] = { n: n.name, c: n.art[0], sym: n.art[1], fx: n.art[2], r: n.art[3], ...(n.art[4] ? { at: n.art[4] } : {}) }; })));

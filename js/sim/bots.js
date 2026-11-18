@@ -87,7 +87,7 @@ const BOT_BUILD_KEYS = ["warband", "fortress", "champion", "mixed"];
 const botBuild = (slot, offset) => BOT_BUILD_KEYS[((slot || 0) + (offset || 0)) % 4]; // by seat, turned by a number fixed for the game, so every game has each build about equally often
 const botArmy = (B, dayNo) => ({ waves: B.units * 2, lvl: B.units > 0 && dayNo >= 3 ? 1 : 0 }); // a warband sends more and better-trained reinforcements; the others fewer
 const botItemsN = (seed, n) => { const out = []; for (let j = 0; out.length < n && j < 40; j++) { const k = BOT_ITEM_POOL[Math.floor(hash(seed, j + 1, 32) * BOT_ITEM_POOL.length)]; if (!out.includes(k)) out.push(k); } return out; };
-// a tower's stage by day: a Guard Tower, an Arrow Tower once the castle reaches the tier for it (day 3), and one of the five level 3 towers from day 5
+// a tower's stage by day: an Archer Tower Lv1, Lv2 once the castle reaches the tier for it (day 3), and one of the five level 3 towers from day 5
 const botTowerKey = (seed, k, dayNo, tier) => { if (dayNo < 3 || tier < TOWER_UP.tower.tier) return "tower"; if (dayNo < 5 || tier < TOWER_UP.tower2.tier) return "tower2"; const to = TOWER_UP.tower2.to; return to[Math.floor(hash(seed, k, 63) * to.length)]; };
 // A bot's defences for a day, placed on the way in from the middle: a wall line across the approach with a gap in it, a trap in the gap and more just behind,
 // and towers beside the castle facing out. taken: tiles already used (it adds its own). The same inputs always give the same pieces.

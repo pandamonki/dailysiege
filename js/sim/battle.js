@@ -52,7 +52,7 @@ const ITEM_FLAT = { whetstone: { atk: 6 }, gauntlets: { atk: 12 }, daedalus: { a
 const ITEM_REGEN_V5 = { hpring: 10, herbs: 5 }, SALVE_V5 = 300, ELIXIR_V5 = .2, STANDARD_V5 = .18;
 const AGGRO_R = 4, RECALL_R = 6, RETREAT_END_V2 = .5, METEOR_CASTLE = 700, MAGIC_VS_FORT = .6, HIT_WINDOW = 2.5, BACK_AT = .6;
 const fairTie = (seed, a, b) => hash(seed, botSeed(String(a)) * 7919 + botSeed(String(b)), 17);
-const SURVIVOR_PTS = 1, BLOC_MAX = 3, TREACHERY_PTS = 3, TREACHERY_LOOT = .25, DAY_WEIGHT = { 5: 1.5, 6: 1.5, 7: 2 };
+const ASSIST_SECS = 10, SURVIVOR_PTS = 1, BLOC_MAX = 3, TREACHERY_PTS = 3, TREACHERY_LOOT = .25, DAY_WEIGHT = { 5: 1.5, 6: 1.5, 7: 2 };
 // A lord whose castle falls keeps their hero and soldiers on the field: they fight on to the end of the battle, but can no longer fall back, heal at the castle, teleport home or respawn. Placing is still decided by when the castle fell.
 const ORPHAN_ARMIES = true;
 const dayWeight = (v2, dayNo) => (v2 && DAY_WEIGHT[dayNo]) || 1;
@@ -419,6 +419,7 @@ function runBattle(plans, seed, opts = {}) {
       credit.tel.dealt += eff; abRec(credit, label).dmg += eff;
       if (!fast && tgt.kind !== "castle" && P[credit.pid]) { const B = P[credit.pid].burst || (P[credit.pid].burst = {}), k = Math.floor(t * 2); B[k] = B[k] || [0, tgt.x, tgt.y]; B[k][0] += eff; B[k][1] = tgt.x; B[k][2] = tgt.y; }
       if (tgt.kind === "castle" && P[credit.pid] && credit.pid !== tgt.pid) { P[credit.pid].castleDmg = (P[credit.pid].castleDmg || 0) + eff; const s2 = st(tgt.pid); s2.castleTaken += eff; s2.castleBy[credit.pid] = (s2.castleBy[credit.pid] || 0) + eff; }
+      if (tgt.kind === "champ" && credit.pid !== tgt.pid) (tgt.hitBy || (tgt.hitBy = {}))[credit.pid] = t; // for assists
       if (tgt.kind === "champ") credit.tel.toChamp += eff; else if (tgt.kind === "castle") credit.tel.toCastle += eff; else credit.tel.toUnit += eff;
     } else if (o.trapPid) P[o.trapPid].trapDmg = (P[o.trapPid].trapDmg || 0) + eff;
     const tp = P[tgt.pid]; tp.hitT = t;
@@ -456,6 +457,7 @@ function runBattle(plans, seed, opts = {}) {
     if (sdOn() && e.kind === "champ" && src && (src.owner || src).pid !== e.pid) quip((src.owner || src).pid, "te", src.owner || src);
     const kc = src && (src.owner || src); if (kc && kc.pid !== e.pid && e.kind !== "totem" && e.kind !== "castle") { kc.tel.kills++; if (e.kind !== "champ" && P[kc.pid]) P[kc.pid].ukills++; }
     if (!opts.duel) { awardXp(e); awardGold(e, kc); if ((e.kind === "champ" || e.kind === "castle") && kc && kc.pid !== e.pid && RANKS[e.pid] && RANKS[e.pid] <= 3 && hostile(kc.pid, e.pid)) { const kh = champOf(kc.pid); if (kh) giveXp(kh, bountyGold(RANKS[e.pid], e.kind === "champ" ? e.heroLvl : (champOf(e.pid) || {}).heroLvl) * .8); } }
+    if (e.kind === "champ") { const kp = kc && kc.pid; Object.keys(e.hitBy || {}).forEach(q => { if (q !== kp && t - e.hitBy[q] <= ASSIST_SECS && P[q]) P[q].assists = (P[q].assists || 0) + 1; }); e.hitBy = {}; } // an assist: hurt an enemy hero in the last few seconds before someone else slew it
     if (src && src.pid !== e.pid && e.kind === "champ") { P[src.pid].kills++; { const a = st(e.pid).heroBy, b = st(src.pid).heroSlain; a[src.pid] = (a[src.pid] || 0) + 1; b[e.pid] = (b[e.pid] || 0) + 1; } log(`${nm(src.pid)} slew ${lposs(e.pid)} hero.`);
       if (!firstBlood) { firstBlood = true; H({ kind: "firstblood", pid: src.pid, other: e.pid, x: e.x, y: e.y, score: 38 }); }
       else if (under(src.pid) && top3(e.pid) && !hl.some(h => h.kind === "giantslayer" && h.other === e.pid)) H({ kind: "giantslayer", pid: src.pid, other: e.pid, x: e.x, y: e.y, score: 62 }); }
@@ -1195,8 +1197,11 @@ function runBattle(plans, seed, opts = {}) {
   const PTS = [10, 7, 5, 4, 3, 2, 1, 0]; // placement points; from 8th place down a lord scores only for kills and castles
   // survivor (plans stamped survV1): a lord whose hero is on its feet when the battle ends scores SURVIVOR_PTS more, castle standing or not
   const surv = pid => { const pl = plans.find(q => q.pid === pid), h = P[pid].champ; return !!(pl && pl.survV1 && h && !h.dead); };
+  // the battle report's scoreboard (battles from 20 Nov): hero deaths, assists, and damage dealt in all, to heroes and to castles
+  const BOARD2 = plans.some(p => p.skV2), board = pid => { const mine = ents.filter(e => e.pid === pid && e.tel && e.kind !== "castle"), sum = k => Math.round(mine.reduce((a, e) => a + (e.tel[k] || 0), 0));
+    return { deaths: ents.filter(e => e.pid === pid && e.kind === "champ").reduce((a, e) => a + e.tel.deaths, 0), assists: P[pid].assists || 0, dmg: sum("dealt") + Math.round(P[pid].trapDmg || 0), dmgH: sum("toChamp"), dmgC: sum("toCastle") }; };
   const results = order.map(pid => ({ pid, name: nm(pid), color: P[pid].color, cls: P[pid].cls, place: P[pid].place, kills: P[pid].kills, ukills: P[pid].ukills, castles: P[pid].castles,
-    points: Math.round(((PTS[P[pid].place - 1] || 0) + P[pid].kills + castlePts(FV) * P[pid].castles) * W8) + (treach[pid] || 0) * TREACHERY_PTS + (surv(pid) ? SURVIVOR_PTS : 0), ...(treach[pid] ? { treachery: treach[pid] } : {}), ...(surv(pid) ? { survivor: 1 } : {}), fellAt: P[pid].elimT, gold: Math.round(P[pid].gold) })).sort((a, b) => a.place - b.place);
+    points: Math.round(((PTS[P[pid].place - 1] || 0) + P[pid].kills + castlePts(FV) * P[pid].castles) * W8) + (treach[pid] || 0) * TREACHERY_PTS + (surv(pid) ? SURVIVOR_PTS : 0), ...(treach[pid] ? { treachery: treach[pid] } : {}), ...(surv(pid) ? { survivor: 1 } : {}), fellAt: P[pid].elimT, gold: Math.round(P[pid].gold), ...(BOARD2 ? board(pid) : {}) })).sort((a, b) => a.place - b.place);
   const TEL_COST = { footman: 50, bowman: 70, knight: 120, healer: 100, raider: 110, mage: 140, sniper: 160, ram: 240, cart: 200, catapult: 220 }; // telemetry keeps the prices from before 15 Nov 2026 so recorded battles replay identically
   const invest = (type, lvl) => { const c = TEL_COST[type] ?? UNITS[type].cost; let g = c; for (let l = 1; l < lvl; l++) g += Math.round(c * .5 * l); return g; };
   const tel = { duration: Math.min(t, SV ? SD_AT + SD_COUNT + SD_LEN : TMAX),
