@@ -56,6 +56,10 @@ npm run build      # copy the game into dist/ ready for hosting
   (`preview.yml`); the friends game is switched off on previews so they can never touch the real war.
   `OPERATIONS.md` is the host's guide: starting a war, recovering a player, rolling back, checking costs.
 - CI (`.github/workflows/ci.yml`) runs lint, the tests and the build on every pull request (not again on merge, since Deploy re-runs the core tests).
+- **The rules as they are now** are in `docs/game-rules.md`: the one place that describes every current rule, kept up to date with each change.
+- **Regression checks:** `test/invariants.test.mjs` fights bot wars under today's rules and checks what must always hold.
+  `npm run build && npm run walkthrough` has a robot player play a practice day through every screen in a real browser
+  (`tools/walkthrough.mjs`; set `PW_EXECUTABLE` to use a browser already on the machine). CI runs both.
 - The hosting plan and its phases are in `daily-siege-hosting-plan.md`.
 
 | Folder | What lives there |

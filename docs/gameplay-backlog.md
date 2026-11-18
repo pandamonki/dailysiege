@@ -1,5 +1,8 @@
 # Daily Siege: gameplay-loop review and backlog
 
+> **Historical snapshot (11 Nov 2026).** Many rules have changed since. For how the game works now, read
+> `docs/game-rules.md`; use this file only for the reasoning behind past decisions.
+
 *Design review, 11 Nov 2026. No game code was changed. Every number below comes from the game's own simulation, run headlessly.*
 
 ## How this was done

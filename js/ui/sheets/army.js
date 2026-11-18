@@ -9,7 +9,7 @@ function unitSheet(id) {
       <button class="btn" data-act="bench" data-v="${u.id}" ${dis()}>Back to barracks</button>
       <button class="btn" data-act="usell" data-v="${u.id}" ${dis()}>Sell · +${unitSellPrice(u)}g</button>
       <button class="btn wax" data-act="up" data-v="${u.id}" ${dis(u.lvl >= 3 || ctNow() < UNIT_LVL_TIER[u.lvl] || avail() < upgradeCost(u))}>${u.lvl >= 3 ? "Fully trained" : ctNow() < UNIT_LVL_TIER[u.lvl] ? `Needs a ${tierName(UNIT_LVL_TIER[u.lvl])}` : `Train to Lv${u.lvl + 1} · ${upgradeCost(u)}g`}</button></div>
-    <p class="muted">${(u.hp ?? 1) < 1 ? "Still recovering from yesterday's battle. Fallen soldiers return at half health. " : ""}Soldiers follow your War Orders: stance, target priority and if-then commands.</p></div>`;
+    <p class="muted">Every soldier starts each battle at full health and fights on to the end. Where it goes follows your army plan, and what it fights first follows your combat groups.</p></div>`;
 }
 function trapSheet(id) {
   const t = findTrap(id), d = t.type === "tower" ? { ...UNITS[towerKey(t)], cost: towerSpent(towerKey(t)) } : TRAPS[t.type];

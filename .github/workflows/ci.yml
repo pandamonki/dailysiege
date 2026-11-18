@@ -52,6 +52,8 @@ jobs:
       - run: npm run build
       - name: Self-test in Chromium, Firefox and WebKit
         run: node tools/selftest-browsers.mjs chromium firefox webkit
+      - name: Walkthrough (a robot player plays a practice day through every screen)
+        run: node tools/walkthrough.mjs chromium
 
   # The hosted game against the Firebase emulators: the security rules; three accounts in real browsers
   # registering, sealing orders, failing to read each other's secrets and getting a server-fought battle;
