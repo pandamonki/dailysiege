@@ -112,7 +112,8 @@ function heroKit(pl) {
 function heroKitTiles(pl, pid) {
   const kit = heroKit(pl); if (!kit.length) return "";
   const [tp, tk] = String(sheet.rtip || "").split("|"), open = tp === pid ? kit.find(x => x.k === tk) : null;
-  return `<div class="kit">${kit.map(x => `<button class="kt${x.ult ? " ult" : ""}${x.item ? " it" : ""}${open === x ? " on" : ""}" data-act="rtip" data-v="${esc(pid + "|" + x.k)}" aria-label="${esc(x.name)}"><img alt="" src="${x.img}"></button>`).join("")}</div>
+  const tiles = L => L.map(x => `<button class="kt${x.ult ? " ult" : ""}${x.item ? " it" : ""}${open === x ? " on" : ""}" data-act="rtip" data-v="${esc(pid + "|" + x.k)}" aria-label="${esc(x.name)}"><img alt="" src="${x.img}"></button>`).join("");
+  return `<div class="kit">${tiles(kit.filter(x => !x.item))}</div>${kit.some(x => x.item) ? `<div class="kit">${tiles(kit.filter(x => x.item))}</div>` : ""}
     ${open ? `<div class="ktip"><img alt="" src="${open.img}"><div><b>${esc(open.name)}</b><small>${esc(open.sub)}</small><p>${esc(open.desc)}</p></div></div>` : ""}`;
 }
 function lordSheet(d, pid, nm) {
