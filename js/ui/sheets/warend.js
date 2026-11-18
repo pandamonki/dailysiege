@@ -16,6 +16,9 @@ function warSummary(pw) {
     p.daily[di] = r.points || 0; p.pts += r.points || 0; p.kills += r.kills || 0; p.ukills += r.ukills || 0; p.castles += r.castles || 0; p.gold += r.gold || 0;
     if (r.place === 1) p.wins++; if ((r.points || 0) > p.best) p.best = r.points || 0; p.treachery += r.treachery || 0; if (r.survivor) p.survived++;
     if (r.color) p.color = r.color; if (r.cls) p.cls = r.cls; }));
+  // saved results carry no colour or class: take them from each battle's plans (latest day wins, as heroes can change)
+  days.forEach(d => { const pl = (pw.battles[d].inputs && pw.battles[d].inputs.plans) || [];
+    pl.forEach(q => { const p = per[q.pid]; if (!p) return; if (q.color) p.color = q.color; if (q.cls) p.cls = q.cls; if (!p.name && q.name) p.name = q.name; }); });
   const rank = Object.values(per).sort((a, b) => b.pts - a.pts || b.wins - a.wins || (a.pid < b.pid ? -1 : 1));
   const through3 = {}; rank.forEach(p => { through3[p.pid] = p.daily.slice(0, 3).reduce((a, b) => a + b, 0); });
   const r3 = Object.keys(through3).sort((a, b) => through3[b] - through3[a]), moved = {}; rank.forEach((p, i) => { moved[p.pid] = r3.indexOf(p.pid) - i; });
