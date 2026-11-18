@@ -15,7 +15,7 @@ function renderSheet() {
   if (heldSelect && sheet && document.contains(heldSelect)) { sheetBehind = true; return; } // don't close a dropdown that's open
   const sh = document.getElementById("sheet"), veil = document.getElementById("veil");
   if (sheet && sheet.type === "spin" && !(S && S.spin)) sheet = null; // the gift was claimed, dropped or belongs to another save (a live update can arrive after the game state changes): nothing to show
-  if (!sheet) { sh.hidden = veil.hidden = true; try { TitleFX.mount(null); } catch (e) {} return; }
+  if (!sheet) { sh.hidden = veil.hidden = true; return; }
   const p = document.getElementById("paper"), scroll = p.querySelector(".body")?.scrollTop || 0;
   const html = { castle: castleSheet, champ: champSheet, unit: () => unitSheet(sheet.id), trap: () => trapSheet(sheet.id), rival: () => rivalSheet(sheet.id),
     title: titleSheet, patch: patchSheet, gold: goldSheet, day: daySheet, board: boardSheet, report: () => reportSheet(sheet.id), invites: inviteSheet, whatsnew: newsSheet, camp: campSheet, wars: warsSheet, warend: warEndSheet, hall: hallSheet, spin: spinSheet, rhero: () => rivalHeroSheet(sheet.id), guide: guideSheet, spells: spellsSheet, wall: () => wallSheet(sheet.id),
@@ -23,7 +23,6 @@ function renderSheet() {
   if (sheet.type === "spin" && p.dataset.spin === html && !sh.hidden) return; // the reels are mid-spin: a redraw with the same markup must not restart them
   p.dataset.spin = sheet.type === "spin" ? html : "";
   p.innerHTML = html; sh.hidden = veil.hidden = false; sh.classList.toggle("splash", sheet.type === "title" && sheet.tab !== "test");
-  try { TitleFX.mount(sh.classList.contains("splash") ? p.querySelector(".splash-art") : null); } catch (e) {}
   decorateHelp(p);
   const b = p.querySelector(".body"); if (b && sheet.keep) b.scrollTop = scroll;
 }

@@ -34,8 +34,6 @@ for (const name of engines) {
   const step = async (title, fn) => { const before = errors.length; try { await fn(); if (errors.length > before) throw new Error("page error: " + errors.slice(before).join(" ; ")); results.push(["ok", title]); } catch (e) { results.push(["FAIL", title + ": " + (e && e.message || e).split("\n")[0]]); } };
 
   await step("the title screen loads", async () => { await page.goto(base); await page.waitForFunction(() => typeof runBattle === "function" && !document.getElementById("sheet").hidden, null, { timeout: 30000 }); });
-  await step("the title picture comes alive", async () => { if (!(await js(() => sheet && sheet.type === "title"))) return; // the moving picture is drawn over the still one
-    await page.waitForFunction(() => !!document.querySelector("#sheet .splash-art .splash-fx.on"), null, { timeout: 8000 }); });
   await step("a practice game starts", async () => { await js(() => { try { localStorage.clear(); } catch { /* storage may be blocked: start from whatever is there */ } }); await page.goto(base); await page.waitForFunction(() => typeof runBattle === "function", null, { timeout: 30000 }); await page.waitForTimeout(800);
     if (await page.locator('[data-act="testgo"]').count()) await tap('[data-act="testgo"]'); else await tap('[data-act="playgo"]'); await page.waitForTimeout(800); await closeAll();
     if (!(await js(() => mode === "plan" && !!S && typeof DAY === "number"))) throw new Error("not on the planning screen"); });

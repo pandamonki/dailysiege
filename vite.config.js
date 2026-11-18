@@ -7,7 +7,7 @@ import { createHash } from "node:crypto";
 import path from "node:path";
 
 // Folders and files the page loads by path at run time. Vite only bundles the stylesheets.
-const STATIC = ["js", "icons", "items", "audio", "app", "manifest.webmanifest", "title.jpg", "title-mask.png", "test/golden/hashes.json"]; // the last one is read by selftest.html
+const STATIC = ["js", "icons", "items", "audio", "app", "manifest.webmanifest", "title.jpg", "test/golden/hashes.json"]; // the last one is read by selftest.html
 
 function classicScripts() {
   let outDir;
