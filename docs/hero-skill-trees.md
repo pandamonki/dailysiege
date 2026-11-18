@@ -4,7 +4,8 @@ This spec replaces the current hero abilities (three abilities with four ranks, 
 each, an ultimate with three ranks, and Vigour) with three skill trees per hero. It is written for
 the model that implements it. Read all of it before you change any code.
 
-**Status: built and live from 12 Nov 2026 (see §10).**
+**Status: built and live from 12 Nov 2026 (see §10).** For the rules as they are now (level cap, gains per day,
+how skills cast), `docs/game-rules.md` is the reference; the code in `js/config/trees.js` has the exact numbers.
 
 ---
 

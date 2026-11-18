@@ -53,6 +53,14 @@ merge a pull request into `main`, don't stop at "merged":
 3. If a push-notification tool is available, also send the result as a push notification, since
    the user may have stepped away while it ran.
 
+## The rules reference and the regression checks
+
+- **`docs/game-rules.md` is the source of truth for how the game works now.** Read it before describing a rule to the
+  user, and check the code when in doubt; don't rely on memory of earlier versions. In every pull request that changes
+  a rule or feature, update that file (and any in-game help text in `js/ui/help.js` that mentions it).
+- **Keep the regression checks growing.** When a new screen or feature lands, add a step to `tools/walkthrough.mjs`;
+  when a battle rule lands, add a check to `test/invariants.test.mjs`. Both run in CI on every pull request.
+
 ## Release notes pop-up
 
 The "What's new" pop-up comes from the `RELEASES` list at the top of `js/ui/sheets/news.js`. For every major release or
