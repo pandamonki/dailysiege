@@ -116,6 +116,8 @@ function runBattle(plans, seed, opts = {}) {
   const fighting = pid => P[pid].alive || !!P[pid].orphan; // still has an army in the fight, even if the castle is gone
   const live = e => e && !e.dead;
   const enemiesNear = (e, x, y, r) => ents.filter(o => !o.dead && o.kind !== "castle" && hostile(e.pid, o.pid) && vis(o, e) && hyp(o.x - x, o.y - y) <= r);
+  // engaging an enemy hero: you are attacking one within reach, or one is attacking you from within its reach
+  const shellEngaged = e => (e.tgt && !e.tgt.dead && e.tgt.kind === "champ" && hostile(e.pid, e.tgt.pid) && d(e, e.tgt) <= e.range + 1) || enemiesNear(e, e.x, e.y, 6).some(o => o.kind === "champ" && o.tgt === e && d(o, e) <= o.range + 1);
   const friendsNear = (pid, x, y, r) => ents.filter(o => !o.dead && o.kind !== "castle" && allied(pid, o.pid) && hyp(o.x - x, o.y - y) <= r);
   const minBy = (arr, f) => arr.reduce((b, o) => (b === null || f(o) < f(b) ? o : b), null);
   // a hidden unit can be seen by a viewer standing within its reveal radius if it is only in stealth (skill-tree Rogues); a fully vanished one never can
@@ -169,7 +171,7 @@ function runBattle(plans, seed, opts = {}) {
         e.hp = e.maxhp; if (!HV3) { ["a1", "a2", "a3"].forEach(k => e.cds[k] = 2 + rng() * 3); e.cds.ult = 10 + rng() * 8; }
         e.ultArm = pl.ultArm !== false; e.heroLvl = lvl; e.lvl0 = lvl; e.xp = pl.xp0 || 0; e.xp0 = e.xp; e.gains = 0;
         const its = new Set(pl.items || []); e.itemSet = its; if (its.has("rapier")) { e.rapier = true; rapierOwner = rapierHolder = pl.pid; }
-        e.itemV5 = !!pl.itemV5;
+        e.itemV5 = !!pl.itemV5; e.shellV2 = !!pl.shellV2;
         if (e.itemV5) { // flat items
           its.forEach(k => { const st = ITEM_FLAT[k]; if (!st) return; if (st.atk) { e.atk += st.atk; e.flatAtk = (e.flatAtk || 0) + st.atk; } if (st.hp) { e.maxhp += st.hp; e.flatHp = (e.flatHp || 0) + st.hp; } if (st.spd) e.spd += st.spd; if (st.block) e.block = (e.block || 0) + st.block; });
           e.hp = e.maxhp; if (its.has("vanguard")) e.block = (e.block || 0) + 12;
@@ -295,14 +297,15 @@ function runBattle(plans, seed, opts = {}) {
       if (s.has("pipe")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => setFx(o, "spellward", 1.3, Math.min(.6, .25 * AB)));
       if (s.has("mender")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => { if (o.hp < o.maxhp) heal(o, 4 * AB, true, e, "Mender's Charm"); });
     }
-    if (s.has("antimagic")) { if (enemiesNear(e, e.x, e.y, 7).some(x => x.kind === "champ")) { if (e.engT == null) e.engT = t; } else e.engT = null; } // the clock on the Shell starts when an enemy hero comes into view
+    if (s.has("antimagic") && e.shellV2) e.engT = shellEngaged(e) ? t : null; // shell v2: it fires the moment you engage an enemy hero, whenever it is off cooldown
+    else if (s.has("antimagic")) { if (enemiesNear(e, e.x, e.y, 7).some(x => x.kind === "champ")) { if (e.engT == null) e.engT = t; } else e.engT = null; } // the clock on the Shell starts when an enemy hero comes into view
     (e.cons || []).forEach(c => {
       if (t < c.ready) return;
       if (c.k === "salve" && e.hp / e.maxhp < .5) { c.ready = t + ITEMS[c.k].cd; heal(e, e.itemV5 ? SALVE_V5 : e.maxhp * .35, false, e, "Healing Salve"); txt(e, "Salve", "#9cf09c"); }
       else if (c.k === "elixir" && live(e.tgt) && d(e, e.tgt) <= e.range + 1) { c.ready = t + ITEMS[c.k].cd; setFx(e, "asbuf", 8, e.itemV5 ? ELIXIR_V5 / Math.max(.3, e.as - ELIXIR_V5) : .25); txt(e, "Fury!", "#ff8a7a"); }
       else if (c.k === "net") { const v = minBy(enemiesNear(e, e.x, e.y, 4).filter(x => x.kind === "champ"), x => d(x, e)); if (v) { c.ready = t + ITEMS[c.k].cd; setFx(v, "root", 2.5); shot(e, v, "#c9a46a", 2); txt(v, "Netted", "#e8cf9a"); } }
       else if (c.k === "shiva") { const vs = enemiesNear(e, e.x, e.y, 3); if (vs.length >= 2) { c.ready = t + ITEMS[c.k].cd; aoe(e.x, e.y, 3, "#9fe4ff", .6); vs.forEach(x => { deal(e, x, 140, { aoe: 1, ab: "Shiva's Guard" }); if (live(x)) setFx(x, "slow", 4, .4); }); txt(e, "Shiva's Guard", "#bdeeff"); } }
-      else if (c.k === "antimagic" && e.engT != null && t - e.engT >= e.shellAt - 1e-6) { c.ready = t + ITEMS[c.k].cd; setFx(e, "shell", 5, .7); ev({ ty: "shell", id: e.id, dur: 5 }); txt(e, "Anti-Magic Shell", "#9ff0e0"); }
+      else if (c.k === "antimagic" && e.engT != null && (e.shellV2 || t - e.engT >= e.shellAt - 1e-6)) { c.ready = t + ITEMS[c.k].cd; setFx(e, "shell", 5, .7); ev({ ty: "shell", id: e.id, dur: 5 }); txt(e, "Anti-Magic Shell", "#9ff0e0"); }
       else if (c.k === "scroll" && !e.orphan && t - (p.castleHitT == null ? -99 : p.castleHitT) < .3 && p.castle && !p.castle.dead && d(e, p.castle) > 4) { // Rune of Homecoming: once a battle, as the castle comes under attack
         c.ready = 1e9; const grp = friendsNear(e.pid, e.x, e.y, 4).filter(o => o.kind !== "totem" && P[o.pid] && P[o.pid].castle && !P[o.pid].castle.dead);
         grp.forEach((o, i) => { const cs = P[o.pid].castle, a = i * 2.399, r = 1.1 + (i % 3) * .45; aoe(o.x, o.y, .7, "#b48cff", .5); o.x = cs.x + dcos(a) * r; o.y = cs.y + .4 + dsin(a) * r * .8; o.tgt = null; aoe(o.x, o.y, .7, "#b48cff", .5); });

@@ -75,3 +75,15 @@ test("the scoreboard adds up: every hero kill is matched by a hero death, and as
     assert.ok(r.dmg, `game ${g}: damage to heroes and castles is more than the damage in all`);
   }
 });
+
+test("Anti-Magic Shell v2: fires on engaging a hero with no chosen delay, and never faster than its cooldown", () => {
+  const run = at => `(() => { const { plans, L } = ${WAR(1, 5)}; plans.forEach(p => { p.items = ["antimagic"].concat((p.items || []).filter(k => k !== "antimagic")).slice(0, 6); p.shellV2 = true; p.shellAt = ${at}; });
+    const opts = { N: L.N, ultV2: true, balV2: true, balV3: true, fairV1: true, pickV1: true, balV4: true, suddenV1: true, treesV1: true, heroV3: true, dayNo: 5 };
+    return runBattle(plans, 4242, opts); })()`;
+  const r = JSON.parse(sim.run(`(() => { const a = ${run(1)}, b = ${run(10)}, sh = a.events.filter(e => e.ty === "shell"), by = {};
+    sh.forEach(e => (by[e.id] = by[e.id] || []).push(e.t)); const gaps = Object.values(by).flatMap(ts => ts.slice(1).map((t, i) => t - ts[i]));
+    return JSON.stringify({ n: sh.length, minGap: gaps.length ? Math.min(...gaps) : 99, cd: ITEMS.antimagic.cd, same: a.duration === b.duration && JSON.stringify(a.results) === JSON.stringify(b.results) }); })()`));
+  assert.ok(r.n > 0, "no shell ever fired");
+  assert.ok(r.minGap >= r.cd - 1e-6, `a shell fired again after ${r.minGap}s`);
+  assert.ok(r.same, "the old delay setting still changes the battle");
+});

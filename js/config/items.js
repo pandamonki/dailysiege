@@ -38,7 +38,7 @@ const ITEMS = {
   talisman:    { name: "Talisman of Will",   g: "✦", col: "#b48cff", cost: 90,  tier: 2, kind: "passive", desc: "Stuns and snares on you last 60% shorter." },
   scroll:      { name: "Rune of Homecoming", g: "ᚱ", col: "#b48cff", cost: 220, tier: 3, kind: "use", cd: 0, desc: "Once per battle, the moment your castle is attacked: you and every ally within 4 tiles are teleported back to base. Reusable every day." },
   vanguard:    { name: "Vanguard",           g: "⛊", col: "#6f8fa8", cost: 120, tier: 2, kind: "passive", desc: "+15% health, and blocks 12 damage from every normal hit you take. Soldiers' blows barely scratch you." },
-  antimagic:   { name: "Anti-Magic Shell",   g: "◉", col: "#7ad6c4", cost: 200, tier: 2, kind: "use", cd: 30, desc: "When you engage an enemy hero, after a delay you choose (1 to 10s): 5s of 70% magic resistance against hero abilities and ultimates. Time it to catch their ultimate." },
+  antimagic:   { name: "Anti-Magic Shell",   g: "◉", col: "#7ad6c4", cost: 200, tier: 2, kind: "use", cd: 30, desc: "When you engage an enemy hero, after a delay you choose (1 to 10s): 5s of 70% magic resistance against hero abilities and ultimates. Time it to catch their ultimate.", descV2: "The moment you engage an enemy hero, if it is off cooldown: 5s of 70% magic resistance against hero abilities and ultimates." },
   crystalys:   { name: "Crystalys",          g: "◆", col: "#e0705a", cost: 120, tier: 2, kind: "passive", desc: "Your attacks have a 20% chance to crit for 1.6x damage." },
   banner:      { name: "Banner of Might",   g: "⚑", col: "#e2b33c", cost: 140, tier: 2, kind: "aura", desc: "Aura: allies within 3 tiles deal 12% more damage." },
   standard:    { name: "Iron Standard",      g: "⛨", col: "#7fb2ff", cost: 140, tier: 2, kind: "aura", desc: "Aura: allies within 3 tiles take 12% less damage." },
@@ -62,6 +62,8 @@ const ITEM_DESC_V4 = {
 let ITEMS_V5_FROM = "2026-11-17"; const itemsV5For = d => String(d) >= ITEMS_V5_FROM;
 // Survivor bonus from SURV_FROM: +1 point to a lord whose hero is alive when the battle ends (SURVIVOR_PTS in sim/battle.js)
 let SURV_FROM = "2026-11-17"; const survFor = d => String(d) >= SURV_FROM;
+// Anti-Magic Shell v2 from SHELL_V2_FROM: no chosen delay. It fires the moment the hero engages an enemy hero, whenever it is off cooldown
+let SHELL_V2_FROM = "2026-11-20"; const shellV2For = d => String(d) >= SHELL_V2_FROM;
 const ITEM_DESC_V5 = {
   whetstone: "+6 attack damage.", jerkin: "+100 health.", sandals: "+0.2 tiles a second move speed.", buckler: "Blocks 3 damage from every normal hit you take.",
   herbs: "Regenerate 5 health every second.", boots: "+0.35 tiles a second move speed. Catch the fleeing, or run from the strong.", gauntlets: "+12 attack damage.",
@@ -74,4 +76,5 @@ const ITEM_DESC_V5 = {
 };
 // day: a replayed battle is described as it was fought
 const itemDesc = (k, day) => { const it = ITEMS[k]; if (!it) return ""; const d = day || (typeof isLive === "function" && isLive() ? liveClock().planDay : null);
+  if (k === "antimagic" && (!d || shellV2For(d))) return it.descV2;
   if (!d || itemsV5For(d)) return ITEM_DESC_V5[k] || it.desc; return balV4For(d) && ITEM_DESC_V4[k] ? ITEM_DESC_V4[k] : it.desc; };

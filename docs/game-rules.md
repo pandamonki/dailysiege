@@ -19,6 +19,7 @@ practice games always stamp all of them (`js/sim/plans.js`).
 | 19 Nov | `sdV2`, `wallV2`, `engV2` | Sudden death v2, walls block everyone, siege engine alert; bots buy defences by build |
 | 20 Nov | `ordV2` | Army plans and one fall-back condition; no if-then commands or soldier orders |
 | 20 Nov | `skV2` | Skill scaling v2: every rank adds an even step (`TREE_V2`); report records deaths, assists, damage |
+| 20 Nov | `shellV2` | Anti-Magic Shell fires the moment the hero engages an enemy hero (when off cooldown); no chosen delay |
 
 ## The war
 
@@ -54,6 +55,8 @@ practice games always stamp all of them (`js/sim/plans.js`).
 - From 20 Nov (`skV2`) every skill rank adds an even step worth at least about two thirds of rank 1 (`TREE_V2` in
   `js/config/trees.js`); older battles keep the old values.
 - Up to 6 items; gear upgrades (weapon, armour, charm) last the week.
+- From 20 Nov (`shellV2`) the Anti-Magic Shell has no timing setting: it fires as soon as the hero engages an enemy hero
+  (attacking one within reach, or being attacked by one), whenever it is off cooldown.
 
 ## Defences (from 17 Nov)
 
