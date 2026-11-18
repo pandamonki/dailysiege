@@ -169,6 +169,12 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "New towers, fairer arena", date: "18 Nov", fixes: [], balance: [
+    "From the battle of 19 Nov, towers take no part in sudden death: they stay home, out of the fight, like the castles.",
+    "From the battle of 19 Nov, each army enters the sudden death arena on its own castle's side, and the lords still standing are spread evenly round the ring.",
+  ], changes: [
+    "Towers are now tall stone keep towers in the castle's style, with the owner's banner down the front and a roof in their colour. The level 3 towers trade the roof for their weapon: a mortar, a crystal, a brazier or a great crossbow.",
+  ] },
   { v: "Simpler orders", date: "18 Nov", fixes: [], balance: [
     "From the battle of 20 Nov, soldiers no longer fall back to heal on their own. Only the hero does, at the health its stance sets (aggressive 12%, skirmish 30%, cautious 45%).",
   ], changes: [

@@ -1019,16 +1019,17 @@ function runBattle(plans, seed, opts = {}) {
   function startSudden() {
     const mobile = e => !e.dead && (e.kind === "champ" || e.kind === "unit" || e.kind === "summon") && P[e.pid].alive;
     const returning = ents.filter(e => e.dead && e.kind === "champ" && e.respawnAt && P[e.pid].alive); // heroes still waiting to respawn
-    let fighters = ents.filter(e => mobile(e) && !e.cart && !e.ram && !e.cat);
+    const isTower = e => !!(UNITS[e.key] && UNITS[e.key].tower); // v2: towers stay home and are out of the fight, like the castles
+    let fighters = ents.filter(e => mobile(e) && !e.cart && !e.ram && !e.cat && !(SD2 && isTower(e)));
     const pids = order.filter(q => fighters.some(e => e.pid === q) || returning.some(e => e.pid === q));
     if (pids.every(a => pids.every(b => allied(a, b)))) { sd = { skip: true }; return; } // one side only: the day ends as before
     sd = { t0: t, go: +(t + SD_COUNT).toFixed(2), winners: null };
     returning.forEach(e => { // a hero on its way back joins the fight at once, with health by how far through the wait it was (never below a quarter)
       const prog = Math.max(0, Math.min(1, e.respawnLen ? 1 - (e.respawnAt - t) / e.respawnLen : 0)); e.dead = false; e.respawnAt = null; e.hp = Math.max(1, e.maxhp * (.25 + .75 * prog)); e.fx = {}; e.dots = []; e.tgt = null;
       if (e.respawnEv) e.respawnEv.t1 = t; if (HV3) kit.onRespawn(e); });
-    fighters = ents.filter(e => mobile(e) && !e.cart && !e.ram && !e.cat);
+    fighters = ents.filter(e => mobile(e) && !e.cart && !e.ram && !e.cat && !(SD2 && isTower(e)));
     if (SD2) fighters.forEach(e => { if (e.hp < e.maxhp * .5) e.hp = e.maxhp * .5; }); // v2: everyone drawn in is topped up to at least half health
-    ents.forEach(e => { if (e.dead) { e.respawnAt = null; return; } if (e.cart || e.ram || e.cat || e.kind === "totem") { e.dead = true; ev({ ty: "die", id: e.id, x: e.x, y: e.y, fx: 0, ex: 1 }); } });
+    ents.forEach(e => { if (e.dead) { e.respawnAt = null; return; } if (e.cart || e.ram || e.cat || e.kind === "totem" || (SD2 && isTower(e))) { e.dead = true; ev({ ty: "die", id: e.id, x: e.x, y: e.y, fx: 0, ex: 1 }); } });
     const cx = NN / 2, cy = NN / 2, AR = sdArenaR(pids.length, SD2), R = SD2 ? AR - 1 : 3 + pids.length * .4; sd.r = AR; // v2: lines start just inside the smaller ring and stack inward
     // seating: the board's 1st and 2nd face each other, 3rd and 4th face each other, and the weakest lords sit beside the top two so they don't just trade blows and leave the day to the bottom half
     const rk = q => RANKS[q] != null ? RANKS[q] : ((plans.find(p => p.pid === q) || {}).rank || idx[q] + 1), n = pids.length, byRank = pids.slice().sort((a, b) => rk(a) - rk(b) || idx[a] - idx[b]), seat = Array(n).fill(null), h = Math.floor(n / 2);
@@ -1038,9 +1039,13 @@ function runBattle(plans, seed, opts = {}) {
     const placed = new Set(seat.filter(q => q != null)), rest = byRank.filter(q => !placed.has(q)).reverse(); // weakest first
     const near = s => Math.min(Math.abs(s - 0), n - Math.abs(s - 0), Math.abs(s - h), n - Math.abs(s - h));
     seat.map((q, s) => [q, s]).filter(([q]) => q == null).sort((x, y) => near(x[1]) - near(y[1]) || x[1] - y[1]).forEach(([, s]) => { seat[s] = rest.shift(); });
-    pids.forEach(pid => { const i = seat.indexOf(pid), a = -Math.PI / 2 + 2 * Math.PI * i / n, ux = dcos(a), uy = dsin(a), vx = -uy, vy = ux;
-      fighters.filter(e => e.pid === pid).sort((x, y) => (y.kind === "champ") - (x.kind === "champ") || x.id - y.id).forEach((e, k) => {
-        const row = Math.floor(k / 4), col = (k % 4) - 1.5;
+    // v2: each army comes in from its own castle's side, and the lords still in are spread evenly round the ring (turned to fit their castles as closely as can be)
+    const sdAng = {}; if (SD2) { const ang = q => datan2(P[q].castle.y - cy, P[q].castle.x - cx), byAng = pids.slice().sort((a, b) => ang(a) - ang(b) || (a < b ? -1 : 1)); let sx = 0, sy = 0;
+      byAng.forEach((q, k) => { const off = ang(q) - 2 * Math.PI * k / n; sx += dcos(off); sy += dsin(off); }); const base = datan2(sy, sx); byAng.forEach((q, k) => { sdAng[q] = base + 2 * Math.PI * k / n; }); }
+    pids.forEach(pid => { const i = seat.indexOf(pid), a = SD2 ? sdAng[pid] : -Math.PI / 2 + 2 * Math.PI * i / n, ux = dcos(a), uy = dsin(a), vx = -uy, vy = ux;
+      const mine = fighters.filter(e => e.pid === pid).sort((x, y) => (y.kind === "champ") - (x.kind === "champ") || x.id - y.id);
+      mine.forEach((e, k) => {
+        const row = Math.floor(k / 4), inRow = Math.min(4, mine.length - row * 4), col = SD2 ? (k % 4) - (inRow - 1) / 2 : (k % 4) - 1.5; // v2: every row centred on the army's spot
         const rw = SD2 ? -Math.min(row * .75, R - .5) : row * .75; e.x = Math.max(.5, Math.min(NN - .5, cx + ux * R + vx * col * .75 + ux * rw)); e.y = Math.max(.5, Math.min(NN - .5, cy + uy * R + vy * col * .75 + uy * rw));
         e.hx = e.x; e.hy = e.y; e.tgt = null; e.retreating = false; e.noRetreat = true; e.aggro = null; if (e.order === "guard" || e.order === "escort") e.order = "army"; }); });
     ev({ ty: "sudden", x: cx, y: cy, go: sd.go }); log("SUDDEN DEATH! Every hero and soldier is drawn to the arena. Fight to the last.", "big");

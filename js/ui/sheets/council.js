@@ -94,7 +94,7 @@ function rivalSheet(id) {
   } else if (live) intel = `<p class="muted">They didn't fight yesterday, so there's nothing to see yet.</p>`;
   else intel = `<p class="muted">Their soldiers from yesterday are shown around their castle.</p>`;
   const b = bucketOf(id);
-  return head(seen && seen.cls ? spriteURL("c-" + seen.cls) : null, `${r.name}'s Castle`, `${seen && seen.cls ? clsName(seen.cls) : "Class unknown"} · seems <span class="trust t-${r.trust}">${r.trust === "Unknown" ? "hard to read" : r.trust}</span> toward you`) + `<div class="body">
+  return head(seen && seen.cls ? spriteURL("c-" + seen.cls, r.color) : null, `${r.name}'s Castle`, `${seen && seen.cls ? clsName(seen.cls) : "Class unknown"} · seems <span class="trust t-${r.trust}">${r.trust === "Unknown" ? "hard to read" : r.trust}</span> toward you`) + `<div class="body">
     <div class="sec"><h3>What you know</h3>${intel}</div>
     <div class="sec"><h3>Tonight</h3><div class="rvlist">${rivalRow(r, true)}</div></div></div>`;
 }
