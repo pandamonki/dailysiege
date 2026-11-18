@@ -3,6 +3,7 @@
 // class and army, so even small effects show up. Every lord carries 0 to 3 random items, as in a real mid-week battle.
 //   node tools/item-lab.mjs [trials, default 120] [lords, default 8] [first trial, default 0]
 // Prints, per item: the change in win rate, points, hero kills and survival, and the points gained per 100 gold.
+//   ONLY=salve,hpring ... tests just those items; ITEMS_OLD=1 fights with the items as they were before 20 Nov.
 // Fights by today's rules (flat items, skill trees, sudden death v2, orders v2), like practice battles.
 import { loadSim } from "./load-sim.mjs";
 
@@ -21,7 +22,7 @@ sim.run(`globalThis.itemLabPlans = function (seed, n) {
       gear: { weapon: gt(), armour: gt(), charm: gt() }, defences: { walls: rnd() < .3 ? 1 : 0, tower: rnd() < .3 ? 1 : 0 }, stance: pick(["aggressive", "skirmish", "cautious"]),
       prio: PRIORITIES.slice(rot).concat(PRIORITIES.slice(0, rot)), rules: [{ if: IFS[0], then: THENS[0] }], armyPlan: "conquest", fallback: "none",
       pieces: [{ kind: "champ", r: sp.champ[0], c: sp.champ[1] }, ...units], pacts: [], hostile: [], betray: {},
-      itemV5: true, survV1: true, siegeV1: true, trapV2: true, sdV2: true, wallV2: true, engV2: true, ordV2: true, skV2: true, shellV2: true };
+      itemV5: true, survV1: true, siegeV1: true, trapV2: true, sdV2: true, wallV2: true, engV2: true, ordV2: true, skV2: true, shellV2: true, itemV6: ${!process.env.ITEMS_OLD} };
   });
 };
 globalThis.itemLabRun = function (seed, n, focus, add) {
@@ -31,7 +32,7 @@ globalThis.itemLabRun = function (seed, n, focus, add) {
   const r = res.results.find(x => x.pid === p.pid);
   return { win: r.place === 1 ? 1 : 0, pts: r.points, place: r.place, kills: r.kills, surv: r.fellAt == null ? 1 : 0, cls: p.cls };
 };`);
-const shop = sim.run(`Object.keys(ITEMS).filter(k => !ITEMS[k].unique)`), cost = Object.fromEntries(shop.map(k => [k, sim.run(`itemCost(${JSON.stringify(k)})`)])), name = Object.fromEntries(shop.map(k => [k, sim.run(`ITEMS.${k}.name`)]));
+const shop = sim.run(`Object.keys(ITEMS).filter(k => !ITEMS[k].unique)`).filter(k => !process.env.ONLY || process.env.ONLY.split(",").includes(k)), cost = Object.fromEntries(shop.map(k => [k, sim.run(`itemCost(${JSON.stringify(k)})`)])), name = Object.fromEntries(shop.map(k => [k, sim.run(`ITEMS.${k}.name`)]));
 const acc = Object.fromEntries(shop.map(k => [k, { n: 0, win: 0, pts: 0, kills: 0, surv: 0, place: 0, ptsSq: 0, byCls: {} }]));
 const t0 = performance.now();
 for (let i = from; i < from + trials; i++) {

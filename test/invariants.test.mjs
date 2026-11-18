@@ -11,7 +11,7 @@ const tough = loadSim(); tough.run("BAL.castleHp *= 1000"); // castles that cann
 const WAR = (game, day) => `(() => { const L = seatLayout(8, true), CL = ["warrior", "mage", "rogue", "archer", "shaman"], ids = [...Array(8)].map((_, k) => "g${game}b" + k);
   const plans = ids.map((uid, i) => { const zone = zoneFor(L.castles[i], L.N, L.castles, L.v2), lvl = Math.min(15, 1 + 2 * (${day} - 1));
     const p = lordBotPlan({ uid, cls: CL[(${game} + i) % 5], i, ids, L, zone, dayNo: ${day}, lvl, v2: true, v3: true, fair: true, pick: true, ranks: {}, sup: true, defV2: true });
-    return Object.assign(p, { pid: uid, name: uid, color: "#2f5fa8", castle: L.castles[i], level: lvl, trapV2: true, sdV2: true, wallV2: true, engV2: true, ordV2: true, skV2: true, itemV5: true, survV1: true, siegeV1: true }); });
+    return Object.assign(p, { pid: uid, name: uid, color: "#2f5fa8", castle: L.castles[i], level: lvl, trapV2: true, sdV2: true, wallV2: true, engV2: true, ordV2: true, skV2: true, itemV5: true, itemV6: true, shellV2: true, survV1: true, siegeV1: true }); });
   const opts = { N: L.N, ultV2: true, balV2: true, balV3: true, fairV1: true, pickV1: true, balV4: true, suddenV1: true, treesV1: true, heroV3: true, dayNo: ${day} };
   const full = runBattle(JSON.parse(JSON.stringify(plans)), 4000 + ${game} * 31 + ${day}, { ...opts, fast: false }), fast = runBattle(JSON.parse(JSON.stringify(plans)), 4000 + ${game} * 31 + ${day}, { ...opts, fast: true });
   return { full, fast, plans, L }; })()`;
@@ -86,4 +86,16 @@ test("Anti-Magic Shell v2: fires on engaging a hero with no chosen delay, and ne
   assert.ok(r.n > 0, "no shell ever fired");
   assert.ok(r.minGap >= r.cd - 1e-6, `a shell fired again after ${r.minGap}s`);
   assert.ok(r.same, "the old delay setting still changes the battle");
+});
+
+test("Items v6: the Rune of Homecoming can fire again after its 45s cooldown, each time after a 1.5s channel", () => {
+  const r = JSON.parse(tough.run(`(() => { const { plans, L } = ${WAR(2, 6)}; plans.forEach(p => { p.items = ["scroll"].concat((p.items || []).filter(k => k !== "scroll")).slice(0, 6); });
+    const res = runBattle(plans, 777, { N: L.N, ultV2: true, balV2: true, balV3: true, fairV1: true, pickV1: true, balV4: true, suddenV1: true, treesV1: true, heroV3: true, dayNo: 6 });
+    const ch = res.events.filter(e => e.ty === "rune"), by = {}; ch.forEach(e => (by[e.id] = by[e.id] || []).push(e.t));
+    const gaps = Object.values(by).flatMap(ts => ts.slice(1).map((t, i) => t - ts[i])), ports = res.events.filter(e => e.ty === "runeport");
+    return JSON.stringify({ n: ch.length, again: gaps.length, minGap: gaps.length ? Math.min(...gaps) : 99, portLag: ch.length && ports.length ? Math.min(...ports.map(p => p.t)) - Math.min(...ch.map(e => e.t)) : null }); })()`));
+  assert.ok(r.n > 0, "the Rune never fired");
+  assert.ok(r.again > 0, "no hero used the Rune twice");
+  assert.ok(r.minGap >= 45 - 1e-6, `the Rune fired again after ${r.minGap}s`);
+  assert.ok(r.portLag === null || r.portLag >= 1.5 - 1e-6, `a teleport came ${r.portLag}s after the channel began`);
 });

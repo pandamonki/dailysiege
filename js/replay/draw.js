@@ -168,12 +168,14 @@ function poseOf(k, time, x, y, f0, f1) {
   return o;
 }
 function drawLongFx(time) { // effects that outlast the 2-second window: respawn countdowns and a dropped Rapier
-  const E = replay.res.events; if (!replay.longFx) replay.longFx = E.filter(e => e.ty === "respawn" || e.ty === "rapier" || e.ty === "zone" || e.ty === "taunt" || e.ty === "shell" || e.ty === "quip");
+  const E = replay.res.events; if (!replay.longFx) replay.longFx = E.filter(e => e.ty === "respawn" || e.ty === "rapier" || e.ty === "zone" || e.ty === "taunt" || e.ty === "shell" || e.ty === "quip" || e.ty === "rune" || e.ty === "runeport");
   replay.longFx.forEach(e => {
     if (e.ty === "zone") { drawZoneFx(e, time); return; }
     if (e.ty === "taunt") { drawTauntFx(e, time); return; }
     if (e.ty === "quip") { drawQuipFx(e, time); return; }
     if (e.ty === "shell") { drawShellFx(e, time); return; }
+    if (e.ty === "rune") { drawRuneFx(e, time); return; }
+    if (e.ty === "runeport") { drawRuneportFx(e, time); return; }
     if (e.ty === "respawn") {
       if (time < e.t0 || time >= e.t1) return; const left = Math.ceil(e.t1 - time), px = e.x * ts, py = (e.y - 1.25) * ts, col = (replay.res.colors || {})[e.pid] || "#fff";
       ctx.font = `700 ${Math.round(ts * .3)}px Alegreya, Georgia, serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
@@ -347,6 +349,22 @@ function drawShellFx(e, time) {
   ctx.strokeStyle = "rgba(170,255,240,.9)"; ctx.lineWidth = ts * .045; ctx.stroke();
   for (let s = 0; s < 6; s++) { const a = time * 1.5 + s * 1.047; ctx.fillStyle = "rgba(200,255,245,.9)"; ctx.beginPath(); ctx.arc(x + Math.cos(a) * R, y + Math.sin(a) * R * 1.1, ts * .035, 0, 7); ctx.fill(); }
   ctx.restore();
+}
+
+// Rune of Homecoming: a violet rune circle gathers round the hero over the 1.5s channel, with motes rising and a filling ring
+function drawRuneFx(e, time) {
+  const age = time - e.t; if (age < 0 || age > e.dur) return; const fr = replayFrameAt(time), ok = fr && fr.d && fr.d.length > e.id * 4 + 3; if (!ok || (fr.d[e.id * 4 + 3] & 1)) return;
+  const x = fr.d[e.id * 4] * ts, y = (fr.d[e.id * 4 + 1] + .15) * ts, k = age / e.dur, R = ts * (1.3 - .5 * k);
+  ctx.save(); ctx.globalCompositeOperation = "lighter";
+  const g = ctx.createRadialGradient(x, y, 0, x, y, R); g.addColorStop(0, `rgba(190,150,255,${.15 + .35 * k})`); g.addColorStop(1, "rgba(150,100,255,0)"); ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(x, y, R, R * .45, 0, 0, 7); ctx.fill();
+  ctx.strokeStyle = "rgba(214,194,255,.9)"; ctx.lineWidth = ts * .05; ctx.beginPath(); ctx.ellipse(x, y, R, R * .45, 0, -Math.PI / 2, -Math.PI / 2 + k * 2 * Math.PI); ctx.stroke();
+  for (let s = 0; s < 8; s++) { const a = time * 3 + s * .785, h = ((age * 1.6 + s * .13) % 1); ctx.fillStyle = `rgba(220,200,255,${.9 * (1 - h)})`; ctx.beginPath(); ctx.arc(x + Math.cos(a) * R * .8, y + Math.sin(a) * R * .36 - h * ts * 1.2, ts * .04, 0, 7); ctx.fill(); }
+  ctx.restore();
+}
+// the flash where a unit leaves and arrives
+function drawRuneportFx(e, time) {
+  const age = time - e.t; if (age < 0 || age > .6) return; const x = e.x * ts, y = e.y * ts, k = age / .6;
+  ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = `rgba(200,170,255,${.7 * (1 - k)})`; ctx.fillRect(x - ts * .12, y - ts * (1.4 - k * .4), ts * .24, ts * 1.4); ctx.beginPath(); ctx.ellipse(x, y, ts * (.3 + .5 * k), ts * (.14 + .2 * k), 0, 0, 7); ctx.fill(); ctx.restore();
 }
 
 // Sudden death announcement and countdown, drawn over the screen: "SUDDEN DEATH" and the count while the armies stand ready, then a short "FIGHT!"

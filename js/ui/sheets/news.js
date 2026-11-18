@@ -3,6 +3,19 @@
 // Each item is [icon, headline, one short sentence]. Players who have not seen the newest id get the pop-up the next time they plan;
 // the id is remembered on their device, so changing the id is all it takes to show it again. Keep about 8 to 14 items.
 const RELEASES = [
+  { id: "1.10", title: "What's new in v1.10", sub: "An item shake-up: the Shell and the Rune reworked, and the weak items made worth buying", items: [
+    ["◉", "Anti-Magic Shell", "From the 20 Nov battle it fires the moment you engage an enemy hero. No timing to set."],
+    ["✨", "Full magic immunity", "For 7.5s, hero abilities, ultimates and magic attacks do no damage to you."],
+    ["ᚱ", "Rune of Homecoming", "No longer once a battle. It fires when your castle is attacked or your hero drops below 30% health."],
+    ["⏳", "A moment to go home", "The Rune channels for 1.5s, then takes you and every ally within 4 tiles home. 45s cooldown."],
+    ["✚", "Healing Salve", "Now heals 220 (was 300) and costs a little more."],
+    ["♡", "Ring of Health", "Now +120 health and 8 a second (was 140 and 10), and costs a little more."],
+    ["✦", "Talisman of Will", "Stuns, roots, slows and silences on you last 75% shorter."],
+    ["♨", "Orb of Fire", "Splashes 50% of your damage within 1.5 tiles."],
+    ["◆", "Crystalys", "25% chance to crit for 1.8x damage."],
+    ["⌘", "Pipe of Insight", "60% less damage from hero abilities, for allies within 4 tiles."],
+    ["»", "Boots of Speed", "A little faster: +0.42 move speed."],
+  ] },
   { id: "1.9", title: "What's new in v1.9", sub: "Skills that grow with every point, towers you can compare, and a clearer battle report", items: [
     ["📈", "Every skill point counts", "From the 20 Nov battle each rank of a skill adds about as much as the first. Blood Rage goes 4% then 7%, not 4% then 5%."],
     ["🔍", "See the next rank", "The hero screen shows each skill now and at its next rank, so you know what a point buys."],

@@ -24,7 +24,7 @@ const ITEMS = {
   boots:       { name: "Boots of Speed",     g: "»", col: "#5aa0d8", cost: 80,  tier: 1, kind: "passive", desc: "+10% move speed. Catch the fleeing, or run from the strong." },
   gauntlets:   { name: "Gauntlets of Power", g: "✊", col: "#c9962f", cost: 100, tier: 1, kind: "passive", desc: "+15% attack damage." },
   ringprot:    { name: "Ring of Protection", g: "◎", col: "#8aa0b8", cost: 90,  tier: 1, kind: "passive", desc: "Take 8% less damage from everything." },
-  salve:       { name: "Healing Salve",      g: "✚", col: "#58b85c", cost: 50,  tier: 1, kind: "use", cd: 45, desc: "Below half health: heals 35% of your health." },
+  salve:       { name: "Healing Salve",      g: "✚", col: "#58b85c", cost: 60,  tier: 1, kind: "use", cd: 45, desc: "Below half health: heals 35% of your health." },
   elixir:      { name: "Elixir of Fury",     g: "☄", col: "#d8503a", cost: 60,  tier: 1, kind: "use", cd: 30, desc: "When you engage a foe: +25% attack speed for 8s." },
   net:         { name: "Snare Net",          g: "#", col: "#c9a46a", cost: 70,  tier: 1, kind: "use", cd: 25, desc: "Roots the nearest enemy hero within 4 tiles for 2.5s." },
   frostdagger: { name: "Orb of Frost",       g: "❄", col: "#8fd3ff", cost: 110, tier: 2, kind: "passive", orb: 1, desc: "A frost orb circles you. Your attacks chill the target, slowing it by 30% for 1.5s." },
@@ -32,7 +32,7 @@ const ITEMS = {
   fireorb:     { name: "Orb of Fire",        g: "♨", col: "#ff7a2a", cost: 130, tier: 2, kind: "passive", orb: 1, desc: "A blazing orb circles you. Your attacks explode: 35% of the damage splashes onto foes within 1.3 tiles of the target." },
   corruptorb:  { name: "Orb of Corruption",  g: "☯", col: "#b050e0", cost: 130, tier: 2, kind: "passive", orb: 1, desc: "A dark orb circles you. Your attacks corrupt the target: it takes 15% more damage from everyone for 3s." },
   evasion:     { name: "Talisman of Evasion", g: "≋", col: "#d8e8a0", cost: 110, tier: 2, kind: "passive", desc: "20% chance to dodge a normal attack." },
-  hpring:      { name: "Ring of Health",     g: "♡", col: "#e06a7a", cost: 90,  tier: 1, kind: "passive", desc: "+8% health, and you regenerate 1.2% of your health every second." },
+  hpring:      { name: "Ring of Health",     g: "♡", col: "#e06a7a", cost: 100,  tier: 1, kind: "passive", desc: "+8% health, and you regenerate 1.2% of your health every second." },
   fang:        { name: "Vampiric Fang",      g: "♥", col: "#b8322a", cost: 130, tier: 2, kind: "passive", desc: "Heal for 12% of the damage you deal." },
   thornmail:   { name: "Spiked Mail",        g: "✶", col: "#9aa3ab", cost: 110, tier: 2, kind: "passive", desc: "Reflects 15% of the damage you take from melee attackers." },
   talisman:    { name: "Talisman of Will",   g: "✦", col: "#b48cff", cost: 90,  tier: 2, kind: "passive", desc: "Stuns and snares on you last 60% shorter." },
@@ -64,6 +64,18 @@ let ITEMS_V5_FROM = "2026-11-17"; const itemsV5For = d => String(d) >= ITEMS_V5_
 let SURV_FROM = "2026-11-17"; const survFor = d => String(d) >= SURV_FROM;
 // Anti-Magic Shell v2 from SHELL_V2_FROM: no chosen delay. It fires the moment the hero engages an enemy hero, whenever it is off cooldown
 let SHELL_V2_FROM = "2026-11-20"; const shellV2For = d => String(d) >= SHELL_V2_FROM;
+// Items v6 from ITEMS_V6_FROM (ITEM_V6 in sim/battle.js): weaker Salve and Ring of Health; stronger Shell, Rune, Will, Orb of Fire, Crystalys, Pipe, Boots
+let ITEMS_V6_FROM = "2026-11-20"; const itemsV6For = d => String(d) >= ITEMS_V6_FROM;
+const ITEM_DESC_V6 = {
+  salve: "Below half health: heals 220 health.", hpring: "+120 health, and you regenerate 8 health every second.",
+  boots: "+0.42 tiles a second move speed. Catch the fleeing, or run from the strong.",
+  antimagic: "The moment you engage an enemy hero, if it is off cooldown: 7.5s immune to magic. Hero abilities, ultimates and magic attacks do no damage.",
+  scroll: "When your castle is attacked or you drop below 30% health, away from home: a 1.5s channel, then you and every ally within 4 tiles are teleported back to base. 45s cooldown.",
+  talisman: "Stuns, roots, slows and silences on you last 75% shorter.",
+  fireorb: "A blazing orb circles you. Your attacks explode: 50% of the damage splashes onto foes within 1.5 tiles of the target.",
+  crystalys: "Your attacks have a 25% chance to crit for 1.8x damage.",
+  pipe: "Aura: you and allies within 4 tiles take 60% less damage from enemy hero abilities and ultimates.",
+};
 const ITEM_DESC_V5 = {
   whetstone: "+6 attack damage.", jerkin: "+100 health.", sandals: "+0.2 tiles a second move speed.", buckler: "Blocks 3 damage from every normal hit you take.",
   herbs: "Regenerate 5 health every second.", boots: "+0.35 tiles a second move speed. Catch the fleeing, or run from the strong.", gauntlets: "+12 attack damage.",
@@ -76,5 +88,6 @@ const ITEM_DESC_V5 = {
 };
 // day: a replayed battle is described as it was fought
 const itemDesc = (k, day) => { const it = ITEMS[k]; if (!it) return ""; const d = day || (typeof isLive === "function" && isLive() ? liveClock().planDay : null);
+  if ((!d || itemsV6For(d)) && ITEM_DESC_V6[k]) return ITEM_DESC_V6[k];
   if (k === "antimagic" && (!d || shellV2For(d))) return it.descV2;
   if (!d || itemsV5For(d)) return ITEM_DESC_V5[k] || it.desc; return balV4For(d) && ITEM_DESC_V4[k] ? ITEM_DESC_V4[k] : it.desc; };
