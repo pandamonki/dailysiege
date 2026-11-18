@@ -56,3 +56,13 @@ test("sudden death: nobody leaves the ring, towers sit it out, and the armies ar
   }
   assert.ok(reached >= 2, "too few battles reached sudden death to check it");
 });
+
+test("towers never move from where they were placed", () => {
+  for (const [g, d] of GAMES) {
+    const r = JSON.parse(sim.run(`(() => { const { full } = ${WAR(g, d)}; let towers = 0, moved = 0; const at = {};
+      full.frames.forEach(f => full.meta.forEach((m, j) => { if (!(m.key && UNITS[m.key] && UNITS[m.key].tower)) return; const i = j * 4; if (f.d.length <= i + 3 || (f.d[i + 3] & 1)) return;
+        const p = [f.d[i], f.d[i + 1]]; if (!at[j]) { at[j] = p; towers++; } else if (Math.hypot(p[0] - at[j][0], p[1] - at[j][1]) > .02) moved++; }));
+      return JSON.stringify({ towers, moved }); })()`));
+    assert.equal(r.moved, 0, `game ${g}: a tower moved (${r.moved} frames)`);
+  }
+});

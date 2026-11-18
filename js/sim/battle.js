@@ -133,6 +133,7 @@ function runBattle(plans, seed, opts = {}) {
   function makeUnit(pl, pc, x, y) {
     const g = pl.gear || {}, base = UNITS[pc.type], s = UNIT_SIM[pc.type], isCart = pc.type === "cart", isTower = !!base.tower, tm = 1, fixed = isCart || !!base.merc || isTower, m = fixed ? 1 : 1 + UNIT_LVL_GAIN * (pc.lvl - 1), gm = fixed ? 1 : 1 + .15 * (g.armour || 0), ga = fixed ? 1 : 1 + .15 * (g.weapon || 0);
     const e = add({ order: pl.ordV2 && pc.order !== "guard" ? "army" : pc.order || "army", pid: pl.pid, kind: "unit", key: pc.type, lvl: pc.lvl, ref: pc.id || null, x, y, maxhp: base.hp * m * gm * tm, atk: base.atk * m * ga * tm, cart: isCart, ram: pc.type === "ram" || !!s.rammer, cat: pc.type === "catapult", merc: !!base.merc, regen: s.regen || 0, hunter: !!s.hunter, dmgRed: fixed ? 0 : [0, 0, .1, .2][g.armour || 0], lifesteal: s.lifesteal || (!fixed && (g.weapon || 0) >= 3 ? .1 : 0), range: s.range, as: s.as, spd: s.spd, armor: s.armor, shot: s.shot, siege: s.siege, splash: s.splash || 0, healer: s.heal ? s.heal * m : 0 });
+    if (isTower && pl.wallV2) e.anchor = [x, y]; // towers v2: pinned where they were placed (from 19 Nov battles)
     e.hp = e.maxhp * (pc.hp ?? 1); [e.atype, e.armour] = UNIT_TYPES[pc.type]; if (pl.siegeV1 && e.ram) e.breaker = true; // rams, catapults and the Ogre Breaker smash walls in their way
     return e;
   }
@@ -1142,6 +1143,7 @@ function runBattle(plans, seed, opts = {}) {
         if (lt) { const s = (lt.id % 2 ? 1 : -1) * gap * .3; lt.x += -ny * s; lt.y += nx * s; }
       }
     }
+    ents.forEach(e => { if (e.anchor && !e.dead) { e.x = e.anchor[0]; e.y = e.anchor[1]; } }); // nothing moves a tower: not crowds, not spells, not orders
     if (WV2 && walls.length) { const mg = TG ? .9 : .3, inside = (x, y) => x < mg || y < mg || x > NN - mg || y > NN - mg || walls.some(w => w.hp > 0 && Math.abs(x - w.x0 - .5) < (w.dir === "v" ? .3 : .72) && Math.abs(y - w.y0 - .5) < (w.dir === "v" ? .72 : .3));
       mob.forEach(e => { if (!walls.some(w => w.hp > 0 && Math.abs(e.x - w.x0 - .5) < (w.dir === "v" ? .3 : .72) && Math.abs(e.y - w.y0 - .5) < (w.dir === "v" ? .72 : .3)) || e.ghostT > t) return; // v2: a soldier inside a fence (or wedged where two meet) steps to the nearest clear spot
         for (let r = .08; r <= 1.2; r += .08) { let done = false; for (let k = 0; k < 16; k++) { const a = k * Math.PI / 8, x = e.x + dcos(a) * r, y = e.y + dsin(a) * r; if (!inside(x, y)) { e.x = x; e.y = y; done = true; break; } } if (done) break; } }); }
