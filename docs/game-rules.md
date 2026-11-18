@@ -19,6 +19,8 @@ practice games always stamp all of them (`js/sim/plans.js`).
 | 19 Nov | `sdV2`, `wallV2`, `engV2` | Sudden death v2, walls block everyone, siege engine alert; bots buy defences by build |
 | 20 Nov | `ordV2` | Army plans and one fall-back condition; no if-then commands or soldier orders |
 | 20 Nov | `skV2` | Skill scaling v2: every rank adds an even step (`TREE_V2`); report records deaths, assists, damage |
+| 20 Nov | `shellV2` | Anti-Magic Shell fires the moment the hero engages an enemy hero (when off cooldown); no chosen delay |
+| 20 Nov | `itemV6` | Item rebalance: weaker Healing Salve and Ring of Health; stronger Anti-Magic Shell (7.5s magic immunity), Rune of Homecoming (reusable), Talisman of Will, Orb of Fire, Crystalys, Pipe of Insight and Boots |
 
 ## The war
 
@@ -54,6 +56,16 @@ practice games always stamp all of them (`js/sim/plans.js`).
 - From 20 Nov (`skV2`) every skill rank adds an even step worth at least about two thirds of rank 1 (`TREE_V2` in
   `js/config/trees.js`); older battles keep the old values.
 - Up to 6 items; gear upgrades (weapon, armour, charm) last the week.
+- From 20 Nov (`shellV2`) the Anti-Magic Shell has no timing setting: it fires as soon as the hero engages an enemy hero
+  (attacking one within reach, or being attacked by one), whenever it is off cooldown.
+- Items from 20 Nov (`itemV6`, `ITEM_V6` in `js/sim/battle.js`): Healing Salve heals 220 (was 300) and costs 60; Ring of
+  Health gives +120 health and 8 a second (was 140 and 10) and costs 100. Anti-Magic Shell lasts 7.5s and makes the hero
+  immune to magic: hero abilities, ultimates and magic attacks. Rune of Homecoming is no longer once a battle: when the
+  castle is attacked or the hero drops below 30% health (more than 4 tiles from home), the hero channels for 1.5s, then
+  it and every ally within 4 tiles go home; 45s cooldown. Talisman of Will: stuns, roots, slows and silences 75% shorter.
+  Orb of Fire splashes 50% within 1.5 tiles. Crystalys: 25% chance of 1.8x. Pipe of Insight: 60% within 4 tiles.
+  Boots of Speed +0.42 move speed (was +0.35). Divine Rapier: +100 damage on each weapon hit, abilities unaffected
+  (was double all hero damage).
 
 ## Defences (from 17 Nov)
 

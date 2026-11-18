@@ -453,5 +453,7 @@
     if (!m) { say("That doesn't look like an invite link. It looks like …/join/abc123."); return; }
     LS.set("ds.invite", m[1]); DS.wantNew = false; reopen();
   };
-  DS.newWar = () => { DS.wantNew = true; DS.autoEnter = false; onAuthChange(); }; // hosts: set up another war; the others carry on
+  // hosts: set up another war; the others carry on. Once reconnected, go straight to the set-up screen (it used to reconnect
+  // quietly behind the war list, so the button seemed to do nothing)
+  DS.newWar = () => { DS.wantNew = true; DS.autoEnter = true; try { sheet = null; } catch (e) {} say("Setting up a new war…"); onAuthChange(); };
 })();
