@@ -82,6 +82,7 @@ const BOT_BUILDS = {
   champion: { units: -1, items: 2,  traps: d => d >= 4 ? 1 : 0,             towers: () => 0,                         walls: () => 0 },
   mixed:    { units: -1, items: 0,  traps: d => Math.min(2, Math.floor(d / 2)), towers: d => d >= 3 ? 1 : 0,       walls: d => d >= 2 ? 2 : 0 },
 };
+const BOT_ORDERS = { warband: ["slayer", "none"], fortress: ["conquest", "castle"], champion: ["hunt", "herodies"], mixed: ["siege", "siege"] }; // orders v2: each build's army plan and fall-back condition
 const BOT_BUILD_KEYS = ["warband", "fortress", "champion", "mixed"];
 const botBuild = (slot, offset) => BOT_BUILD_KEYS[((slot || 0) + (offset || 0)) % 4]; // by seat, turned by a number fixed for the game, so every game has each build about equally often
 const botArmy = (B, dayNo) => ({ waves: B.units * 2, lvl: B.units > 0 && dayNo >= 3 ? 1 : 0 }); // a warband sends more and better-trained reinforcements; the others fewer
@@ -127,6 +128,6 @@ function lordBotPlan({ uid, cls, i, ids, L, zone, dayNo, lvl, v2, v3, fair, pick
   const near = ids.map((id, k) => ({ id, d: id === uid ? 1e9 : hyp(L.castles[k][0] - me[0], L.castles[k][1] - me[1]) })).filter(x => x.id !== uid).sort((a, b) => fair || pick ? (Math.round(a.d * 1e6) - Math.round(b.d * 1e6)) || (hash(seed, botSeed(a.id), dayNo) - hash(seed, botSeed(b.id), dayNo)) || (a.id < b.id ? -1 : 1) : (a.d - b.d) || (a.id < b.id ? -1 : 1)).map(x => x.id); // fair: equally near rivals are put in order by a draw for this bot and day, not by name
   return { cls, sealed: true, ...(v3 ? { ranks: { a1: 0, a2: 0, a3: 0, ult: 0 }, tree: autoTree(lvl, seed, cls, i) } : { ranks: autoRanks(lvl, seed) }), picks, triggers: { a1: TRIGGERS[1], a2: TRIGGERS[2], a3: TRIGGERS[0], ult: TRIGGERS[1] },
     gear: { weapon: Math.min(2, Math.floor(dayNo / 3)), armour: Math.min(2, Math.floor((dayNo + 1) / 3)), charm: dayNo >= 5 ? 1 : 0 }, defences: { walls: dayNo >= 3 ? 1 : 0, tower: dayNo >= 5 && seed % 2 ? 1 : 0 },
-    items: defV2 ? botItemsN(seed, Math.max(0, Math.min(ITEM_SLOTS, Math.floor(dayNo / 2) + B.items))) : botItems(seed).slice(0, Math.floor(dayNo / 2)), build: defV2 ? build : undefined, castleTier: tier, stance: BOT_STANCES[seed % BOT_STANCES.length], prio: PRIORITIES.slice(rot).concat(PRIORITIES.slice(0, rot)), rules: [{ if: IFS[0], then: THENS[0] }],
+    items: defV2 ? botItemsN(seed, Math.max(0, Math.min(ITEM_SLOTS, Math.floor(dayNo / 2) + B.items))) : botItems(seed).slice(0, Math.floor(dayNo / 2)), build: defV2 ? build : undefined, armyPlan: BOT_ORDERS[build][0], fallback: BOT_ORDERS[build][1], castleTier: tier, stance: BOT_STANCES[seed % BOT_STANCES.length], prio: PRIORITIES.slice(rot).concat(PRIORITIES.slice(0, rot)), rules: [{ if: IFS[0], then: THENS[0] }],
     pieces, targets: pick ? botPicks(uid, seed, near, ranks) : near, tmode: "list", heading: "near", offers: {}, replies: {}, terms: {}, bids: {}, pacts: [], hostile: [], betray: {}, bot: true, ...(v2 ? { ...botCombat(seed), waves: botWaves(seed, kinds, dayNo, sup, AR.waves, AR.lvl) } : {}) };
 }

@@ -28,7 +28,7 @@ function tapAt(clientX, clientY) {
     if (sel) toast(`Next: tap a tile for ${pieceName(sel)}. ${PLACE_Q.length ? `${PLACE_Q.length + 1} left.` : "Last one."}`);
     render(); return;
   }
-  if (here && S.phase === "orders") { if (here === "champ" || findUnit(here)) open("uorder", here); return; }
+  if (here && S.phase === "orders") { if (!ordersV2Now() && (here === "champ" || findUnit(here))) open("uorder", here); return; } // orders v2: soldiers have no orders of their own
   if (S.phase === "orders") return;
   if (here) { const ty = here === "champ" ? "champ" : findUnit(here) ? "unit" : findWall(here) ? "wall" : "trap"; if (psel && psel.t === ty && psel.id === here) { open(ty, here); return; } psel = { t: ty, id: here }; render(); return; }
   if (S.locked) return;

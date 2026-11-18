@@ -198,7 +198,14 @@ function strategyTab() {
       ${idle.length ? `<div class="chips"><span class="muted">${st.mode === "list" ? "Not attacking:" : "Left out:"}</span>${idle.map(r => `<button class="chip" data-act="lmove" data-v="hostile" data-k="${r.id}" ${dis()}><i class="sw" style="background:${r.color}"></i>${esc(r.name)} +</button>`).join("")}</div>` : ""}</div>
     ${strategyTabRest(st)}`;
 }
+const ordersV2Now = () => (isLive() ? ordersV2For(liveClock().planDay) : true); // orders v2: army plan and fall-back replace the heading, battle commands and soldiers' own orders
+const STANCE_V2 = { aggressive: "Your hero fights on until 12% health before going home to heal", skirmish: "Your hero goes home to heal below 30% health, then returns", cautious: "Your hero goes home to heal below 45% health, then returns" };
 function strategyTabRest(st) {
+  if (ordersV2Now()) { const pl = st.plan || "conquest", fb = st.fallback || "none", opt = (act, k, cur, [n, d]) => `<button class="opt${cur === k ? " on" : ""}" data-act="${act}" data-v="${k}" ${dis()}><b>${esc(n)}</b><span>${esc(d)}</span></button>`;
+    return `<div class="sec tight"><h3>2 · Army plan <small class="hint">what comes next once a fight is over</small></h3><div class="olist">${ARMY_PLANS.map(k => opt("aplan", k, pl, ARMY_PLAN_INFO[k])).join("")}</div>
+      <label class="inline"><input type="checkbox" data-act="hillfirst" ${st.heading === "centre" ? "checked" : ""} ${dis()}> Hold the central hill for the first 2 minutes</label></div>
+    <div class="sec tight"><h3>3 · Army falls back when</h3><div class="olist">${FALL_BACKS.map(k => opt("fback", k, fb, FALL_BACK_INFO[k])).join("")}</div><p class="muted">The whole army goes home to defend, then returns to its plan a few seconds after the danger has passed. Soldiers never leave a fight on their own.</p></div>
+    <div class="sec tight"><h3>4 · Hero stance</h3><div class="seg3">${STANCES.map(([k, n]) => `<button class="btn small${S.stance === k ? " on" : ""}" data-act="stance" data-v="${k}" ${dis()}>${n}</button>`).join("")}</div><p class="muted">${esc(STANCE_V2[S.stance] || "")}.</p></div>`; }
   const hn = { hero: "Straight at their hero", castle: "Straight at their castle (the default)", near: "Whatever of theirs is closest", centre: "Hold the central hill for 2 minutes first" }[st.heading] || "";
   return `<div class="sec tight"><h3>2 · On reaching a target, go for</h3><div class="seg3 two">${HEADINGS.map(([k, n]) => `<button class="btn small${st.heading === k ? " on" : ""}" data-act="heading" data-v="${k}" ${dis()}>${n}</button>`).join("")}</div><p class="muted">${esc(hn)}.${st.heading === "centre" ? " Your army skips its targets and holds the hill, fighting anything that comes near. After 2 minutes it marches on its targets. Heroes on the hill earn 25% more gold and XP." : ""}</p></div>
     <div class="sec tight"><h3>3 · Stance</h3><div class="seg3">${STANCES.map(([k, n]) => `<button class="btn small${S.stance === k ? " on" : ""}" data-act="stance" data-v="${k}" ${dis()}>${n}</button>`).join("")}</div><p class="muted">${esc(STANCES.find(x => x[0] === S.stance)[2])}.</p></div>`;
@@ -281,10 +288,10 @@ function ordersSheet() {
   if (tab === "strategy") body = strategyTab();
   if (tab === "tactics") body = `<p class="muted tight">These rules only apply mid-skirmish, once your soldiers are in a fight. Strategy decides where they go.</p>
     ${combatGroupsHTML()}
-    <div class="sec tight"><h3>Battle commands</h3><p class="muted">If this happens mid-battle, do that. Each costs one order seal (${OP_MAX - opUsed()} left).</p>
+    ${ordersV2Now() ? "" : `<div class="sec tight"><h3>Battle commands</h3><p class="muted">If this happens mid-battle, do that. Each costs one order seal (${OP_MAX - opUsed()} left).</p>
       ${S.rules.map((r, i) => `<div class="rule"><label><span>If</span><select data-act="rif" data-v="${i}" ${dis()}>${opts(IFS, r.if)}</select></label><label><span>Then</span><select data-act="rthen" data-v="${i}" ${dis()}>${opts(THENS, r.then)}</select></label><button class="btn small" data-act="rdel" data-v="${i}" aria-label="Remove command" ${dis()}>✕</button></div>`).join("")}
       <div><button class="btn wood" data-act="radd" ${dis(opUsed() >= OP_MAX)}>Add command</button></div>
-      <p class="muted">Tap a soldier or your hero on the map to give it its own job.</p></div>`;
+      <p class="muted">Tap a soldier or your hero on the map to give it its own job.</p></div>`}`;
   if (tab === "contracts") body = contractsTab();
   if (tab === "alliances") body = alliancesTab();
   if (tab === "rituals") body = ritualsTab();

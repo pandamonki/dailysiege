@@ -144,6 +144,8 @@ const A = {
   stance: v => { S.stance = v; },
   formation: () => { S.formation = S.formation === false; },
   heading: v => { S.strategy.heading = v; },
+  aplan: v => { if (ARMY_PLANS.includes(v)) S.strategy.plan = v; }, fback: v => { if (FALL_BACKS.includes(v)) S.strategy.fallback = v; },
+  hillfirst: () => { S.strategy.heading = S.strategy.heading === "centre" ? "castle" : "centre"; },
   gtoggle: (_, k) => { sheet.gopen = sheet.gopen === k ? null : k; },
   engage: v => { if (!S.locked) S.engage = cleanEngage(S.engage + +v); },
   heropick: () => { showHeroPick(null); },

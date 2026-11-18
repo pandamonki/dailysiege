@@ -699,7 +699,7 @@ hash exactly as before, and 10 new golden battles (62 to 71) cover skill-tree he
 - **Switch-over.** `HERO_V3_FROM` in `js/config/trees.js` is `2026-11-12`: the user chose to apply the
   trees from that day, mid-war, with no wait for a war's first day. Battles before it replay with the
   old abilities. A hero keeps its level; the old ranks are ignored and every point can be spent in a
-  tree. You can also try the trees in practice with `?herov3` (or `localStorage.dsHeroV3 = "1"`), where the
+  tree. Practice uses the trees by default (open it with `?herov2`, or `localStorage.dsHeroV3 = "0"`, to see the old heroes), where the
   hero levels up two levels a day.
 - **Saves.** Plans carry `tree: { b1, b2, b3 }`, three arrays of six ranks in node order
   (T1, T2, T2b, T3, T3b, T4). Battle inputs record `heroV3`, so replays use the rules they were fought with.
