@@ -13,7 +13,8 @@ function makeTreeKit(X) {
   const backline = o => !o.dead && o.kind !== "castle" && o.kind !== "totem" && (o.range || 1.1) >= 2;
   const foes = (e, x, y, r) => enemiesNear(e, x, y, r).filter(o => o.kind !== "totem");
   const rk = (e, bi, i) => (e.tr ? e.tr[bi][i] : 0);
-  const V = (e, bi, i, vi) => nodeVal(e.cls, bi, i, vi, rk(e, bi, i));
+  const V2 = e => !!(P[e.pid] && P[e.pid].skV2); // skill scaling v2 (battles from 20 Nov)
+  const V = (e, bi, i, vi) => nodeVal(e.cls, bi, i, vi, rk(e, bi, i), V2(e));
   let hc = { k: -1, m: {} }; // the heroes of each lord, worked out once a tick
   const heroes = pid => { const k = X.tickNo(); if (hc.k !== k) hc = { k, m: {} }; return hc.m[pid] || (hc.m[pid] = ents.filter(h => h.kind === "champ" && h.tr && h.pid === pid)); };
   const heroOf = (pid, cls, bi, i) => heroes(pid).find(h => !h.dead && h.cls === cls && rk(h, bi, i) > 0);
@@ -309,7 +310,7 @@ function makeTreeKit(X) {
   // ----- trap and wall hooks used by the Ranger -----
   function trapFire(tr, o) {
     const e = tr.owner, r = tr.rank; aoe(tr.x, tr.y, .7, "#c7ccd1", .6);
-    withAb("Spike Trap", () => { deal(e, o, nodeVal("archer", 1, 1, 0, r) + e.atk, { aoe: 1, big: 1, atype: "pure" }); if (live(o)) cc(o, "root", nodeVal("archer", 1, 1, 1, r));
+    withAb("Spike Trap", () => { deal(e, o, nodeVal("archer", 1, 1, 0, r, V2(e)) + e.atk, { aoe: 1, big: 1, atype: "pure" }); if (live(o)) cc(o, "root", nodeVal("archer", 1, 1, 1, r, V2(e)));
       if (rk(e, 1, 3)) { const rad = V(e, 1, 3, 0), sl = V(e, 1, 3, 1) / 100; aoe(tr.x, tr.y, rad, "#c9a46a", .5); foes(e, tr.x, tr.y, rad).forEach(x => setFx(x, "slow", 4, sl)); } });
     X.abRec(e, "Spike Trap").casts++; if (!tr.free) tr.used = true; tr.used = true;
   }
@@ -421,7 +422,7 @@ function makeTreeKit(X) {
   };
   FN["rogue.0.5"] = e => {
     const bl = foes(e, e.x, e.y, 6).filter(backline); if (bl.length < 3) return false;
-    const order2 = bl.sort((a, b) => d(a, e) - d(b, e) || a.id - b.id).slice(0, 5), rankA = Math.max(1, rk(e, 0, 1)), dm = (nodeVal("rogue", 0, 1, 0, rankA) + e.atk) * 1.8 * .6;
+    const order2 = bl.sort((a, b) => d(a, e) - d(b, e) || a.id - b.id).slice(0, 5), rankA = Math.max(1, rk(e, 0, 1)), dm = (nodeVal("rogue", 0, 1, 0, rankA, V2(e)) + e.atk) * 1.8 * .6;
     hide(e, 4, false);
     order2.forEach((v, k) => pending.push({ ab: "Shadow Dance", at: +(T() + .8 * (k + 1)).toFixed(2), fn: () => {
       if (e.dead || v.dead) return; const ox = e.x, oy = e.y; e.x = v.x + .4; e.y = v.y + .1;

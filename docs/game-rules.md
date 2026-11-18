@@ -5,7 +5,7 @@ it in the same pull request as any change to the rules** (see CLAUDE.md). When t
 is right and this file is the bug. Exact numbers live in the files named in brackets; this page gives the shape and the
 key values.
 
-Last checked against the code: 18 Nov 2026 (v1.8 plus the keep-tower update).
+Last checked against the code: 18 Nov 2026 (v1.9).
 
 ## Dated rules
 
@@ -18,6 +18,7 @@ practice games always stamp all of them (`js/sim/plans.js`).
 | 17 Nov | `trapV2` | Permanent traps, new trap damage, weaker walls, towers |
 | 19 Nov | `sdV2`, `wallV2`, `engV2` | Sudden death v2, walls block everyone, siege engine alert; bots buy defences by build |
 | 20 Nov | `ordV2` | Army plans and one fall-back condition; no if-then commands or soldier orders |
+| 20 Nov | `skV2` | Skill scaling v2: every rank adds an even step (`TREE_V2`); report records deaths, assists, damage |
 
 ## The war
 
@@ -50,6 +51,8 @@ practice games always stamp all of them (`js/sim/plans.js`).
 - A hero gains at least 2 and at most 3 levels a day (`MIN_GAIN`, `XP_CAP`).
 - Active skills cast themselves at their own best moment; a "Cast when" condition can be added on top.
 - A fallen hero respawns at its castle (up to twice a battle, waiting longer at higher levels), except in sudden death.
+- From 20 Nov (`skV2`) every skill rank adds an even step worth at least about two thirds of rank 1 (`TREE_V2` in
+  `js/config/trees.js`); older battles keep the old values.
 - Up to 6 items; gear upgrades (weapon, armour, charm) last the week.
 
 ## Defences (from 17 Nov)
@@ -59,8 +62,9 @@ practice games always stamp all of them (`js/sim/plans.js`).
 - **Walls**, up to 5: tap Walls in Defences, then tap tile after tile on the map, paying 35 gold each. Walls next to
   each other line up and draw as one wall. They rebuild free each day and can be turned or sold but not moved.
   Wall health depends on castle tier (Palisade 100, Timber 170, Stone 250).
-- **Towers**, up to 2 (Tower 1 and Tower 2 slots): Guard Tower (150 gold) → Arrow Tower (Fortress) → one of Arrow III,
-  Bomb, Magic, Fire or Sniper Tower (Citadel). They never move and can't be moved; sell and rebuy to relocate.
+- **Towers**, up to 2 (Tower I and Tower II slots): Archer Tower Lv1 (150 gold) → Archer Tower Lv2 (100 gold, Fortress) →
+  one Lv3 tower (150 gold, Citadel): Archer Tower Lv3, Fire, Bomb, Magic or Sniper. Each slot shows the tower's stats beside
+  the picked upgrade's. Towers never move (pinned to their tile from 19 Nov) and can't be moved; sell and rebuy to relocate.
 - From 19 Nov **walls block everyone**, including their owner's and allies' soldiers, who route round through the gaps.
   The planning rules always keep a way through to every castle.
 
@@ -101,6 +105,12 @@ practice games always stamp all of them (`js/sim/plans.js`).
 - Placing: 10, 7, 5, 4, 3, 2, 1 points for 1st to 7th; plus 1 per enemy hero killed, 3 per castle destroyed, 1 for surviving with
   your hero alive, and points for treachery. Days 5 and 6 count 1.5 times and day 7 twice.
 - Contracts add points and gold.
+
+## Battle report
+
+- A card per lord: medal, colour, hero sprite, name, points, and chips for heroes killed / deaths / assists, soldiers
+  killed, castles taken, damage dealt, levels and gold. Build opens their skills and items. Deaths, assists and damage are recorded from 20 Nov. An assist is damaging an enemy hero in the
+  10 seconds (`ASSIST_SECS`) before another lord kills it.
 
 ## Alliances
 

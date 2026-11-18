@@ -3,6 +3,20 @@
 // Each item is [icon, headline, one short sentence]. Players who have not seen the newest id get the pop-up the next time they plan;
 // the id is remembered on their device, so changing the id is all it takes to show it again. Keep about 8 to 14 items.
 const RELEASES = [
+  { id: "1.9", title: "What's new in v1.9", sub: "Skills that grow with every point, towers you can compare, and a clearer battle report", items: [
+    ["📈", "Every skill point counts", "From the 20 Nov battle each rank of a skill adds about as much as the first. Blood Rage goes 4% then 7%, not 4% then 5%."],
+    ["🔍", "See the next rank", "The hero screen shows each skill now and at its next rank, so you know what a point buys."],
+    ["🗼", "Tower I and Tower II", "The two tower slots have new names."],
+    ["🏹", "Archer Towers", "Towers start as Archer Tower Lv1, upgrade to Lv2, then to one of five Lv3 towers."],
+    ["⚖", "Compare before you buy", "Tap each Lv3 tower to see its stats beside your tower's. Nothing is bought blind."],
+    ["📊", "Full tower stats", "Health, damage, shot speed, damage a second, range and damage type for every tower."],
+    ["📌", "Towers stay put", "Magic and Fire Towers no longer drift after heroes or shift as they shoot."],
+    ["🏆", "Battle report", "Each lord's card now shows their hero in their colours, with medals, scores and stats."],
+    ["⚔", "K/D/A", "Heroes killed, deaths and assists for every lord, plus soldiers killed, castles taken and gold."],
+    ["💥", "Damage dealt", "Each lord's total damage in the battle."],
+    ["🎒", "Builds on tap", "Tap Build on a lord to see their skills and items, or Show all builds."],
+    ["📅", "Days on one row", "The day picker now sits on a single row."],
+  ] },
   { id: "1.8", title: "What's new in v1.8", sub: "Simpler orders: one army plan, one fall-back, and soldiers that fight on", items: [
     ["🗺", "Army plans", "From the 20 Nov battle, choose what your army does once a fight is over: Conquest, Hero hunt, Siege or Army slayer."],
     ["⚔", "Conquest", "Kill their hero, clear their army, raze their castle, then move on. The default, and closest to how armies fought before."],
@@ -18,7 +32,7 @@ const RELEASES = [
   { id: "1.7", title: "What's new in v1.7", sub: "Walls that matter, a tighter sudden death, and easier defences", items: [
     ["🧱", "Walls block everyone", "From the 19 Nov battle your own soldiers walk round your walls too, through the gaps you leave. No more free shield to fight from."],
     ["🔨", "Build walls on the map", "Base, Defences, Walls: tap tile after tile to build, paying for each one. Walls next to each other line up and join into one wall, corners included."],
-    ["🗼", "Tower 1 and Tower 2", "Buy, upgrade and sell each tower from its own slot in Defences, or tap Upgrade on the tower itself."],
+    ["🗼", "Two tower slots", "Buy, upgrade and sell each tower from its own slot in Defences, or tap Upgrade on the tower itself."],
     ["📌", "Walls and towers stay put", "They can't be moved. Sell one and build it again somewhere else. Traps can still be moved."],
     ["🔍", "Defence details", "Tap a fence, trap or tower on the map to see its health, damage and range."],
     ["⚔", "Sudden death arena", "From the 19 Nov battle the ring is half the size and nobody can leave it."],

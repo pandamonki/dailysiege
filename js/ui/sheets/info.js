@@ -61,7 +61,7 @@ function awardsHTML(A, nm) {
 function dayChips(id, d) {
   if (!isLive()) return "";
   const ks = Object.keys(LIVE.battles || {}).filter(k => LIVE.battles[k].week === d.week).sort(); if (ks.length < 2) return "";
-  return `<div class="daychips">${ks.map(k => `<button class="chip${k === id ? " on" : ""}" data-act="rday" data-v="${k}">Day ${LIVE.battles[k].day}</button>`).join("")}</div>`;
+  return `<div class="daychips one">${ks.map(k => `<button class="chip${k === id ? " on" : ""}" data-act="rday" data-v="${k}">Day ${LIVE.battles[k].day}</button>`).join("")}</div>`;
 }
 function weekHTML(d, me, nm) {
   if (!isLive() || !d.week) return "";
@@ -78,14 +78,27 @@ function reportSheet(id) {
   const sorted = d.results.slice().sort((a, b) => a.place - b.place || b.points - a.points), gain = d.gain[me] || 0;
   return head(null, `Day ${d.day} report`, d.team ? "Allies won the Daily Siege together" : "The battle has been fought") + `<div class="body">
     ${dayChips(id, d)}
-    ${mine ? `<div class="rsum"><b>${mine.place === 1 ? (d.team ? "Victory, together" : "Victory") : ord(mine.place) + " of " + d.results.length}</b><span>${mine.points} pt${mine.points === 1 ? "" : "s"} · +${d.gold[me] != null ? d.gold[me] : (mine.gold || 0)}g${gain ? ` · +${gain} lvl` : ""}</span></div>` : `<p class="muted">You weren't in this battle.</p>`}
-    <div class="rbtns"><button class="btn wax" data-act="rwatch" data-v="${id}">▶ Watch</button><button class="btn wood" data-act="rreelm" data-v="${id}">★ Highlights</button></div>
-    <div class="sec tight">${sorted.map(r => { const medal = ["🥇", "🥈", "🥉"][r.place - 1] || ord(r.place), chips = [`⚔ ${r.kills || 0}`, `☠ ${r.ukills || 0}`, `♜ ${r.castles || 0}`].concat(d.gain[r.pid] ? [`+${d.gain[r.pid]} lvl`] : [], d.gold[r.pid] != null ? [`+${d.gold[r.pid]}g`] : [], d.rapierEnd === r.pid ? ["Rapier"] : []);
-      return `<${d.plans ? `button data-act="rinsp" data-v="${r.pid}"` : "div"} class="rrow${r.pid === me ? " me" : ""}${d.plans ? " tap" : ""}"><span class="rk">${medal}</span><i style="background:${isLive() ? teamColour(r.pid) : r.pid === "you" ? MY_COLOR : ((RIVALS.find(x => x.id === r.pid) || {}).color || "#b8322a")}"></i><span class="rn"><b>${esc(nm(r.pid))}</b>${r.cls ? `<small>${CLASSES[r.cls].name}</small>` : ""}</span><span class="pts">${r.points}<small>pts</small></span><span class="rc">${chips.map(c => `<em>${c}</em>`).join("")}</span></${d.plans ? "button" : "div"}>${d.plans ? heroKitTiles(d.plans.find(p => p.pid === r.pid), r.pid) : ""}`; }).join("")}
-      <p class="muted legend">${d.plans ? "Tap a lord to inspect them, or a skill or item to read it · " : ""}⚔ hero kills · ☠ unit kills · ♜ castles</p></div>
+    ${mine ? `<div class="rhead"><div class="rsum"><b>${mine.place === 1 ? (d.team ? "Victory, together" : "Victory") : ord(mine.place) + " of " + d.results.length}</b><span>${mine.points} pt${mine.points === 1 ? "" : "s"} · +${d.gold[me] != null ? d.gold[me] : (mine.gold || 0)}g${gain ? ` · +${gain} lvl` : ""}</span></div>` : `<div class="rhead"><p class="muted">You weren't in this battle.</p>`}<div class="rbtns"><button class="btn wax" data-act="rwatch" data-v="${id}">▶ Watch</button><button class="btn wood" data-act="rreelm" data-v="${id}">★ Highlights</button></div></div>
+    ${boardHTML(d, sorted, me, nm)}
     ${weekHTML(d, me, nm)}
     ${awardsHTML(d.awards, nm)}
     <div class="row"><button class="btn" data-act="rclose">Close</button></div></div>`;
+}
+// the scoreboard: a card per lord (medal, colour, hero sprite, name, points, then chips for heroes killed / deaths / assists,
+// soldiers killed, castles taken, damage, levels and gold). Each lord's build (skills, then items) opens under their card.
+// Battles from 20 Nov also carry hero deaths, assists and damage.
+function boardHTML(d, sorted, me, nm) {
+  const ord = n => n + (n === 1 ? "st" : n === 2 ? "nd" : n === 3 ? "rd" : "th"), num = v => v >= 1000 ? (v / 1000).toFixed(1) + "k" : String(v), has = sorted.some(r => r.dmg != null);
+  const col = pid => isLive() ? teamColour(pid) : pid === "you" ? MY_COLOR : ((RIVALS.find(x => x.id === pid) || {}).color || "#b8322a");
+  const open = sheet.rkit || {}, all = sorted.every(r => open[r.pid]);
+  const card = r => { const medal = ["🥇", "🥈", "🥉"][r.place - 1] || ord(r.place), pl = d.plans && d.plans.find(p => p.pid === r.pid), kit = pl ? heroKit(pl) : [], ns = kit.filter(x => !x.item).length, ni = kit.length - ns;
+    const chips = [r.deaths != null ? `⚔ ${r.kills || 0}/${r.deaths}/${r.assists || 0}` : `⚔ ${r.kills || 0}`, `☠ ${r.ukills || 0}`, `♜ ${r.castles || 0}`].concat(r.dmg != null ? [`💥 ${num(r.dmg)}`] : [], d.gain[r.pid] ? [`+${d.gain[r.pid]} lvl`] : [], d.gold[r.pid] != null ? [`+${d.gold[r.pid]}g`] : [], d.rapierEnd === r.pid ? ["Rapier"] : []);
+    const tag = d.plans ? "button" : "div";
+    return `<div class="rcard${open[r.pid] && kit.length ? " open" : ""}${r.pid === me ? " me" : ""}"><${tag}${d.plans ? ` data-act="rinsp" data-v="${r.pid}"` : ""} class="rrow hs${r.pid === me ? " me" : ""}${d.plans ? " tap" : ""}"><span class="rk">${medal}</span><i style="background:${col(r.pid)}"></i>${r.cls ? `<img class="rhero" alt="" src="${spriteURL("c-" + r.cls, col(r.pid))}">` : "<span></span>"}<span class="rn"><b>${esc(nm(r.pid))}</b>${r.cls ? `<small>${CLASSES[r.cls].name}</small>` : ""}</span><span class="pts">${r.points}<small>pts</small></span><span class="rc">${chips.map(c => `<em>${c}</em>`).join("")}</span></${tag}>
+      ${kit.length ? `<button class="kitbtn${open[r.pid] ? " on" : ""}" data-act="rkit" data-v="${r.pid}" aria-expanded="${!!open[r.pid]}">${open[r.pid] ? "▴" : "▾"} Build</button>` : ""}
+      ${open[r.pid] && kit.length ? `<div class="kitwrap"><small class="muted">${ns} skill${ns === 1 ? "" : "s"} · ${ni} item${ni === 1 ? "" : "s"}</small>${heroKitTiles(pl, r.pid)}</div>` : ""}</div>`; };
+  return `<div class="sec tight">${d.plans ? `<div class="rtools"><button class="btn small" data-act="rkit" data-v="*">${all ? "Hide all builds" : "Show all builds"}</button></div>` : ""}${sorted.map(card).join("")}
+    <p class="muted legend">${d.plans ? "Tap a lord to inspect them, or Build to see their skills and items · " : ""}⚔ heroes killed${has ? " / deaths / assists" : ""} · ☠ soldiers killed · ♜ castles${has ? " · 💥 damage dealt" : ""}</p></div>`;
 }
 // a lord's hero kit in small tiles (skills learned, then items); tap one to read it underneath
 function heroKit(pl) {
@@ -99,7 +112,8 @@ function heroKit(pl) {
 function heroKitTiles(pl, pid) {
   const kit = heroKit(pl); if (!kit.length) return "";
   const [tp, tk] = String(sheet.rtip || "").split("|"), open = tp === pid ? kit.find(x => x.k === tk) : null;
-  return `<div class="kit">${kit.map(x => `<button class="kt${x.ult ? " ult" : ""}${x.item ? " it" : ""}${open === x ? " on" : ""}" data-act="rtip" data-v="${esc(pid + "|" + x.k)}" aria-label="${esc(x.name)}"><img alt="" src="${x.img}"></button>`).join("")}</div>
+  const tiles = L => L.map(x => `<button class="kt${x.ult ? " ult" : ""}${x.item ? " it" : ""}${open === x ? " on" : ""}" data-act="rtip" data-v="${esc(pid + "|" + x.k)}" aria-label="${esc(x.name)}"><img alt="" src="${x.img}"></button>`).join("");
+  return `<div class="kit">${tiles(kit.filter(x => !x.item))}</div>${kit.some(x => x.item) ? `<div class="kit">${tiles(kit.filter(x => x.item))}</div>` : ""}
     ${open ? `<div class="ktip"><img alt="" src="${open.img}"><div><b>${esc(open.name)}</b><small>${esc(open.sub)}</small><p>${esc(open.desc)}</p></div></div>` : ""}`;
 }
 function lordSheet(d, pid, nm) {
@@ -169,6 +183,16 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "Skill scaling, tower upgrades, battle report", date: "18 Nov", fixes: [
+    "From the battle of 19 Nov, towers never move from where they were placed. Magic Towers were being pushed after heroes and Fire Towers shifted with each shot.",
+  ], balance: [
+    "From the battle of 20 Nov, every hero skill rises in even steps, each worth at least about two thirds of the first rank. Examples: Blood Rage 4/7% (was 4/5), Fireball 70/120/170/220 (was 90/125/165/205), Chain Lightning 60/100/140/180 damage and 3/4/4/5 targets, Ambush 30/55/80/105, Headshot 60/105/150/195, Poisoned Blades 3/5/7/9 a stack. Some first ranks are a little lower and top ranks a little higher. Full list in js/config/trees.js (TREE_V2).",
+  ], changes: [
+    "Tower slots are named Tower I and Tower II. Towers are named Archer Tower Lv1 and Lv2, then the Lv3 tower chosen (Archer Tower Lv3, Fire, Bomb, Magic or Sniper).",
+    "A tower's slot in Defences lists its health, damage, shot speed, damage a second, range and damage type, and shows them beside the upgrade you pick. Tap each Lv3 tower to compare before upgrading.",
+    "Battle report: each lord's card shows their hero sprite in their colours, the medal, points and chips for heroes killed / deaths / assists, soldiers killed, castles taken, damage dealt, levels and gold. A Build button opens their skills and items (or Show all builds). Deaths, assists and damage are recorded from the battle of 20 Nov. An assist is hurting an enemy hero in the 10 seconds before someone else kills it.",
+    "The day picker on the battle report sits on a single row and scrolls.",
+  ] },
   { v: "New towers, fairer arena", date: "18 Nov", fixes: [], balance: [
     "From the battle of 19 Nov, towers take no part in sudden death: they stay home, out of the fight, like the castles.",
     "From the battle of 19 Nov, each army enters the sudden death arena on its own castle's side, and the lords still standing are spread evenly round the ring.",
@@ -191,7 +215,7 @@ const PATCHES = [
     "From the battle of 19 Nov, bot lords spend like players do. Each bot has a build for the war: a warband (more and better-trained reinforcements, few defences), a fortress (up to 4 traps, 2 towers upgraded through the week and a wall line with a trapped gap, but fewer soldiers and items), a champion (more hero items) or a mix of all three.",
     "From the battle of 19 Nov, the sudden death ring is half the size and nobody can leave it. Everyone drawn into it is topped up to at least half health. A hero who falls in sudden death shows no respawn timer, because heroes don't come back once it starts.",
   ], changes: [
-    "Defences: traps are bought here and then moved or sold from the map. Walls are built straight onto the map: tap Walls, then tap tile after tile, paying for each. Tower 1 and Tower 2 each have a slot to buy, upgrade or sell them.",
+    "Defences: traps are bought here and then moved or sold from the map. Walls are built straight onto the map: tap Walls, then tap tile after tile, paying for each. Tower I and Tower II each have a slot to buy, upgrade or sell them.",
     "Walls and towers can't be moved. Sell one and build it again elsewhere. A wall can still be turned where it stands.",
     "Walls built next to each other turn to line up with each other, and joined walls are drawn as one cohesive wall, with proper corners at L-shaped bends.",
     "Tapping a fence, trap or tower on the map shows its health, damage or range in the strip, with Turn, Move, Upgrade and Sell buttons as they apply. Selling asks you to tap again to be sure.",
