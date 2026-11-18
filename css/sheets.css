@@ -529,7 +529,9 @@ h3 .cnt { font: 700 13px/1 var(--f-body); font-style: normal; color: var(--parch
 .prize .pg { font-size: 20px; text-align: center; } .prize small { display: block; color: var(--ink-soft); font-size: 11px; line-height: 1.25; }
 .hall { padding: 6px 0; border-bottom: 1px dashed rgba(90,58,32,.35); } .hall h3 { display: flex; justify-content: space-between; align-items: baseline; margin: 0 0 4px; } .hall h3 small { font-size: 12px; color: var(--ink-soft); }
 .hrow { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 6px; align-items: center; padding: 2px 0; } .hrow small { color: var(--ink-soft); }
-.lbox.warcard { border-color: var(--gold); background: rgba(201,162,39,.16); }
+.lbox.warcard { border-color: var(--gold); background: linear-gradient(rgba(201,162,39,.22), rgba(201,162,39,.22)), var(--parchment); }
+.lbox.warcard h3 { color: var(--wax); }
+.lbox.warcard p { color: var(--ink); }
 
 /* balance report (Host tools): compact tables that scroll sideways on a phone rather than squeezing */
 .bal-wrap { overflow-x: auto; margin: 0 -2px; }

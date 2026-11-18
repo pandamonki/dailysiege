@@ -229,7 +229,7 @@ function drawTrap(c, type, x, y, s) {
   c.imageSmoothingEnabled = false; c.drawImage(px, x - w / 2, y - h / 2 + s * .04, w, h); c.imageSmoothingEnabled = sm;
 }
 function drawSprite(key, color, cx, by, scale, o) {
-  const s = spr(key, color, o && o.pose), px = ts * scale / SH, h0 = s.height * px, w = s.width * px; o = o || {}; // pixels the size a soldier's are, so a tall tower stands taller
+  const s = spr(key, color, o && o.pose), px = ts * scale / SH, h0 = s.height * px * (SPECS[key] && SPECS[key].tower ? .8 : 1), w = s.width * px; o = o || {}; // pixels the size a soldier's are, so a tall tower stands taller (towers drawn 20% shorter)
   ctx.fillStyle = "rgba(0,0,0,.3)"; ctx.beginPath(); ctx.ellipse(cx, by - ts * .02, w * .32, ts * .09, 0, 0, 7); ctx.fill();
   const h = h0 * (o.sq || 1), x = cx + (o.dx || 0), y = by + (o.dy || 0);
   ctx.imageSmoothingEnabled = false;
