@@ -177,6 +177,12 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "Locked rosters and the Battle check", date: "20 Nov", fixes: [
+    "The server rebuilt each war's list of lords before every battle from sign-up records, so a record gone wrong could leave it counting fewer than two lords and skipping days. The lords are now locked when registration closes, and a war under way is locked the next time the server looks at it.",
+    "A day that passes without a battle is now recorded and shown plainly, instead of the game waiting for a battle that will never come.",
+  ], balance: [], changes: [
+    "Host: when Resolve now finds nothing to fight, a Battle check screen shows what the phone and the server each see, with a Copy button.",
+  ] },
   { v: "Tour, bots and battle-day fixes", date: "19 Nov", fixes: [
     "Bots added before 15 Nov had no hero class saved and all fought as Warriors. Each now gets its own class from the next battle.",
     "After a testing-mode skip, or when a phone's clock disagreed with the server, the game could wait on a battle the server was not due to fight. Phones now follow the server's day.",

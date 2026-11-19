@@ -276,3 +276,18 @@ async function saveConfig(patch, msg) {
   try { await LIVE.db.doc("game/config").set(next); LIVE.config = next; toast(msg || "Settings saved."); liveChanged(); }
   catch (e) { console.warn(e); toast("Couldn't save settings (" + ((e && (e.code || e.message)) || "error") + "). Reload the page and try again."); }
 }
+
+// The host's Battle check: after Resolve now finds nothing to fight, what this phone and the server each see, so a missing battle can be explained
+function bcheckSheet() {
+  const r = (window.DS && DS.lastCheck) || {}, d = r.diag || {}, ck = isLive() ? liveClock() : null, cfg = LIVE.config || {};
+  const phone = ck ? { "Phone's day": `${ck.planDay} (day ${ck.dayNo} of 7)`, "Server's day (as the phone sees it)": cfg.planDay || "none", "Testing skips": cfg.testSkew || 0, "Battles on the phone": Object.keys(LIVE.battles || {}).sort().join(", ") || "none" } : { Phone: "not in a live war" };
+  const srv = d.error ? { Error: d.error } : { "Server's day": d.planDay, "War": d.war, "First day": d.startDate, "Week starts": d.week, "Battle time": d.lockAt, "Time zone": d.tz, "Testing skips": d.testSkew, "Lords counted": d.counted ? Object.entries(d.counted).map(([k, v]) => `${k}: ${v}`).join(" · ") : "", "Battles saved": (d.battles || []).join(" · ") || "none", "Seats": `${d.maxPlayers || "?"}${d.capFrom ? ` (from ${d.capFrom}; before that ${d.capPrev || "?"})` : ""}` };
+  const rows = o => Object.entries(o).map(([k, v]) => `<div class="bcrow"><b>${esc(k)}</b><span>${esc(String(v ?? ""))}</span></div>`).join("");
+  const text = JSON.stringify({ note: r.note, days: r.days, phone, server: d }, null, 1); window.__bcheck = text;
+  return head(null, "Battle check", "What your phone and the server each see") + `<div class="body">
+    <p>${r.note ? esc(r.note) : "Nothing was due to fight."}</p>
+    <div class="sec"><h3>This phone</h3>${rows(phone)}</div>
+    <div class="sec"><h3>The server</h3>${rows(srv)}${(d.players || []).length ? `<details><summary>Lords (${d.players.length})</summary><ul class="bclist">${d.players.map(x => `<li>${esc(x)}</li>`).join("")}</ul></details>` : ""}</div>
+    <p class="muted">Send a screenshot of this screen, or tap Copy and paste it, so the problem can be found.</p>
+    <div class="row"><button class="btn wax" data-act="bcopy">Copy</button><button class="btn" data-act="close">Close</button></div></div>`;
+}

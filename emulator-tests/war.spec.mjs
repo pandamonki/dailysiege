@@ -11,7 +11,7 @@ const fnRequire = createRequire(new URL("../functions/package.json", import.meta
 const { initializeApp, deleteApp } = fnRequire("firebase-admin/app");
 const { getFirestore, Timestamp } = fnRequire("firebase-admin/firestore");
 const { getAuth } = fnRequire("firebase-admin/auth");
-const { resolveDue, resolveAllDue, remindAll } = createRequire(import.meta.url)("../functions/lib/resolve.js");
+const resolve = createRequire(import.meta.url)("../functions/lib/resolve.js"), { resolveDue, resolveAllDue, remindAll } = resolve;
 const { clockFor } = createRequire(import.meta.url)("../functions/lib/clock.js");
 let pw; try { pw = createRequire(import.meta.url)("playwright"); } catch { pw = createRequire("/")("playwright"); }
 
@@ -63,6 +63,12 @@ after(async () => { if (browser) await browser.close(); await deleteApp(app); })
 test("the clock starts on day 1", async () => {
   const g = (await gameRef().get()).data();
   assert.equal(g.planDay, D1); assert.equal(g.nextLockAt.toMillis(), Date.parse(D1 + "T00:00:00Z"));
+});
+
+test("once the war is under way its lords are locked, so the count cannot change mid-war", async () => {
+  await resolve.lockRoster(gameRef(), (await gameRef().get()).data());
+  const g = (await gameRef().get()).data();
+  assert.ok(g.roster && g.roster.week === D1 && g.roster.uids.length >= 2, "the roster is locked with the war's lords");
 });
 
 test("nothing is fought before the lock", async () => {

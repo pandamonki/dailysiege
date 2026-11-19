@@ -30,6 +30,13 @@ practice games always stamp all of them (`js/sim/plans.js`).
 - Up to 12 lords; new hosted wars default to 10 (`js/config/seats.js`). Empty seats can be filled with bot lords.
 - Practice is a private sandbox against bots, with every current rule on and skill-tree heroes by default.
 
+- The war's lords are locked when registration closes (game config `roster`, written by the server, `lockRoster` in
+  `functions/lib/resolve.js`): everyone registered at that moment, bots included. Every battle of that war uses that list
+  (`wRoster` in `js/net/world.js`), so the count cannot change mid-war; only a lord the host removes drops out. Wars from
+  before the lock work it out from each player's sign-up record. A day that passes with fewer than two lords is recorded
+  (`skipDays`) and the game says so, instead of waiting for a battle. The host's Resolve now opens a Battle check showing
+  what the phone and the server each see.
+
 ## Gold
 
 - Base pay of 225 gold after day 1, growing 30 a day; castle tiers add 70 (Fortress) or 130 (Citadel) a day

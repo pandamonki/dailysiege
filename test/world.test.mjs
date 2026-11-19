@@ -61,6 +61,16 @@ test("lords who have left, are unregistered, or are beyond the seat limit do not
   assert.deepEqual(J(buildBattleInputs(W2, D1).plans.map(p => p.pid)), J(["a", "b", "c"]));
 });
 
+test("a locked roster decides who fights, whatever later happens to their sign-up records", () => {
+  const W = world(ids); W.config.roster = { war: 1, week: D1, uids: ["a", "b", "c"] };
+  W.players.c.pending = true; W.players.b.fromWeek = "2099-01-01"; // records gone wrong after registration closed: still in the war
+  assert.deepEqual(J(buildBattleInputs(W, D1).plans.map(p => p.pid)).sort(), ["a", "b", "c"], "the locked lords fight, and only they");
+  W.players.a.left = true; // removed by the host: out
+  assert.deepEqual(J(buildBattleInputs(W, D1).plans.map(p => p.pid)).sort(), ["b", "c"]);
+  W.config.roster.war = 2; // another war's lock is ignored: back to the records
+  assert.deepEqual(J(buildBattleInputs(W, D1).plans.map(p => p.pid)).sort(), ["d"], "without its own lock, the records decide (and here they have gone wrong)");
+});
+
 // ----- bot lords -----
 function botWorld(humans, bots, maxPlayers = 8) {
   const W = { config: { tz: "UTC", lockHour: 20, startDate: D1, maxPlayers }, players: {}, battles: {} };

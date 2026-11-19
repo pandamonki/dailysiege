@@ -13,7 +13,7 @@ const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, Timestamp, FieldValue } = require("firebase-admin/firestore");
 const { clockFor } = require("./lib/clock");
 const { getMessaging } = require("firebase-admin/messaging");
-const { resolveDue, resolveAllDue, explainNotDue, fightMissing, reassignSeat, remindAll, testMode } = require("./lib/resolve");
+const { resolveDue, resolveAllDue, explainNotDue, fightMissing, reassignSeat, remindAll, testMode, diagnose, lockRoster } = require("./lib/resolve");
 const { setBots } = require("./lib/bots");
 const { REGION, TRIGGER_REGION } = require("./region");
 
@@ -38,6 +38,7 @@ exports.keepGameClock = onDocumentWritten({ document: "games/{gameId}", region: 
     for (const k of CLOCK_KEYS) { const v = want[k]; if (v === undefined) { if (k === "startDate" && after[k] !== undefined) patch[k] = FieldValue.delete(); continue; } if (ms(after[k]) !== v) patch[k] = k === "nextLockAt" || k === "lockAfter" ? Timestamp.fromMillis(v) : v; }
   }
   if (Object.keys(patch).length) await getFirestore().doc(event.data.after.ref.path).update(patch); // the follow-up run finds nothing to change
+  if (want && want.startDate) await lockRoster(getFirestore().doc(event.data.after.ref.path), Object.assign({}, after, patch, { startDate: want.startDate })).catch(e => console.error("Daily Siege: locking the roster failed", e)); // registration has closed: fix the war's lords
 });
 
 // One push notification to one device. The message is data only; the game's service worker turns it into a notification.
@@ -65,7 +66,8 @@ exports.resolveNow = onCall(async request => {
   const gameId = await hostOnly(request);
   try { let days = await resolveDue(getFirestore(), gameId, { send }), note = "";
     if (!days.length) { const m = await fightMissing(getFirestore(), gameId); days = m.days; note = days.length ? "" : (m.why + " " + await explainNotDue(getFirestore(), gameId)).trim(); }
-    return { days, note }; }
+    const diag = await diagnose(getFirestore(), gameId).catch(e => ({ error: (e && e.message) || "error" })); // what the server sees, for the host's Battle check
+    return { days, note, diag }; }
   catch (e) { console.error("resolveNow", gameId, e); throw new HttpsError("internal", "The battle could not be fought: " + ((e && e.message) || "error")); }
 });
 

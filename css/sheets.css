@@ -592,3 +592,6 @@ details.fg-host[open] > summary { margin-bottom: 8px; }
 .aan { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 14.5px; } .aan .sw { width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--wood-dark); }
 .aan b { margin-left: auto; font-size: 13px; } .aan.ok b { color: var(--verdant); } .aan.bad b { color: var(--wax); } .aan.wait b { color: #8a5a0e; font-weight: 400; font-style: italic; }
 .aans em { font-size: 13px; color: var(--ink-soft); }
+/* the host's Battle check */
+.bcrow { display: grid; grid-template-columns: minmax(110px, 40%) 1fr; gap: 8px; padding: 4px 0; border-bottom: 1px dashed rgba(62,39,20,.25); font-size: 14px; } .bcrow b { color: var(--ink-soft); font-weight: 700; } .bcrow span { overflow-wrap: anywhere; }
+.bclist { margin: 6px 0 0; padding-left: 18px; font-size: 13.5px; display: grid; gap: 2px; }

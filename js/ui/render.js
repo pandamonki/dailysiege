@@ -18,7 +18,7 @@ function renderSheet() {
   if (!sheet) { sh.hidden = veil.hidden = true; return; }
   const p = document.getElementById("paper"), scroll = p.querySelector(".body")?.scrollTop || 0;
   const html = { castle: castleSheet, champ: champSheet, unit: () => unitSheet(sheet.id), trap: () => trapSheet(sheet.id), rival: () => rivalSheet(sheet.id),
-    title: titleSheet, patch: patchSheet, gold: goldSheet, day: daySheet, board: boardSheet, report: () => reportSheet(sheet.id), invites: inviteSheet, whatsnew: newsSheet, camp: campSheet, wars: warsSheet, warend: warEndSheet, hall: hallSheet, spin: spinSheet, rhero: () => rivalHeroSheet(sheet.id), guide: guideSheet, spells: spellsSheet, wall: () => wallSheet(sheet.id),
+    title: titleSheet, bcheck: bcheckSheet, patch: patchSheet, gold: goldSheet, day: daySheet, board: boardSheet, report: () => reportSheet(sheet.id), invites: inviteSheet, whatsnew: newsSheet, camp: campSheet, wars: warsSheet, warend: warEndSheet, hall: hallSheet, spin: spinSheet, rhero: () => rivalHeroSheet(sheet.id), guide: guideSheet, spells: spellsSheet, wall: () => wallSheet(sheet.id),
     council: councilSheet, uorder: () => uorderSheet(sheet.id), game: gameSheet, install: installSheet, orders: ordersSheet, seal: sealSheet, results: resultsSheet, lab: labSheet, balance: balanceSheet, deploy: () => deploySheet(sheet.id) }[sheet.type]();
   if (sheet.type === "spin" && p.dataset.spin === html && !sh.hidden) return; // the reels are mid-spin: a redraw with the same markup must not restart them
   p.dataset.spin = sheet.type === "spin" ? html : "";
