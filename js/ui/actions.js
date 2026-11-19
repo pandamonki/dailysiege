@@ -75,7 +75,7 @@ const A = {
     { const [r0, c0] = k.split(",").map(Number), wl0 = findWall(v); if (wl0 && !wallFree(r0, c0, wl0.dir, v)) { toast("That tile isn't free."); return; } if (wl0 && !routeOpen(k, v)) { toast(NO_BLOCK); return; } }
     if (inGarrison(v)) { if (fieldCount() >= S.slots) { toast("Your field supply is full."); return; } unGarrison(v); }
     const old = placedAt(v); if (old) delete S.place[old]; S.place[k] = v; sheet = null; },
-  cls: v => { if (v === S.cls) return; if (isLive() && DAY > 1) { toast("Your class is set for the week. Pick again next week."); return; } S.cls = v; S.ranks = { a1: 0, a2: 0, a3: 0, ult: 0 }; S.tree = emptyTree(); S.picks = {}; toast(`${CLASSES[v].name} chosen. Skill points refunded.`); },
+  cls: v => { if (v === S.cls) return; if (isLive()) { toast("Your hero is fixed for this war."); return; } S.cls = v; S.ranks = { a1: 0, a2: 0, a3: 0, ult: 0 }; S.tree = emptyTree(); S.picks = {}; toast(`${CLASSES[v].name} chosen. Skill points refunded.`); },
   rank: (_, k) => { if (canRank(k)) S.ranks[k] = (S.ranks[k] || 0) + 1; },
   choose: (v, k) => { S.picks[k] = v; },
   buy: k => { const u = UNITS[k]; if (avail() < u.cost || supplyFull() || ctNow() < UNIT_TIER[k]) return; ensureGarrison(); const toGar = fieldCount() >= S.slots; if (toGar && garrisonCount() >= garrisonCap()) { toast(supplyV2Now() && wavesOpen() < WAVE_COUNT ? "Your field is full. Unlock a reinforcement wave for more soldiers." : "Your field supply and garrison are full."); return; } S.gold -= u.cost; const id = "u" + idc++; S.owned.push({ id, type: k, lvl: 1, hp: 1 }); if (toGar) { toGarrison(id); sel = null; toast(`${u.name} recruited into your garrison.`); } else { sel = id; sheet = null; toast(`${u.name} recruited. Tap a glowing tile.`); } },

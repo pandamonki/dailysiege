@@ -50,6 +50,8 @@ practice games always stamp all of them (`js/sim/plans.js`).
 
 - One hero a war, one of five classes (Warrior, Shaman, Rogue, Mage, Archer/Ranger) with three skill trees each
   (`js/config/trees.js`, `docs/hero-skill-trees.md`). Every level gives one skill point; the cap is level 15.
+- The class is chosen when registering and can be changed only while registration is open. Once the war begins it is
+  fixed for the whole war; the next war's registration is the next chance to pick again.
 - A hero gains at least 2 and at most 3 levels a day (`MIN_GAIN`, `XP_CAP`).
 - Active skills cast themselves at their own best moment; a "Cast when" condition can be added on top.
 - A fallen hero respawns at its castle (up to twice a battle, waiting longer at higher levels), except in sudden death.

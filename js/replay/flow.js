@@ -34,7 +34,7 @@ function showHeroPick(done) {
       return `<button class="hcard${on ? " on" : ""}" data-k="${k}"><img alt="" src="${spriteURL("c-" + k)}"><span class="ht"><b>${v.name}</b><em>${esc(v.role)}</em>${on ? `<small>${esc(v.trait)}</small>` : ""}<span class="hs">${IC.hp(c.hp)}${IC.atk(c.atk)}<span class="ic rng" title="Range"><svg viewBox="0 0 12 12"><circle cx="6" cy="6" r="4.2" fill="none" stroke="#3b4650" stroke-width="1"/><circle cx="6" cy="6" r="1.4" fill="#3b4650"/></svg><b>${c.range}</b></span></span>${on ? `<small class="ab">${v.abilities.map(a => esc(a.name)).join(" · ")} · <b>${esc(v.ult.name)}</b></small>` : ""}</span></button>`; }).join("")}</div>
     <button class="btn wax hgo" id="hgo">Choose ${CLASSES[pick].name}</button></div>`;
     el.querySelectorAll(".hcard").forEach(b => b.addEventListener("click", () => { pick = b.dataset.k; paint(); }));
-    el.querySelector("#hgo").addEventListener("click", () => { if (pick !== S.cls) { if (isLive() && DAY > 1) toast("Your class is set for the week."); else A.cls(pick); } el.remove(); if (done) done(); render(); }); };
+    el.querySelector("#hgo").addEventListener("click", () => { if (pick !== S.cls) { if (isLive()) toast("Your hero is fixed for this war."); else A.cls(pick); } el.remove(); if (done) done(); render(); }); };
   paint(); document.body.appendChild(el);
 }
 function showIntro(it, done) {
