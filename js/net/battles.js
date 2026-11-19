@@ -18,7 +18,8 @@ function savedBattle(dayKey) {
 function battlePending() {
   if (!isLive() || !LIVE.db || !LIVE.db.serverBattles) return null;
   const ck = liveClock(); if (rosterFor(ck.week).length < 2) return null;
-  for (let d = ck.week; d < ck.planDay; d = addDays(d, 1)) if (!LIVE.battles[d]) return d;
+  const skip = (LIVE.config && LIVE.config.skipDays) || [];
+  for (let d = ck.week; d < ck.planDay; d = addDays(d, 1)) if (!LIVE.battles[d] && !skip.includes(d)) return d;
   return null;
 }
 async function resolveBattles() {

@@ -34,6 +34,19 @@ async function loadWorld(gameRef, cfg, day) {
   return W;
 }
 
+// Lock the war's lords: everyone registered (not still joining, not removed) when registration closed, bots included.
+// Written once per war; a war already under way without one gets it the first time the server looks at it.
+async function lockRoster(gameRef, cfg) {
+  const war = cfg.war || 1, week = startDate(cfg);
+  if (!week || cfg.lobby && !cfg.startDate && !(cfg.lobbyEnds && Date.now() >= cfg.lobbyEnds)) return cfg; // registration still open
+  if (cfg.roster && (cfg.roster.war || 1) === war && cfg.roster.week === week) return cfg;
+  const pubs = await gameRef.collection("players").get(), uids = pubs.docs.filter(d => !d.get("left") && !d.get("pending")).map(d => d.id).sort();
+  const roster = { war, week, uids, at: Date.now() };
+  await gameRef.update({ roster });
+  console.log("Daily Siege: roster locked", gameRef.id, war, week, uids.length);
+  return Object.assign({}, cfg, { roster });
+}
+
 /**
  * Fight every battle of this game that is due at `now`, oldest first.
  * Safe to call at any time and from several places at once: each day is claimed in a transaction,
@@ -46,7 +59,7 @@ async function resolveDue(db, gameId, { now = Date.now(), maxDays = 8, send = nu
   const { addDays, lockInstant, wRoster, wWeekOf, fightDay } = { addDays: g().get("addDays"), lockInstant: g().get("lockInstant"), wRoster: g().get("wRoster"), wWeekOf: g().get("wWeekOf"), fightDay: g().get("fightDay") };
   for (let i = 0; i < maxDays; i++) {
     const snap = await gameRef.get(); if (!snap.exists) break;
-    const cfg = snap.data(), day = cfg.planDay;
+    const cfg = await lockRoster(gameRef, snap.data()), day = cfg.planDay;
     if (!day) break;
     // the lock is worked out from the game's own settings, so a stored lock time that is missing or has drifted cannot hold a battle back
     const sk = (cfg.testSkew || 0) * 864e5, lockAt = cfg.tz && cfg.lockHour !== undefined ? lockInstant(day, cfg.tz, cfg.lockHour) - sk : cfg.nextLockAt ? cfg.nextLockAt.toMillis() : null;
@@ -61,7 +74,7 @@ async function resolveDue(db, gameId, { now = Date.now(), maxDays = 8, send = nu
       const skew = (cur.testSkew || 0) + (force ? 1 : 0), sk2 = skew * 864e5;
       const battleRef = gameRef.collection("battles").doc(day);
       if (doc && !(await tx.get(battleRef)).exists) tx.create(battleRef, doc);
-      tx.update(gameRef, { planDay: next, nextPlanDay: after, nextLockAt: Timestamp.fromMillis(lockInstant(next, cur.tz, cur.lockHour) - sk2), lockAfter: Timestamp.fromMillis(lockInstant(after, cur.tz, cur.lockHour) - sk2), clockWar: cur.war || 1, resolvedAt: Timestamp.fromMillis(now), ...(force ? { testSkew: skew } : {}) });
+      tx.update(gameRef, { ...(doc ? {} : { skipDays: FieldValue.arrayUnion(day) }), planDay: next, nextPlanDay: after, nextLockAt: Timestamp.fromMillis(lockInstant(next, cur.tz, cur.lockHour) - sk2), lockAfter: Timestamp.fromMillis(lockInstant(after, cur.tz, cur.lockHour) - sk2), clockWar: cur.war || 1, resolvedAt: Timestamp.fromMillis(now), ...(force ? { testSkew: skew } : {}) });
       return true;
     });
     if (!claimed) break;
@@ -133,7 +146,7 @@ function remindAll(db, send, { now = Date.now() } = {}) {
 // Returns the days fought, and a plain-words reason for any day that could not be.
 async function fightMissing(db, gameId, { now = Date.now() } = {}) {
   const gameRef = db.collection("games").doc(gameId), snap = await gameRef.get(); if (!snap.exists) return { days: [], why: "" };
-  const cfg = snap.data(), planDay = cfg.planDay; if (!planDay) return { days: [], why: "" };
+  const cfg = await lockRoster(gameRef, snap.data()), planDay = cfg.planDay; if (!planDay) return { days: [], why: "" };
   const { addDays, wRoster, wWeekOf, fightDay } = { addDays: g().get("addDays"), wRoster: g().get("wRoster"), wWeekOf: g().get("wWeekOf"), fightDay: g().get("fightDay") };
   const week = wWeekOf({ config: Object.assign({}, cfg, { startDate: startDate(cfg) }) }, planDay), days = [], war = cfg.war || 1; let why = "";
   for (let d = week; d < planDay; d = addDays(d, 1)) {
@@ -160,7 +173,7 @@ async function diagnose(db, gameId, { now = Date.now() } = {}) {
   const gameRef = db.collection("games").doc(gameId), snap = await gameRef.get(); if (!snap.exists) return { error: "This game was not found." };
   const cfg = snap.data(), war = cfg.war || 1, day = cfg.planDay || null, sd = startDate(cfg);
   const { addDays, lockInstant, wRoster, wWeekOf } = { addDays: g().get("addDays"), lockInstant: g().get("lockInstant"), wRoster: g().get("wRoster"), wWeekOf: g().get("wWeekOf") };
-  const out = { now: new Date(now).toISOString(), war, planDay: day, startDate: sd || null, tz: cfg.tz || null, lockHour: cfg.lockHour ?? null, testSkew: cfg.testSkew || 0, lobby: !!cfg.lobby, maxPlayers: cfg.maxPlayers || null, capFrom: cfg.capFrom || null, capPrev: cfg.capPrev || null };
+  const out = { now: new Date(now).toISOString(), war, planDay: day, startDate: sd || null, tz: cfg.tz || null, lockHour: cfg.lockHour ?? null, testSkew: cfg.testSkew || 0, lobby: !!cfg.lobby, maxPlayers: cfg.maxPlayers || null, capFrom: cfg.capFrom || null, capPrev: cfg.capPrev || null, roster: cfg.roster ? `war ${cfg.roster.war || 1}, from ${cfg.roster.week}: ${(cfg.roster.uids || []).length} lords` : "not locked", skipped: (cfg.skipDays || []).join(", ") || "none" };
   if (day && cfg.tz && cfg.lockHour !== undefined) out.lockAt = new Date(lockInstant(day, cfg.tz, cfg.lockHour) - (cfg.testSkew || 0) * 864e5).toISOString();
   const bs = await gameRef.collection("battles").get(); out.battles = bs.docs.map(d => `${d.id} (war ${d.get("war") || 1}${d.get("results") ? ", " + d.get("results").length + " lords" : ""})`).sort().slice(-12);
   const pubs = await gameRef.collection("players").get(); out.players = pubs.docs.map(d => { const p = d.data(); return `${p.nick || d.id}${p.bot ? " (bot" + (p.cls ? ", " + p.cls : ", no class") + ")" : ""}: from ${p.fromWeek || "none"}${p.pending ? ", pending" : ""}${p.left ? ", left" : ""}${p.war ? ", war " + p.war : ""}`; });
@@ -170,4 +183,4 @@ async function diagnose(db, gameId, { now = Date.now() } = {}) {
 }
 
 const testMode = () => !!g().get("TEST_MODE");
-module.exports = { endWar, testMode, fightMissing, explainNotDue, diagnose, resolveDue, resolveAllDue, reassignSeat, loadWorld, remindAll };
+module.exports = { endWar, testMode, fightMissing, explainNotDue, diagnose, lockRoster, resolveDue, resolveAllDue, reassignSeat, loadWorld, remindAll };

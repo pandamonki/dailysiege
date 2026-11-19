@@ -13,7 +13,7 @@ const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, Timestamp, FieldValue } = require("firebase-admin/firestore");
 const { clockFor } = require("./lib/clock");
 const { getMessaging } = require("firebase-admin/messaging");
-const { resolveDue, resolveAllDue, explainNotDue, fightMissing, reassignSeat, remindAll, testMode, diagnose } = require("./lib/resolve");
+const { resolveDue, resolveAllDue, explainNotDue, fightMissing, reassignSeat, remindAll, testMode, diagnose, lockRoster } = require("./lib/resolve");
 const { setBots } = require("./lib/bots");
 const { REGION, TRIGGER_REGION } = require("./region");
 
@@ -38,6 +38,7 @@ exports.keepGameClock = onDocumentWritten({ document: "games/{gameId}", region: 
     for (const k of CLOCK_KEYS) { const v = want[k]; if (v === undefined) { if (k === "startDate" && after[k] !== undefined) patch[k] = FieldValue.delete(); continue; } if (ms(after[k]) !== v) patch[k] = k === "nextLockAt" || k === "lockAfter" ? Timestamp.fromMillis(v) : v; }
   }
   if (Object.keys(patch).length) await getFirestore().doc(event.data.after.ref.path).update(patch); // the follow-up run finds nothing to change
+  if (want && want.startDate) await lockRoster(getFirestore().doc(event.data.after.ref.path), Object.assign({}, after, patch, { startDate: want.startDate })).catch(e => console.error("Daily Siege: locking the roster failed", e)); // registration has closed: fix the war's lords
 });
 
 // One push notification to one device. The message is data only; the game's service worker turns it into a notification.

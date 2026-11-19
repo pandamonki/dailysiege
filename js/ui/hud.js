@@ -53,10 +53,14 @@ function renderCamp() {
   if (tb) { tb.hidden = !tw; tb.classList.toggle("fresh", !!tw && S.twSeen !== planDayKey()); }
   if (tp) { tp.hidden = !(tw && TWIST_POP); if (!tp.hidden) tp.innerHTML = `${twistStripHTML()}<small class="muted">Tap anywhere to close</small>`; }
 }
+// a day of this war that passed without a battle (the server counted fewer than two lords): said plainly instead of leaving lords waiting
+function skippedNote() { if (!isLive() || !LIVE.config) return ""; const ck = liveClock(), sk = (LIVE.config.skipDays || []).filter(d => d === addDays(ck.planDay, -1) && !LIVE.battles[d]); // only the last day, so it never crowds out the usual hints for long
+  return sk.length ? `No battle was fought on day ${weekdayOf(sk[0])}: the server counted fewer than two lords.${window.DS && DS.isHost() ? ` <button data-act="dsresolve">Check</button>` : ""}` : ""; }
 function renderHint() {
   renderCamp();
   const h = document.getElementById("hint");
   if (isLive() && LIVE.readOnly) h.innerHTML = "You're watching this game. Ask the host to add you as an Editor to play.";
+  else if (skippedNote()) h.innerHTML = skippedNote();
   else if (battlePending()) h.innerHTML = `Last night's battle is being fought… results arrive within a few minutes.${window.DS && DS.isHost() ? ` <button data-act="dsresolve">Resolve now</button>` : ""}`;
   else if (S.locked) h.innerHTML = isLive() ? `Orders sealed. The battle is fought at ${lockLabel(LIVE.config)}.` : "Orders sealed. The battle plays out at dusk.";
   else if (WALL_BUILD) h.innerHTML = `Building walls: tap a glowing tile (${WALL_COST}g each, ${S.walls.length} of ${wallLimit(ctNow())}) <button data-act="wturn">Turn ${WALL_BUILD.dir === "h" ? "│" : "─"}</button> <button data-act="wdone">Done</button>`;

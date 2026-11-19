@@ -19,9 +19,13 @@ function wCap(W, week) { const c = W.config || {}; return Math.min(MAX_LORDS, (c
 // (bots give way to people), but where each lord sits round the map is a draw keyed to the war's first day, the same on every phone and the server.
 let SEAT_SHUFFLE_FROM = "2026-11-18";
 const seatDraw = (week, uid) => { let h = 2166136261; const s = week + "|" + uid; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b); h ^= h >>> 13; h = Math.imul(h, 0xc2b2ae35); h ^= h >>> 16; return h >>> 0; }; // FNV-1a, then a full avalanche so every war draws a fresh order
+// The war's lords, locked when registration closed (game config `roster`, written by the server): from then on they are the lords,
+// whatever later happens to their sign-up records. Wars without a locked roster (before it existed) work it out from the records.
+const wLocked = (W, week) => { const c = W.config || {}, r = c.roster; return r && (r.war || 1) === (c.war || 1) && r.week === week && Array.isArray(r.uids) ? r.uids : null; };
 function wRoster(W, week) {
   // bots take the seats that people leave free: when the war is full, it is the bots that give way
-  const r = Object.entries(W.players).filter(([, p]) => p.fromWeek && p.fromWeek <= week && !p.left && !p.pending)
+  const lk = wLocked(W, week);
+  const r = Object.entries(W.players).filter(([uid, p]) => lk ? lk.includes(uid) && !p.left : p.fromWeek && p.fromWeek <= week && !p.left && !p.pending)
     .sort((a, b) => (!!a[1].bot - !!b[1].bot) || (a[1].joinedAt - b[1].joinedAt) || (a[0] < b[0] ? -1 : 1)).slice(0, wCap(W, week)).map(([uid, p]) => ({ uid, ...p }));
   if (String(week) >= SEAT_SHUFFLE_FROM) r.sort((a, b) => seatDraw(week, a.uid) - seatDraw(week, b.uid) || (a.uid < b.uid ? -1 : 1));
   return r;
