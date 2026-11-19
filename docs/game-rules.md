@@ -137,7 +137,7 @@ practice games always stamp all of them (`js/sim/plans.js`).
 
 ## How to play (the guide)
 
-- One guide in five chapter tabs: Basics, Army, Hero, Battle and Rivals (`js/ui/guide.js`). Read from Options it floats over
+- One guide in five chapter tabs: Basics, Army, Hero, Battle and Allies (`js/ui/guide.js`). Read from Options it floats over
   the planning screen and rings the real button for anything already on screen. New lords read Basics as pages in the Muster
   Hall before choosing a hero. A chapter gets a tick once its last page has been seen (kept on the device).
 - Pages about screens a new player can't see yet (invitations, betrayal, the mercenary camp, contracts, the replay and the

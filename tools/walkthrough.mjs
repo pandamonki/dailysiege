@@ -87,7 +87,7 @@ for (const name of engines) {
     const shots = await js(() => [...new Set(GUIDE.flatMap(c => c.pages).filter(p => p.shot).map(p => p.shot))]);
     for (const n of shots) { const ok = await js(async n => { const im = new Image(); im.src = "guide/" + n + ".webp"; try { await im.decode(); return im.naturalWidth > 100; } catch { return false; } }, n); if (!ok) throw new Error("the guide picture " + n + " is missing"); }
     const bad = await js(() => GUIDE.flatMap(c => c.pages).filter(p => p.shot && !(p.keys && p.keys.length)).map(p => p.t)); if (bad.length) throw new Error("pictures without numbered lines: " + bad.join(", "));
-    await js(() => { sheet = { type: "guide", pg: 0 }; render(false); }); await tap('#sheet [data-act="gch"][data-v="rivals"]'); if (!(await js(() => /Contracts/.test(document.querySelector("#sheet").innerText)))) throw new Error("the book's Rivals tab did not open"); await closeAll(); });
+    await js(() => { sheet = { type: "guide", pg: 0 }; render(false); }); await tap('#sheet [data-act="gch"][data-v="rivals"]'); if (!(await js(() => /Contracts/.test(document.querySelector("#sheet").innerText)))) throw new Error("the book's Allies tab did not open"); await closeAll(); });
   await step("no script errors anywhere", async () => { if (errors.length) throw new Error(errors.length + " errors: " + errors.slice(0, 3).join(" ; ")); });
 
   console.log(`\n[${name} walkthrough]\n` + results.map(([s, t]) => `${s === "ok" ? "  ✓" : "  ✗"} ${t}`).join("\n"));

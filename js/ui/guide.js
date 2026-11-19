@@ -39,7 +39,7 @@ const GUIDE = [
     { t: "Watching the battle", p: "The replay plays the battle back.", shot: "replay",
       keys: ["The camera follows your hero. Tap any soldier or hero to see it", "Play, pause and change speed, or open the report and stats"] },
   ] },
-  { id: "rivals", name: "Rivals", pages: [
+  { id: "rivals", name: "Allies", pages: [
     { t: "Contracts and twists", p: "Each day you can take one contract for bonus points and gold. Each day also has a twist: tap the ! above the map to see it.", shot: "contracts",
       keys: ["Today's three contracts: easy, hard and one aimed at a rival", "Today's twist"] },
     { sel: '#cmdbar [data-act="openorders"][data-v="alli"]', t: "Allies", p: "Nobody is allied at the start. You invite a lord, they answer the next day, and the alliance starts at the next battle. Allies win together if they're the last ones standing." },
