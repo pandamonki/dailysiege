@@ -11,7 +11,7 @@ const tough = loadSim(); tough.run("BAL.castleHp *= 1000"); // castles that cann
 const WAR = (game, day) => `(() => { const L = seatLayout(8, true), CL = ["warrior", "mage", "rogue", "archer", "shaman"], ids = [...Array(8)].map((_, k) => "g${game}b" + k);
   const plans = ids.map((uid, i) => { const zone = zoneFor(L.castles[i], L.N, L.castles, L.v2), lvl = Math.min(15, 1 + 2 * (${day} - 1));
     const p = lordBotPlan({ uid, cls: CL[(${game} + i) % 5], i, ids, L, zone, dayNo: ${day}, lvl, v2: true, v3: true, fair: true, pick: true, ranks: {}, sup: true, defV2: true });
-    return Object.assign(p, { pid: uid, name: uid, color: "#2f5fa8", castle: L.castles[i], level: lvl, trapV2: true, sdV2: true, wallV2: true, engV2: true, ordV2: true, skV2: true, itemV5: true, itemV6: true, shellV2: true, survV1: true, siegeV1: true }); });
+    return Object.assign(p, { pid: uid, name: uid, color: "#2f5fa8", castle: L.castles[i], level: lvl, trapV2: true, sdV2: true, wallV2: true, engV2: true, ordV2: true, skV2: true, waveV2: true, itemV5: true, itemV6: true, shellV2: true, survV1: true, siegeV1: true }); });
   const opts = { N: L.N, ultV2: true, balV2: true, balV3: true, fairV1: true, pickV1: true, balV4: true, suddenV1: true, treesV1: true, heroV3: true, dayNo: ${day} };
   const full = runBattle(JSON.parse(JSON.stringify(plans)), 4000 + ${game} * 31 + ${day}, { ...opts, fast: false }), fast = runBattle(JSON.parse(JSON.stringify(plans)), 4000 + ${game} * 31 + ${day}, { ...opts, fast: true });
   return { full, fast, plans, L }; })()`;
@@ -136,7 +136,7 @@ test("Alliances v2: allies who win together share the top places, and only the l
     const r = JSON.parse(sim.run(`(() => { const L = seatLayout(5, true), CL = ["warrior", "mage", "rogue", "archer", "shaman"], ids = [...Array(5)].map((_, k) => "w${g}b" + k);
       const plans = ids.map((uid, i) => { const zone = zoneFor(L.castles[i], L.N, L.castles, L.v2), lvl = 7;
         const p = lordBotPlan({ uid, cls: CL[(${g} + i) % 5], i, ids, L, zone, dayNo: 4, lvl, v2: true, v3: true, fair: true, pick: true, ranks: {}, sup: true, defV2: true });
-        return Object.assign(p, { pid: uid, name: uid, color: "#2f5fa8", castle: L.castles[i], level: lvl, trapV2: true, sdV2: true, wallV2: true, engV2: true, ordV2: true, skV2: true, itemV5: true, itemV6: true, shellV2: true, survV1: true, siegeV1: true, allyV2: true, pacts: [] }); });
+        return Object.assign(p, { pid: uid, name: uid, color: "#2f5fa8", castle: L.castles[i], level: lvl, trapV2: true, sdV2: true, wallV2: true, engV2: true, ordV2: true, skV2: true, waveV2: true, itemV5: true, itemV6: true, shellV2: true, survV1: true, siegeV1: true, allyV2: true, pacts: [] }); });
       const link = (a, b) => { plans[a].pacts.push(ids[b]); plans[b].pacts.push(ids[a]); };
       const go = () => runBattle(JSON.parse(JSON.stringify(plans)), 900 + ${g}, { N: L.N, balV2: true, balV3: true, ultV2: true, fairV1: true, pickV1: true, balV4: true, suddenV1: true, treesV1: true, heroV3: true, dayNo: 4, fast: true });
       link(0, 1); link(3, 4); const a = go(); // two pairs: lord 2 is the only lord outside a pact, against 4 allied lords
@@ -175,4 +175,15 @@ test("Placement v2: one point per place, last scores 1, and the winner gets 2 mo
     const res = runBattle(JSON.parse(JSON.stringify(plans)), 777, { N: L.N, ultV2: true, balV2: true, balV3: true, fairV1: true, pickV1: true, balV4: true, suddenV1: true, treesV1: true, heroV3: true, dayNo: 3, fast: true });
     return JSON.stringify(res.results.map(x => ({ place: x.place, points: x.points, kills: x.kills, castles: x.castles, extra: (x.survivor ? 1 : 0) + (x.treachery || 0) * 3 }))); })()`));
   r.forEach(x => assert.equal(x.points, (9 - x.place) + (x.place === 1 ? 2 : 0) + x.kills + 3 * x.castles + x.extra, `place ${x.place}`));
+});
+
+test("emergency waves: never closer than the gap, and a falling castle sends every wave it has time for", () => {
+  for (const [g, d] of GAMES) {
+    const r = JSON.parse(sim.run(`(() => { const { full } = ${WAR(g, d)}; return JSON.stringify({ gap: WAVE_EMERGENCY_GAP, lords: full.results.map(x => ({ fell: x.fellAt, w: full.stats[x.pid].waves })) }); })()`));
+    r.lords.forEach((x, i) => {
+      x.w.forEach((s, j) => { if (j) assert.ok(s - x.w[j - 1] >= r.gap, `game ${g} lord ${i}: waves at ${x.w.join(", ")}`); });
+      const last = x.w.length ? x.w[x.w.length - 1] : -99; // a fallen castle has crossed every mark: once the gap after its last wave is over, the next must go
+      if (x.fell != null && x.fell > Math.max(last + r.gap, 0) + 1) assert.equal(x.w.length, 3, `game ${g} lord ${i}: fell at ${x.fell} with waves at ${x.w.join(", ")}`);
+    });
+  }
 });

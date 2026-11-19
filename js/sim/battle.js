@@ -152,14 +152,14 @@ function runBattle(plans, seed, opts = {}) {
     return e;
   }
   // a wave marches out of the castle gate
-  function deployWave(p, i) {
+  function deployWave(p, i, rush) {
     const w = p.waves[i], c = p.castle, dx = NN / 2 - c.x, dy = NN / 2 - c.y, L = hyp(dx, dy) || 1, px = -dy / L, py = dx / L, n = w.units.length;
     w.done = true; p.lastWave = t; st(p.pid).waves.push(Math.round(t));
     w.units.forEach((u, j) => { const o = (j - (n - 1) / 2) * .45, e = makeUnit(p, { ...u, kind: "unit" }, c.x + dx / L * .9 + px * o, c.y + dy / L * .9 + py * o);
       e.hx = e.x; e.hy = e.y; e.spd *= BAL.move; e.as *= BAL.swing; e.retreats = 1; e.wave = i + 1; if (p.noRetreat) e.noRetreat = true;
       if (w.order === "castle") e.purpose = "castle"; else if (w.order === "hero") e.hunter = true; else if (w.order === "nearest") e.purpose = "nearest"; }); // the wave's purpose: raider-style march on a castle, hunt heroes, or fight the nearest enemy
-    ev({ ty: "wave", pid: p.pid, i, n: p.waves.filter(x => x.done).length });
-    log(`${poss(p.pid)} reinforcements march out of the castle.`, p.pid === mePid ? "you" : undefined);
+    ev({ ty: "wave", pid: p.pid, i, n: p.waves.filter(x => x.done).length, ...(rush ? { rush: 1 } : {}) });
+    log(rush ? `${poss(p.pid)} castle is losing ground: reinforcements rush out to defend it.` : `${poss(p.pid)} reinforcements march out of the castle.`, p.pid === mePid ? "you" : undefined);
   }
   // ----- set up players and armies -----
   plans.forEach(pl => {
@@ -1102,8 +1102,11 @@ function runBattle(plans, seed, opts = {}) {
     if (tick % 20 === 0 && !opts.duel) centreTick();
     // reinforcement waves (from 12 Nov 2026): each castle sends the garrison out when its conditions are met, never sooner than WAVE_GAP after the last, and forced out at each minute mark
     if (V3 && !opts.duel && !sdOn() && tick % 5 === 0) order.forEach(pid => {
-      const p = P[pid]; if (!p.alive || !p.waves || t - p.lastWave < WAVE_GAP) return;
-      const c = p.castle, soldiers = ents.some(x => !x.dead && x.pid === pid && x.kind === "unit" && !x.free && !x.militia && !x.merc);
+      const p = P[pid]; if (!p.alive || !p.waves) return;
+      const c = p.castle, sent = p.waves.filter(w => w.done).length;
+      if (p.waveV2 && sent < WAVE_COUNT && t - p.lastWave >= WAVE_EMERGENCY_GAP && sent < WAVE_EMERGENCY.filter(f => c.hp / c.maxhp < f).length) { deployWave(p, p.waves.findIndex(w => !w.done), true); return; } // emergency: the castle is losing ground
+      if (t - p.lastWave < WAVE_GAP) return;
+      const soldiers = ents.some(x => !x.dead && x.pid === pid && x.kind === "unit" && !x.free && !x.militia && !x.merc);
       const met = w => w.when === "timer" ? t >= w.at : w.when === "castle_hit" ? p.castleHitT > 0 : w.when === "castle_low" ? c.hp / c.maxhp < .5 : w.when === "hero_dies" ? p.heroDied : w.when === "army_dead" ? t > 5 && !soldiers : w.when === "enemy_hero" ? p.enemyHeroDied : anyUlt;
       let i = p.waves.findIndex(w => !w.done && met(w));
       if (i < 0 && p.waves.filter(w => w.done).length < Math.floor(t / WAVE_FORCE_EVERY)) i = p.waves.findIndex(w => !w.done);
