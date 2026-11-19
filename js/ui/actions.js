@@ -75,12 +75,12 @@ const A = {
     { const [r0, c0] = k.split(",").map(Number), wl0 = findWall(v); if (wl0 && !wallFree(r0, c0, wl0.dir, v)) { toast("That tile isn't free."); return; } if (wl0 && !routeOpen(k, v)) { toast(NO_BLOCK); return; } }
     if (inGarrison(v)) { if (fieldCount() >= S.slots) { toast("Your field supply is full."); return; } unGarrison(v); }
     const old = placedAt(v); if (old) delete S.place[old]; S.place[k] = v; sheet = null; },
-  cls: v => { if (v === S.cls) return; if (isLive() && DAY > 1) { toast("Your class is set for the week. Pick again next week."); return; } S.cls = v; S.ranks = { a1: 0, a2: 0, a3: 0, ult: 0 }; S.tree = emptyTree(); S.picks = {}; toast(`${CLASSES[v].name} chosen. Skill points refunded.`); },
+  cls: v => { if (v === S.cls) return; if (isLive()) { toast("Your hero is fixed for this war."); return; } S.cls = v; S.ranks = { a1: 0, a2: 0, a3: 0, ult: 0 }; S.tree = emptyTree(); S.picks = {}; toast(`${CLASSES[v].name} chosen. Skill points refunded.`); },
   rank: (_, k) => { if (canRank(k)) S.ranks[k] = (S.ranks[k] || 0) + 1; },
   choose: (v, k) => { S.picks[k] = v; },
   buy: k => { const u = UNITS[k]; if (avail() < u.cost || supplyFull() || ctNow() < UNIT_TIER[k]) return; ensureGarrison(); const toGar = fieldCount() >= S.slots; if (toGar && garrisonCount() >= garrisonCap()) { toast(supplyV2Now() && wavesOpen() < WAVE_COUNT ? "Your field is full. Unlock a reinforcement wave for more soldiers." : "Your field supply and garrison are full."); return; } S.gold -= u.cost; const id = "u" + idc++; S.owned.push({ id, type: k, lvl: 1, hp: 1 }); if (toGar) { toGarrison(id); sel = null; toast(`${u.name} recruited into your garrison.`); } else { sel = id; sheet = null; toast(`${u.name} recruited. Tap a glowing tile.`); } },
   up: id => { const u = findUnit(id), c = upgradeCost(u); if (u.lvl < 3 && avail() >= c && ctNow() >= UNIT_LVL_TIER[u.lvl]) { S.gold -= c; u.lvl++; } },
-  wunlock: () => { if (S.locked) { toast("Draft new orders to change your garrison."); return; } ensureGarrison(); const c = waveUnlockCost(); if (!supplyV2Now() || c == null) return; if (avail() < c) { toast("Not enough gold."); return; } S.gold -= c; S.wavesOpen = wavesOpen() + 1; toast(`Wave ${S.wavesOpen} unlocked: ${WAVE_SLOTS} more soldiers can march out later in the battle.`); },
+  wunlock: () => { if (S.locked) { toast("Draft new orders to change your army."); return; } ensureGarrison(); const c = waveUnlockCost(); if (!supplyV2Now() || c == null) return; if (avail() < c) { toast("Not enough gold."); return; } S.gold -= c; S.wavesOpen = wavesOpen() + 1; toast(`Wave ${S.wavesOpen} unlocked: ${WAVE_SLOTS} more soldiers can march out later in the battle.`); },
   slot: () => { if (supplyV2Now()) return; const c = slotCost(S.slots); if (avail() >= c && S.slots < SLOT_MAX) { S.gold -= c; S.slots++; } },
   trap: k => { const t = TRAPS[k]; if (avail() < t.cost) return; if (!trapRoom(k)) { toast(`You can own ${k === "tower" ? TOWER_CAP + " towers" : TRAP_CAP + " traps"}. Sell one first.`); return; } S.gold -= t.cost; const id = "t" + idc++; S.traps.push({ id, type: k }); sel = id; sheet = null; toast(`${t.name} bought. Tap a glowing tile.`); },
   help: () => { sheet.help = !sheet.help; },
@@ -151,8 +151,12 @@ const A = {
   engage: v => { if (!S.locked) S.engage = cleanEngage(S.engage + +v); },
   heropick: () => { showHeroPick(null); },
   invite: (_, k) => { ensureDip(); if (S.offers[k]) return; if (carriedPartners().includes(k)) { toast("You are already allied."); return; }
-    if (Object.keys(S.offers).length >= MAX_INVITES) { toast("Only 2 invitations can be open at once."); return; }
-    S.offers[k] = { gold: 0, day: planDayKey() }; if (sheet && sheet.type === "orders") sheet.tab = "alliances"; toast("Invitation drafted. Set a dowry if you like."); },
+    const me = allyLords().me, grp = allyV2Now() ? allyGroup(k).filter(x => x !== me && !S.offers[x]) : [k], mine = allyV2Now() ? allyGroup(me).filter(x => x !== me) : []; // v2: inviting one member of an alliance invites them all
+    if (allyV2Now() && allyGroup(k).length + allyGroup(me).length > BLOC_MAX) { toast(`An alliance holds at most ${BLOC_MAX} lords.`); return; }
+    if (Object.keys(S.offers).length + grp.length > MAX_INVITES) { toast(grp.length > 1 ? "Joining their alliance needs an invitation to each member, and only 2 can be open at once." : "Only 2 invitations can be open at once."); return; }
+    grp.forEach(x => { S.offers[x] = { gold: 0, day: planDayKey() }; }); if (sheet && sheet.type === "orders") sheet.tab = "alliances";
+    const nmOf = x => (RIVALS.find(r => r.id === x) || {}).name || "your ally";
+    toast(grp.length > 1 ? `Invitations drafted to ${grp.map(nmOf).join(" and ")}: every member of their alliance must agree.` : mine.length ? `Invitation drafted. Your ally ${mine.map(nmOf).join(" and ")} must invite them too.` : "Invitation drafted. Set a dowry if you like."); },
   uninvite: (_, k) => { const o = S.offers[k]; if (o && o.day === planDayKey()) delete S.offers[k]; },
   ireply: (v, k) => { ensureDip(); S.replies[k] = v; if (!isLive()) { if (v === "reject") S.declined[k] = true; else delete S.declined[k]; }
     toast(v === "accept" ? "Accepted. You ally at the start of tonight's battle." : "Declined."); if (sheet && sheet.type === "invites" && !pendingInvites().length) sheet = null; },

@@ -32,7 +32,7 @@ const itemKindTag = it => `<span class="kind k-${it.kind}"><b>T${it.tier}</b> ·
 // the hero's item slots: tap an item for its details (like the shop), with Sell and a way to the shop
 function heroItemsHTML(slots) {
   const k = S.items.includes(sheet.hit) ? sheet.hit : null, it = k && ITEMS[k];
-  return `<div class="sec"><div class="spread"><h3>Items <span class="cnt">${S.items.length}/${ITEM_SLOTS}</span></h3><button class="bagbtn" data-act="shop" aria-label="Shop"><img alt="" src="icons/ui/shop.webp"></button></div>
+  return `<div class="sec"><div class="spread"><h3>Items <span class="cnt">${S.items.length}/${ITEM_SLOTS}</span></h3></div>
       <div class="islots tiny">${slots.map(x => x ? `<button class="islot${x === k ? " sel" : ""}" data-act="hitem" data-v="${x}" aria-label="${esc(ITEMS[x].name)}: details"><img alt="" src="${itemURL(x)}"><b>${esc(ITEMS[x].name)}</b></button>` : `<div class="islot empty"><span>Empty</span></div>`).join("")}</div>
       ${it ? `${udet(esc(it.name), null, `<p>${itemKindTag(it)} ${esc(itemDesc(k))}</p>`)}<div class="row"><button class="btn" data-act="isell" data-v="${k}" ${dis()}>Sell +${Math.floor(itemCost(k) / 2)}g</button><button class="btn small" data-act="shop">Shop</button></div>` : S.items.length ? `<p class="muted">Tap an item for its details.</p>` : ""}</div>`;
 }
@@ -40,7 +40,7 @@ function castleSheet() {
   const tab = sheet.lobby ? "banner" : (sheet.tab || "recruit"), full = supplyFull(), ct = ctNow();
   let body = "";
   if (tab === "recruit") { const pk = sheet.pick || "footman", pu = UNITS[pk], need = UNIT_TIER[pk], lk = ct < need, sCap = false;
-    body = `<p class="muted">Field <b>${fieldCount()}/${S.slots}</b> · ${S.owned.filter(u => placedAt(u.id)).length} placed · Garrison <b>${garrisonCount()}/${garrisonCap()}</b>. ${supplyV2Now() ? `You can field ${FIELD_MAX} soldiers. More wait in the reinforcement waves you have unlocked and march out later.` : "Soldiers beyond your field supply wait in the garrison and march out in waves."}</p>
+    body = `<p class="muted">Field <b>${fieldCount()}/${S.slots}</b> · ${S.owned.filter(u => placedAt(u.id)).length} placed · In waves <b>${garrisonCount()}/${garrisonCap()}</b>. ${supplyV2Now() ? `You can field ${FIELD_MAX} soldiers. More wait in the reinforcement waves you have unlocked and march out later.` : "Soldiers beyond your field supply wait in the garrison and march out in waves."}</p>
     <div class="ugrid shopg">${Object.entries(UNITS).filter(([, u]) => !u.merc && !u.tower).map(([k, u]) => tile("upick", k, pk === k, spriteURL(k), u.name, { price: u.cost, lk: ct < UNIT_TIER[k] })).join("")}</div>
     ${udet(pu.name, pu.cost, `<p>${pu.note}</p><p>${IC.hp(pu.hp)} ${IC.atk(pu.atk)}</p>${typeInfo(UNIT_TYPES[pk], "u-" + pk)}${lk ? `<p class="muted">Needs a ${tierName(need)}.</p>` : ""}`)}
     ${abar(`<button class="btn wax" data-act="buy" data-v="${pk}" ${dis(lk || full || sCap || avail() < pu.cost)}>${lk ? `Needs a ${tierName(need)}` : full ? (supplyV2Now() ? (wavesOpen() < WAVE_COUNT ? "Field full: unlock a wave" : "Field and waves full") : "Barracks and garrison full") : sCap ? `Siege limit ${SIEGE_MAX}` : `Recruit · ${pu.cost}g`}</button>`)}`; }
@@ -92,8 +92,9 @@ function castleSheet() {
     const own = S.items.includes(ik), lk = !!it.unique && rapierTaken(ik), fullI = S.items.length >= ITEM_SLOTS;
     return `<header><h2>Shop</h2><span class="gchip"><i class="coin"></i>${S.gold}</span><button class="x" data-act="close" aria-label="Close">✕</button></header><div class="body nshop">${myTwist() === "market" ? `<p class="twistnote">${TWISTS.market.icon} <b>Market Day</b>: every item is 25% off today.</p>` : ""}
       <div class="toprow"><div class="islots tiny">${Array.from({ length: ITEM_SLOTS }, (_, i) => S.items[i] || null).map(k => k ? `<button class="islot${k === ik ? " sel" : ""}" data-act="ish" data-v="${k}"><img alt="" src="${itemURL(k)}"></button>` : `<div class="islot empty"><span>·</span></div>`).join("")}</div>
-        <div class="pg"><button class="btn small" data-act="ipg" data-v="${pg - 1}" ${dis(pg <= 0)}>‹</button><span>${pg + 1}/${pages}</span><button class="btn small" data-act="ipg" data-v="${pg + 1}" ${dis(pg >= pages - 1)}>›</button></div></div>
+</div>
       <div class="ugrid shopg">${keys.slice(pg * ISH_PAGE, pg * ISH_PAGE + ISH_PAGE).map(k => tile("ish", k, k === ik, itemURL(k), esc(ITEMS[k].name), S.items.includes(k) ? { own: 1 } : { price: buyCost(k) })).join("")}</div>
+      <div class="pg below"><button class="btn small" data-act="ipg" data-v="${pg - 1}" ${dis(pg <= 0)} aria-label="Previous items">‹</button><span>Page ${pg + 1} of ${pages}</span><button class="btn small" data-act="ipg" data-v="${pg + 1}" ${dis(pg >= pages - 1)} aria-label="More items">›</button></div>
       ${udet(esc(it.name), own ? itemCost(ik) : buyCost(ik), `<p>${itemKindTag(it)} ${esc(itemDesc(ik))}</p>`)}
       ${own && ik === "antimagic" && !shellV2Now() ? `<div class="sec tight"><h3>Shell timing</h3><div class="reach"><span class="stepper"><button class="btn small" data-act="shellat" data-v="-1" ${dis((S.shellAt || 2) <= 1 || S.locked)}>−</button><b>${S.shellAt || 2}s</b><button class="btn small" data-act="shellat" data-v="1" ${dis((S.shellAt || 2) >= 10 || S.locked)}>+</button></span><span class="muted">after you meet an enemy hero</span></div></div>` : ""}
       ${abar(own ? `<button class="btn wax" data-act="isell" data-v="${ik}">Sell +${Math.floor(itemCost(ik) / 2)}g</button>` : `<button class="btn wax" data-act="ibuy" data-v="${ik}" ${dis(lk || fullI || avail() < buyCost(ik))}>${lk ? "Held by a rival" : fullI ? "Slots full" : `Buy · ${buyCost(ik)}g`}</button>`)}</div>`;
@@ -130,7 +131,7 @@ function castleSheet() {
   }
   if (sheet.lobby) return head(null, "Coat of arms", "Shown on your castle and banner all war") + `<div class="body">${body}<div class="row"><button class="btn wax" data-act="lobbydone">Done</button></div></div>`;
   return head(null, sheet.grp === "army" ? "Army" : "Base", `Tier ${ct} ${tierName(ct)} · ${S.gold} gold in the treasury`) + `<div class="body">
-    <div class="tabs scrolltabs">${[["recruit", "Recruit"], ["garrison", "Train"], ["deployment", "Deploy"], ["keep", "Castle"], ["traps", "Defences"], ["armoury", "Armoury"]].filter(([k]) => (sheet.grp === "army" ? ["recruit", "garrison", "deployment"] : ["keep", "traps", "armoury"]).includes(k) || !sheet.grp).map(([k, l]) => `<button class="${tab === k ? "on" : ""}" data-act="ctab" data-v="${k}"><img class="tabi" alt="" src="icons/ui/${{ recruit: "recruit", garrison: "roster", deployment: "units", keep: "castle" + ct, traps: "defences", armoury: "armoury", shop: "shop" }[k]}.webp">${l}</button>`).join("")}</div>${body}</div>`;
+    <div class="tabs scrolltabs${sheet.grp ? " three" : ""}">${[["recruit", "Recruit"], ["garrison", "Train"], ["deployment", "Deploy"], ["keep", "Castle"], ["traps", "Defences"], ["armoury", "Armoury"]].filter(([k]) => (sheet.grp === "army" ? ["recruit", "garrison", "deployment"] : ["keep", "traps", "armoury"]).includes(k) || !sheet.grp).map(([k, l]) => `<button class="${tab === k ? "on" : ""}" data-act="ctab" data-v="${k}"><img class="tabi" alt="" src="icons/ui/${{ recruit: "recruit", garrison: "roster", deployment: "units", keep: "castle" + ct, traps: "defences", armoury: "armoury", shop: "shop" }[k]}.webp">${l}</button>`).join("")}</div>${body}</div>`;
 }
 function wallSheet(id) {
   const w = findWall(id); if (!w) return head(null, "Wall", "") + `<div class="body"><p class="muted">That wall is gone.</p></div>`;

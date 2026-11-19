@@ -3,6 +3,19 @@
 // Each item is [icon, headline, one short sentence]. Players who have not seen the newest id get the pop-up the next time they plan;
 // the id is remembered on their device, so changing the id is all it takes to show it again. Keep about 8 to 14 items.
 const RELEASES = [
+  { id: "1.12", title: "What's new in v1.12", sub: "Alliances rebuilt, a lone wolf, and a clearer screen everywhere", items: [
+    ["🤝", "Alliances are groups", "From the 20 Nov battle up to 3 lords can ally, and a new lord joins only if every member accepts."],
+    ["✅", "See your allies' answers", "When a lord invites your alliance, you see who has accepted so far."],
+    ["🥇", "Shared top places", "Allies who win together take 1st, 2nd and 3rd, most castle health first."],
+    ["🐺", "The lone wolf", "The last lord outside every alliance gets 10% more damage and health for each allied lord."],
+    ["🤖", "Bots make deals", "Bots in your war now invite, accept and sometimes betray."],
+    ["📜", "Alliance history", "The Allies screen shows every alliance and who allied, parted or betrayed, day by day."],
+    ["🛡", "Your hero is fixed", "Once registration closes, your hero can't change until the next war."],
+    ["🏷", "Labelled top row", "Ult, Board, Report and Menu now say what they are."],
+    ["🏰", "Friends Game page", "Lord cards with banners, a lock clock and who has sealed."],
+    ["🛒", "Easier shop", "An Open the shop button on the Hero screen, and page arrows under the items."],
+    ["🗺", "Bigger map", "The planning map is taller, with less empty space."],
+  ] },
   { id: "1.11", title: "What's new in v1.11", sub: "A new How to play guide, in chapters with pictures", items: [
     ["📖", "Five chapters", "How to play is now in tabs: Basics, Army, Hero, Battle and Allies."],
     ["✂", "Shorter pages", "Each page is a sentence or two. The ideas, not the maths."],

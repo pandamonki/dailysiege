@@ -90,7 +90,7 @@
 .victory .confetti { position: absolute; inset: 0; pointer-events: none; }
 .vbox { position: relative; text-align: center; padding: 16px; max-width: 420px; } .vt { font-family: var(--f-display); font-size: 48px; color: #ffe082; text-shadow: 0 3px 0 #5a3a08; animation: vpop .6s; }
 .vhero { width: 120px; image-rendering: pixelated; animation: vbob 1s ease-in-out infinite; } .vs { color: #f4e6c4; font-size: 20px; margin-bottom: 12px; }
-.vawards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0 14px; } .vawards div { background: rgba(255,255,255,.1); border-radius: 8px; padding: 8px; color: #f4e6c4; } .vawards span { font-size: 24px; display: block; } .vawards small { opacity: .85; }
+.vawards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0 14px; } .vawards div { background: rgba(28,17,8,.9); border: 1px solid rgba(255,211,77,.35); border-radius: 8px; padding: 8px; color: #f4e6c4; box-shadow: 0 2px 8px rgba(0,0,0,.45); } .vawards span { font-size: 24px; display: block; } .vawards small { opacity: .85; }
 @keyframes vpop { from { transform: scale(.3); opacity: 0; } to { transform: none; opacity: 1; } } @keyframes vbob { 50% { transform: translateY(-10px); } }
 .awards .award { display: flex; gap: 10px; align-items: center; margin: 6px 0; } .awards .ag { font-size: 24px; }
 .abox { position: absolute; border: 3px solid #47b04b; border-radius: 10px; background: rgba(71,176,75,.12); box-shadow: 0 0 12px rgba(71,176,75,.5); pointer-events: none; } .abox span { position: absolute; top: -10px; left: 10px; background: #47b04b; color: #fff; font-size: 11px; letter-spacing: .1em; padding: 1px 6px; border-radius: 4px; }

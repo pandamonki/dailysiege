@@ -67,7 +67,7 @@ function champSheetV3() {
   const items = `
     ${heroItemsHTML(slots)}
     <p class="muted">Your hero fights with items, not the castle's forge: Armoury upgrades only arm your soldiers.</p>
-    <div><button class="btn small" data-act="open" data-v="spells">Spell book</button></div>`;
+    <div class="row"><button class="btn wax shopgo" data-act="shop"><img alt="" src="icons/ui/shop.webp">Open the shop</button><button class="btn small" data-act="open" data-v="spells">Spell book</button></div>`;
   return head(spriteURL("c-" + S.cls), `${c.name} Hero`, `Level ${L} of ${MAX_HERO_LVL_V3}`) + `<div class="body">
     ${S.ob === 2 ? `<div class="obbox"><b>Step 1 of 2 · Choose your hero</b><span>Pick a class, then spend your first skill point in a tree.</span><button class="btn wax" data-act="obnext">Next: design your banner →</button></div>` : ""}
     ${heroTabs(tab, free)}${tab === "items" ? items : tab === "stats" ? stats : abilities}</div>`;

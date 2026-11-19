@@ -15,22 +15,22 @@ function underdogChip() {
   return g ? `<span class="under" title="The bottom 30% earn extra gold every day to catch up">Catch-up gold +${g}</span>` : `<span class="under"></span>`;
 }
 function ultChip() {
-  if (!ultLearned()) return ["⚡", "–", "off", "Ultimate not learned yet"];
+  if (!ultLearned()) return ["⚡", "Ult", "off", "Ultimate not learned yet"];
   if (ultCooling()) return ["⚡", "1d", "off", "Ultimate recharging, ready tomorrow"];
-  return S.ultArm ? ["⚡", "Set", "ok", "Ultimate planned for tonight"] : ["⚡", "Rdy", "ok", "Ultimate ready. Plan it in Orders"];
+  return S.ultArm ? ["⚡", "Set", "ok", "Ultimate planned for tonight"] : ["⚡", "Ready", "ok", "Ultimate ready. Plan it in Orders"];
 }
 const UIIMG = (n, alt = "") => `<img class="ui" alt="${alt}" src="icons/ui/${n}.webp">`;
 function renderTop() {
   const un = typeof unplaced === "function" ? unplaced().length : 0, u = ultChip(), pts = freePts();
-  const chip = (act, v, ico, val, title, cls = "") => `<button class="chip2 ${cls}" data-act="${act}" ${v != null ? `data-v="${v}"` : ""} aria-label="${title}" title="${title}"><span class="ci">${ico}</span><b>${val}</b></button>`;
+  const chip = (act, v, ico, val, title, cls = "") => `<button class="chip2 ${cls}" data-act="${act}" ${v != null ? `data-v="${v}"` : ""} aria-label="${title}" title="${title}"><span class="ci">${ico}</span><b${/^[A-Za-z]+$/.test(val) ? ' class="lbl"' : ""}>${val}</b></button>`; // a word under the icon where there's no number, so every chip says what it is
   document.getElementById("chips").innerHTML =
     chip("open", "day", UIIMG("day"), `${DAY}/7`, "Day of the war and battle countdown") +
     chip("open", "gold", UIIMG("gold"), avail(), "Gold and tomorrow's income") +
     chip("opencastle", "recruit", UIIMG("units"), `${fieldCount()}/${S.slots}${un ? `<sup class="dot">${un}</sup>` : ""}`, un ? `${un} soldier${un === 1 ? "" : "s"} still to place` : "Soldiers and supply", un ? "hot" : "") +
     chip("ulti", null, UIIMG("ultimate"), u[1], u[3], u[2]) +
-    chip("open", "board", UIIMG("board"), "", "Leaderboard") +
-    chip("rep", null, UIIMG("report"), "", "Last battle report") +
-    chip("open", "title", UIIMG("options"), "", "Options and menu");
+    chip("open", "board", UIIMG("board"), "Board", "Leaderboard") +
+    chip("rep", null, UIIMG("report"), "Report", "Last battle report") +
+    chip("open", "title", UIIMG("options"), "Menu", "Options and menu");
   renderCommands(); return;
   const sb = document.getElementById("sealbtn"); sb.textContent = S.locked ? "Sealed ✓" : "Seal Orders"; sb.className = "plank " + (S.locked ? "sealed" : "wax");
 }

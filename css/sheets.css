@@ -373,8 +373,8 @@ body.inreplay .field { padding-block: 8px 2px; }
 .pd-note { font-size: 12px; line-height: 1.2; color: #cdb78a; font-style: italic; }
 .pd-chev { align-self: center; color: #c9962f; font-size: 15px; padding: 0 2px; }
 .pd-act { flex: none; display: flex; gap: 3px; align-items: center; justify-content: flex-end; width: 160px; } /* room for four buttons, so every unit's health bar is the same width */
-.pd-b { width: 38px; height: 46px; border-radius: 6px; border: 1px solid rgba(255,220,160,.2) !important; background: rgba(0,0,0,.3) !important; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; text-align: center !important; }
-.pd-b span { font-size: 17px; line-height: 20px; color: #e8c25a; height: 22px; display: flex; align-items: center; } .pd-b span img.ui { width: 22px; height: 22px; border-radius: 5px; display: block; } .pd-b small { font-size: 9px; white-space: nowrap; color: #cdb78a; line-height: 1; }
+.pd-b { width: 42px; height: 46px; border-radius: 6px; border: 1px solid rgba(255,220,160,.2) !important; background: rgba(0,0,0,.3) !important; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; text-align: center !important; }
+.pd-b span { font-size: 17px; line-height: 20px; color: #e8c25a; height: 22px; display: flex; align-items: center; } .pd-b span img.ui { width: 22px; height: 22px; border-radius: 5px; display: block; } .pd-b small { font-size: 10.5px; white-space: nowrap; color: #cdb78a; line-height: 1; }
 .pd-b:disabled { opacity: .35; cursor: default; }
 .ud.udp { --udh: 308px; } .ud-act { display: flex; gap: 5px; align-items: center; } .ud-act .pd-b { height: 40px; width: 42px; }
 body.pdx .ud-tip { bottom: calc(308px + env(safe-area-inset-bottom, 0px) + 8px); }
@@ -552,3 +552,43 @@ h3 .cnt { font: 700 13px/1 var(--f-body); font-style: normal; color: var(--parch
 .rcard.open .rrow { margin: 0; border: 0; border-radius: 0; background: none; }
 .kitwrap { padding: 2px 10px 8px 56px; border-top: 1px dashed rgba(62,39,20,.25); } .kitwrap .kit { margin: 2px 0 0; } .kitwrap .ktip { margin: 6px 0 0; }
 .rtools { display: flex; justify-content: flex-end; margin: 0 0 6px; }
+
+/* a short note beside a section heading (was .hint, which is the map's floating hint and drew these as pills over the page) */
+.hnote { margin-left: 6px; font-family: var(--f-body); font-size: 13px; font-weight: 400; font-style: italic; color: var(--ink-soft); text-transform: none; letter-spacing: 0; font-variant: normal; }
+.btn.shopgo { display: inline-flex; align-items: center; gap: 8px; } .btn.shopgo img { width: 26px; height: 26px; border-radius: 6px; display: block; }
+/* the Friends Game page: a clock, sealed and seats strip, then a card per lord */
+.fg-top { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.fg-top > div { display: grid; gap: 2px; align-content: start; padding: 10px 10px 9px; border: 2px solid var(--wood-dark); border-radius: 10px; background: rgba(255,255,255,.35); min-width: 0; }
+.fg-top small { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); }
+.fg-top b { font: 700 21px/1.15 var(--f-body); font-variant-numeric: lining-nums tabular-nums; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.fg-top span { font-size: 12.5px; color: var(--ink-soft); }
+.fg-clock { background: linear-gradient(#a8382b, #7a2219) !important; border-color: #4d140e !important; }
+.fg-clock small, .fg-clock b, .fg-clock span { color: #fff1dc !important; } .fg-clock small { opacity: .85; }
+.fg-clock.soon { animation: campPulse 1.4s ease-in-out infinite; }
+.fg-dots { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 3px; } .fg-dots i { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--wood-dark); background: transparent; } .fg-dots i.on { background: var(--verdant); border-color: var(--verdant); }
+.fg-list { display: grid; gap: 7px; }
+.fg-lord { display: grid; grid-template-columns: 18px 30px 1fr auto 38px; gap: 9px; align-items: center; padding: 8px 10px 8px 8px; border: 1px solid rgba(62,39,20,.28); border-left: 5px solid var(--c); border-radius: 10px; background: rgba(255,255,255,.4); }
+.fg-lord.me { background: rgba(47,95,168,.12); border-color: rgba(47,95,168,.55); border-left-color: var(--c); }
+.fg-list.norank .fg-lord { grid-template-columns: 30px 1fr auto 38px; } .fg-list.norank .fg-rk { display: none; }
+.fg-rk { font: 700 18px var(--f-body); font-variant-numeric: lining-nums; color: var(--wax); text-align: center; }
+.fg-ban { width: 30px; height: 40px; display: block; image-rendering: auto; }
+.fg-who { display: grid; gap: 1px; min-width: 0; } .fg-who b { font-size: 16.5px; line-height: 1.2; overflow-wrap: anywhere; }
+.fg-who small { display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--ink-soft); } .fg-who small img { width: 18px; height: 18px; image-rendering: pixelated; }
+.fg-st { font-family: var(--f-body); font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; white-space: nowrap; background: rgba(201,150,47,.22); color: #7a4f0e; border: 1px solid rgba(201,150,47,.55); }
+.fg-st.ok { background: rgba(79,122,46,.16); color: var(--verdant); border-color: rgba(79,122,46,.5); } .fg-st.muted { background: transparent; color: var(--ink-soft); border-color: rgba(62,39,20,.25); font-style: italic; font-weight: 400; }
+.fg-pts { text-align: right; line-height: 1; } .fg-pts b { display: block; font: 700 21px var(--f-body); font-variant-numeric: lining-nums tabular-nums; } .fg-pts small { font-size: 11px; color: var(--ink-soft); }
+details.fg-host > summary { list-style: none; cursor: pointer; display: flex; align-items: baseline; gap: 4px; flex-wrap: wrap; } details.fg-host > summary::-webkit-details-marker { display: none; }
+details.fg-host > summary h3 { margin: 0; } details.fg-host > summary::after { content: "▾"; margin-left: auto; color: var(--wax); font-size: 18px; } details.fg-host[open] > summary::after { content: "▴"; }
+details.fg-host[open] > summary { margin-bottom: 8px; }
+@media (max-width: 370px) { .fg-lord { grid-template-columns: 16px 26px 1fr auto 32px; gap: 7px; } }
+/* Allies: alliance cards, the lone wolf note and the alliance history */
+.agrid { display: grid; gap: 6px; } .ateam .anote { margin: 4px 0 0; font-size: 12.5px; }
+.ahist { display: grid; gap: 8px; } .ahday { display: grid; grid-template-columns: 54px 1fr; gap: 8px; align-items: start; padding: 6px 0; border-bottom: 1px dashed rgba(62,39,20,.3); }
+.ahday b { font-family: var(--f-display); color: var(--wax); } .ahday ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; } .ahday li { font-size: 14.5px; line-height: 1.5; }
+.ahday .tm { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; } .ahday .sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; border: 1px solid var(--wood-dark); }
+/* an invitation to my alliance: each ally's answer */
+.aans { flex-basis: 100%; display: grid; gap: 4px; margin: 6px 0 2px; padding: 8px 10px; border-radius: 8px; background: rgba(255,255,255,.35); border: 1px dashed rgba(62,39,20,.35); }
+.aans small { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); }
+.aan { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 14.5px; } .aan .sw { width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--wood-dark); }
+.aan b { margin-left: auto; font-size: 13px; } .aan.ok b { color: var(--verdant); } .aan.bad b { color: var(--wax); } .aan.wait b { color: #8a5a0e; font-weight: 400; font-style: italic; }
+.aans em { font-size: 13px; color: var(--ink-soft); }

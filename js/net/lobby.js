@@ -174,7 +174,7 @@ function gameSheet() {
         <p class="when">${closesText(LIVE.config)} · <b>${open}</b> of ${seatCap()} seats open</p></div>
       <div class="sec"><h3>${n} lord${n === 1 ? " has" : "s have"} registered</h3>${n ? lordCards(false) : `<p class="muted">Nobody yet. Be the first.</p>`}<p class="muted">Heroes stay hidden until the war begins.</p></div>
       <div class="row">${mineL ? `<button class="btn wax big" data-act="playgo">${mineL.pending ? "Finish registering" : "Enter the Muster Hall"}</button>` : peopleSeated() >= seatCap() ? `<span class="muted">All ${seatCap()} seats are taken.</span>` : `<button class="btn wax big" data-act="joingame">⚑ Register<small>A short tour, then choose your hero, name, colour and coat of arms</small></button>`}<button class="btn" data-act="open" data-v="title">← Back</button></div>${accountLine()}</div>`; }
-  const ck = liveClock(), roster = rosterFor(ck.week), mine = LIVE.players[LIVE.uid], pts = standings(ck.week), cfg = LIVE.config, cap = capFor(ck.week), capNext = capFor(addDays(ck.week, 7));
+  const ck = liveClock(), roster = rosterFor(ck.week), mine = LIVE.players[LIVE.uid], pts = standings(ck.week), cfg = LIVE.config, capNext = capFor(addDays(ck.week, 7));
   const signed = Object.entries(LIVE.players).filter(([, p]) => !p.left).length, inNow = roster.some(p => p.uid === LIVE.uid), queued = mine && !inNow;
   const nextWeek = addDays(ck.week, 7), waiting = Object.entries(LIVE.players).filter(([uid, p]) => !p.left && !roster.some(r => r.uid === uid)).map(([uid]) => uid);
   const status = p => { const pl = p.plans && p.plans[ck.planDay]; return (pl && pl.sealed) || p.sealedFor === ck.planDay ? ["Sealed", "ok"] : pl || window.DS ? ["Planning", ""] : ["No orders yet", "muted"]; }; // on the hosted game a rival's orders are never sent here, only whether they are sealed
@@ -182,28 +182,34 @@ function gameSheet() {
   const ranked = roster.map((p, i) => ({ p, i })).sort((a, b) => (pts[b.p.uid] || 0) - (pts[a.p.uid] || 0));
   const battles = Object.keys(LIVE.battles).filter(k => LIVE.battles[k].week === ck.week).sort();
   const sealedN = roster.filter(p => status(p)[0] === "Sealed").length;
-  return head(null, "Friends Game", `Battles daily at ${lockLabel(cfg)} · Day ${ck.dayNo} of 7`) + `<div class="body">
-    <div class="stats"><div class="stat"><b>${countdown()}</b><span>until orders lock</span></div><div class="stat"><b>${sealedN} / ${roster.length}</b><span>lords have sealed</span></div><div class="stat"><b>${roster.length} / ${cap}</b><span>seats filled</span></div></div>
-    <div class="sec"><h3>This week's lords</h3>
-      ${ranked.length ? ranked.map(({ p, i }, n) => { const [st, cl] = status(p), c = clsOf(p);
-        return `<div class="place${p.uid === LIVE.uid ? " me" : ""}"><span class="ord">${n + 1}</span><i style="background:${teamColour(p.uid)}"></i><span><b>${esc(nameOf(p.uid))}</b>${c ? ` · ${CLASSES[c].name}` : ""}<br><span class="lstat ${cl}">${st}</span></span><span class="pts">${pts[p.uid] || 0}<small>points</small></span></div>`; }).join("") : `<p class="muted">Nobody yet.</p>`}
-      ${waiting.length ? `<p class="muted">Joining next week: ${waiting.map(u => esc(nameOf(u))).join(", ")}.</p>` : ""}
-      <p class="muted">The map grows with the number of players: ${roster.length} castle${roster.length === 1 ? "" : "s"} on a ${seatLayout(Math.max(1, roster.length), mapV2For(ck.week)).N}×${seatLayout(Math.max(1, roster.length), mapV2For(ck.week)).N} field.</p></div>
+  const rows = Object.fromEntries(boardRows().map(r => [r.id, r])), fought = battles.length > 0, mins = ck.minsToLock;
+  const rankOf = uid => 1 + ranked.filter(x => (pts[x.p.uid] || 0) > (pts[uid] || 0)).length; // lords on equal points share a place
+  const lordCard = ({ p }) => { const [st, cl] = status(p), c = clsOf(p), r = rows[p.uid] || {}, col = teamColour(p.uid), me = p.uid === LIVE.uid;
+    return `<div class="fg-lord${me ? " me" : ""}" style="--c:${col}"><span class="fg-rk">${fought ? rankOf(p.uid) : ""}</span>
+      <img class="fg-ban" alt="" src="${bannerURL(r.banner || (me && S && S.banner) || defaultBanner(), col, 30, 40)}">
+      <span class="fg-who"><b>${esc(nameOf(p.uid))}</b><small>${c ? `<img alt="" src="${spriteURL("c-" + c, col)}">${CLASSES[c].name}${r.lvl ? ` · Lv ${r.lvl}` : ""}` : "Hero hidden"}</small></span>
+      <span class="fg-st ${cl || "plan"}">${st === "Sealed" ? "✓ Sealed" : st}</span>
+      <span class="fg-pts"><b>${pts[p.uid] || 0}</b><small>pts</small></span></div>`; };
+  return head(null, "Friends Game", `Battles daily at ${lockLabel(cfg)} · Day ${ck.dayNo} of 7`) + `<div class="body fgame">
+    <div class="fg-top">
+      <div class="fg-clock${mins <= 60 ? " soon" : ""}"><small>Orders lock in</small><b>${countdown()}</b><span>Battle at ${lockLabel(cfg)}</span></div>
+      <div class="fg-seal"><small>Sealed</small><b>${sealedN} of ${roster.length}</b><span class="fg-dots" aria-hidden="true">${roster.map(p => `<i class="${status(p)[0] === "Sealed" ? "on" : ""}"></i>`).join("")}</span></div></div>
+    <div class="sec"><h3>This week's lords <small class="hnote">${fought ? "by points" : "ranks appear after the first battle"}</small></h3>
+      <div class="fg-list${fought ? "" : " norank"}">${ranked.length ? ranked.map(lordCard).join("") : `<p class="muted">Nobody yet.</p>`}</div>
+      ${waiting.length ? `<p class="muted">Joining next week: ${waiting.map(u => esc(nameOf(u))).join(", ")}.</p>` : ""}</div>
     ${!mine ? `<div class="sec"><p>${signed >= capNext ? `All ${capNext} seats for next week's war are taken.` : "Registration for this war has closed. Sign up now and you'll fight in next week's war."}</p>${signed >= capNext ? "" : `<div><button class="btn wax" data-act="joingame">Sign up for next week</button></div>`}</div>` : ""}
     ${queued ? `<p class="muted">You're signed up. Your first battle is next week.</p>` : ""}
     ${queued ? `<div class="sec"><h3>Your name</h3>${nameForm(lordLabel(mine) ? `You'll be shown as <b>${esc(lordLabel(mine))}</b>. Names are fixed once your war begins.` : "Add a nickname and your actual name before your war begins. They show over your castle and hero, and can't be changed once the war starts.")}</div>` : ""}
-    ${inNow ? `<div class="sec"><h3>Your name</h3><p>${esc(lordLabel(mine) || nameOf(LIVE.uid) === "You" && MY_NAME || "Your account name")} <span class="muted">· fixed for this war</span></p></div>` : ""}
-    ${inNow ? `<div class="sec"><h3>Your hero</h3><div class="spread"><span>${CLASSES[S && S.week === ck.week ? S.cls : "warrior"].name}${ck.dayNo === 1 ? " · you can change class until tonight's battle" : " · locked in for the week"}</span><button class="btn small wood" data-act="open" data-v="champ">${ck.dayNo === 1 ? "Choose" : "View"}</button></div></div>` : ""}
     ${battles.length ? `<div class="sec"><h3>This week's battles</h3>${battles.map(k => { const b = LIVE.battles[k], w = (b.results || []).find(r => r.place === 1), me = (b.results || []).find(r => r.pid === LIVE.uid);
       return `<div class="spread"><span>Day ${b.day} · ${w ? esc(nameOf(w.pid)) + " won" : "fought"}${me ? ` · you ${me.place === 1 ? "won" : "placed " + me.place}` : ""}</span><button class="btn small wood" data-act="watchday" data-v="${k}">Recap</button></div>`; }).join("")}</div>` : ""}
-    ${LIVE.isOwner ? `<div class="sec"><h3>Host settings</h3>
+    ${LIVE.isOwner ? `<details class="sec fg-host"><summary><h3>Host settings</h3><small class="hnote">battle time, next war, time zone</small></summary>
       <label class="inline">Battle time<select id="cfghour">${[12, 13, 17, 18, 19, 20, 21, 22].map(h => `<option value="${h}"${h === cfg.lockHour ? " selected" : ""}>${hourLabel(h)}</option>`).join("")}</select></label>
       <label class="inline">After day 7<select id="cfgnext"><option value="0"${+cfg.nextClose > 0 ? "" : " selected"}>Registration waits for me to begin</option><option value="24"${+cfg.nextClose === 24 ? " selected" : ""}>Registration closes 24 hours later</option></select></label>
       <p class="muted">When the seventh battle is fought the war ends: everyone sees the ceremony, and registration for the next war opens in the Muster Hall, where lords can change hero, banner and name.</p>
       <p class="muted">Time zone: ${esc(cfg.tz)}${cfg.tz !== (Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC") ? ` <button class="btn small" data-act="cfgtz">Use mine (${esc(Intl.DateTimeFormat().resolvedOptions().timeZone)})</button>` : ""}</p>
       <div><button class="btn small wood" data-act="cfgsave">Save settings</button></div>
       <div class="row"><button class="btn small ${sheet.rconfirm ? "wax" : ""}" data-act="restartgame">${sheet.rconfirm ? "Tap again: start a new war" : "Start a new war"}</button></div>
-      <p class="muted">A new war reopens registration and clears everyone's army. Changing the battle time mid-week moves tonight's lock. </p></div>` : ""}
+      <p class="muted">A new war reopens registration and clears everyone's army. Changing the battle time mid-week moves tonight's lock. </p></details>` : ""}
     <div class="row">${inNow ? `<button class="btn ${gameMode === "friends" ? "on" : "wood"}" data-act="mode" data-v="friends">${gameMode === "friends" ? "Playing friends game" : "Play friends game"}</button>` : ""}
       <button class="btn" data-act="open" data-v="title">← Menu</button></div>
     ${roster.length < 2 ? `<p class="muted">Battles start once at least two players are in.</p>` : ""}

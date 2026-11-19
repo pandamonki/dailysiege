@@ -116,6 +116,12 @@ test("a lord edits only their own public profile", async () => {
   await assertSucceeds(updateDoc(doc(db(A), "games", G, "players", A), { banner: { pat: "solid", c1: "#b8322a" }, sealedFor: "2026-11-12" }));
   await assertFails(updateDoc(doc(db(B), "games", G, "players", A), { banner: { pat: "solid" } }));
 });
+test("a lord shares today's answers to invitations on their profile, in the expected shape only", async () => {
+  await assertSucceeds(updateDoc(doc(db(A), "games", G, "players", A), { allyReplies: { day: "2026-11-21", r: { [B]: "accept" } } }));
+  await assertFails(updateDoc(doc(db(A), "games", G, "players", A), { allyReplies: "accept everyone" }));
+  await assertFails(updateDoc(doc(db(A), "games", G, "players", A), { allyReplies: { day: "2026-11-21", r: {}, gold: 5 } }));
+  await assertFails(updateDoc(doc(db(B), "games", G, "players", A), { allyReplies: { day: "2026-11-21", r: {} } }));
+});
 test("a public profile cannot carry anything outside the allowed fields", async () => {
   await assertFails(updateDoc(doc(db(A), "games", G, "players", A), { gold: 99999 }));
   await assertFails(updateDoc(doc(db(A), "games", G, "players", A), { kicked: false }));

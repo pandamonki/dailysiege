@@ -16,6 +16,34 @@ function incomingOffer(r) { // an invitation sent to me in the previous planning
   if (!o || carriedPartners().includes(r.id) || finalToday()) return null;
   return { gold: o.gold || 0, reply: (S.replies || {})[r.id] || null };
 }
+// alliances v2: when a lord invites my alliance, each of us must accept. What my ally has answered, as far as this device can know:
+// a human's answer is shared on their public profile; a bot's follows its terms. "uninvited" means the inviter never asked them.
+function offerFrom(r, toId) {
+  if (isLive()) { const pl = latestPlan(r.live, liveClock().planDay, true), x = pl && pl.offers && pl.offers[toId]; return x && x.day === prevDayKey() ? x : null; }
+  const x = ((RIVAL_AI[r.id] && RIVAL_AI[r.id].offers) || {})[toId]; return x && DAY >= 2 ? x : null;
+}
+function botTerms(pid, inviter) {
+  if (!isLive()) return (((RIVAL_AI[pid] || {}).terms) || {})[inviter] || { mode: "accept", min: 200 };
+  const ck = liveClock(), ids = rosterFor(ck.week).map(p => p.uid), rkm = rankMap(ck.dayNo > 1 ? wStandings(LIVE, ck.week, addDays(ck.planDay, -1)) : {}, ids);
+  return (wBotDiplomacy(pid, ck.planDay, ids, rkm, feudsBefore(ck.planDay, ck.week)).terms || {})[inviter] || { mode: "accept", min: 200 };
+}
+function allyAnswer(pid, inviter) {
+  const r = RIVALS.find(q => q.id === inviter), off = r && offerFrom(r, pid); if (!off) return "uninvited";
+  if (!isLive() || (LIVE.players[pid] && LIVE.players[pid].bot)) { const t = botTerms(pid, inviter); return t.mode !== "refuse" && (off.gold || 0) >= (t.min || 0) ? "accept" : "reject"; }
+  const p = LIVE.players[pid] || {}, day = liveClock().planDay, pub = p.allyReplies, st = p.state;
+  const a = pub && pub.day === day ? (pub.r || {})[inviter] : st && st.day === day ? (st.replies || {})[inviter] : null;
+  return a === "accept" || a === "reject" ? a : "pending";
+}
+// one line per ally of mine: their answer to inviter's invitation
+function allyAnswersHTML(inviter) {
+  if (!allyV2Now()) return ""; const me = allyLords().me, mates = allyGroup(me).filter(x => x !== me && x !== inviter); if (!mates.length) return "";
+  const nm = id => esc((RIVALS.find(q => q.id === id) || {}).name || "Your ally"), col = id => (RIVALS.find(q => q.id === id) || {}).color || "#888";
+  const mine = (S.replies || {})[inviter], lab = { accept: ["✓ Accepted", "ok"], reject: ["✗ Declined", "bad"], pending: ["Not answered yet", "wait"], uninvited: ["Not invited", "bad"] };
+  const rows = [[me, mine === "accept" ? "accept" : mine === "reject" ? "reject" : "pending", true], ...mates.map(id => [id, allyAnswer(id, inviter), false])];
+  const all = rows.every(x => x[1] === "accept"), out = rows.some(x => x[1] === "reject" || x[1] === "uninvited");
+  return `<div class="aans"><small>Your alliance must all accept</small>${rows.map(([id, a, you]) => `<span class="aan ${lab[a][1]}"><i class="sw" style="background:${you ? MY_COLOR : col(id)}"></i>${you ? "You" : nm(id)}<b>${lab[a][0]}</b></span>`).join("")}
+    <em>${all ? "Everyone has accepted: they join your alliance at tonight's battle." : out ? "They can't join today: everyone in your alliance must be invited and accept." : "They join only if everyone accepts before the battle."}</em></div>`;
+}
 const pendingInvites = () => RIVALS.map(r => ({ r, o: incomingOffer(r) })).filter(x => x.o && !x.o.reply);
 const inviteDue = () => !!S && !S.lobbyPrep && S.invSeen !== planDayKey() && pendingInvites().length > 0;
 const MAX_INVITES = 2;
@@ -23,7 +51,8 @@ function inviteSheet() {
   const list = pendingInvites();
   return head(null, "Alliance invitations", "Answer before tonight's battle") + `<div class="body">
     ${list.length ? list.map(({ r, o }) => `<div class="invcard"><div class="spread"><span><i class="sw" style="background:${r.color}"></i><b>${esc(r.name)}</b> invites you to ally</span><span class="chip ${o.gold ? "ok" : ""}">${o.gold ? `<i class="coin"></i> ${o.gold} dowry` : "no dowry"}</span></div>
-      <div class="row"><button class="btn wax" data-act="ireply" data-k="${r.id}" data-v="accept" ${dis()}>Accept</button><button class="btn" data-act="ireply" data-k="${r.id}" data-v="reject" ${dis()}>Decline</button></div></div>`).join("") : `<p class="muted">All answered.</p>`}
+      ${allyV2Now() && allyGroup(r.id).length > 1 ? `<p class="muted">${esc(r.name)} is allied with ${allyGroup(r.id).filter(x => x !== r.id).map(x => esc((RIVALS.find(q => q.id === x) || {}).name || "a lord")).join(" and ")}. You join their alliance only if every member invites you and you accept them all.</p>` : ""}
+      ${allyAnswersHTML(r.id)}<div class="row"><button class="btn wax" data-act="ireply" data-k="${r.id}" data-v="accept" ${dis()}>Accept</button><button class="btn" data-act="ireply" data-k="${r.id}" data-v="reject" ${dis()}>Decline</button></div></div>`).join("") : `<p class="muted">All answered.</p>`}
     <p class="muted">Accepting forms the alliance at the start of tonight's battle, and everyone sees it on the muster screen. The dowry is paid to you if you accept.</p>
     <p class="note"><b>Remember:</b> you can betray an ally at any point in the game. Open <b>Alliances</b> and choose <b>Betray</b>, then set when to turn on them. Allies who survive together win together.</p>
     <div><button class="btn small" data-act="idismiss">Decide later</button></div></div>`;
@@ -193,7 +222,7 @@ function strategyTab() {
   const st = S.strategy, tm = TMODES.find(x => x[0] === st.mode) || TMODES[0], hostile = S.lists.hostile, idle = RIVALS.filter(r => !hostile.includes(r.id));
   const row = (id, i) => { const r = RIVALS.find(x => x.id === id); if (!r) return "";
     return `<li class="tgt cp" data-k="${id}"><span class="grip" aria-label="Drag to reorder">⠿</span><span class="ord">${i + 1}</span><i class="sw" style="background:${r.color}"></i><span class="tn"><b>${esc(r.name)}</b></span><button class="btn small" data-act="lmove" data-v="neutral" data-k="${id}" aria-label="Stop attacking ${esc(r.name)}" ${dis()}>✕</button></li>`; };
-  return `<div class="sec tight"><h3>1 · Who to attack <small class="hint">drives direction out of combat</small></h3><select class="wide" data-act="tmodeset" ${dis()}>${TMODES.map(([k, n]) => `<option value="${k}"${st.mode === k ? " selected" : ""}>${n}</option>`).join("")}</select>${st.mode === "list" ? "" : `<p class="muted">${esc(tm[2])}</p>`}
+  return `<div class="sec tight"><h3>1 · Who to attack <small class="hnote">drives direction out of combat</small></h3><select class="wide" data-act="tmodeset" ${dis()}>${TMODES.map(([k, n]) => `<option value="${k}"${st.mode === k ? " selected" : ""}>${n}</option>`).join("")}</select>${st.mode === "list" ? "" : `<p class="muted">${esc(tm[2])}</p>`}
       ${st.mode === "list" ? `<ol class="tgts cpl" id="tgtlist">${hostile.map(row).join("") || `<li class="muted">Nobody. Your army will pick the nearest castle.</li>`}</ol>` : `<p class="muted">Order tonight: <b>${previewOrder().map(id => esc(RIVALS.find(r => r.id === id).name)).join(" → ") || "nobody"}</b></p>`}
       ${idle.length ? `<div class="chips"><span class="muted">${st.mode === "list" ? "Not attacking:" : "Left out:"}</span>${idle.map(r => `<button class="chip" data-act="lmove" data-v="hostile" data-k="${r.id}" ${dis()}><i class="sw" style="background:${r.color}"></i>${esc(r.name)} +</button>`).join("")}</div>` : ""}</div>
     ${strategyTabRest(st)}`;
@@ -202,7 +231,7 @@ const ordersV2Now = () => (isLive() ? ordersV2For(liveClock().planDay) : true); 
 const STANCE_V2 = { aggressive: "Your hero fights on until 12% health before going home to heal", skirmish: "Your hero goes home to heal below 30% health, then returns", cautious: "Your hero goes home to heal below 45% health, then returns" };
 function strategyTabRest(st) {
   if (ordersV2Now()) { const pl = st.plan || "conquest", fb = st.fallback || "none", opt = (act, k, cur, [n, d]) => `<button class="opt${cur === k ? " on" : ""}" data-act="${act}" data-v="${k}" ${dis()}><b>${esc(n)}</b><span>${esc(d)}</span></button>`;
-    return `<div class="sec tight"><h3>2 · Army plan <small class="hint">what comes next once a fight is over</small></h3><div class="olist">${ARMY_PLANS.map(k => opt("aplan", k, pl, ARMY_PLAN_INFO[k])).join("")}</div>
+    return `<div class="sec tight"><h3>2 · Army plan <small class="hnote">what comes next once a fight is over</small></h3><div class="olist">${ARMY_PLANS.map(k => opt("aplan", k, pl, ARMY_PLAN_INFO[k])).join("")}</div>
       <label class="inline"><input type="checkbox" data-act="hillfirst" ${st.heading === "centre" ? "checked" : ""} ${dis()}> Hold the central hill for the first 2 minutes</label></div>
     <div class="sec tight"><h3>3 · Army falls back when</h3><div class="olist">${FALL_BACKS.map(k => opt("fback", k, fb, FALL_BACK_INFO[k])).join("")}</div><p class="muted">The whole army goes home to defend, then returns to its plan a few seconds after the danger has passed. Soldiers never leave a fight on their own.</p></div>
     <div class="sec tight"><h3>4 · Hero stance</h3><div class="seg3">${STANCES.map(([k, n]) => `<button class="btn small${S.stance === k ? " on" : ""}" data-act="stance" data-v="${k}" ${dis()}>${n}</button>`).join("")}</div><p class="muted">${esc(STANCE_V2[S.stance] || "")}.</p></div>`; }
@@ -210,20 +239,50 @@ function strategyTabRest(st) {
   return `<div class="sec tight"><h3>2 · On reaching a target, go for</h3><div class="seg3 two">${HEADINGS.map(([k, n]) => `<button class="btn small${st.heading === k ? " on" : ""}" data-act="heading" data-v="${k}" ${dis()}>${n}</button>`).join("")}</div><p class="muted">${esc(hn)}.${st.heading === "centre" ? " Your army skips its targets and holds the hill, fighting anything that comes near. After 2 minutes it marches on its targets. Heroes on the hill earn 25% more gold and XP." : ""}</p></div>
     <div class="sec tight"><h3>3 · Stance</h3><div class="seg3">${STANCES.map(([k, n]) => `<button class="btn small${S.stance === k ? " on" : ""}" data-act="stance" data-v="${k}" ${dis()}>${n}</button>`).join("")}</div><p class="muted">${esc(STANCES.find(x => x[0] === S.stance)[2])}.</p></div>`;
 }
+const allyV2Now = () => (isLive() ? allyV2For(liveClock().planDay) : true); // alliances v2: groups that all agree, shared top places, lone wolves
+// everyone in the war this device knows of, by id
+function allyLords() { const live = isLive(), me = live ? LIVE.uid : "you"; return { me, all: [{ id: me, name: live ? MY_NAME : "You", color: MY_COLOR, banner: S && S.banner }, ...RIVALS] }; }
+const allyPairsNow = () => (isLive() ? carriedPairs(liveClock().planDay) : (S.pairs || []));
+// the lords in id's alliance (id included), from the pacts that stand right now
+function allyGroup(id, src = allyPairsNow()) { const seen = new Set([id]), q = [id]; while (q.length) { const x = q.shift(); src.forEach(k => { const [a, b] = k.split("|"); const o = a === x ? b : b === x ? a : null; if (o && !seen.has(o)) { seen.add(o); q.push(o); } }); } return [...seen]; }
 function knownAlliances() {
-  const live = isLive(), src = live ? carriedPairs(liveClock().planDay) : (S.pairs || []), me = live ? LIVE.uid : "you";
-  const all = [{ id: me, name: live ? MY_NAME : "You", color: live ? MY_COLOR : MY_COLOR }, ...RIVALS], byId = Object.fromEntries(all.map(p => [p.id, p]));
-  const par = {}, fnd = x => (par[x] == null || par[x] === x ? (par[x] = x) : (par[x] = fnd(par[x])));
-  src.forEach(k => { const [a, b] = k.split("|"); if (byId[a] && byId[b]) par[fnd(a)] = fnd(b); });
-  const groups = {}; Object.keys(par).forEach(id => { (groups[fnd(id)] = groups[fnd(id)] || []).push(id); });
-  const teams = Object.values(groups).filter(g => g.length > 1).map(g => g.map(id => byId[id])), inTeam = new Set(teams.flat().map(p => p.id));
-  const fk = live ? feudsBefore(liveClock().planDay, liveClock().week) : (S.feuds || []), feuds = fk.map(k => k.split("|").map(id => byId[id])).filter(x => x[0] && x[1]);
-  return { teams, alone: all.filter(p => !inTeam.has(p.id)), me, feuds };
+  const { me, all } = allyLords(), byId = Object.fromEntries(all.map(p => [p.id, p])), src = allyPairsNow().filter(k => k.split("|").every(id => byId[id]));
+  const done = new Set(), teams = [];
+  all.forEach(p => { if (done.has(p.id)) return; const g = allyGroup(p.id, src); g.forEach(x => done.add(x)); if (g.length > 1) teams.push({ lords: g.map(x => byId[x]), whole: g.every(x => g.every(y => x === y || src.includes([x, y].sort().join("|")))) }); });
+  const inTeam = new Set(teams.flatMap(t => t.lords.map(p => p.id)));
+  const live = isLive(), fk = live ? feudsBefore(liveClock().planDay, liveClock().week) : (S.feuds || []), feuds = fk.map(k => k.split("|").map(id => byId[id])).filter(x => x[0] && x[1]);
+  return { teams, alone: all.filter(p => !inTeam.has(p.id)), me, feuds, byId };
+}
+// the alliance history of this war, day by day: who allied, who parted, who betrayed whom
+function allyHistory() {
+  const live = isLive(), recs = live ? Object.keys(LIVE.battles).filter(k => LIVE.battles[k].week === liveClock().week).sort().map(k => { const b = LIVE.battles[k];
+      return { day: b.day, start: b.pairs || [], end: b.pairsEnd || [], feuds: b.feuds || [], by: Object.fromEntries((b.results || []).filter(r => r.treachery).map(r => [r.pid, r.treachery])), wolves: (b.results || []).filter(r => r.lone).map(r => r.pid) }; })
+    : (S.allyLog || []);
+  const out = []; let prevEnd = [], prevFeuds = [];
+  recs.forEach(r => { const ev = [];
+    { const fresh = r.start.filter(k => !prevEnd.includes(k)), seen = new Set(); // pacts made the same day that join into one alliance read as one line
+      fresh.flatMap(k => k.split("|")).forEach(x => { if (seen.has(x)) return; const g = allyGroup(x, fresh); g.forEach(y => seen.add(y)); ev.push({ kind: "ally", ids: g }); }); }
+    if (r.day < 7) prevEnd.filter(k => !r.start.includes(k)).forEach(k => ev.push({ kind: "part", ids: k.split("|") })); else if (prevEnd.length) ev.push({ kind: "final" });
+    r.feuds.filter(k => !prevFeuds.includes(k)).forEach(k => { const ids = k.split("|"), by = ids.find(x => r.by[x]); ev.push({ kind: "betray", ids: by ? [by, ids.find(x => x !== by)] : ids, known: !!by }); });
+    if ((r.wolves || []).length) ev.push({ kind: "wolf", ids: r.wolves });
+    if (ev.length) out.push({ day: r.day, ev }); prevEnd = r.end; prevFeuds = prevFeuds.concat(r.feuds); });
+  return out.reverse();
 }
 function knownAlliancesHTML() {
-  const { teams, alone, me, feuds } = knownAlliances(), sw = p => `<span class="tm"><i class="sw" style="background:${p.color}"></i>${esc(p.id === me ? "You" : p.name)}</span>`;
-  return `<div class="sec"><h3>Alliances in the war</h3>${teams.length ? teams.map(t => `<div class="ateam${t.some(p => p.id === me) ? " mine" : ""}"><small>${t.some(p => p.id === me) ? "Your alliance" : "Allied"}</small><div>${t.map(sw).join("")}</div></div>`).join("") : `<p class="muted">No alliances stand right now. Everyone is on their own.</p>`}
-    ${alone.length ? `<div class="ateam solo"><small>Standing alone</small><div>${alone.map(sw).join("")}</div></div>` : ""}${feuds.length ? `<div class="ateam solo"><small>Bad blood · +20% damage to each other</small><div>${feuds.map(([a, b]) => `<span class="tm">${sw(a)} ⚔ ${sw(b)}</span>`).join("")}</div></div>` : ""}<p class="muted">Pacts as they stood after the last battle. New invitations are announced when the next battle begins.</p></div>`;
+  const { teams, alone, me, feuds, byId } = knownAlliances(), nm = p => esc(p.id === me ? "You" : p.name);
+  const chip = p => `<span class="tm"><i class="sw" style="background:${p.color}"></i>${nm(p)}</span>`;
+  const hist = allyHistory(), who = id => byId[id] ? chip(byId[id]) : `<span class="tm">A lord</span>`;
+  const list = ids => ids.length > 1 ? ids.slice(0, -1).map(who).join(", ") + " and " + who(ids[ids.length - 1]) : ids.map(who).join("");
+  const line = e => e.kind === "ally" ? `🤝 ${list(e.ids)} allied` : e.kind === "part" ? `✋ ${who(e.ids[0])} and ${who(e.ids[1])} parted ways` : e.kind === "final" ? "⚑ Every pact ended for the final day" : e.kind === "wolf" ? `🐺 ${list(e.ids)} fought as the lone wolf` : e.known ? `💣 ${who(e.ids[0])} betrayed ${who(e.ids[1])}` : `💣 ${who(e.ids[0])} and ${who(e.ids[1])} fell out in a betrayal`;
+  const betrayer = (a, b) => { const e = hist.flatMap(h => h.ev).find(x => x.kind === "betray" && x.known && x.ids.includes(a.id) && x.ids.includes(b.id)); return e ? [byId[e.ids[0]], byId[e.ids[1]]] : null; };
+  const v2 = allyV2Now(), wolf = v2 && alone.length === 1 && teams.length > 0, foes = teams.reduce((n, t) => n + t.lords.length, 0);
+  return `<div class="sec"><h3>Alliances in the war</h3>
+    ${teams.length ? `<div class="agrid">${teams.map(t => `<div class="ateam${t.lords.some(p => p.id === me) ? " mine" : ""}"><small>${t.lords.some(p => p.id === me) ? "Your alliance" : "Alliance"} · ${t.lords.length} lords</small><div>${t.lords.map(chip).join("")}</div>${t.whole ? "" : `<p class="muted anote">Not all of them are allied to each other, so some of their armies still fight.</p>`}</div>`).join("")}</div>` : `<p class="muted">No alliances stand right now. Everyone is on their own.</p>`}
+    ${alone.length ? `<div class="ateam solo"><small>Standing alone${wolf ? " · lone wolf" : ""}</small><div>${alone.map(chip).join("")}</div></div>` : ""}
+    ${v2 ? `<p class="note${wolf ? " gold" : ""}">${wolf ? `<b>🐺 ${nm(alone[0])} ${alone[0].id === me ? "are" : "is"} the lone wolf.</b> Standing alone against ${foes} allied lords, ${alone[0].id === me ? "your" : "their"} army and castle deal ${Math.round(foes * LONE_WOLF_STEP * 100)}% more damage and has ${Math.round(foes * LONE_WOLF_STEP * 100)}% more health in battle. It ends if a second lord stands alone or they join an alliance.` : `Lone wolf: when only one lord is left outside every alliance, their army and castle get +${Math.round(LONE_WOLF_STEP * 100)}% damage and health in battle for each allied lord.`}</p>` : ""}
+    ${feuds.length ? `<div class="ateam solo"><small>Bad blood · +20% damage to each other, and never allies again</small><div>${feuds.map(([a, b]) => { const bt = betrayer(a, b); return `<span class="tm">${bt ? `${chip(bt[0])} betrayed ${chip(bt[1])}` : `${chip(a)} ⚔ ${chip(b)}`}</span>`; }).join("")}</div></div>` : ""}
+    <p class="muted">Pacts as they stood after the last battle. New invitations are announced when the next battle begins.</p></div>
+    ${hist.length ? `<div class="sec"><h3>Alliance history</h3><div class="ahist">${hist.map(h => `<div class="ahday"><b>Day ${h.day}</b><ul>${h.ev.map(e => `<li>${line(e)}</li>`).join("")}</ul></div>`).join("")}</div></div>` : ""}`;
 }
 function alliancesTab() {
   const fin = finalToday(), today = planDayKey(), inc = RIVALS.map(r => ({ r, o: incomingOffer(r) })).filter(x => x.o);
@@ -233,13 +292,17 @@ function alliancesTab() {
     return `<div class="alrow fl"><span class="who"><i class="sw" style="background:${r.color}"></i><b>${esc(r.name)}</b></span>
       ${draft ? `<span class="stepper"><button class="btn small" data-act="ogold" data-k="${r.id}" data-v="-1" ${dis()}>−</button><b>${o.gold}g</b><button class="btn small" data-act="ogold" data-k="${r.id}" data-v="1" ${dis()}>+</button></span><button class="btn small" data-act="uninvite" data-k="${r.id}" ${dis()}>Withdraw</button>`
         : `<span class="chip weak">Pending · ${o.gold}g</span>`}
-      <small class="muted alx">${draft ? "Goes out tonight. They answer in tomorrow's planning." : "Sent yesterday. They answer in today's planning, and the alliance starts at tonight's battle if they accept."}</small></div>`; };
+      <small class="muted alx">${draft ? "Goes out tonight. They answer in tomorrow's planning." : "Sent yesterday. They answer in today's planning, and the alliance starts at tonight's battle if they accept."}${groupNote(r.id)}</small></div>`; };
+  const nmI = id => esc((RIVALS.find(x => x.id === id) || {}).name || "your ally"), meId = allyLords().me;
+  const groupNote = id => { if (!allyV2Now()) return ""; const theirs = allyGroup(id).filter(x => x !== id), mine = allyGroup(meId).filter(x => x !== meId);
+    return (theirs.length ? ` They're allied with ${theirs.map(nmI).join(" and ")}: every member must accept you.` : "") + (mine.length ? ` Your ally ${mine.map(nmI).join(" and ")} must invite them too.` : ""); };
   return `${fin ? `<p class="muted">Final day: every pact has ended. Only one banner can win.</p>` : knownAlliancesHTML()}
     ${inc.length ? `<div class="sec"><h3>Invitations to you</h3>${inc.map(({ r, o }) => `<div class="alrow fl"><span class="who"><i class="sw" style="background:${r.color}"></i><b>${esc(r.name)}</b><small class="inc">${o.gold ? o.gold + "g dowry" : "no dowry"}</small></span>
-      ${o.reply ? `<span class="chip ${o.reply === "accept" ? "ok" : "weak"}">${o.reply === "accept" ? "Accepted" : "Declined"}</span><button class="btn small" data-act="ireply" data-k="${r.id}" data-v="${o.reply === "accept" ? "reject" : "accept"}" ${dis()}>Change</button>` : `<button class="btn small wax" data-act="ireply" data-k="${r.id}" data-v="accept" ${dis()}>Accept</button><button class="btn small" data-act="ireply" data-k="${r.id}" data-v="reject" ${dis()}>Decline</button>`}</div>`).join("")}</div>` : ""}
+      ${o.reply ? `<span class="chip ${o.reply === "accept" ? "ok" : "weak"}">${o.reply === "accept" ? "Accepted" : "Declined"}</span><button class="btn small" data-act="ireply" data-k="${r.id}" data-v="${o.reply === "accept" ? "reject" : "accept"}" ${dis()}>Change</button>` : `<button class="btn small wax" data-act="ireply" data-k="${r.id}" data-v="accept" ${dis()}>Accept</button><button class="btn small" data-act="ireply" data-k="${r.id}" data-v="reject" ${dis()}>Decline</button>`}${allyAnswersHTML(r.id)}</div>`).join("")}</div>` : ""}
     ${carried.length && !fin ? pactHTML() : ""}
-    <div class="sec"><h3>Your invitations <small class="hint">${sent.length}/${MAX_INVITES} open</small></h3>${sent.length ? sent.map(sentRow).join("") : `<p class="muted">None open.</p>`}</div>
-    ${!fin ? `<div class="sec"><h3>Invite a lord</h3>${free.map(r => `<div class="alrow fl"><span class="who"><i class="sw" style="background:${r.color}"></i><b>${esc(r.name)}</b></span><button class="btn small ally" data-act="invite" data-k="${r.id}" ${dis(sent.length >= MAX_INVITES)}>Invite</button></div>`).join("") || `<p class="muted">Everyone is allied or invited.</p>`}
+    <div class="sec"><h3>Your invitations <small class="hnote">${sent.length}/${MAX_INVITES} open</small></h3>${sent.length ? sent.map(sentRow).join("") : `<p class="muted">None open.</p>`}</div>
+    ${!fin ? `<div class="sec"><h3>Invite a lord</h3>${free.map(r => { const full = allyV2Now() && allyGroup(r.id).length + allyGroup(meId).length > BLOC_MAX, theirs = allyV2Now() ? allyGroup(r.id).length : 1;
+      return `<div class="alrow fl"><span class="who"><i class="sw" style="background:${r.color}"></i><b>${esc(r.name)}</b>${theirs > 1 ? `<small class="inc">in an alliance of ${theirs}</small>` : ""}</span>${full ? `<span class="chip weak">Alliance full</span>` : `<button class="btn small ally" data-act="invite" data-k="${r.id}" ${dis(sent.length >= MAX_INVITES)}>Invite</button>`}</div>`; }).join("") || `<p class="muted">Everyone is allied or invited.</p>`}
       ${sent.length >= MAX_INVITES ? `<p class="muted">Two invitations are open. Wait for answers before sending more.</p>` : `<p class="muted">The dowry is set aside until they answer, and paid only if they accept.</p>`}</div>` : ""}`;
 }
 const planDayKey = () => (isLive() ? liveClock().planDay : DAY);

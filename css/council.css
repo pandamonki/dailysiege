@@ -82,6 +82,7 @@
 .gr-s { all: unset; box-sizing: border-box; position: relative; min-height: 58px; border: 2px dashed rgba(62,39,20,.55); border-radius: 8px; display: grid; place-items: center; align-content: center; font-size: 10px; color: var(--ink-soft); background: rgba(255,250,230,.25); text-align: center; line-height: 1.05; cursor: pointer; }
 .gr-s img { width: 28px; height: 35px; }
 .gr-s b { font-size: 11px; color: var(--ink); font-weight: 600; } .gr-s small { font-size: 11px; color: var(--ink-soft); }
+.gr-s.free.lk { opacity: .45; }
 .gr-s.free { border-style: solid; border-color: var(--wood-dark); background: rgba(60,40,20,.14); cursor: default; }
 .gr-s.fill { border-style: solid; border-color: var(--wood-dark); background: var(--parchment-2); touch-action: none; user-select: none; -webkit-user-select: none; }
 .gr-x { position: absolute; top: -7px; right: -7px; width: 22px; height: 22px; border-radius: 50%; background: var(--wax); color: #fff; font-size: 11px; display: grid; place-items: center; border: 2px solid var(--parchment); cursor: pointer; }

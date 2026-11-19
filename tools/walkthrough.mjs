@@ -79,6 +79,10 @@ for (const name of engines) {
     await tap('#sheet [data-act="rkit"][data-v="*"]'); if ((await page.locator("#sheet .kitwrap").count()) < 2) throw new Error("Show all builds opened no builds"); await closeAll(); });
   await step("the results screens appear and close", async () => { await page.waitForTimeout(1500); for (let i = 0; i < 6; i++) { const c = page.locator('button:has-text("Continue"):visible'); if (await c.count()) { await c.first().click(); await page.waitForTimeout(600); } }
     await closeAll(); });
+  await step("the Allies screen shows the alliances, who stands alone and the history", async () => { await js(() => { if (mode === "replay") leaveBattle(); sheet = null; render(); }); await closeAll();
+    await tap('#cmdbar [data-act="openorders"][data-v="alli"]'); const t = await js(() => document.querySelector("#sheet").innerText);
+    if (!/Alliances in the war/i.test(t)) throw new Error("no alliance overview"); if (!/Standing alone|Alliance/i.test(t)) throw new Error("no alliance cards");
+    if (await js(() => (S.allyLog || []).length && !document.querySelector("#sheet .ahist") && allyHistory().length)) throw new Error("the alliance history is missing"); await closeAll(); });
   await step("the How to play guide: chapter tabs, the tour's ring and every picture", async () => { await closeAll();
     await js(() => { if (mode === "replay") leaveBattle(); sheet = null; render(); }); await closeAll(); await js(() => startWizard(true, 0)); await page.waitForTimeout(200);
     for (const ch of await js(() => GUIDE.map(c => c.id))) { await tap(`#wiz [data-gch="${ch}"]`); if (!(await js(c => document.querySelector("#wiz .gtabs .on").dataset.gch === c, ch))) throw new Error("the " + ch + " tab did not open"); }

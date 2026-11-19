@@ -54,6 +54,11 @@ const ITEM_REGEN_V5 = { hpring: 10, herbs: 5 }, SALVE_V5 = 300, ELIXIR_V5 = .2, 
 const ITEM_V6 = { salve: 220, hpringHp: 120, hpringRegen: 8, bootsSpd: .42, shellDur: 7.5, runeCd: 45, runeLow: .3, runeChannel: 1.5, will: .25, fireSplash: .5, fireR: 1.5, crys: [.25, 1.8], pipe: .6, pipeR: 4, rapier: 100 };
 const AGGRO_R = 4, RECALL_R = 6, RETREAT_END_V2 = .5, METEOR_CASTLE = 700, MAGIC_VS_FORT = .6, HIT_WINDOW = 2.5, BACK_AT = .6;
 const fairTie = (seed, a, b) => hash(seed, botSeed(String(a)) * 7919 + botSeed(String(b)), 17);
+// alliances v2 (plans stamped allyV2): winning allies share the top places by castle health left. Lone wolf: while exactly one lord still
+// standing is in no pact and at least one alliance stands, that lord's army and castle deal LONE_WOLF_STEP more damage and have LONE_WOLF_STEP
+// more maximum health (current health scaled with it) for each allied lord still standing. Checked every second; it ends the moment a second
+// lord stands alone or the lone wolf allies, and the extra health goes again.
+let ALLY_V2_FROM = "2026-11-20"; const allyV2For = d => String(d) >= ALLY_V2_FROM, LONE_WOLF_STEP = .1;
 const ASSIST_SECS = 10, SURVIVOR_PTS = 1, BLOC_MAX = 3, TREACHERY_PTS = 3, TREACHERY_LOOT = .25, DAY_WEIGHT = { 5: 1.5, 6: 1.5, 7: 2 };
 // A lord whose castle falls keeps their hero and soldiers on the field: they fight on to the end of the battle, but can no longer fall back, heal at the castle, teleport home or respawn. Placing is still decided by when the castle fell.
 const ORPHAN_ARMIES = true;
@@ -160,6 +165,16 @@ function runBattle(plans, seed, opts = {}) {
   plans.forEach(pl => pl.pacts.forEach(o => { if (P[o]) { P[pl.pid].pacts.add(o); P[o].pacts.add(pl.pid); } }));
   (plans.feuds || []).forEach(k => { const [a, b] = k.split("|"); if (P[a] && P[b]) { P[a].feud.add(b); P[b].feud.add(a); P[a].hostileTo.add(b); P[b].hostileTo.add(a); P[a].pacts.delete(b); P[b].pacts.delete(a); } }); // betrayers and their victims stay rivals for the rest of the war
   const pact0 = []; order.forEach(a => order.forEach(b => { if (a < b && P[a].pacts.has(b)) pact0.push(a + "|" + b); })); // the pacts the day starts with, after bad blood has dissolved any between feuding lords
+  const AV2 = plans.some(p => p.allyV2);
+  let loneId = null, loneN = 0; // the lone wolf right now, and how many allied lords stand against it
+  const updateLone = () => { if (!AV2) return; const up = order.filter(pid => P[pid].alive), solo = up.filter(pid => !P[pid].pacts.size), n = up.length - solo.length;
+    const id = solo.length === 1 && n > 0 ? solo[0] : null;
+    if (id && (id !== loneId || n !== loneN)) { P[id].loneMax = Math.max(P[id].loneMax || 0, n); log(`${nm(id)} ${id === mePid ? "stand" : "stands"} alone against ${n} allied lord${n === 1 ? "" : "s"}: lone wolf, +${Math.round(n * LONE_WOLF_STEP * 100)}% damage and health.`, id === mePid ? "you" : undefined); }
+    else if (!id && loneId) log(`${nm(loneId)} ${loneId === mePid ? "are" : "is"} no longer the lone wolf.`);
+    loneId = id; loneN = id ? n : 0;
+    ents.forEach(e => { if (e.dead || !(e.maxhp > 0)) return; const want = e.pid === loneId ? 1 + LONE_WOLF_STEP * loneN : 1, had = e.lm || 1; // real extra health, so healing and percentages still work
+      if (want !== had) { const f = want / had; e.maxhp *= f; e.hp = Math.min(e.maxhp, e.hp * f); e.lm = want; } }); };
+  const loneMul = pid => (pid && pid === loneId ? 1 + LONE_WOLF_STEP * loneN : 1);
   plans.forEach(pl => {
     const p = P[pl.pid], [cr, cc] = pl.castle, def = pl.defences || {};
     p.castle = add({ pid: pl.pid, kind: "castle", x: cc + .5, y: cr + .5, maxhp: BAL.castleHp * (1 + .25 * (def.walls || 0)) * CASTLE_TIERS[Math.max(0, Math.min(2, (pl.castleTier || 1) - 1))].hp * (TW === "iron" ? TWIST_IRON : 1), atk: 20 * [1, 1.5, 2][def.tower || 0], range: (def.tower || 0) >= 2 ? 3.6 : 3, as: 1.5, spd: 0, armor: .25, shot: "#e8e2d0" });
@@ -390,6 +405,7 @@ function runBattle(plans, seed, opts = {}) {
       m *= 1 + fxv(src, "atkbuf");
       if (fxv(src, "weaken")) m *= .8;
       if (P[src.pid].feud.has(tgt.pid)) m *= 1.2;
+      if (loneId) m *= loneMul(src.pid); // the lone wolf hits harder
       if (leaderPid && tgt.pid === leaderPid && src.pid !== leaderPid) m *= 1.1;
     }
     if (t >= SUDDEN) m *= 1.25;
@@ -1078,7 +1094,7 @@ function runBattle(plans, seed, opts = {}) {
     if (SV && !sd && !opts.duel && t >= SD_AT) startSudden();
     for (let i = pending.length - 1; i >= 0; i--) if (pending[i].at <= t) { const pe = pending.splice(i, 1)[0]; curAb = pe.ab; pe.fn(); curAb = null; }
     if (HV3) kit.world();
-    if (tick % 10 === 0) { order.forEach(pid => { const p = P[pid]; if (p.alive && !p.frenzy && p.castle.hp / p.castle.maxhp <= .2) { p.frenzy = true; aoe(p.castle.x, p.castle.y, 3, "#ff5a2a", 1.2); txt(p.castle, "Desperation Frenzy!", "#ff8a4a"); log(`${poss(pid)} defenders fight with Desperation Frenzy!`, "big"); H({ kind: "frenzy", pid, x: p.castle.x, y: p.castle.y, score: 50 }); } }); council(); }
+    if (tick % 10 === 0) { updateLone(); order.forEach(pid => { const p = P[pid]; if (p.alive && !p.frenzy && p.castle.hp / p.castle.maxhp <= .2) { p.frenzy = true; aoe(p.castle.x, p.castle.y, 3, "#ff5a2a", 1.2); txt(p.castle, "Desperation Frenzy!", "#ff8a4a"); log(`${poss(pid)} defenders fight with Desperation Frenzy!`, "big"); H({ kind: "frenzy", pid, x: p.castle.x, y: p.castle.y, score: 50 }); } }); council(); }
     if (tick % 20 === 0 && !opts.duel) centreTick();
     // reinforcement waves (from 12 Nov 2026): each castle sends the garrison out when its conditions are met, never sooner than WAVE_GAP after the last, and forced out at each minute mark
     if (V3 && !opts.duel && !sdOn() && tick % 5 === 0) order.forEach(pid => {
@@ -1191,9 +1207,14 @@ function runBattle(plans, seed, opts = {}) {
       g.slice().sort((a, b) => ((P[b].castleDmg || 0) - (P[a].castleDmg || 0)) || (P[b].kills - P[a].kills) || (hash(seed, botSeed(a)) - hash(seed, botSeed(b))) || (a < b ? -1 : 1)).forEach((pid, i) => { P[pid].place = places[i]; }); });
   }
   // if the last castles fell on the same tick, the last one to fall takes first place
-  const champion = alive[0] || order.find(pid => P[pid].place === 1) || order.slice().sort((x, y) => (P[y].elimT ?? 0) - (P[x].elimT ?? 0))[0];
+  let champion = alive[0] || order.find(pid => P[pid].place === 1) || order.slice().sort((x, y) => (P[y].elimT ?? 0) - (P[x].elimT ?? 0))[0];
   if (P[champion].place !== 1) P[champion].place = 1;
-  if (teamWin) { teamWin = teamWin.filter(pid => P[pid].alive); if (teamWin.length > 1) teamWin.forEach(pid => { P[pid].place = 1; }); else teamWin = null; }
+  if (teamWin) { teamWin = teamWin.filter(pid => P[pid].alive);
+    if (teamWin.length > 1 && AV2) { // allies who win together share the top places, the one with the most castle health left first
+      const hpf = pid => P[pid].castle.hp / P[pid].castle.maxhp;
+      teamWin.sort((a, b) => (hpf(b) - hpf(a)) || (P[b].kills - P[a].kills) || (hash(seed, botSeed(a)) - hash(seed, botSeed(b))) || (a < b ? -1 : 1)).forEach((pid, i) => { P[pid].place = i + 1; });
+      champion = teamWin[0]; }
+    else if (teamWin.length > 1) teamWin.forEach(pid => { P[pid].place = 1; }); else teamWin = null; }
   if (teamWin) log(`${teamWin.map(nm).join(" and ")} win the Daily Siege together!`, "big");
   else log(`${nm(champion)} ${champion === mePid ? "win" : "wins"} the Daily Siege!`, "big");
   if (!fast) {
@@ -1216,7 +1237,7 @@ function runBattle(plans, seed, opts = {}) {
   const BOARD2 = plans.some(p => p.skV2), board = pid => { const mine = ents.filter(e => e.pid === pid && e.tel && e.kind !== "castle"), sum = k => Math.round(mine.reduce((a, e) => a + (e.tel[k] || 0), 0));
     return { deaths: ents.filter(e => e.pid === pid && e.kind === "champ").reduce((a, e) => a + e.tel.deaths, 0), assists: P[pid].assists || 0, dmg: sum("dealt") + Math.round(P[pid].trapDmg || 0), dmgH: sum("toChamp"), dmgC: sum("toCastle") }; };
   const results = order.map(pid => ({ pid, name: nm(pid), color: P[pid].color, cls: P[pid].cls, place: P[pid].place, kills: P[pid].kills, ukills: P[pid].ukills, castles: P[pid].castles,
-    points: Math.round(((PTS[P[pid].place - 1] || 0) + P[pid].kills + castlePts(FV) * P[pid].castles) * W8) + (treach[pid] || 0) * TREACHERY_PTS + (surv(pid) ? SURVIVOR_PTS : 0), ...(treach[pid] ? { treachery: treach[pid] } : {}), ...(surv(pid) ? { survivor: 1 } : {}), fellAt: P[pid].elimT, gold: Math.round(P[pid].gold), ...(BOARD2 ? board(pid) : {}) })).sort((a, b) => a.place - b.place);
+    points: Math.round(((PTS[P[pid].place - 1] || 0) + P[pid].kills + castlePts(FV) * P[pid].castles) * W8) + (treach[pid] || 0) * TREACHERY_PTS + (surv(pid) ? SURVIVOR_PTS : 0), ...(treach[pid] ? { treachery: treach[pid] } : {}), ...(P[pid].loneMax ? { lone: P[pid].loneMax } : {}), ...(surv(pid) ? { survivor: 1 } : {}), fellAt: P[pid].elimT, gold: Math.round(P[pid].gold), ...(BOARD2 ? board(pid) : {}) })).sort((a, b) => a.place - b.place);
   const TEL_COST = { footman: 50, bowman: 70, knight: 120, healer: 100, raider: 110, mage: 140, sniper: 160, ram: 240, cart: 200, catapult: 220 }; // telemetry keeps the prices from before 15 Nov 2026 so recorded battles replay identically
   const invest = (type, lvl) => { const c = TEL_COST[type] ?? UNITS[type].cost; let g = c; for (let l = 1; l < lvl; l++) g += Math.round(c * .5 * l); return g; };
   const tel = { duration: Math.min(t, SV ? SD_AT + SD_COUNT + SD_LEN : TMAX),
