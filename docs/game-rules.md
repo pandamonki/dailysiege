@@ -36,6 +36,9 @@ practice games always stamp all of them (`js/sim/plans.js`).
   before the lock work it out from each player's sign-up record. A day that passes with fewer than two lords is recorded
   (`skipDays`) and the game says so, instead of waiting for a battle. The host's Resolve now opens a Battle check showing
   what the phone and the server each see.
+- Battles are saved by date, and from a game's second war as `date~wN`, so a war played with testing skips can never
+  clash with the next war's dates. The game reads both and shows one war at a time.
+- Bot lords each have their own hero class, spread across the classes before any repeats.
 
 ## Gold
 

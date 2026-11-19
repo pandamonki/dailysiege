@@ -178,6 +178,8 @@ function abilLines(k, r) {
 
 const PATCHES = [
   { v: "Locked rosters and the Battle check", date: "20 Nov", fixes: [
+    "A war that followed a war played with testing skips could have its battles mistaken for the earlier war's (they were saved under the same dates), so they never showed. From the second war on, battles are saved under the date and the war, and Resolve now fights any that were lost.",
+    "Bots whose hero class was missing or repeated (all Mages, for example) are given different classes.",
     "The server rebuilt each war's list of lords before every battle from sign-up records, so a record gone wrong could leave it counting fewer than two lords and skipping days. The lords are now locked when registration closes, and a war under way is locked the next time the server looks at it.",
     "A day that passes without a battle is now recorded and shown plainly, instead of the game waiting for a battle that will never come.",
   ], balance: [], changes: [

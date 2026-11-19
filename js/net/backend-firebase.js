@@ -202,7 +202,10 @@
 
   // ---------- what the game sees ----------
   function configView(g) { if (!g.game) return null; const c = copy(Object.fromEntries(Object.entries(g.game).filter(([k]) => !HIDDEN_KEYS.includes(k)))); return c; }
-  const battlesView = g => Object.fromEntries(Object.entries(g.battles || {}).filter(([, b]) => (b.war || 1) === curWar()).map(([k, b]) => [k, copy(b)]));
+  // battles are saved by date, or "date~wN" from a war's second war on (so wars never clash): the game sees them by date, one war at a time
+  const dayOf = id => String(id).split("~")[0];
+  const warBattles = (g, war) => Object.fromEntries(Object.entries(g.battles || {}).filter(([, b]) => (b.war || 1) === war).map(([k, b]) => [dayOf(k), copy(b)]));
+  const battlesView = g => warBattles(g, curWar());
   function playersView(g) {
     const uid = g.seat || DS.user.uid, bt = Object.entries(battlesView(g)).sort((a, b) => (a[0] < b[0] ? -1 : 1)), out = {};
     for (const [id, pub] of Object.entries(g.pubs || {})) {
@@ -231,7 +234,7 @@
       try { LIVE.isOwner = g.game ? g.game.host === DS.user.uid : LIVE.isOwner; } catch (e) {}
       g.started = true;
       const cfg = snapDoc(configView(g)), bt = snapCol(battlesView(g)), pl = snapCol(playersView(g));
-      { const pw = curWar() - 1, pb = Object.fromEntries(Object.entries(g.battles || {}).filter(([, b]) => (b.war || 1) === pw).map(([k, b]) => [k, copy(b)])); LIVE.prevWar = pw >= 1 && Object.keys(pb).length ? { war: pw, battles: pb } : null; } // the war that just ended, for its ceremony and highlights
+      { const pw = curWar() - 1, pb = warBattles(g, pw); LIVE.prevWar = pw >= 1 && Object.keys(pb).length ? { war: pw, battles: pb } : null; } // the war that just ended, for its ceremony and highlights
       g.cfgCbs.forEach(f => f(cfg)); g.btCbs.forEach(f => f(bt)); g.plCbs.forEach(f => f(pl));
       if (DS.autoEnter && cfg) { DS.autoEnter = false; setTimeout(() => { try { if (typeof A === "object" && A.playgo) { A.playgo(); render(); } } catch (e) {} }, 60); } };
     if (now) run(); else if (!emitT) emitT = setTimeout(run, 0);

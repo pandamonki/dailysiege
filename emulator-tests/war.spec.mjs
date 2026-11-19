@@ -200,3 +200,18 @@ test("after each battle every lord's devices are told the result, and dead devic
 test("the scheduler's sweep finds only games that are due", async () => {
   assert.deepEqual(await resolveAllDue(db, { now: lockInstant(addDays(D1, 7), "UTC", 0) - 1000 }), {});
 });
+
+// A second war whose dates overlap the first war's saved battles (testing skips can push a war's dates ahead of the calendar):
+// its battles must still be fought and saved, never mistaken for the first war's. (This happened in a real game.)
+test("a second war fights and saves its own battles even on dates the first war already used", async () => {
+  const c2 = { ...cfg, war: 2, startDate: days[0], lobbyEnds: Date.parse(addDays(days[0], -1) + "T12:00:00Z") }, c = clockFor(c2, null);
+  await gameRef().update({ war: 2, lobby: true, startDate: days[0], lobbyEnds: c2.lobbyEnds, planDay: c.planDay, nextPlanDay: c.nextPlanDay, nextLockAt: Timestamp.fromMillis(c.nextLockAt), lockAfter: Timestamp.fromMillis(c.lockAfter), clockWar: 2, roster: null });
+  const war1 = (await gameRef().collection("battles").doc(days[0]).get()).data();
+  assert.equal(war1.war, 1, "the first war's battle is on this date already");
+  const out = await resolveDue(db, GAME, { now: lockInstant(days[0], "UTC", 0) + 60000 });
+  assert.equal(out[0] && out[0].fought, true, "war 2's first battle is fought");
+  const mine = await gameRef().collection("battles").doc(days[0] + "~w2").get();
+  assert.ok(mine.exists && mine.data().war === 2, "and saved as war 2's, beside the first war's");
+  assert.equal((await gameRef().collection("battles").doc(days[0]).get()).data().resultHash, war1.resultHash, "the first war's battle is untouched");
+  const g = (await gameRef().get()).data(); assert.ok(g.roster && g.roster.war === 2, "the second war's lords are locked");
+});
