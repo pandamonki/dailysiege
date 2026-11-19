@@ -20,6 +20,10 @@ function planDayNow(tz, lock) { const now = tzNow(tz); return now.h >= lock ? ad
 function liveClock() {
   const cfg = LIVE.config, now = tzNow(cfg.tz), lock = cfg.lockHour;
   let planDay = addDays(now.h >= lock ? addDays(now.date, 1) : now.date, cfg.testSkew || 0), mins = lock * 60 - (now.h * 60 + now.m); if (mins <= 0) mins += 1440; // testSkew: days skipped in testing mode
+  // the hosted game: the server's day is the truth. If this device has moved past a day the server is not due to fight yet (a testing-mode
+  // skip, or a clock that disagrees), follow the server, so the game never waits on a battle the server has no reason to fight
+  if (cfg.planDay && planDay > cfg.planDay && typeof LIVE === "object" && LIVE.db && LIVE.db.serverBattles) { const at = lockInstant(cfg.planDay, cfg.tz, lock) - (cfg.testSkew || 0) * 864e5;
+    if (Date.now() < at) { planDay = cfg.planDay; mins = Math.max(1, Math.ceil((at - Date.now()) / 6e4)); } }
   const sd = startOf(cfg); if (sd && planDay < sd) { mins += 1440 * (dayDiff(sd, planDay)); planDay = sd; }
   const dayNo = weekdayOf(planDay), week = addDays(planDay, -(dayNo - 1));
   return { planDay, dayNo, week, minsToLock: mins };

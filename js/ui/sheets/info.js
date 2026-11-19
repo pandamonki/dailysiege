@@ -177,6 +177,12 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "Tour, bots and battle-day fixes", date: "19 Nov", fixes: [
+    "Bots added before 15 Nov had no hero class saved and all fought as Warriors. Each now gets its own class from the next battle.",
+    "After a testing-mode skip, or when a phone's clock disagreed with the server, the game could wait on a battle the server was not due to fight. Phones now follow the server's day.",
+  ], balance: [], changes: [
+    "The How to play tour opens each screen it describes (Base, Army, Hero, the shop, Orders, Allies) and rings its tabs, with the card at the bottom.",
+  ] },
   { v: "Alliances v2 and interface fixes", date: "19 Nov", fixes: [
     "Labels in Orders and Allies floated over the Target and Invite buttons. They now sit beside their headings.",
     "The practice leaderboard showed the day number as every lord's level. It now shows real hero levels.",
