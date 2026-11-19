@@ -50,7 +50,7 @@ function renderCamp() {
   const bd = b.querySelector(".cbadge"); bd.hidden = !n; bd.textContent = n;
   const tb = document.getElementById("twistbtn"), tp = document.getElementById("twistpop"); let tw = null;
   try { tw = S && mode === "plan" && contractsOn() ? myTwist() : null; } catch (e) {}
-  if (tb) { tb.hidden = !tw; tb.classList.toggle("fresh", !!tw && S.twSeen !== planDayKey()); if (tw && tb.dataset.tw !== tw) { tb.dataset.tw = tw; tb.innerHTML = `${artImg(twistArt(tw), "twico")}<b>Twist</b>`; } } // the day's twist art and a word, not a "!" that reads as a warning
+  if (tb) { tb.hidden = !tw; tb.classList.toggle("fresh", !!tw && S.twSeen !== planDayKey()); }
   if (tp) { tp.hidden = !(tw && TWIST_POP); if (!tp.hidden) tp.innerHTML = `${twistStripHTML()}<small class="muted">Tap anywhere to close</small>`; }
 }
 function renderHint() {

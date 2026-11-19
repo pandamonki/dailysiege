@@ -555,3 +555,4 @@ h3 .cnt { font: 700 13px/1 var(--f-body); font-style: normal; color: var(--parch
 
 /* a short note beside a section heading (was .hint, which is the map's floating hint and drew these as pills over the page) */
 .hnote { margin-left: 6px; font-family: var(--f-body); font-size: 13px; font-weight: 400; font-style: italic; color: var(--ink-soft); text-transform: none; letter-spacing: 0; font-variant: normal; }
+.btn.shopgo { display: inline-flex; align-items: center; gap: 8px; } .btn.shopgo img { width: 26px; height: 26px; border-radius: 6px; display: block; }
