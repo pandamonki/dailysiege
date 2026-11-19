@@ -13,7 +13,7 @@ const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, Timestamp, FieldValue } = require("firebase-admin/firestore");
 const { clockFor } = require("./lib/clock");
 const { getMessaging } = require("firebase-admin/messaging");
-const { resolveDue, resolveAllDue, explainNotDue, fightMissing, reassignSeat, remindAll, testMode } = require("./lib/resolve");
+const { resolveDue, resolveAllDue, explainNotDue, fightMissing, reassignSeat, remindAll, testMode, diagnose } = require("./lib/resolve");
 const { setBots } = require("./lib/bots");
 const { REGION, TRIGGER_REGION } = require("./region");
 
@@ -65,7 +65,8 @@ exports.resolveNow = onCall(async request => {
   const gameId = await hostOnly(request);
   try { let days = await resolveDue(getFirestore(), gameId, { send }), note = "";
     if (!days.length) { const m = await fightMissing(getFirestore(), gameId); days = m.days; note = days.length ? "" : (m.why + " " + await explainNotDue(getFirestore(), gameId)).trim(); }
-    return { days, note }; }
+    const diag = await diagnose(getFirestore(), gameId).catch(e => ({ error: (e && e.message) || "error" })); // what the server sees, for the host's Battle check
+    return { days, note, diag }; }
   catch (e) { console.error("resolveNow", gameId, e); throw new HttpsError("internal", "The battle could not be fought: " + ((e && e.message) || "error")); }
 });
 

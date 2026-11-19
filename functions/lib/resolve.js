@@ -155,5 +155,19 @@ async function explainNotDue(db, gameId, { now = Date.now() } = {}) {
   return now < at ? `The server's next battle is for ${day} at ${when}.` : `The server is already planning ${day}.`;
 }
 
+// The host's "Battle check": what the server sees for this game, in plain facts, so a battle that never shows up can be explained.
+async function diagnose(db, gameId, { now = Date.now() } = {}) {
+  const gameRef = db.collection("games").doc(gameId), snap = await gameRef.get(); if (!snap.exists) return { error: "This game was not found." };
+  const cfg = snap.data(), war = cfg.war || 1, day = cfg.planDay || null, sd = startDate(cfg);
+  const { addDays, lockInstant, wRoster, wWeekOf } = { addDays: g().get("addDays"), lockInstant: g().get("lockInstant"), wRoster: g().get("wRoster"), wWeekOf: g().get("wWeekOf") };
+  const out = { now: new Date(now).toISOString(), war, planDay: day, startDate: sd || null, tz: cfg.tz || null, lockHour: cfg.lockHour ?? null, testSkew: cfg.testSkew || 0, lobby: !!cfg.lobby, maxPlayers: cfg.maxPlayers || null, capFrom: cfg.capFrom || null, capPrev: cfg.capPrev || null };
+  if (day && cfg.tz && cfg.lockHour !== undefined) out.lockAt = new Date(lockInstant(day, cfg.tz, cfg.lockHour) - (cfg.testSkew || 0) * 864e5).toISOString();
+  const bs = await gameRef.collection("battles").get(); out.battles = bs.docs.map(d => `${d.id} (war ${d.get("war") || 1}${d.get("results") ? ", " + d.get("results").length + " lords" : ""})`).sort().slice(-12);
+  const pubs = await gameRef.collection("players").get(); out.players = pubs.docs.map(d => { const p = d.data(); return `${p.nick || d.id}${p.bot ? " (bot" + (p.cls ? ", " + p.cls : ", no class") + ")" : ""}: from ${p.fromWeek || "none"}${p.pending ? ", pending" : ""}${p.left ? ", left" : ""}${p.war ? ", war " + p.war : ""}`; });
+  if (day) { const week = wWeekOf({ config: Object.assign({}, cfg, { startDate: sd }) }, day); out.week = week; out.counted = {};
+    for (let d = week; d <= day; d = addDays(d, 1)) { const W = await loadWorld(gameRef, cfg, d); out.counted[d] = wRoster(W, wWeekOf(W, d)).length; } }
+  return out;
+}
+
 const testMode = () => !!g().get("TEST_MODE");
-module.exports = { endWar, testMode, fightMissing, explainNotDue, resolveDue, resolveAllDue, reassignSeat, loadWorld, remindAll };
+module.exports = { endWar, testMode, fightMissing, explainNotDue, diagnose, resolveDue, resolveAllDue, reassignSeat, loadWorld, remindAll };
