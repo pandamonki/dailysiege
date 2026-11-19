@@ -8,7 +8,8 @@
 // made by tools/guide-shots.mjs: run it again whenever one of those screens changes.
 // Exact numbers (prices, pay, limits) belong in the page "i" notes (js/ui/help.js), not here: the guide teaches the ideas.
 //
-// A page: { sel, t, p, shot, keys, mode }. sel: what to ring on the planning screen in the tour. shot: a file in guide/.
+// A page: { sel, act, ring, t, p, shot, keys, mode }. sel: what to ring on the planning screen in the tour. act: in the tour, the action that
+// opens the screen the page is about (it opens behind the card, which moves to the bottom), and ring: what to ring on it. shot: a file in guide/.
 // keys: one line per numbered box in the shot. mode: "tour" or "book" to show the page in only one of them.
 const GUIDE = [
   { id: "basics", name: "Basics", pages: [
@@ -22,16 +23,16 @@ const GUIDE = [
     { sel: ".sealbar", t: "Seal your orders", p: "When you're ready, seal. The seal screen checks your plan and lets you rehearse the battle. You can change your orders and seal again until the timer runs out." },
   ] },
   { id: "army", name: "Army", pages: [
-    { sel: '#cmdbar [data-act="opencastle"][data-v="keep"]', t: "Base", p: "Upgrade your castle for more health, more gold each day and stronger soldiers. Unlock reinforcement waves that march out later in the battle. Under Defences, build walls, traps and towers." },
-    { sel: '#cmdbar [data-act="opencastle"][data-v="recruit"]', t: "Army", p: "Recruit soldiers and train them to make them stronger. Four start on the map, and more join in the waves you unlock." },
+    { sel: '#cmdbar [data-act="opencastle"][data-v="keep"]', act: ["opencastle", "keep"], ring: "#sheet .tabs", t: "Base", p: "Upgrade your castle for more health, more gold each day and stronger soldiers. Unlock reinforcement waves that march out later in the battle. Under Defences, build walls, traps and towers." },
+    { sel: '#cmdbar [data-act="opencastle"][data-v="recruit"]', act: ["opencastle", "recruit"], ring: "#sheet .tabs", t: "Army", p: "Recruit soldiers and train them to make them stronger. Four start on the map, and more join in the waves you unlock." },
     { sel: '.topchips [data-act="opencastle"][data-v="recruit"]', t: "Placing soldiers", p: "The shield counts your soldiers on the map. New recruits wait in a strip under the map: tap one, then tap a glowing tile. Tap a soldier on the map to move it." },
   ] },
   { id: "hero", name: "Hero", pages: [
-    { sel: '#cmdbar [data-act="openhero"]', t: "Your hero", p: "Your champion for the week. It levels up as enemies fall near it, and each level gives a skill point to spend. The ultimate opens at level 9." },
-    { sel: "#shopbtn", t: "The shop", p: "The bag of gold on the edge of the map is the shop. Your hero can carry 6 items. Tap one to read what it does, then Buy." },
+    { sel: '#cmdbar [data-act="openhero"]', act: ["openhero", "abilities"], ring: "#sheet .tabs", t: "Your hero", p: "Your champion for the week. It levels up as enemies fall near it, and each level gives a skill point to spend. The ultimate opens at level 9." },
+    { sel: "#shopbtn", act: ["shop"], ring: "#sheet .shopg", t: "The shop", p: "The bag of gold on the edge of the map is the shop. Your hero can carry 6 items. Tap one to read what it does, then Buy." },
   ] },
   { id: "battle", name: "Battle", pages: [
-    { sel: '#cmdbar [data-act="openorders"][data-v="ord"]', t: "Orders", p: "Strategy: pick three targets in order and your army's plan. Combat: who each group fights first. Rituals: when your ultimate fires." },
+    { sel: '#cmdbar [data-act="openorders"][data-v="ord"]', act: ["openorders", "ord"], ring: "#sheet .tabs", t: "Orders", p: "Strategy: pick three targets in order and your army's plan. Combat: who each group fights first. Rituals: when your ultimate fires." },
     { t: "The battleground", p: "The hill in the middle of the map is worth fighting for.", shot: "hill", keys: ["Heroes standing on the hill earn extra experience and gold, so expect company"] },
     { t: "Scoring", p: "Each battle ranks every lord, and the higher you finish the more points you get. Slaying heroes and taking castles add more. The most points after seven days wins the war." },
     { t: "The morning report", p: "Next time you open the game, last night's report is waiting.", shot: "report",
@@ -42,7 +43,7 @@ const GUIDE = [
   { id: "rivals", name: "Allies", pages: [
     { t: "Contracts and twists", p: "Each day you can take one contract for bonus points and gold. Each day also has a twist: tap the ! above the map to see it.", shot: "contracts",
       keys: ["Today's three contracts: easy, hard and one aimed at a rival", "Today's twist"] },
-    { sel: '#cmdbar [data-act="openorders"][data-v="alli"]', t: "Allies", p: "Nobody is allied at the start. You invite a lord, they answer the next day, and the alliance starts at the next battle. Up to 3 lords can ally, and everyone must agree. Allies left standing share the top places." },
+    { sel: '#cmdbar [data-act="openorders"][data-v="alli"]', act: ["openorders", "alli"], ring: "#sheet .sec", t: "Allies", p: "Nobody is allied at the start. You invite a lord, they answer the next day, and the alliance starts at the next battle. Up to 3 lords can ally, and everyone must agree. Allies left standing share the top places." },
     { t: "Sending an invitation", p: "Open Allies and tap Invite next to a lord.", shot: "invite",
       keys: ["Your invitation, with an optional gold dowry. It's only paid if they accept", "Change your mind before the battle with Withdraw", "Invite another lord"] },
     { t: "Answering an invitation", p: "When a lord invites you, it pops up when you next plan.", shot: "answer",
@@ -86,7 +87,7 @@ function startWizard(force, at) {
   const el = document.createElement("div"); el.id = "wiz"; document.body.appendChild(el);
   const ring = document.createElement("div"); ring.id = "wizring"; document.body.appendChild(ring);
   // the highlight is a floating ring that follows the target, so it survives the game redrawing its buttons
-  const place = () => { const sel = list[i].sel, tg = sel && document.querySelector(sel), r = tg && tg.getBoundingClientRect();
+  const place = () => { const sel = list[i].act ? list[i].ring : list[i].sel, tg = sel && document.querySelector(sel), r = tg && tg.getBoundingClientRect();
     if (!r || !r.width) { ring.style.display = "none"; return; }
     Object.assign(ring.style, { display: "block", left: r.left - 4 + "px", top: r.top - 4 + "px", width: r.width + 8 + "px", height: r.height + 8 + "px" }); };
   const timer = setInterval(() => { if (!document.getElementById("wiz")) { clearInterval(timer); ring.remove(); } else place(); }, 250);
@@ -94,12 +95,15 @@ function startWizard(force, at) {
     if (k === n - 1) guideMarkRead(ch.id);
     const dots = Array.from({ length: n }, (_, j) => `<i class="${j === k ? "on" : j < k ? "done" : ""}"></i>`).join("");
     el.innerHTML = `<div class="wiz-card${pg.shot ? " wide" : ""}">${guideTabsHTML(ch.id, false)}<div class="wiz-main"><div class="wiz-face"><img alt="" src="${spriteURL("c-mage")}"></div><div class="wiz-msg"><h3>${esc(pg.t)}</h3><p>${esc(pg.p)}</p></div></div>${guideShotHTML(pg)}<div class="wiz-dots">${dots}</div><div class="wiz-row"><small>${k + 1} of ${n}</small><button class="btn small" id="wskip">${next ? "Skip" : "Close"}</button><button class="btn small" id="wback"${i ? "" : " disabled"}>← Back</button><button class="btn wax small" id="wnext">${next || "Done"}</button></div></div>`;
+    // pages about a screen open it behind the card, so the player sees the real thing; the others show the planning screen
+    if (pg.act && typeof A === "object" && A[pg.act[0]]) { A[pg.act[0]](pg.act[1]); render(false); } else if (sheet) { sheet = null; render(); }
     place(); const tg0 = pg.sel && document.querySelector(pg.sel), r0 = tg0 && tg0.getBoundingClientRect();
-    el.style.top = r0 && pg.sel !== "#map" && r0.top < innerHeight * .3 ? Math.round(r0.bottom + 14) + "px" : "70px";
+    if (pg.act) { el.style.top = "auto"; el.style.bottom = "12px"; } // the screen fills the top: the card sits at the bottom
+    else { el.style.bottom = ""; el.style.top = r0 && pg.sel !== "#map" && r0.top < innerHeight * .3 ? Math.round(r0.bottom + 14) + "px" : "70px"; }
     el.querySelector("#wskip").onclick = end; el.querySelector("#wback").onclick = () => { if (i > 0) { i--; paint(); } };
     el.querySelector("#wnext").onclick = () => { if (i < list.length - 1) { i++; paint(); } else end(); };
     el.querySelectorAll("[data-gch]").forEach(b => { b.onclick = () => { i = Math.max(0, list.findIndex(p => p.ch === b.dataset.gch)); paint(); }; }); };
-  function end() { clearInterval(timer); ring.remove(); el.remove(); }
+  function end() { clearInterval(timer); ring.remove(); el.remove(); if (sheet) { sheet = null; render(); } }
   paint();
 }
 

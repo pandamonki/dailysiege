@@ -18,10 +18,14 @@ async function loadWorld(gameRef, cfg, day) {
   const [pubs, battles] = await Promise.all([gameRef.collection("players").get(), gameRef.collection("battles").where(byDay, ">=", week).get()]);
   const W = { config, players: {}, battles: {} };
   battles.forEach(d => { const b = d.data(); if ((b.war || 1) === war && d.id < day) W.battles[d.id] = b; });
+  // bots made before bots had a class saved fought as Warriors: give each a class, nobody else's where possible, and save it so it stays put
+  const heroes = Object.keys(g().get("CLASSES")), taken = {}; pubs.docs.forEach(d => { const c = d.get("cls"); if (c) taken[c] = (taken[c] || 0) + 1; });
+  const noCls = pubs.docs.filter(d => d.get("bot") && !d.get("left") && !heroes.includes(d.get("cls"))).sort((a, b) => (a.get("joinedAt") || 0) - (b.get("joinedAt") || 0) || (a.id < b.id ? -1 : 1));
+  const botCls = {}; noCls.forEach((d, i) => { const c = heroes.map((h, j) => [h, taken[h] || 0, (j - i + heroes.length * 9) % heroes.length]).sort((a, b) => a[1] - b[1] || a[2] - b[2])[0][0]; taken[c] = (taken[c] || 0) + 1; botCls[d.id] = c; d.ref.update({ cls: c }).catch(e => console.warn("Daily Siege: saving a bot's class failed", d.id, e && e.message)); });
   await Promise.all(pubs.docs.map(async d => {
     const pub = d.data();
     if (pub.left || pub.pending) return; // not fighting: no need to read their orders
-    if (pub.bot) { W.players[d.id] = { fromWeek: pub.fromWeek, joinedAt: pub.joinedAt, nick: pub.nick || "", real: pub.real || "", bot: true, state: { cls: pub.cls || "warrior", banner: pub.banner || null }, plans: {} }; return; } // a bot has no saved state or orders: the game works its orders out
+    if (pub.bot) { W.players[d.id] = { fromWeek: pub.fromWeek, joinedAt: pub.joinedAt, nick: pub.nick || "", real: pub.real || "", bot: true, state: { cls: botCls[d.id] || pub.cls || "warrior", banner: pub.banner || null }, plans: {} }; return; } // a bot has no saved state or orders: the game works its orders out
     const [state, orders] = await Promise.all([d.ref.collection("private").doc("state").get(), d.ref.collection("orders").where(byDay, ">=", week).get()]);
     const plans = {}; orders.forEach(o => { const p = o.data(); if ((p.war || 1) === war && o.id <= day) plans[o.id] = p; });
     const st = state.exists ? state.data() : {};
