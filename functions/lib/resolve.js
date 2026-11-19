@@ -9,6 +9,14 @@ const { notifyBattle, remindUnsealed } = require("./notify");
 
 let game;
 const g = () => game || (game = loadGame([...SIM_FILES, ...WORLD_FILES]));
+// Battles are saved by date. Testing skips can carry one war's dates past the next war's start, so from the second war a battle is
+// saved as "date~wN" and dates never clash between wars. (Wars that began before this kept plain dates: both are read.)
+const battleId = (day, war) => ((war || 1) > 1 ? `${day}~w${war}` : day), dayOf = id => String(id).split("~")[0];
+async function battleSaved(gameRef, day, war) {
+  if ((await gameRef.collection("battles").doc(battleId(day, war)).get()).exists) return true;
+  if ((war || 1) > 1) { const p = await gameRef.collection("battles").doc(day).get(); return p.exists && (p.get("war") || 1) === war; }
+  return false;
+}
 const plain = v => JSON.parse(JSON.stringify(v)); // drops undefined, which the database refuses
 
 // Everything the battle needs, in the shape the game's own code expects (see js/net/world.js).
@@ -17,10 +25,12 @@ async function loadWorld(gameRef, cfg, day) {
   const week = g().get("wWeekOf")({ config }, day), byDay = FieldPath.documentId(); // documents are named by their date
   const [pubs, battles] = await Promise.all([gameRef.collection("players").get(), gameRef.collection("battles").where(byDay, ">=", week).get()]);
   const W = { config, players: {}, battles: {} };
-  battles.forEach(d => { const b = d.data(); if ((b.war || 1) === war && d.id < day) W.battles[d.id] = b; });
+  battles.forEach(d => { const b = d.data(), k = dayOf(d.id); if ((b.war || 1) === war && k < day) W.battles[k] = b; });
   // bots made before bots had a class saved fought as Warriors: give each a class, nobody else's where possible, and save it so it stays put
   const heroes = Object.keys(g().get("CLASSES")), taken = {}; pubs.docs.forEach(d => { const c = d.get("cls"); if (c) taken[c] = (taken[c] || 0) + 1; });
-  const noCls = pubs.docs.filter(d => d.get("bot") && !d.get("left") && !heroes.includes(d.get("cls"))).sort((a, b) => (a.get("joinedAt") || 0) - (b.get("joinedAt") || 0) || (a.id < b.id ? -1 : 1));
+  const bots = pubs.docs.filter(d => d.get("bot") && !d.get("left")).sort((a, b) => (a.get("joinedAt") || 0) - (b.get("joinedAt") || 0) || (a.id < b.id ? -1 : 1)), seen = new Set();
+  const noCls = bots.filter(d => { const c = d.get("cls"), ok = heroes.includes(c) && (!seen.has(c) || seen.size >= heroes.length); if (ok) seen.add(c); return !ok; }); // no class, or a repeat while some class is unused
+  noCls.forEach(d => { const c = d.get("cls"); if (taken[c]) taken[c]--; }); // their old class no longer counts as taken
   const botCls = {}; noCls.forEach((d, i) => { const c = heroes.map((h, j) => [h, taken[h] || 0, (j - i + heroes.length * 9) % heroes.length]).sort((a, b) => a[1] - b[1] || a[2] - b[2])[0][0]; taken[c] = (taken[c] || 0) + 1; botCls[d.id] = c; d.ref.update({ cls: c }).catch(e => console.warn("Daily Siege: saving a bot's class failed", d.id, e && e.message)); });
   await Promise.all(pubs.docs.map(async d => {
     const pub = d.data();
@@ -68,12 +78,13 @@ async function resolveDue(db, gameId, { now = Date.now(), maxDays = 8, send = nu
     // a battle needs two lords; with fewer, the day simply passes
     const doc = lords >= 2 ? Object.assign(plain(fightDay(W, day, now)), { war: cfg.war || 1 }) : null;
     const next = addDays(day, 1), after = addDays(day, 2);
+    const saved = doc ? await battleSaved(gameRef, day, cfg.war || 1) : false;
     const claimed = await db.runTransaction(async tx => {
       const cur = (await tx.get(gameRef)).data();
       if (!cur || cur.planDay !== day || (cur.war || 1) !== (cfg.war || 1)) return false; // someone else fought it, or a new war began
       const skew = (cur.testSkew || 0) + (force ? 1 : 0), sk2 = skew * 864e5;
-      const battleRef = gameRef.collection("battles").doc(day);
-      if (doc && !(await tx.get(battleRef)).exists) tx.create(battleRef, doc);
+      const battleRef = gameRef.collection("battles").doc(battleId(day, cur.war || 1));
+      if (doc && !saved && !(await tx.get(battleRef)).exists) tx.create(battleRef, doc);
       tx.update(gameRef, { ...(doc ? {} : { skipDays: FieldValue.arrayUnion(day) }), planDay: next, nextPlanDay: after, nextLockAt: Timestamp.fromMillis(lockInstant(next, cur.tz, cur.lockHour) - sk2), lockAfter: Timestamp.fromMillis(lockInstant(after, cur.tz, cur.lockHour) - sk2), clockWar: cur.war || 1, resolvedAt: Timestamp.fromMillis(now), ...(force ? { testSkew: skew } : {}) });
       return true;
     });
@@ -150,7 +161,7 @@ async function fightMissing(db, gameId, { now = Date.now() } = {}) {
   const { addDays, wRoster, wWeekOf, fightDay } = { addDays: g().get("addDays"), wRoster: g().get("wRoster"), wWeekOf: g().get("wWeekOf"), fightDay: g().get("fightDay") };
   const week = wWeekOf({ config: Object.assign({}, cfg, { startDate: startDate(cfg) }) }, planDay), days = [], war = cfg.war || 1; let why = "";
   for (let d = week; d < planDay; d = addDays(d, 1)) {
-    const ref = gameRef.collection("battles").doc(d); if ((await ref.get()).exists) continue;
+    const ref = gameRef.collection("battles").doc(battleId(d, war)); if (await battleSaved(gameRef, d, war)) continue;
     const W = await loadWorld(gameRef, cfg, d), lords = wRoster(W, wWeekOf(W, d)).length;
     if (lords < 2) { why = `Only ${lords} lord${lords === 1 ? "" : "s"} counted for ${d}, and a battle needs two.`; continue; }
     await ref.create(Object.assign(plain(fightDay(W, d, now)), { war })); days.push({ day: d, fought: true, lords });
