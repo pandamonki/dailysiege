@@ -118,11 +118,7 @@ html, body { overflow: hidden; overscroll-behavior: none; }
 .alrow.fl { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; justify-content: space-between; }
 .alrow.fl .alx { flex-basis: 100%; }
 
-.wmock { pointer-events: none; margin: 8px 0; padding: 8px; border-radius: 8px; background: rgba(0,0,0,.28); border: 1px dashed rgba(255,255,255,.25); display: grid; gap: 6px; font-size: 13px; }
-.wmock .mk-row { display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
-.wmock .mk-btn, .wmock .mk-sel, .wmock .mk-step, .wmock .mk-chip { padding: 3px 9px; border-radius: 6px; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.22); }
-.wmock .mk-btn.wax { background: #a23a2a; } .wmock .mk-chip.bad { background: rgba(212,64,47,.3); }
-.wmock .mk-card { display: grid; gap: 6px; } .wmock .mk-cap { margin: 0; opacity: .8; font-size: 12px; }
+.sheet .gshot img { max-height: 72vh; }
 #wiz .wiz-card { max-height: calc(100vh - 90px); overflow-y: auto; }
 /* mercenary camp */
 #campbtn { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); z-index: 6; display: flex; align-items: center; gap: 6px; padding: 5px 14px; border-radius: 0 0 14px 14px; border: 2px solid var(--wood-dark); border-top: 0; background: linear-gradient(#5a1f1a, #3b130f); color: #f6e7c1; font-weight: 700; font-size: 14px; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,.55); }
@@ -180,8 +176,6 @@ html, body { overflow: hidden; overscroll-behavior: none; }
 #twistpop[hidden] { display: none; }
 #twistpop .twstrip { margin: 0; background: none; padding: 0; }
 #twistpop > small { display: block; text-align: center; margin-top: 4px; font-size: 11px; }
-.sheet .wmock { background: rgba(42,26,14,.88); color: #f3e6c4; }
-.sheet .wmock .mk-chip.bad { color: #ffd9d0; }
 /* replay: every lord's castle down the left edge, crossed out when it falls */
 #ctrack { position: absolute; left: 6px; top: 50%; transform: translateY(-50%); z-index: 5; display: flex; flex-direction: column; gap: 4px; padding: 5px 4px; border-radius: 10px; background: rgba(20,12,6,.55); pointer-events: none; }
 #ctrack[hidden] { display: none; }

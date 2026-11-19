@@ -149,12 +149,6 @@ function titleSheet() {
       ${inGame ? `<button class="btn small" data-act="open" data-v="game">⚙ Game settings</button>` : ""}${window.DS && DS.user ? `<button class="btn small" data-act="open" data-v="wars">🏰 Your wars${(DS.wars || []).length > 1 ? ` (${DS.wars.length})` : ""}</button>` : ""}${typeof PWA !== "undefined" && PWA.canOffer() ? `<button class="btn small" data-act="pwainstall">📲 Install app</button>` : ""}<button class="btn small" data-act="open" data-v="patch">📜 Patch notes</button>${typeof LIVE === "object" && LIVE.config && (LIVE.config.hall || []).length ? `<button class="btn small" data-act="open" data-v="hall">🏆 Hall of fame</button>` : ""}<button class="btn small" data-act="wizard">🧙 How to play (tour)</button>
     </div></div>`;
 }
-function guideSheet() { // the tour's pages, read as a book (new lords see this before choosing a hero)
-  const pg = Math.max(0, Math.min(WIZARD.length - 1, sheet.pg || 0)), [, t, p, mock] = WIZARD[pg];
-  return head(null, "How to play", `Page ${pg + 1} of ${WIZARD.length}`) + `<div class="body"><h3>${esc(t)}</h3><p>${esc(p)}</p>${mock ? `<div class="wmock">${mock}</div>` : ""}
-    <div class="dots">${WIZARD.map((_, i) => `<i class="${i === pg ? "on" : ""}"></i>`).join("")}</div>
-    <div class="row"><button class="btn" data-act="gpage" data-v="-1" ${pg === 0 ? "disabled" : ""}>← Back</button>${pg < WIZARD.length - 1 ? `<button class="btn wood" data-act="gpage" data-v="1">Next →</button>` : `<button class="btn wax" data-act="gdone">${S && S.ob === 1 ? "Choose my hero →" : "Got it"}</button>`}${S && S.ob === 1 ? `<button class="btn small" data-act="gdone">Skip</button>` : ""}</div></div>`;
-}
 function spellsSheet() {
   return head(null, "Spell book", "Every ability and its recharge") + `<div class="body">${Object.entries(CLASSES).map(([ck, c]) => `<div class="sec"><h3>${c.name}</h3><div class="spellrow">${[...c.abilities.map(a => [a.key, a.name, a.desc]), ["ult", c.ult.name, c.ult.desc]].map(([k, n, d]) => `<div class="spell"><img alt="" src="${spellURL(ck + "_" + k, 64)}"><b>${esc(n)}</b><small>${PASSIVE[ck] === k ? "Passive" : (COOLDOWN[ck][k] * BAL.cd).toFixed(0) + "s recharge"}</small><span>${esc(d)}</span></div>`).join("")}</div></div>`).join("")}</div>`;
 }
