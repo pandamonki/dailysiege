@@ -127,7 +127,10 @@ function castleSheet() {
     else { const t = TRAPS[dk]; det = udet(t.name, t.cost, `<p>${t.note}</p><div class="statrows">${rows(TRAP_STATS[dk] || [])}</div><p class="muted">Permanent. Buy once, it fires once every battle. Move or sell it from the map. You own ${trapCount(false)} of ${TRAP_CAP} traps.</p>`);
       bar = `<button class="btn wax" data-act="trap" data-v="${dk}" ${dis(avail() < t.cost || !trapRoom(dk))}>Buy · ${t.cost}g</button>`; }
     const twTile = n => { const tw = towers[n - 1]; return tile("dsel", "tw" + n, dk === "tw" + n, tw ? defenceArt(tw) : trapImg("tower"), `Tower ${["I", "II"][n - 1]}`, tw ? { own: 1 } : { price: TRAPS.tower.cost }); };
-    body = `<div class="ugrid shopg">${trapKeys.map(k => tile("dsel", k, dk === k, trapImg(k), TRAPS[k].name, { price: TRAPS[k].cost })).join("")}${tile("dsel", "wall+", dk === "wall+", `icons/ui/wall${ct}.webp`, "Walls", { price: WALL_COST })}${twTile(1)}${twTile(2)}</div>${det}${abar(bar)}`;
+    // the three limits at a glance: traps, towers and walls owned out of the most allowed
+    const cap = (img, label, n, max) => `<span class="dcap${n >= max ? " full" : ""}" title="${label}: ${n} of ${max}"><img alt="" src="${img}"><small>${label}</small><b>${n}/${max}</b></span>`;
+    const caps = `<div class="dcaps">${cap(trapImg("spike"), "Traps", trapCount(false), TRAP_CAP)}${cap(trapImg("tower"), "Towers", towers.length, TOWER_CAP)}${cap(`icons/ui/wall${ct}.webp`, "Walls", have, lim)}</div>`;
+    body = `${caps}<div class="ugrid shopg">${trapKeys.map(k => tile("dsel", k, dk === k, trapImg(k), TRAPS[k].name, { price: TRAPS[k].cost })).join("")}${tile("dsel", "wall+", dk === "wall+", `icons/ui/wall${ct}.webp`, "Walls", { price: WALL_COST })}${twTile(1)}${twTile(2)}</div>${det}${abar(bar)}`;
   }
   if (sheet.lobby) return head(null, "Coat of arms", "Shown on your castle and banner all war") + `<div class="body">${body}<div class="row"><button class="btn wax" data-act="lobbydone">Done</button></div></div>`;
   return head(null, sheet.grp === "army" ? "Army" : "Base", `Tier ${ct} ${tierName(ct)} · ${S.gold} gold in the treasury`) + `<div class="body">

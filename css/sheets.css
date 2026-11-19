@@ -595,3 +595,10 @@ details.fg-host[open] > summary { margin-bottom: 8px; }
 /* the host's Battle check */
 .bcrow { display: grid; grid-template-columns: minmax(110px, 40%) 1fr; gap: 8px; padding: 4px 0; border-bottom: 1px dashed rgba(62,39,20,.25); font-size: 14px; } .bcrow b { color: var(--ink-soft); font-weight: 700; } .bcrow span { overflow-wrap: anywhere; }
 .bclist { margin: 6px 0 0; padding-left: 18px; font-size: 13.5px; display: grid; gap: 2px; }
+/* Defences tab: traps, towers and walls owned out of their limits */
+.dcaps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 8px; }
+.dcap { display: flex; align-items: center; gap: 5px; padding: 4px 6px; border-radius: 8px; background: rgba(90, 60, 25, .1); border: 1px solid rgba(90, 60, 25, .25); min-width: 0; }
+.dcap img { width: 24px; height: 24px; object-fit: contain; flex: none; }
+.dcap small { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #6b4a22; }
+.dcap b { font-size: 15px; color: #3e2714; }
+.dcap.full { background: rgba(180, 120, 20, .18); border-color: #b8862b; } .dcap.full b { color: #8a5a10; }

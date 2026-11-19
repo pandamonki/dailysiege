@@ -91,6 +91,7 @@ practice games always stamp all of them (`js/sim/plans.js`).
 - **Towers**, up to 2 (Tower I and Tower II slots): Archer Tower Lv1 (150 gold) → Archer Tower Lv2 (100 gold, Fortress) →
   one Lv3 tower (150 gold, Citadel): Archer Tower Lv3, Fire, Bomb, Magic or Sniper. Each slot shows the tower's stats beside
   the picked upgrade's. Towers never move (pinned to their tile from 19 Nov) and can't be moved; sell and rebuy to relocate.
+- The top of the Defences tab counts what you own against each limit: traps out of 4, towers out of 2, walls out of 5.
 - From 19 Nov **walls block everyone**, including their owner's and allies' soldiers, who route round through the gaps.
   The planning rules always keep a way through to every castle.
 
