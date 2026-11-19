@@ -17,7 +17,7 @@ function garrisonWaveHTML(w, i) {
       <button class="gr-chip" data-act="wpop" data-k="${i}" data-v="${w.when === "timer" && sheet.wpop && sheet.wpop.w === i && sheet.wpop.kind === "time" ? "time" : "when"}" ${dis()}>${whenLabel(w)}</button>
       <button class="gr-chip w" data-act="wpop" data-k="${i}" data-v="order" ${dis()}>${WAVE_ORDERS.find(o => o[0] === w.order)[1]}</button></div>
     ${garrisonPopHTML(i)}
-    <div class="gr-r4"><div class="gr-s free"><img alt="" src="${spriteURL("footman")}"><b>Footman</b><small>free</small></div>${waveOpen(i) ? w.slots.map(slot).join("")
+    <div class="gr-r4"><div class="gr-s free${waveOpen(i) ? "" : " lk"}" title="Every wave brings a free Footman"><img alt="" src="${spriteURL("footman")}"><b>Footman</b><small>${waveOpen(i) ? "free" : "free once open"}</small></div>${waveOpen(i) ? w.slots.map(slot).join("")
       : `<div class="gr-lock">${i === wavesOpen() ? `<button class="btn small wax" data-act="wunlock" ${dis(avail() < waveUnlockCost())}>🔒 Unlock ${WAVE_SLOTS} slots · ${waveUnlockCost()}g</button>` : `<span>🔒 Unlock Wave ${i} first</span>`}</div>`}</div></div>`;
 }
 // the castle guard: one soldier on the field whose order is to stay home (the "guard" order the battle already knows)
@@ -46,21 +46,21 @@ function deploymentTab() {
       ${row("Reserve", `${reserve.length} waiting`, "res", reserve.map(tile).join("") + ph("wres", reserve.length ? "bench" : "empty"))}
       ${S.garrison.map(garrisonWaveHTML).join("")}</div>
     <p class="muted gr-tip">The guard stays home and defends your castle all battle. It is one of your ${FIELD_MAX} soldiers on the field. Drag it back among the attackers to send it out again.</p>
-    <p class="muted gr-tip">Tap a chip to change when a wave goes or what it does. Waves are at least ${WAVE_GAP}s apart and one is forced out at each minute mark. Training and selling are on the Garrison tab.</p>`;
+    <p class="muted gr-tip">Tap a chip to change when a wave goes or what it does. Waves are at least ${WAVE_GAP}s apart and one is forced out at each minute mark. Training and selling are on the Train tab.</p>`;
 }
 // actions
 Object.assign(A, {
-  wsend: (v, k) => { if (S.locked) { toast("Draft new orders to change your garrison."); return; } const err = assignWave(v, +k); if (err) toast(err); else toast(`Sent to Wave ${+k + 1}.`); },
+  wsend: (v, k) => { if (S.locked) { toast("Draft new orders to change your army."); return; } const err = assignWave(v, +k); if (err) toast(err); else toast(`Sent to Wave ${+k + 1}.`); },
   wback: v => { if (S.locked) return; const err = reserveUnit(v); if (err) toast(err); },
-  wdep: () => { if (S.locked) { toast("Draft new orders to change your garrison."); return; } if (!sheet.tsel) { toast("Tap a soldier first."); return; } const err = deployUnit(sheet.tsel); if (err) toast(err); else unguard(sheet.tsel); },
-  wguard: () => { if (S.locked) { toast("Draft new orders to change your garrison."); return; } if (!sheet.tsel) { toast("Tap a soldier first, then the guard slot."); return; } const err = guardUnit(sheet.tsel); if (err) toast(err); else toast("This soldier will guard your castle."); },
-  wres: () => { if (S.locked) { toast("Draft new orders to change your garrison."); return; } if (!sheet.tsel) { toast("Tap a soldier first."); return; } const err = reserveUnit(sheet.tsel); if (err) toast(err); },
+  wdep: () => { if (S.locked) { toast("Draft new orders to change your army."); return; } if (!sheet.tsel) { toast("Tap a soldier first."); return; } const err = deployUnit(sheet.tsel); if (err) toast(err); else unguard(sheet.tsel); },
+  wguard: () => { if (S.locked) { toast("Draft new orders to change your army."); return; } if (!sheet.tsel) { toast("Tap a soldier first, then the guard slot."); return; } const err = guardUnit(sheet.tsel); if (err) toast(err); else toast("This soldier will guard your castle."); },
+  wres: () => { if (S.locked) { toast("Draft new orders to change your army."); return; } if (!sheet.tsel) { toast("Tap a soldier first."); return; } const err = reserveUnit(sheet.tsel); if (err) toast(err); },
   wpop: (v, k) => { if (S.locked) return; const w = +k; sheet.wpop = sheet.wpop && sheet.wpop.w === w && sheet.wpop.kind === v ? null : { w, kind: v }; },
   wopt: (v, k) => { if (S.locked) return; const w = S.garrison[+k], [kind, val] = v.split(":");
     if (kind === "when") { w.when = val; sheet.wpop = val === "timer" ? { w: +k, kind: "time" } : null; }
     else if (kind === "time") { w.when = "timer"; w.at = +val; sheet.wpop = null; }
     else if (kind === "order") { w.order = val; sheet.wpop = null; } },
-  wslot: (v, k) => { if (S.locked) { toast("Draft new orders to change your garrison."); return; } const u = sheet.tsel && findUnit(sheet.tsel);
+  wslot: (v, k) => { if (S.locked) { toast("Draft new orders to change your army."); return; } const u = sheet.tsel && findUnit(sheet.tsel);
     if (!u) { toast("Tap a soldier above first, or drag one here."); return; }
     const err = assignWave(u.id, +k, +v); if (err) toast(err); },
   wunslot: (v, k) => { if (S.locked) return; const id = S.garrison[+k].slots[+v]; if (id) { const err = reserveUnit(id); if (err) toast(err); } },
@@ -77,7 +77,7 @@ Object.assign(A, {
     d.ghost.style.left = e.clientX - 34 + "px"; d.ghost.style.top = e.clientY - 44 + "px"; clear(); const t = under(e); if (t) t.classList.add("gr-hot"); e.preventDefault(); }, { passive: false });
   document.addEventListener("pointerup", e => { if (!d) return;
     if (d.on) { swallow = true; setTimeout(() => { swallow = false; }, 0); const t = under(e), id = d.id; end();
-      if (S.locked) { toast("Draft new orders to change your garrison."); return; }
+      if (S.locked) { toast("Draft new orders to change your army."); return; }
       if (t) { const [kind, w, j] = t.dataset.drop.split(":"); let err = null;
         if (kind === "guard") err = guardUnit(id); else if (kind === "dep") { err = deployUnit(id); if (!err) unguard(id); } else if (kind === "res") err = reserveUnit(id); else if (kind === "w") err = assignWave(id, +w, j != null ? +j : undefined);
         if (err) toast(err); sheet.tsel = id; render(true); }

@@ -26,8 +26,8 @@ function typesHTML() {
 // ----- leaderboard, battle report, guide, spell book -----
 function boardRows() { // [{id,name,color,banner,cls,lvl,pts,last}]
   if (!isLive()) {
-    const ids = ["you", ...RIVALS.map(r => r.id)], lvl = DAY;
-    return ids.map(id => { const rv = RIVALS.find(r => r.id === id); return { id, me: id === "you", name: rv ? rv.name : "You", color: rv ? rv.color : MY_COLOR, banner: rv ? rv.banner : S.banner, cls: rv ? (seeArmies() ? rv.cls : null) : S.cls, lvl, pts: PRACTICE_BOARD[id] || 0, last: null }; });
+    const ids = ["you", ...RIVALS.map(r => r.id)], botLvl = Math.min(heroMaxLvl(heroV3Now()), 2 * DAY - 1); // the same levels the practice battle uses
+    return ids.map(id => { const rv = RIVALS.find(r => r.id === id); return { id, me: id === "you", name: rv ? rv.name : "You", color: rv ? rv.color : MY_COLOR, banner: rv ? rv.banner : S.banner, cls: rv ? (seeArmies() ? rv.cls : null) : S.cls, lvl: rv ? botLvl : level(), pts: PRACTICE_BOARD[id] || 0, last: null }; });
   }
   const ck = liveClock(), roster = rosterFor(ck.week), pts = standings(ck.week), lastKey = Object.keys(LIVE.battles).filter(k => LIVE.battles[k].week === ck.week).sort().pop(), lb = lastKey && LIVE.battles[lastKey];
   return roster.map((p, i) => { const pl = latestPlan(p, ck.planDay, true), hs = heroState(p.uid, ck.week, ck.planDay), st = p.state && p.state.week === ck.week ? p.state : null, lr = lb && (lb.results || []).find(r => r.pid === p.uid);
@@ -527,7 +527,7 @@ function goldSheet() {
   const cb = CASTLE_INCOME[(S.castle || 1) - 1], ct = S.castle || 1, row = (img, l, v, c = "") => `<div class="trs${c}"><img alt="" src="${img}"><b>${v}</b><span>${l}</span></div>`, tot = baseIncome(curDayNo()) + cb + under;
   return head(null, "Treasury", "What you have and what tomorrow brings") + `<div class="body"><div class="trgrid">
     ${row("icons/ui/gold.webp", "gold to spend now", avail(), " big")}${reserved() ? row("icons/ui/allies.webp", "promised in offers and bids", reserved()) : ""}
-    ${row("icons/ui/day.webp", "daily pay", "+" + baseIncome(curDayNo()))}${cb ? row(`icons/ui/castle${ct}.webp`, `from your ${tierName(ct)}`, "+" + cb) : row("icons/ui/castle1.webp", "a Fortress adds +70 a day", "+0")}${under ? row("icons/ui/coin.webp", "catch-up gold", "+" + under) : ""}
+    ${row("icons/ui/day.webp", "daily pay", "+" + baseIncome(curDayNo()))}${cb ? row(`icons/ui/castle${ct}.webp`, `from your ${tierName(ct)}`, "+" + cb) : row("icons/ui/castle1.webp", `from your castle. A Fortress pays +${CASTLE_INCOME[1]} a day`, "+0")}${under ? row("icons/ui/coin.webp", "catch-up gold", "+" + under) : ""}
     ${row("icons/skills/archer_b3_t3b.webp", "tomorrow before spoils", "+" + tot, " sum")}</div>
     <p class="muted">Spoils from kills in the battle and any alliance dowries are added after the fight. Higher-level and leading heroes carry bounties worth taking.</p>
     <div class="row"><button class="btn" data-act="close">Close</button></div></div>`;
@@ -535,7 +535,7 @@ function goldSheet() {
 
 function daySheet() {
   const ck = isLive() ? liveClock() : null, m = ck ? ck.minsToLock : null, left = m != null ? `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, "0")}m` : countdown();
-  return head(null, `Day ${DAY} of 7`, "The war runs for seven daily battles") + `<div class="body"><div class="stats"><div class="stat"><b>⏳ ${left}</b><span>until orders lock and the battle is fought${isLive() ? ` (${lockLabel(LIVE.config)})` : ""}</span></div><div class="stat"><b>${S.locked ? "✓ Sealed" : "Open"}</b><span>your orders</span></div></div>
+  return head(null, `Day ${DAY} of 7`, "The war runs for seven daily battles") + `<div class="body"><div class="stats"><div class="stat"><b>⏳ ${left}</b><span>until orders lock and the battle is fought${isLive() ? ` (${lockLabel(LIVE.config)})` : ""}</span></div><div class="stat"><b>${S.locked ? "✓ Sealed" : "Not sealed"}</b><span>${S.locked ? "your orders are in" : "seal your orders before the timer ends"}</span></div></div>
     <p class="muted">Each day: spend gold, place your soldiers, give orders, then seal. The battle plays out when the timer ends and the replay is waiting for you the next time you open the game.</p>
     ${testSkipHTML()}
     <div class="row"><button class="btn" data-act="close">Close</button></div></div>`;

@@ -25,7 +25,7 @@ function resize(force) {
   const rp = mode === "replay";
   if (!force && bg && cvs.clientWidth === vw && Math.abs(innerHeight - (resize.ih || 0)) < 2 && resize.rp === rp) return;
   resize.ih = innerHeight; resize.rp = rp;
-  vw = cvs.clientWidth; vh = Math.round(Math.max(280, Math.min(rp ? vw * 1.3 : vw * 1.2, rp ? innerHeight - 450 : innerHeight * .585))); // a replay keeps room for the unit panel and the controls
+  vw = cvs.clientWidth; vh = Math.round(Math.max(280, Math.min(rp ? vw * 1.3 : vw * 1.45, rp ? innerHeight - 450 : innerHeight * .585))); // a replay keeps room for the unit panel and the controls
   cvs.style.height = vh + "px";
   if (!rp) { // on a short screen the unit strip would run under the menu buttons: take the difference off the map
     const dock = document.getElementById("pdock"), nav = document.getElementById("commands");

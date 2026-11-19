@@ -50,6 +50,7 @@ main { padding-bottom: 96px; }
 .chip2 .coin { width: 16px; height: 16px; }
 
 .chip2 { min-height: 54px !important; border-radius: 10px !important; } .chip2 .ci { font-size: 22px !important; height: 24px; display: flex; align-items: center; } .chip2 b { font-size: 14px !important; }
+.chip2 b.lbl { font-size: 11.5px !important; font-weight: 700; letter-spacing: .01em; }
 .chip2 .coin { width: 20px !important; height: 20px !important; display: inline-block; }
 .commands .wrap { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; gap: 6px !important; }
 .nb2 { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 7px 0 6px; border: 2px solid var(--wood-dark); border-radius: 8px; background: linear-gradient(#835a34, #5e3c1f); color: var(--parchment); font-family: inherit; font-size: 13px; cursor: pointer; } .nb2 .ni { font-size: 22px; line-height: 1.1; }
@@ -169,8 +170,10 @@ html, body { overflow: hidden; overscroll-behavior: none; }
 .trainfoot { position: sticky; bottom: 0; background: var(--parchment); padding-bottom: 2px; z-index: 1; } .trainfoot .abar { position: static; margin-top: 8px; }
 /* today's twist: a small ! by the camp button, and its pop-up */
 #twistbtn { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); z-index: 6; width: 34px; height: 34px; padding: 0; border-radius: 50%; border: 2px solid var(--wood-dark); background: radial-gradient(circle at 40% 35%, #ffe08a, #c9962f 70%); color: #3a2208; font: 700 18px/1 var(--f-body); box-shadow: 0 2px 0 rgba(62,39,20,.6); cursor: pointer; }
-#campbtn:not([hidden]) ~ #twistbtn { left: calc(50% + 72px); transform: none; }
+#campbtn:not([hidden]) ~ #twistbtn { left: auto; right: calc(50% + 62px); transform: none; } /* left of the Camp ribbon, clear of the zoom buttons */
 #twistbtn[hidden] { display: none; }
+#twistbtn { width: auto; height: 34px; border-radius: 17px; display: flex; align-items: center; gap: 5px; padding: 2px 11px 2px 2px; font-size: 14px; }
+#twistbtn .twico { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; display: block; border: 1px solid rgba(58,34,8,.5); }
 #twistbtn.fresh { animation: campPulse 1.4s ease-in-out infinite; }
 #twistpop { position: absolute; top: 50px; left: 50%; transform: translateX(-50%); width: min(300px, calc(100% - 24px)); z-index: 7; padding: 8px; border-radius: 12px; border: 2px solid var(--wood-dark); background: var(--parchment); color: var(--ink); box-shadow: 0 6px 18px rgba(0,0,0,.45); }
 #twistpop[hidden] { display: none; }
