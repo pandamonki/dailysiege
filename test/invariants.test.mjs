@@ -164,3 +164,15 @@ test("Alliances v2: bot lords' diplomacy is the same on every device and invites
   }
   const rate = invites / days; assert.ok(rate > .2 && rate < .4, `invite rate ${rate.toFixed(2)}`);
 });
+
+// ----- placement v2 (battles from 21 Nov 2026) -----
+test("Placement v2: one point per place, last scores 1, and the winner gets 2 more", () => {
+  const pp = (v2, place, n) => sim.run(`placePts(${v2}, ${place}, ${n})`);
+  assert.deepEqual([1, 2, 3, 4, 5, 6, 7, 8].map(p => pp(true, p, 8)), [10, 7, 6, 5, 4, 3, 2, 1]);
+  assert.equal(pp(true, 1, 10), 12); assert.equal(pp(true, 10, 10), 1, "even 10th of 10 scores");
+  assert.deepEqual([1, 2, 3, 8].map(p => pp(false, p, 8)), [10, 7, 5, 0], "older battles keep the old table");
+  const r = JSON.parse(sim.run(`(() => { const { plans, L } = ${WAR(5, 3)}; plans.forEach(p => { p.placeV2 = true; });
+    const res = runBattle(JSON.parse(JSON.stringify(plans)), 777, { N: L.N, ultV2: true, balV2: true, balV3: true, fairV1: true, pickV1: true, balV4: true, suddenV1: true, treesV1: true, heroV3: true, dayNo: 3, fast: true });
+    return JSON.stringify(res.results.map(x => ({ place: x.place, points: x.points, kills: x.kills, castles: x.castles, extra: (x.survivor ? 1 : 0) + (x.treachery || 0) * 3 }))); })()`));
+  r.forEach(x => assert.equal(x.points, (9 - x.place) + (x.place === 1 ? 2 : 0) + x.kills + 3 * x.castles + x.extra, `place ${x.place}`));
+});

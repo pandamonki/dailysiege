@@ -45,7 +45,7 @@ function boardSheet() {
   return head(null, "Leaderboard", `${isLive() ? "Week standings" : "Test standings"} · day ${DAY} of 7`) + `<div class="body bdbody">
     <div class="bdhead"><span></span><span></span><span>Lord</span><span>Lv</span><span>Pts</span></div>
     ${rows.map((r, i) => `<div class="bd2${r.me ? " me" : ""}"><span class="ord">${i + 1}</span><img class="bmini" alt="" src="${bannerURL(r.banner, r.color, 24, 32)}"><span class="bdn"><b>${esc(r.name)}</b>${r.cls ? `<small>${CLASSES[r.cls].name}</small>` : ""}${i < 3 && n > 3 ? `<i class="tag bty" title="Bounty on their head: base + board position + hero level x 5">♛ ${bountyMap()[r.id] || ""}g</i>` : ""}${i >= n - low && n > 3 ? `<i class="tag cat" title="Earns catch-up gold">◈</i>` : ""}</span><span class="lv">${r.lvl}</span><span class="pts">${r.pts}${r.last != null ? `<small>+${r.last}</small>` : ""}</span></div>`).join("")}
-    <p class="muted bdfoot"><b class="bounty">♛</b> bounty on the top three · <b class="catch">◈</b> catch-up gold for the bottom 30%${catchUp ? ` (you get +${catchUp})` : ""}. Points: 10 for first place down to 0, +1 per hero slain, +${castlePts(isLive() ? fairV1For(liveClock().planDay) : true)} per castle taken, +1 if your hero survives the battle.</p></div>`;
+    <p class="muted bdfoot"><b class="bounty">♛</b> bounty on the top three · <b class="catch">◈</b> catch-up gold for the bottom 30%${catchUp ? ` (you get +${catchUp})` : ""}. Points: ${(isLive() ? placeV2For(liveClock().planDay) : true) ? `one per place, so last scores 1 and first scores one per lord, +${PLACE_WIN_BONUS} for winning` : "10 for first place down to 0"}, +1 per hero slain, +${castlePts(isLive() ? fairV1For(liveClock().planDay) : true)} per castle taken, +1 if your hero survives the battle.</p></div>`;
 }
 function latestBattleKey() { return Object.keys(LIVE.battles || {}).sort().pop() || null; }
 let LASTP = null, reportBack = null;
@@ -177,6 +177,11 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "Placement points", date: "20 Nov", fixes: [
+    "The leaderboard's i note and the rules said day 7 counts double. Since 16 Nov it counts 1.5 times, like days 5 and 6.",
+  ], balance: [
+    "From the battle of 21 Nov, placement scores one point per place: last scores 1 and first scores one per lord, plus 2 for winning (with 8 lords: 10, 7, 6, 5, 4, 3, 2, 1). Before, 10, 7, 5, 4, 3, 2, 1 for 1st to 7th and nothing below. Kills, castles, survival, betrayals and contracts are unchanged.",
+  ], changes: [] },
   { v: "Locked rosters and the Battle check", date: "20 Nov", fixes: [
     "A war that followed a war played with testing skips could have its battles mistaken for the earlier war's (they were saved under the same dates), so they never showed. From the second war on, battles are saved under the date and the war, and Resolve now fights any that were lost.",
     "Bots whose hero class was missing or repeated (all Mages, for example) are given different classes.",
