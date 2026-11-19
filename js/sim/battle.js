@@ -55,8 +55,9 @@ const ITEM_V6 = { salve: 220, hpringHp: 120, hpringRegen: 8, bootsSpd: .42, shel
 const AGGRO_R = 4, RECALL_R = 6, RETREAT_END_V2 = .5, METEOR_CASTLE = 700, MAGIC_VS_FORT = .6, HIT_WINDOW = 2.5, BACK_AT = .6;
 const fairTie = (seed, a, b) => hash(seed, botSeed(String(a)) * 7919 + botSeed(String(b)), 17);
 // alliances v2 (plans stamped allyV2): winning allies share the top places by castle health left. Lone wolf: while exactly one lord still
-// standing is in no pact and at least one alliance stands, that lord deals LONE_WOLF_STEP more damage and takes damage as if it had
-// LONE_WOLF_STEP more health, for each allied lord still standing. It ends the moment a second lord stands alone or the lone wolf allies.
+// standing is in no pact and at least one alliance stands, that lord's army and castle deal LONE_WOLF_STEP more damage and have LONE_WOLF_STEP
+// more maximum health (current health scaled with it) for each allied lord still standing. Checked every second; it ends the moment a second
+// lord stands alone or the lone wolf allies, and the extra health goes again.
 let ALLY_V2_FROM = "2026-11-21"; const allyV2For = d => String(d) >= ALLY_V2_FROM, LONE_WOLF_STEP = .1;
 const ASSIST_SECS = 10, SURVIVOR_PTS = 1, BLOC_MAX = 3, TREACHERY_PTS = 3, TREACHERY_LOOT = .25, DAY_WEIGHT = { 5: 1.5, 6: 1.5, 7: 2 };
 // A lord whose castle falls keeps their hero and soldiers on the field: they fight on to the end of the battle, but can no longer fall back, heal at the castle, teleport home or respawn. Placing is still decided by when the castle fell.
@@ -170,7 +171,9 @@ function runBattle(plans, seed, opts = {}) {
     const id = solo.length === 1 && n > 0 ? solo[0] : null;
     if (id && (id !== loneId || n !== loneN)) { P[id].loneMax = Math.max(P[id].loneMax || 0, n); log(`${nm(id)} ${id === mePid ? "stand" : "stands"} alone against ${n} allied lord${n === 1 ? "" : "s"}: lone wolf, +${Math.round(n * LONE_WOLF_STEP * 100)}% damage and health.`, id === mePid ? "you" : undefined); }
     else if (!id && loneId) log(`${nm(loneId)} ${loneId === mePid ? "are" : "is"} no longer the lone wolf.`);
-    loneId = id; loneN = id ? n : 0; };
+    loneId = id; loneN = id ? n : 0;
+    ents.forEach(e => { if (e.dead || !(e.maxhp > 0)) return; const want = e.pid === loneId ? 1 + LONE_WOLF_STEP * loneN : 1, had = e.lm || 1; // real extra health, so healing and percentages still work
+      if (want !== had) { const f = want / had; e.maxhp *= f; e.hp = Math.min(e.maxhp, e.hp * f); e.lm = want; } }); };
   const loneMul = pid => (pid && pid === loneId ? 1 + LONE_WOLF_STEP * loneN : 1);
   plans.forEach(pl => {
     const p = P[pl.pid], [cr, cc] = pl.castle, def = pl.defences || {};
@@ -395,7 +398,6 @@ function runBattle(plans, seed, opts = {}) {
       if (src && fxv(src, "blind") && rng() < (fxv(src, "blind") === 1 ? .5 : fxv(src, "blind"))) { txt(tgt, "Miss", "#ccc"); return 0; }
     }
     let m = 1;
-    if (loneId && tgt.pid === loneId) m /= loneMul(tgt.pid); // ...and takes damage as if it had more health
     if (src && src.key === "bowman" && tgt.kind === "champ") m *= 1.3; // bowmen are hero-hunters
     if (src) {
       if (src.rapier) { if (RAPIER_V2) { if (src.kind === "champ" && !(o.ab || curAb) && !o.dot && !o.reflected) amt += ITEM_V6.rapier; } else m *= 2; } // Divine Rapier: v6 adds 100 to each weapon hit, abilities untouched; before, it doubled all hero damage

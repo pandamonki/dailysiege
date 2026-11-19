@@ -139,9 +139,10 @@ practice games always stamp all of them (`js/sim/plans.js`).
 - Allies win together if only allies remain. From 21 Nov they share the top places, the one with the most castle health
   left first (1st, 2nd, 3rd: 10, 7, 5 points); before then every surviving ally took 1st place.
 - Lone wolf (from 21 Nov): while exactly one lord still standing is in no pact and at least one alliance stands, that lord's
-  army deals 10% more damage and takes damage as if it had 10% more health for each allied lord still standing
+  army and castle deal 10% more damage and have 10% more maximum health (current health scales with it) for each allied lord
+  still standing
   (`LONE_WOLF_STEP`). It is checked every second of the battle, so it ends the moment a second lord stands alone (a pact
-  broken by a betrayal or a fallen castle) or the lone wolf is in a pact.
+  broken by a betrayal or a fallen castle) or the lone wolf is in a pact, and the extra health goes with it.
 - A pact can be broken cleanly or betrayed mid-battle with a bomb in the ally's keep (half its health). The betrayer scores
   3 points and takes a quarter of the victim's battle spoils; the two deal 20% more damage to each other for the rest of the
   war and can never share an alliance again.

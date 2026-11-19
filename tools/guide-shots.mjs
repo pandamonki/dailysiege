@@ -94,6 +94,17 @@ if (want("answer")) {
   await show({ type: "invites" }); await shot("answer", ["#sheet .invcard .row", '#sheet [data-act="idismiss"]'], "sheet");
   await js(r => { delete RIVAL_AI[r].offers; }, rival2);
 }
+if (want("group")) { // you and your ally are invited by a third lord; your ally has already accepted
+  await js(([r0, r3]) => { Object.values(RIVAL_AI).forEach(a => { delete a.offers; }); S.pairs = [["you", r0].sort().join("|")];
+    RIVAL_AI[r3].offers = { you: { gold: 120 }, [r0]: { gold: 120 } }; RIVAL_AI[r0].terms = Object.assign({}, RIVAL_AI[r0].terms, { [r3]: { mode: "accept", min: 100 } }); S.replies = {}; S.declined = {}; }, [rival, await js(() => RIVALS[3].id)]);
+  await show({ type: "invites" }); await shot("group", ["#sheet .aans", "#sheet .invcard .row"], "sheet");
+  await js(() => { S.pairs = []; Object.values(RIVAL_AI).forEach(a => { delete a.offers; }); });
+}
+if (want("wolf")) { // every lord but one is in an alliance: that one is the lone wolf
+  await js(() => { const id = n => RIVALS[n].id, k = (a, b) => [a, b].sort().join("|"); S.pairs = [k("you", id(0)), k(id(1), id(2)), k(id(2), id(3)), k(id(1), id(3)), k(id(5), id(6))]; });
+  await show({ type: "orders", grp: "alli" }); await shot("wolf", ["#sheet .agrid", "#sheet .ateam.solo", "#sheet .note.gold"], "marks", 16);
+  await js(() => { S.pairs = []; });
+}
 if (want("betray")) {
   await show({ type: "orders", grp: "alli" }, `S.pairs = ["you|" + ${JSON.stringify(rival)}]; S.pactAct[${JSON.stringify(rival)}] = "betray";`);
   await js(() => document.querySelector("#sheet .pact")?.scrollIntoView({ block: "center" })); await wait(200);
