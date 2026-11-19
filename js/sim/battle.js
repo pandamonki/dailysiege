@@ -157,7 +157,8 @@ function runBattle(plans, seed, opts = {}) {
     w.done = true; p.lastWave = t; st(p.pid).waves.push(Math.round(t));
     w.units.forEach((u, j) => { const o = (j - (n - 1) / 2) * .45, e = makeUnit(p, { ...u, kind: "unit" }, c.x + dx / L * .9 + px * o, c.y + dy / L * .9 + py * o);
       e.hx = e.x; e.hy = e.y; e.spd *= BAL.move; e.as *= BAL.swing; e.retreats = 1; e.wave = i + 1; if (p.noRetreat) e.noRetreat = true;
-      if (w.order === "castle") e.purpose = "castle"; else if (w.order === "hero") e.hunter = true; else if (w.order === "nearest") e.purpose = "nearest"; }); // the wave's purpose: raider-style march on a castle, hunt heroes, or fight the nearest enemy
+      if (p.waveV2) { e.waveDef = true; e.waveSeen = t; } // waves v2: defend the castle area first, then the army plan
+      else if (w.order === "castle") e.purpose = "castle"; else if (w.order === "hero") e.hunter = true; else if (w.order === "nearest") e.purpose = "nearest"; }); // the wave's purpose: raider-style march on a castle, hunt heroes, or fight the nearest enemy
     ev({ ty: "wave", pid: p.pid, i, n: p.waves.filter(x => x.done).length, ...(rush ? { rush: 1 } : {}) });
     log(rush ? `${poss(p.pid)} castle is losing ground: reinforcements rush out to defend it.` : `${poss(p.pid)} reinforcements march out of the castle.`, p.pid === mePid ? "you" : undefined);
   }
@@ -630,6 +631,12 @@ function runBattle(plans, seed, opts = {}) {
   }
   function pickTarget(e) {
     if (sdOn()) { const pool = ents.filter(o => !o.dead && o.kind !== "castle" && o.kind !== "totem" && hostile(e.pid, o.pid) && P[o.pid].alive && vis(o, e)); return pool.length ? minBy(pool, o => d(o, e)) : null; } // sudden death: whoever is nearest
+    if (e.waveDef) { // waves v2: a wave's first job is the castle area; it stays by the gate until that has been clear for WAVE_DEF_CLEAR seconds
+      const home = P[e.pid].castle, foes = home && !home.dead ? ents.filter(o => !o.dead && o.kind !== "castle" && o.kind !== "totem" && hostile(e.pid, o.pid) && fighting(o.pid) && vis(o, e) && d(o, home) <= WAVE_DEF_R) : [];
+      if (foes.length) { e.waveSeen = t; return minBy(foes, o => d(o, e)); }
+      if (home && !home.dead && t - e.waveSeen < WAVE_DEF_CLEAR) return null;
+      e.waveDef = false;
+    }
     if (e.hunter) { const hs = ents.filter(x => !x.dead && x.kind === "champ" && hostile(e.pid, x.pid) && vis(x, e)); if (hs.length) return minBy(hs, x => d(x, e)); }
     const p = P[e.pid], guard = e.order === "guard", escort = e.order === "escort" && live(p.champ);
     if (!e.cart && !e.ram && ((UNIT_TYPES[e.key] || [])[0] !== "siege" || e.order === "guard")) { const carts = ents.filter(o => o.cart && !o.dead && hostile(e.pid, o.pid) && ents.some(c => c.kind === "castle" && !c.dead && !hostile(e.pid, c.pid) && d(c, o) <= 4) && d(o, e) <= 9); if (carts.length) return minBy(carts, o => d(o, e)); } // a powder cart within 4 tiles of a friendly castle: stop it

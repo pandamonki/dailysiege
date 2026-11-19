@@ -33,7 +33,9 @@ const WAVE_COUNT = 3, WAVE_SLOTS = 3, WAVE_GAP = 30, WAVE_FORCE_EVERY = 60, GARR
 // Emergency waves (plans stamped waveV2, battles from WAVE_V2_FROM): when a castle drops below each mark in WAVE_EMERGENCY, the next wave not yet sent
 // rushes out to defend, whatever its own condition, as long as WAVE_EMERGENCY_GAP seconds have passed since the last wave. A mark crossed during that
 // wait is kept and the wave goes as soon as the wait is over, so a castle under heavy attack gets its waves one at a time, never all at once.
-let WAVE_V2_FROM = "2026-11-20"; const waveV2For = d => String(d) >= WAVE_V2_FROM, WAVE_EMERGENCY = [.75, .5, .25], WAVE_EMERGENCY_GAP = 10;
+// Also from WAVE_V2_FROM a wave has no orders of its own: every wave first clears enemies within WAVE_DEF_R tiles of its castle, and once that area has
+// been clear for WAVE_DEF_CLEAR seconds (or the castle has fallen) its soldiers follow the lord's army plan like the rest of the army.
+let WAVE_V2_FROM = "2026-11-20"; const waveV2For = d => String(d) >= WAVE_V2_FROM, WAVE_EMERGENCY = [.75, .5, .25], WAVE_EMERGENCY_GAP = 10, WAVE_DEF_R = 8, WAVE_DEF_CLEAR = 4;
 const WAVE_WHEN = [["timer", "At a set time"], ["castle_hit", "When my castle is attacked"], ["castle_low", "When my castle drops below half"], ["hero_dies", "When my hero dies"], ["army_dead", "When all my soldiers die"], ["enemy_hero", "When an enemy hero dies"], ["ult", "When any ultimate is cast"]];
 const WAVE_TIMES = [20, 30, 45, 60, 75, 90, 120, 150];
 const WAVE_ORDERS = [["default", "Default orders", "Each soldier follows its group's combat orders"], ["castle", "March on castle", "Heads for the enemy castle; turns only on melee attackers"], ["hero", "Hunt heroes", "Goes after the nearest enemy hero"], ["nearest", "Nearest enemies", "Fights the closest enemy soldiers and heroes, wherever they are"]];

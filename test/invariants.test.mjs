@@ -187,3 +187,17 @@ test("emergency waves: never closer than the gap, and a falling castle sends eve
     });
   }
 });
+
+test("waves defend first: for their first seconds out, wave soldiers stay in the castle area, whatever orders an old plan gave them", () => {
+  for (const [g, d] of [...GAMES, [4, 3], [5, 5]]) {
+    const r = JSON.parse(sim.run(`(() => { const { plans, L } = ${WAR(g, d)}; plans.forEach(p => (p.waves || []).forEach(w => { w.order = "castle"; }));
+      const res = runBattle(JSON.parse(JSON.stringify(plans)), 99, { N: L.N, ultV2: true, balV2: true, balV3: true, fairV1: true, pickV1: true, balV4: true, suddenV1: true, treesV1: true, heroV3: true, dayNo: ${d}, fast: false });
+      const M = res.meta, F = res.frames, out = [];
+      res.events.filter(e => e.ty === "wave").forEach(ev => { const k = F.findIndex(f => f.t >= ev.t); if (k < 1) return; const before = F[k - 1].d.length / 4, home = M.find(m => m.kind === "castle" && m.pid === ev.pid);
+        const hx = home.tile[1] + .5, hy = home.tile[0] + .5, win = F.filter(f => f.t >= ev.t && f.t <= ev.t + WAVE_DEF_CLEAR);
+        for (let i = before; i < F[k].d.length / 4; i++) { if (M[i].pid !== ev.pid || M[i].kind !== "unit") continue; let far = 0; win.forEach(f => { if (i * 4 < f.d.length && f.d[i * 4 + 2] > 0) far = Math.max(far, Math.hypot(f.d[i * 4] - hx, f.d[i * 4 + 1] - hy)); }); out.push(far); } });
+      return JSON.stringify({ R: WAVE_DEF_R, far: out }); })()`));
+    assert.ok(r.far.length > 0, `game ${g}: no wave went out`);
+    r.far.forEach(x => assert.ok(x <= r.R, `game ${g}: a wave soldier went ${x.toFixed(1)} tiles from its castle in its first seconds`));
+  }
+});

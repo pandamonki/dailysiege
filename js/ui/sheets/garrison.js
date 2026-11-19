@@ -15,7 +15,7 @@ function garrisonWaveHTML(w, i) {
       : `<div class="gr-s" data-drop="w:${i}:${j}" data-act="wslot" data-k="${i}" data-v="${j}" role="button" aria-label="Empty slot, wave ${i + 1}"><span>${sheet.tsel && findUnit(sheet.tsel) && !UNITS[findUnit(sheet.tsel).type].castleOnly ? "tap to place" : "empty"}</span></div>`; };
   return `<div class="gr-wrow" data-drop="w:${i}"><div class="gr-wh"><span class="gr-wn" aria-hidden="true"><i></i></span><b>Wave ${i + 1}</b>
       <button class="gr-chip" data-act="wpop" data-k="${i}" data-v="${w.when === "timer" && sheet.wpop && sheet.wpop.w === i && sheet.wpop.kind === "time" ? "time" : "when"}" ${dis()}>${whenLabel(w)}</button>
-      <button class="gr-chip w" data-act="wpop" data-k="${i}" data-v="order" ${dis()}>${WAVE_ORDERS.find(o => o[0] === w.order)[1]}</button></div>
+      ${waveV2Now() ? "" : `<button class="gr-chip w" data-act="wpop" data-k="${i}" data-v="order" ${dis()}>${WAVE_ORDERS.find(o => o[0] === w.order)[1]}</button>`}</div>
     ${garrisonPopHTML(i)}
     <div class="gr-r4"><div class="gr-s free${waveOpen(i) ? "" : " lk"}" title="Every wave brings a free Footman"><img alt="" src="${spriteURL("footman")}"><b>Footman</b><small>${waveOpen(i) ? "free" : "free once open"}</small></div>${waveOpen(i) ? w.slots.map(slot).join("")
       : `<div class="gr-lock">${i === wavesOpen() ? `<button class="btn small wax" data-act="wunlock" ${dis(avail() < waveUnlockCost())}>🔒 Unlock ${WAVE_SLOTS} slots · ${waveUnlockCost()}g</button>` : `<span>🔒 Unlock Wave ${i} first</span>`}</div>`}</div></div>`;
@@ -46,7 +46,7 @@ function deploymentTab() {
       ${row("Reserve", `${reserve.length} waiting`, "res", reserve.map(tile).join("") + ph("wres", reserve.length ? "bench" : "empty"))}
       ${S.garrison.map(garrisonWaveHTML).join("")}</div>
     <p class="muted gr-tip">The guard stays home and defends your castle all battle. It is one of your ${FIELD_MAX} soldiers on the field. Drag it back among the attackers to send it out again.</p>
-    <p class="muted gr-tip">Tap a chip to change when a wave goes or what it does. Waves are at least ${WAVE_GAP}s apart and one is forced out at each minute mark. Training and selling are on the Train tab.</p>`;
+    <p class="muted gr-tip">${waveV2Now() ? `Tap a wave's chip to change when it goes. Each wave first clears enemies near your castle, then follows your army plan. Waves are at least ${WAVE_GAP}s apart and one is forced out at each minute mark; if your castle drops below 75%, 50% or 25% health, the next wave rushes out early, at least ${WAVE_EMERGENCY_GAP}s after the last.` : `Tap a chip to change when a wave goes or what it does. Waves are at least ${WAVE_GAP}s apart and one is forced out at each minute mark.`} Training and selling are on the Train tab.</p>`;
 }
 // actions
 Object.assign(A, {
