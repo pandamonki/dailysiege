@@ -4,7 +4,7 @@
 // Key moments are flagged by the battle sim (res.hl). The reel picks the best few, then plays each as a short
 // directed clip: a title card, the camera on the action, a slow-motion beat at the key instant, and a closing podium.
 const PRACTICE_BOARD = { p1: 34, p3: 27, p5: 22, you: 18, p2: 15, p6: 11, p4: 8, p7: 5 };
-const HL_WIN = { betray: [1.5, 3.5], bomb: [2, 3], burst: [2.5, 1.5], fall: [4, 2], upset: [4, 2.2], revenge: [4, 2.2], giantslayer: [3, 1.6], firstblood: [3, 1.5], rapierdrop: [2.5, 2], frenzy: [2, 2.5], rapierget: [2, 2.5], winner: [4.5, 2.5] };
+const HL_WIN = { betray: [1.5, 3.5], bomb: [2, 3], burst: [2.5, 1.5], fall: [4, 2], upset: [4, 2.2], revenge: [4, 2.2], giantslayer: [3, 2.6], firstblood: [3, 2.5], rapierdrop: [2.5, 2], frenzy: [2, 2.5], rapierget: [2, 2.5], winner: [4.5, 2.5] };
 function hlText(h, R) {
   const N = p => (R.names && R.names[p]) || "Someone", you = p => p === R.me, V = (p, a, b) => `${N(p)} ${you(p) ? a : b}`;
   const poss = p => (you(p) ? "Your" : N(p) + "'s"), rk = p => (R.ranks && R.ranks[p] ? `#${R.ranks[p]} ` : "");
@@ -28,17 +28,26 @@ function hlText(h, R) {
   }
   return ["", ""];
 }
-function hlWindow(h) {
-  if (h.kind === "spree") return [Math.max(h.t0 - 1, h.t2 - 5), h.t2 + 2, h.t2];
-  if (h.kind === "ult") return h.ab === "Meteor" ? [h.t - 2.6, h.t + 1.6, h.t] : [h.t - 1.5, h.t + 2, h.t];
+// An ultimate's clip runs from just before the cast until its effects have played out (a meteor's fall and impact, a volley, a
+// spirit), plus a beat to take it in: at least HL_ULT_TAIL seconds after the cast, at most HL_ULT_MAX. The effects are the ultimate's
+// own drawn events (ultfx, zones, warnings) that start near the caster within HL_ULT_SPAN seconds of the cast.
+const HL_ULT_LEAD = 2, HL_ULT_TAIL = 4.5, HL_ULT_MAX = 9, HL_ULT_SPAN = 3, HL_ULT_NEAR = 7, HL_ULT_HOLD = 1.5;
+function ultEnd(h, R) {
+  let end = h.t + HL_ULT_TAIL; ((R && R.events) || []).forEach(e => { if (e.t < h.t - .1 || e.t > h.t + HL_ULT_SPAN || !(e.ty === "ultfx" || e.ty === "zone" || e.ty === "warn")) return;
+    if (Number.isFinite(e.x) && Math.hypot(e.x - h.x, e.y - h.y) > HL_ULT_NEAR) return; end = Math.max(end, e.t + (e.dur || 1) + HL_ULT_HOLD); });
+  return Math.min(h.t + HL_ULT_MAX, end);
+}
+function hlWindow(h, R) {
+  if (h.kind === "spree") return [Math.max(h.t0 - 1, h.t2 - 5), h.t2 + 2.5, h.t2];
+  if (h.kind === "ult") return [h.t - (h.ab === "Meteor" ? 2.6 : HL_ULT_LEAD), ultEnd(h, R), h.t];
   const w = HL_WIN[h.kind] || [3, 2]; return [h.t - w[0], h.t + w[1], h.t];
 }
 function buildReel(R) {
   const hl = (R.hl || []).filter(h => h.kind !== "winner" && !(h.kind === "fall" && !(h.rank && h.rank <= 3)));
   const picked = hl.filter(h => h.kind === "ult"); // every ultimate cast gets its clip
   hl.filter(h => h.kind !== "ult").sort((a, b) => b.score - a.score).forEach(h => {
-    if (picked.filter(p => p.kind !== "ult").length >= 6 || picked.filter(p => p.kind === h.kind).length >= 2) return; const [a, b] = hlWindow(h);
-    if (picked.some(p => { const [c, d] = hlWindow(p); return a < d + .5 && c < b + .5; })) return; picked.push(h);
+    if (picked.filter(p => p.kind !== "ult").length >= 6 || picked.filter(p => p.kind === h.kind).length >= 2) return; const [a, b] = hlWindow(h, R);
+    if (picked.some(p => { const [c, d] = hlWindow(p, R); return a < d + .5 && c < b + .5; })) return; picked.push(h);
   });
   // The reel used to end on the winner's castle standing alone. It now ends on the moment the last rival castle is destroyed (nothing at all if the
   // battle ran to nightfall, since no castle fell last). The clip carries the winner's name; the camera is on the castle that fell.
@@ -46,20 +55,23 @@ function buildReel(R) {
   const falls = (R.hl || []).filter(h => h.kind === "fall" || h.kind === "upset" || h.kind === "revenge"), last = falls.reduce((a, b) => (!a || b.t > a.t ? b : a), null);
   const finale = win && last && !win.timeout ? { ...win, t: last.t, x: last.x, y: last.y, last } : null;
   picked.sort((a, b) => a.t - b.t);
-  if (finale) { const [a] = hlWindow(finale); for (let i = picked.length - 1; i >= 0; i--) if (hlWindow(picked[i])[1] > a - .5) picked.splice(i, 1); picked.push(finale); }
+  if (finale) { const [a] = hlWindow(finale, R); for (let i = picked.length - 1; i >= 0; i--) if (hlWindow(picked[i], R)[1] > a - .5) picked.splice(i, 1); picked.push(finale); }
   const champIdx = pid => R.meta.findIndex(m => m.pid === pid && m.kind === "champ");
-  return picked.map(h => { const [a, b, key] = hlWindow(h), [title, sub] = hlText(h, R);
+  return picked.map(h => { const [a, b, key] = hlWindow(h, R), [title, sub] = hlText(h, R);
     const follow = ["spree", "burst", "betray", "firstblood", "giantslayer", "rapierdrop", "rapierget"].includes(h.kind) || (h.kind === "ult" && h.ab !== "Meteor") ? champIdx(h.kind === "giantslayer" || h.kind === "firstblood" ? h.other : h.pid) : -1;
     return { h, a: Math.max(0, a), b: Math.min(R.duration, b), key, title, sub, follow, color: R.colors[h.kind === "fall" || h.kind === "upset" ? (h.other || h.pid) : h.kind === "revenge" ? h.other : h.pid] || "#ffe082" }; });
 }
 const REEL_CARD = 1.3, REEL_INTRO = 2.2, REEL_OUTRO = 4;
-const REEL_ZOOM_OUT = 1.35 ** 3; // the reel's camera sits three zoom steps (the zoom buttons' x1.35) further out than it first did, so more of the action is in view
-function startReel(record) {
-  if (!replay) return; const clips = warReelClips(buildReel(replay.res));
+// The reel's camera frames the action exactly as the replay's auto camera does by default: 1.7 on a hero, 1.35 on a castle,
+// then the replay's starting zoom-out (two steps of the zoom buttons' x1.35, AUTO_ZOOM_START).
+const REEL_Z_HERO = 1.7 * AUTO_ZOOM_START, REEL_Z_CASTLE = 1.35 * AUTO_ZOOM_START;
+// startReel(record, only): `only` is the index of one key moment (as the recap lists them) to play on its own; with record, a clip to share
+function startReel(record, only) {
+  if (!replay) return; const all = buildReel(replay.res), clips = only != null ? (all[only] ? [all[only]] : []) : warReelClips(all);
   if (!clips.length) { toast("Nothing big happened in this battle."); return; }
-  replay.reel = { clips, i: -1, phase: "intro", pt: 0, rec: null }; replay.playing = false; replay.sel = null; sheet = null;
-  render(); buildReelUI();
-  if (record) startRecording();
+  replay.reel = { clips, i: -1, phase: "intro", pt: 0, rec: null, single: only != null }; replay.playing = false; replay.sel = null; sheet = null;
+  render(); buildReelUI(); if (only != null) nextClip(replay.reel);
+  if (record) startRecording(only != null ? clips[0] : null);
 }
 function stopReel(toRecap) {
   if (!replay || !replay.reel) return; const rec = replay.reel.rec; replay.reel = null;
@@ -77,15 +89,16 @@ function tickReel(dt) {
   else if (r.phase === "card" && r.pt >= REEL_CARD) { r.phase = "clip"; r.pt = 0; }
   else if (r.phase === "clip") {
     const c = r.clips[r.i]; replay.time = Math.min(c.b, replay.time + dt * reelSpeed(c, replay.time));
-    const [x, y] = reelFocus(c, replay.time); flyTo(x * ts, (y - .3) * ts, (c.h.kind === "winner" || c.h.kind === "fall" || c.h.kind === "upset" || c.h.kind === "revenge" || c.h.kind === "bomb" ? 1.45 : 1.75) / REEL_ZOOM_OUT);
+    const [x, y] = reelFocus(c, replay.time); flyTo(x * ts, (y - .3) * ts, reelZoom(c));
     if (replay.time >= c.b) nextClip(r);
-  } else if (r.phase === "outro" && r.pt >= REEL_OUTRO) { const rec = r.rec; stopReel(!rec); }
+  } else if (r.phase === "outro" && r.pt >= (r.single ? .6 : REEL_OUTRO)) { const rec = r.rec; stopReel(!rec); }
 }
+const reelZoom = c => (["winner", "fall", "upset", "revenge", "bomb"].includes(c.h.kind) ? REEL_Z_CASTLE : REEL_Z_HERO);
 function nextClip(r) {
   r.i++; r.pt = 0;
-  if (r.i >= r.clips.length) { r.phase = "outro"; flyTo(W / 2, W / 2, 0); return; }
+  if (r.i >= r.clips.length) { r.phase = "outro"; if (!r.single) flyTo(W / 2, W / 2, 0); return; }
   const c = r.clips[r.i]; r.phase = "card"; replay.time = c.a;
-  const [x, y] = reelFocus(c, c.a), z = Math.max(minZoom(), Math.min(2.4, 1.6 / REEL_ZOOM_OUT)); camTarget = null; Object.assign(cam, { x: x * ts - vw / 2 / z, y: (y - .3) * ts - vh / 2 / z, z }); clampCam();
+  const [x, y] = reelFocus(c, c.a), z = Math.max(minZoom(), Math.min(2.4, reelZoom(c))); camTarget = null; Object.assign(cam, { x: x * ts - vw / 2 / z, y: (y - .3) * ts - vh / 2 / z, z }); clampCam();
   const el = document.getElementById("reelstep"); if (el) el.textContent = `${r.i + 1} / ${r.clips.length}`;
 }
 function buildReelUI() {
@@ -135,6 +148,7 @@ function drawReel() {
       ctx.textAlign = "right"; ctx.font = `600 ${Math.round(13 * s)}px ${serif}`; ctx.fillStyle = "#c9b48a"; ctx.fillText(fmt(replay.time), W2 - 12, H2 - bh + 24 * s + 4);
       if (reelSpeed(c, replay.time) < 1) { ctx.textAlign = "right"; ctx.fillStyle = "#ffe082"; ctx.font = `700 ${Math.round(12 * s)}px ${serif}`; ctx.fillText("SLOW MOTION", W2 - 12, 22); }
     }
+  } else if (r.phase === "outro" && r.single) { center("Daily Siege", 24 * s, 18 * s, "#c9962f");
   } else if (r.phase === "outro") {
     shade(Math.min(.8, r.pt / .4 * .8)); const top = R.results.slice(0, 3);
     center("The Day's Podium", H2 * .2, 28 * s, "#ffe9b0");

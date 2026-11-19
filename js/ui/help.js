@@ -31,7 +31,7 @@ const HELP = {
   day: ["The war", "The war runs for seven daily battles. Each day you spend gold, place your soldiers and seal your orders before the timer ends."],
   board: ["Leaderboard", "Standings for the week. Tap a lord to see their hero, castle and banner. Each battle: 10, 7, 5, 4, 3, 2 and 1 points for 1st to 7th place, +1 per enemy hero slain, +3 per castle destroyed and +1 if your hero is alive at the end. Days 5 and 6 count 1.5 times and day 7 twice."],
   report: ["Battle report", "What happened in the last battle: who fell, who held the hill and who gained gold. Watch the replay to see how it played out."],
-  results: ["Recap", "How the battle went for you. Replay it, check the standings, then head back to plan tomorrow."],
+  results: ["Recap", "How the battle went for you. Replay it, check the standings, share the results card or a key moment with your group chat, then head back to plan tomorrow. Whoever comes dead last is the Bronson."],
   deploy: ["Deploy here", "Choose who takes this ground. Only soldiers in your reserve can be placed."],
   spells: ["Spell book", "Every ability for every hero class, with its recharge time. Use it to compare classes or to scout what a rival's hero can do."]
 };

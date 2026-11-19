@@ -123,10 +123,14 @@ practice games always stamp all of them (`js/sim/plans.js`).
 - A card per lord: medal, colour, hero sprite, name, points, and chips for heroes killed / deaths / assists, soldiers
   killed, castles taken, damage dealt, levels and gold. Build opens their skills and items. Deaths, assists and damage are recorded from 20 Nov. An assist is damaging an enemy hero in the
   10 seconds (`ASSIST_SECS`) before another lord kills it.
-- The lord who finishes dead last (of three or more, and not on a shared allied win) is labelled the Bronson: a 🥄 in
+- The lord who finishes dead last (of three or more; allies sharing first place still leave a last place) is labelled the Bronson: a 🥄 in
   place of their rank and a "Bronson" chip on the report, and "· 🥄 the Bronson" beside their own placing (`LAST_LABEL`).
+- Sharing: Share results card (recap and day report) makes a picture of the battle for a group chat, with the Bronson
+  marked. Each key moment on the recap has a Share button that records it as a short video, then offers Share clip.
+- Highlights: an ultimate's clip runs from 2s before the cast until its effects end plus 1.5s (at least 4.5s after the
+  cast, at most 9s). The reel's camera uses the replay's default zoom.
 - Taunts: each lord can set a victory and an elimination taunt in the lobby. An empty box gets a stock taunt from the
-  bot lists, which include a few Bronson lines.
+  bot lists, which include "Bronson".
 
 ## Alliances
 

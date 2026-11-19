@@ -3,6 +3,17 @@
 // Each item is [icon, headline, one short sentence]. Players who have not seen the newest id get the pop-up the next time they plan;
 // the id is remembered on their device, so changing the id is all it takes to show it again. Keep about 8 to 14 items.
 const RELEASES = [
+  { id: "1.12", title: "What's new in v1.12", sub: "Share the carnage with the group chat, and crown a Bronson every day", items: [
+    ["🖼", "Results card", "Share results card on the recap and the day report makes a picture of the day for your group chat."],
+    ["👑", "The winner up top", "The card shows the winner's hero, their victory taunt and every lord's points."],
+    ["🥄", "The Bronson", "Whoever finishes dead last is the Bronson, with a spoon in place of their rank."],
+    ["🎬", "Share a moment", "Every key moment on the recap has a Share button that makes a short video of it."],
+    ["📤", "Share in two taps", "When the clip is ready, a preview pops up with a Share clip button."],
+    ["⏱", "Ultimates in full", "Highlight clips of ultimates now run until the spell has played out, with a beat to take it in."],
+    ["⚔", "Kills land", "Hero kills and kill streaks stay on screen a second longer after the blow."],
+    ["🔭", "Same view as the replay", "The highlights camera now frames the action at the replay's own zoom."],
+    ["💬", "Bronson", "\"Bronson\" joins the stock taunts for lords who leave their taunt empty."],
+  ] },
   { id: "1.11", title: "What's new in v1.11", sub: "A new How to play guide, in chapters with pictures", items: [
     ["📖", "Five chapters", "How to play is now in tabs: Basics, Army, Hero, Battle and Allies."],
     ["✂", "Shorter pages", "Each page is a sentence or two. The ideas, not the maths."],

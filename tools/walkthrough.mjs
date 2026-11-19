@@ -79,6 +79,13 @@ for (const name of engines) {
     await tap('#sheet [data-act="rkit"][data-v="*"]'); if ((await page.locator("#sheet .kitwrap").count()) < 2) throw new Error("Show all builds opened no builds"); await closeAll(); });
   await step("the results screens appear and close", async () => { await page.waitForTimeout(1500); for (let i = 0; i < 6; i++) { const c = page.locator('button:has-text("Continue"):visible'); if (await c.count()) { await c.first().click(); await page.waitForTimeout(600); } }
     await closeAll(); });
+  await step("the results card and a key moment can be shared", async () => { await closeAll();
+    await js(() => { window.__shared = []; navigator.canShare = () => true; navigator.share = async o => { window.__shared.push(o.files[0].type); }; sheet = { type: "report" }; render(); });
+    await tap('#sheet [data-act="rcardd"]'); await page.waitForFunction(() => window.__shared.includes("image/png"), null, { timeout: 5000 }); await closeAll();
+    if (!(await js(() => mode === "replay" && !!replay && canRecord()))) return; // the replay was left, or this browser can't record: nothing more to try
+    await js(() => { sheet = { type: "results" }; render(); }); if (!(await page.locator('#sheet [data-act="reelclip"]').count())) return;
+    await tap('#sheet [data-act="reelclip"]'); await page.waitForFunction(() => !!SHARE_CLIP && !document.getElementById("sheet").hidden, null, { timeout: 40000 });
+    await tap('#sheet [data-act="clipshare"]'); await page.waitForFunction(() => window.__shared.some(t => t.startsWith("video/")), null, { timeout: 5000 }); await tap('#sheet [data-act="clipdrop"]'); await closeAll(); });
   await step("the How to play guide: chapter tabs, the tour's ring and every picture", async () => { await closeAll();
     await js(() => { if (mode === "replay") leaveBattle(); sheet = null; render(); }); await closeAll(); await js(() => startWizard(true, 0)); await page.waitForTimeout(200);
     for (const ch of await js(() => GUIDE.map(c => c.id))) { await tap(`#wiz [data-gch="${ch}"]`); if (!(await js(c => document.querySelector("#wiz .gtabs .on").dataset.gch === c, ch))) throw new Error("the " + ch + " tab did not open"); }

@@ -122,8 +122,9 @@ function canRank(k) {
 
 // ----- banner, walls, carried alliances -----
 const TAUNT_MAX = 40, cleanTaunt = s => String(s == null ? "" : s).replace(/[\u0000-\u001f<>]/g, " ").replace(/\s+/g, " ").trim().slice(0, TAUNT_MAX); // victory (tv) and elimination (te) taunts live on the banner, so they travel with the lord everywhere the banner goes
-// the wooden spoon: the lord who finishes dead last (of three or more) is labelled the Bronson for that battle. Not on a shared team win.
-const LAST_LABEL = "Bronson", isLastPlace = (r, results, team) => !team && results.length > 2 && r.place === Math.max(...results.map(x => x.place));
+// the wooden spoon: the lord who finishes dead last (of three or more) is labelled the Bronson for that battle. Allies sharing first
+// place don't change who came last; only when every lord shares first is there no Bronson.
+const LAST_LABEL = "Bronson", isLastPlace = (r, results) => { const m = Math.max(...results.map(x => x.place)); return results.length > 2 && m > 1 && r.place === m; };
 function defaultBanner() { return { pat: "solid", c1: null, c2: "#ecdcb4", em: "none" }; }
 function dedupePlace(place) { // a piece can only stand on one tile; if an old tile survived a merged save, the later (newer) one wins
   const seen = new Set(); Object.keys(place || {}).reverse().forEach(k => { const ref = place[k]; if (seen.has(ref)) delete place[k]; else seen.add(ref); }); return place;

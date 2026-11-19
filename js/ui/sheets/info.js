@@ -78,7 +78,7 @@ function reportSheet(id) {
   const sorted = d.results.slice().sort((a, b) => a.place - b.place || b.points - a.points), gain = d.gain[me] || 0;
   return head(null, `Day ${d.day} report`, d.team ? "Allies won the Daily Siege together" : "The battle has been fought") + `<div class="body">
     ${dayChips(id, d)}
-    ${mine ? `<div class="rhead"><div class="rsum"><b>${mine.place === 1 ? (d.team ? "Victory, together" : "Victory") : ord(mine.place) + " of " + d.results.length + (isLastPlace(mine, d.results, d.team) ? " · 🥄 the " + LAST_LABEL : "")}</b><span>${mine.points} pt${mine.points === 1 ? "" : "s"} · +${d.gold[me] != null ? d.gold[me] : (mine.gold || 0)}g${gain ? ` · +${gain} lvl` : ""}</span></div>` : `<div class="rhead"><p class="muted">You weren't in this battle.</p>`}<div class="rbtns"><button class="btn wax" data-act="rwatch" data-v="${id}">▶ Watch</button><button class="btn wood" data-act="rreelm" data-v="${id}">★ Highlights</button></div></div>
+    ${mine ? `<div class="rhead"><div class="rsum"><b>${mine.place === 1 ? (d.team ? "Victory, together" : "Victory") : ord(mine.place) + " of " + d.results.length + (isLastPlace(mine, d.results) ? " · 🥄 the " + LAST_LABEL : "")}</b><span>${mine.points} pt${mine.points === 1 ? "" : "s"} · +${d.gold[me] != null ? d.gold[me] : (mine.gold || 0)}g${gain ? ` · +${gain} lvl` : ""}</span></div>` : `<div class="rhead"><p class="muted">You weren't in this battle.</p>`}<div class="rbtns"><button class="btn wax" data-act="rwatch" data-v="${id}">▶ Watch</button><button class="btn wood" data-act="rreelm" data-v="${id}">★ Highlights</button><button class="btn wood" data-act="rcardd" data-v="${id}">Share ↗</button></div></div>
     ${boardHTML(d, sorted, me, nm)}
     ${weekHTML(d, me, nm)}
     ${awardsHTML(d.awards, nm)}
@@ -91,7 +91,7 @@ function boardHTML(d, sorted, me, nm) {
   const ord = n => n + (n === 1 ? "st" : n === 2 ? "nd" : n === 3 ? "rd" : "th"), num = v => v >= 1000 ? (v / 1000).toFixed(1) + "k" : String(v), has = sorted.some(r => r.dmg != null);
   const col = pid => isLive() ? teamColour(pid) : pid === "you" ? MY_COLOR : ((RIVALS.find(x => x.id === pid) || {}).color || "#b8322a");
   const open = sheet.rkit || {}, all = sorted.every(r => open[r.pid]);
-  const card = r => { const spoon = isLastPlace(r, d.results, d.team), medal = ["🥇", "🥈", "🥉"][r.place - 1] || (spoon ? "🥄" : ord(r.place)), pl = d.plans && d.plans.find(p => p.pid === r.pid), kit = pl ? heroKit(pl) : [], ns = kit.filter(x => !x.item).length, ni = kit.length - ns;
+  const card = r => { const spoon = isLastPlace(r, d.results), medal = ["🥇", "🥈", "🥉"][r.place - 1] || (spoon ? "🥄" : ord(r.place)), pl = d.plans && d.plans.find(p => p.pid === r.pid), kit = pl ? heroKit(pl) : [], ns = kit.filter(x => !x.item).length, ni = kit.length - ns;
     const chips = [r.deaths != null ? `⚔ ${r.kills || 0}/${r.deaths}/${r.assists || 0}` : `⚔ ${r.kills || 0}`, `☠ ${r.ukills || 0}`, `♜ ${r.castles || 0}`].concat(r.dmg != null ? [`💥 ${num(r.dmg)}`] : [], d.gain[r.pid] ? [`+${d.gain[r.pid]} lvl`] : [], d.gold[r.pid] != null ? [`+${d.gold[r.pid]}g`] : [], d.rapierEnd === r.pid ? ["Rapier"] : [], spoon ? [LAST_LABEL] : []);
     const tag = d.plans ? "button" : "div";
     return `<div class="rcard${open[r.pid] && kit.length ? " open" : ""}${r.pid === me ? " me" : ""}"><${tag}${d.plans ? ` data-act="rinsp" data-v="${r.pid}"` : ""} class="rrow hs${r.pid === me ? " me" : ""}${d.plans ? " tap" : ""}"><span class="rk">${medal}</span><i style="background:${col(r.pid)}"></i>${r.cls ? `<img class="rhero" alt="" src="${spriteURL("c-" + r.cls, col(r.pid))}">` : "<span></span>"}<span class="rn"><b>${esc(nm(r.pid))}</b>${r.cls ? `<small>${CLASSES[r.cls].name}</small>` : ""}</span><span class="pts">${r.points}<small>pts</small></span><span class="rc">${chips.map(c => `<em>${c}</em>`).join("")}</span></${tag}>
@@ -177,6 +177,15 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "Sharing and the Bronson", date: "19 Nov", fixes: [], balance: [], changes: [
+    "The recap and the day report have Share results card: a 1080 x 1350 picture of the battle with the winner's hero and victory taunt, every lord's place and points, you highlighted, and the Bronson marked. It opens the phone's share sheet, or downloads the picture on a computer.",
+    "The lord who finishes dead last (of three or more) is the Bronson: a spoon in place of their rank on the day report, a Bronson tag on the recap's placings and on the card. Allies sharing first place still leave a last place.",
+    "Each key moment on the recap has a Share button. It plays that moment as a short highlights clip, records it, then shows a preview with Share clip. The full Save highlights video works the same way, and is now offered wherever the browser can record.",
+    "Highlight clips of ultimates start 2 seconds before the cast and run until the spell's effects have finished plus 1.5 seconds (at least 4.5 seconds after the cast, at most 9). A Meteor's impact is no longer cut off.",
+    "Hero kill clips (first blood, giant slayer) run a second longer after the kill, and kill streak clips half a second longer.",
+    "The highlights camera uses the replay's default zoom (the auto camera's framing, two zoom steps out).",
+    "\"Bronson\" is a stock victory and elimination taunt.",
+  ] },
   { v: "How to play guide", date: "19 Nov", fixes: [
     "The Muster Hall's War is over card had dark text on a dark background. It now sits on parchment with dark text.",
   ], balance: [], changes: [

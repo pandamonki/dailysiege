@@ -42,6 +42,11 @@ const A = {
   rreport: () => open("results"),
   reel: () => startReel(false),
   reelrec: () => startReel(true),
+  reelclip: v => startReel(true, +v), // one key moment, recorded to share
+  clipshare: async () => { if (!SHARE_CLIP) return; shareDone(await shareFile(SHARE_CLIP.blob, SHARE_CLIP.filename, SHARE_CLIP.title + " · Daily Siege")); },
+  clipdrop: () => { if (SHARE_CLIP) URL.revokeObjectURL(SHARE_CLIP.url); SHARE_CLIP = null; },
+  rcard: () => { if (replay && replay.res) shareResultCard(replayCard(replay.res)); },
+  rcardd: v => { const d = reportData(v); if (d) shareResultCard(reportCard(d)); },
   reelskip: () => { const r = replay && replay.reel; if (!r) return; if (r.phase === "outro") stopReel(!r.rec); else nextClip(r); },
   reelstop: () => { if (WAR_REEL) { WAR_REEL = null; stopReel(false); leaveBattle(); return; } stopReel(true); },
   rjump: v => { replay.time = +v; replay.playing = true; replay.done = false; sheet = null; },
