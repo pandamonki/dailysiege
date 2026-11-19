@@ -87,6 +87,22 @@ function battleFoes(res) {
   return out;
 }
 
+// ----- bot lords and alliances (alliances v2) -----
+// Each day a bot has a BOT_INVITE chance to invite one lord, with a small dowry. It accepts an invitation that pays its price
+// (nothing if it is behind on points, more from lords below it). A bot in the bottom half of the board plans to betray about
+// BOT_BETRAY of its pacts. Everything is drawn from the day and the bot's id, so every device works out the same plan.
+const BOT_INVITE = .3, BOT_BETRAY = .2;
+function wBotDiplomacy(uid, dayKey, ids, rkm, feuds) {
+  const h = (d, k) => cxHash(d + "|" + uid + "|" + k), n = ids.length, rank = rkm[uid] || n, behind = rank > Math.ceil(n / 2);
+  const others = ids.filter(q => q !== uid && !(feuds || []).includes([uid, q].sort().join("|")));
+  const offerOn = d => { if (!others.length || h(d, "inv") >= BOT_INVITE) return null; const to = others[Math.floor(h(d, "to") * others.length)];
+    return [to, { day: d, gold: [0, 50, 100][Math.floor(h(d, "dow") * 3)], ...(behind && h(d, "rig") < BOT_BETRAY ? { rigged: true } : {}) }]; };
+  const offers = {}; [addDays(dayKey, -1), dayKey].forEach(d => { const o = offerOn(d); if (o) offers[o[0]] = o[1]; }); // yesterday's invitation is the one answered today
+  const terms = Object.fromEntries(others.map(q => [q, { mode: behind && h(dayKey, "tb" + q) < BOT_BETRAY ? "betray" : "accept", min: behind ? 0 : (rkm[q] || n) > rank ? 150 : 50, when: "Halfway through the battle" }]));
+  const pbetray = behind ? Object.fromEntries(others.filter(q => h(dayKey, "pb" + q) < BOT_BETRAY).map(q => [q, "Halfway through the battle"])) : {};
+  return { offers, terms, auto: true, pbetray };
+}
+
 // ----- turning everyone's orders into a battle -----
 // opts (phones only): uid = whose device this is; nameOf, colours = how this device shows names and colours;
 // test = { mine } builds a practice fight from my unsaved orders against what is publicly known of my rivals.
@@ -120,7 +136,9 @@ function buildBattleInputs(W, dayKey, opts = {}) {
     ...(itemsV5For(dayKey) ? { itemV5: true } : {}), ...(trapsV2For(dayKey) ? { trapV2: true } : {}), ...(suddenV2For(dayKey) ? { sdV2: true, wallV2: true, engV2: true } : {}), ...(survFor(dayKey) ? { survV1: true } : {}), ...(shellV2For(dayKey) ? { shellV2: true } : {}), ...(itemsV6For(dayKey) ? { itemV6: true } : {}), ...(L.v2 ? { siegeV1: true } : {}), formation: plan.formation !== false, stance: plan.stance || "aggressive", gprio: plan.gprio || null, engage: plan.engage || 0, waves: plan.waves || null, prio: plan.prio || PRIORITIES.slice(), rules: plan.rules || [], pieces,
     targets: (plan.targets || []).filter(q => raw.some(x => x.uid === q) || (pickV1For(dayKey) && !!PICK_ROLES[q])), tmode: plan.tmode || "list", heading: plan.heading || "near", armyPlan: plan.armyPlan || null, fallback: plan.fallback || null, ...(ordersV2For(dayKey) ? { ordV2: true } : {}), ...(skillsV2For(dayKey) ? { skV2: true } : {}), rank: rkm[uid], offers: plan.offers || {}, replies: plan.replies || {}, terms: plan.terms || {}, bids: plan.bids || {},
     ...(noOrders && !opts.test ? { noOrders: true } : {}) })); // noOrders: this lord sealed nothing all week, so these are the stand-in orders, not theirs
-  const feuds0 = wFeudsBefore(W, dayKey, week), { pairs, transfers } = resolveAlliances(plans, { persist: wCarriedPairs(W, dayKey), final, prevDay: addDays(dayKey, -1), feuds: feuds0, blocMax: balV2For(dayKey) ? BLOC_MAX : 0 });
+  const feuds0 = wFeudsBefore(W, dayKey, week), AV2 = allyV2For(dayKey);
+  if (AV2) plans.forEach(q => { q.allyV2 = true; if ((roster.find(x => x.uid === q.pid) || {}).bot) Object.assign(q, wBotDiplomacy(q.pid, dayKey, roster.map(x => x.uid), rkm, feuds0)); }); // bots join the diplomacy from alliances v2
+  const { pairs, transfers } = resolveAlliances(plans, { persist: wCarriedPairs(W, dayKey), final, prevDay: addDays(dayKey, -1), feuds: feuds0, blocMax: balV2For(dayKey) ? BLOC_MAX : 0, v2: AV2 });
   plans.feuds = feuds0;
   let mercs = {}; if (dayNo >= MERC_DAY) { const mer = resolveMercs(plans, { day: dayKey, dayNo, v2: mercV2For(dayKey), N: L.N, cool: id => mercCool(id, null, k => { const b = W.battles[addDays(dayKey, -k)]; return b && b.week === week ? b : null; }) }); plans.notes = (plans.notes || []).concat(mer.notes); mercs = mer.hires; }
   plans.mercs = mercs;
@@ -138,7 +156,7 @@ function fightDay(W, dayKey, at, opts) {
   const inputs = JSON.parse(JSON.stringify({ N: size, final: !!final, ultV2: ultV2For(dayKey), balV2: balV2For(dayKey), balV3: balV3For(dayKey), fairV1: fairV1For(dayKey), pickV1: pickV1For(dayKey), balV4: balV4For(dayKey), suddenV1: suddenV1For(dayKey), treesV1: treesV1For(dayKey), heroV3: heroV3For(dayKey), dayNo, ranks, ...(twist ? { twist } : {}), feuds: plans.feuds || [], plans: plans.map(p => Object.assign({}, p, { me: false })) })); // taken before the fight, which edits its plans as it goes
   const res = runBattle(plans, daySeed(dayKey), { fast: true, N: size, finalDay: final, ultV2: ultV2For(dayKey), balV2: balV2For(dayKey), balV3: balV3For(dayKey), fairV1: fairV1For(dayKey), pickV1: pickV1For(dayKey), balV4: balV4For(dayKey), suddenV1: suddenV1For(dayKey), treesV1: treesV1For(dayKey), heroV3: heroV3For(dayKey), dayNo, ranks, twist });
   const units = {}; res.tel.ents.filter(e => e.kind === "unit" && e.ref).forEach(e => { (units[e.pid] = units[e.pid] || {})[e.ref] = e.survived ? 1 : 0; });
-  const doc = { week, day: dayNo, at, results: res.results.map(r => ({ pid: r.pid, place: r.place, points: r.points, kills: r.kills, ukills: r.ukills || 0, castles: r.castles, fellAt: r.fellAt ?? null })), units, pairs: pairs.map(p => p.join("|")), pairsEnd: res.pairsEnd, transfers,
+  const doc = { week, day: dayNo, at, results: res.results.map(r => ({ pid: r.pid, place: r.place, points: r.points, kills: r.kills, ukills: r.ukills || 0, castles: r.castles, fellAt: r.fellAt ?? null, ...(r.treachery ? { treachery: r.treachery } : {}), ...(r.lone ? { lone: 1 } : {}), ...(r.wolf ? { wolf: r.wolf } : {}) })), units, pairs: pairs.map(p => p.join("|")), pairsEnd: res.pairsEnd, transfers,
     awards: res.awards, ...(res.rapier ? { rapier: res.rapier } : {}), ...(res.ultCast && res.ultCast.length ? { ults: Object.fromEntries(res.ultCast.map(p => [p, 1])) } : {}), ...(res.rapierEnd ? { rapierEnd: res.rapierEnd } : {}), gain: Object.fromEntries(Object.entries(res.lvl).map(([k, v]) => [k, v.gain])), xp: Object.fromEntries(Object.entries(res.lvl).map(([k, v]) => [k, v.xp])), gold: Object.fromEntries(res.results.map(r => [r.pid, r.gold])), team: !!res.team };
   doc.feuds = Array.from(new Set((feuds || []).concat(res.feudsNew || []))); doc.mercs = mercs || {}; doc.trapsUsed = res.trapsUsed || []; doc.inputs = inputs; // the exact orders fought, so replaying never depends on orders that were edited or lost later
   doc.resultHash = battleHash(res); // a fingerprint of the outcome: every device that replays this battle must arrive at the same one

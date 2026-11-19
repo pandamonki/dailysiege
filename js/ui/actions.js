@@ -151,8 +151,12 @@ const A = {
   engage: v => { if (!S.locked) S.engage = cleanEngage(S.engage + +v); },
   heropick: () => { showHeroPick(null); },
   invite: (_, k) => { ensureDip(); if (S.offers[k]) return; if (carriedPartners().includes(k)) { toast("You are already allied."); return; }
-    if (Object.keys(S.offers).length >= MAX_INVITES) { toast("Only 2 invitations can be open at once."); return; }
-    S.offers[k] = { gold: 0, day: planDayKey() }; if (sheet && sheet.type === "orders") sheet.tab = "alliances"; toast("Invitation drafted. Set a dowry if you like."); },
+    const me = allyLords().me, grp = allyV2Now() ? allyGroup(k).filter(x => x !== me && !S.offers[x]) : [k], mine = allyV2Now() ? allyGroup(me).filter(x => x !== me) : []; // v2: inviting one member of an alliance invites them all
+    if (allyV2Now() && allyGroup(k).length + allyGroup(me).length > BLOC_MAX) { toast(`An alliance holds at most ${BLOC_MAX} lords.`); return; }
+    if (Object.keys(S.offers).length + grp.length > MAX_INVITES) { toast(grp.length > 1 ? "Joining their alliance needs an invitation to each member, and only 2 can be open at once." : "Only 2 invitations can be open at once."); return; }
+    grp.forEach(x => { S.offers[x] = { gold: 0, day: planDayKey() }; }); if (sheet && sheet.type === "orders") sheet.tab = "alliances";
+    const nmOf = x => (RIVALS.find(r => r.id === x) || {}).name || "your ally";
+    toast(grp.length > 1 ? `Invitations drafted to ${grp.map(nmOf).join(" and ")}: every member of their alliance must agree.` : mine.length ? `Invitation drafted. Your ally ${mine.map(nmOf).join(" and ")} must invite them too.` : "Invitation drafted. Set a dowry if you like."); },
   uninvite: (_, k) => { const o = S.offers[k]; if (o && o.day === planDayKey()) delete S.offers[k]; },
   ireply: (v, k) => { ensureDip(); S.replies[k] = v; if (!isLive()) { if (v === "reject") S.declined[k] = true; else delete S.declined[k]; }
     toast(v === "accept" ? "Accepted. You ally at the start of tonight's battle." : "Declined."); if (sheet && sheet.type === "invites" && !pendingInvites().length) sheet = null; },

@@ -42,7 +42,7 @@ const GUIDE = [
   { id: "rivals", name: "Allies", pages: [
     { t: "Contracts and twists", p: "Each day you can take one contract for bonus points and gold. Each day also has a twist: tap the ! above the map to see it.", shot: "contracts",
       keys: ["Today's three contracts: easy, hard and one aimed at a rival", "Today's twist"] },
-    { sel: '#cmdbar [data-act="openorders"][data-v="alli"]', t: "Allies", p: "Nobody is allied at the start. You invite a lord, they answer the next day, and the alliance starts at the next battle. Allies win together if they're the last ones standing." },
+    { sel: '#cmdbar [data-act="openorders"][data-v="alli"]', t: "Allies", p: "Nobody is allied at the start. You invite a lord, they answer the next day, and the alliance starts at the next battle. Up to 3 lords can ally, and everyone must agree. Allies left standing share the top places." },
     { t: "Sending an invitation", p: "Open Allies and tap Invite next to a lord.", shot: "invite",
       keys: ["Your invitation, with an optional gold dowry. It's only paid if they accept", "Change your mind before the battle with Withdraw", "Invite another lord"] },
     { t: "Answering an invitation", p: "When a lord invites you, it pops up when you next plan.", shot: "answer",

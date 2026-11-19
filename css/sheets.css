@@ -581,3 +581,8 @@ details.fg-host > summary { list-style: none; cursor: pointer; display: flex; al
 details.fg-host > summary h3 { margin: 0; } details.fg-host > summary::after { content: "▾"; margin-left: auto; color: var(--wax); font-size: 18px; } details.fg-host[open] > summary::after { content: "▴"; }
 details.fg-host[open] > summary { margin-bottom: 8px; }
 @media (max-width: 370px) { .fg-lord { grid-template-columns: 16px 26px 1fr auto 32px; gap: 7px; } }
+/* Allies: alliance cards, the lone wolf note and the alliance history */
+.agrid { display: grid; gap: 6px; } .ateam .anote { margin: 4px 0 0; font-size: 12.5px; }
+.ahist { display: grid; gap: 8px; } .ahday { display: grid; grid-template-columns: 54px 1fr; gap: 8px; align-items: start; padding: 6px 0; border-bottom: 1px dashed rgba(62,39,20,.3); }
+.ahday b { font-family: var(--f-display); color: var(--wax); } .ahday ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; } .ahday li { font-size: 14.5px; line-height: 1.5; }
+.ahday .tm { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; } .ahday .sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; border: 1px solid var(--wood-dark); }
