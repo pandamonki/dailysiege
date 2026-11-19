@@ -177,6 +177,21 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "Alliances v2 and interface fixes", date: "19 Nov", fixes: [
+    "Labels in Orders and Allies floated over the Target and Invite buttons. They now sit beside their headings.",
+    "The practice leaderboard showed the day number as every lord's level. It now shows real hero levels.",
+    "Your hero class could still be changed on day 1 of a running war. It is now fixed once registration closes.",
+  ], balance: [
+    "From the battle of 20 Nov, allies who win together share 1st, 2nd and 3rd (10, 7 and 5 points), the one with the most castle health left first. Before, every surviving ally took 1st.",
+    "From the battle of 20 Nov, lone wolf: while exactly one lord still standing is outside every pact, their army and castle get 10% more damage and 10% more maximum health for each allied lord still standing. It ends when a second lord stands alone or the lone wolf allies.",
+  ], changes: [
+    "From the battle of 20 Nov an alliance is a group of up to 3. A lord or group joins only if every member of each side agreed, so all allies are allied to each other. Inviting one member of an alliance invites them all, and an invitation to your alliance shows each member's answer.",
+    "Bots in friends wars now take part in alliances: about 30% of days they invite a lord, they accept invitations that pay their price, and bots in the bottom half sometimes plan a betrayal.",
+    "The Allies screen shows a card per alliance, who stands alone, the lone wolf, who betrayed whom, and a day-by-day alliance history.",
+    "The top row labels its icons (Ult, Board, Report, Menu). Hero > Items has an Open the shop button, and the shop's page arrows sit under the items. The planning map is taller.",
+    "The Friends Game page has lord cards with banners, Sealed and Planning badges, a lock clock and a sealed count; host settings fold away.",
+    "Smaller fixes: clearer day and treasury wording, full-width tab bars, solid award cards, bigger unit-strip labels, and the recap explains that places go by who holds out longest.",
+  ] },
   { v: "How to play guide", date: "19 Nov", fixes: [
     "The Muster Hall's War is over card had dark text on a dark background. It now sits on parchment with dark text.",
   ], balance: [], changes: [

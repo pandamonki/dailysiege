@@ -110,7 +110,7 @@ test("Items v6: the Divine Rapier adds 100 to weapon hits, not to abilities", ()
   assert.match(r.old, /Doubles/);
 });
 
-// ----- alliances v2 (battles from 21 Nov 2026) -----
+// ----- alliances v2 (battles from 20 Nov 2026) -----
 const lord = (pid, extra = {}) => ({ pid, name: pid, offers: {}, replies: {}, terms: {}, breaks: [], pbetray: {}, ...extra });
 const ally = (plans, opts) => { const r = sim.get("resolveAlliances")(plans, { prevDay: 1, blocMax: 3, ...opts }); return JSON.parse(JSON.stringify(r.pairs.map(p => p.slice().sort().join("|")).sort())); };
 

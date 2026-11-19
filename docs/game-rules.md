@@ -20,8 +20,8 @@ practice games always stamp all of them (`js/sim/plans.js`).
 | 20 Nov | `ordV2` | Army plans and one fall-back condition; no if-then commands or soldier orders |
 | 20 Nov | `skV2` | Skill scaling v2: every rank adds an even step (`TREE_V2`); report records deaths, assists, damage |
 | 20 Nov | `shellV2` | Anti-Magic Shell fires the moment the hero engages an enemy hero (when off cooldown); no chosen delay |
-| 21 Nov | `allyV2` | Alliances v2: groups need every member's yes, winning allies share the top places by castle health, the lone wolf, bots in friends wars join the diplomacy |
 | 20 Nov | `itemV6` | Item rebalance: weaker Healing Salve and Ring of Health; stronger Anti-Magic Shell (7.5s magic immunity), Rune of Homecoming (reusable), Talisman of Will, Orb of Fire, Crystalys, Pipe of Insight and Boots |
+| 20 Nov | `allyV2` | Alliances v2: groups need every member's yes, winning allies share the top places by castle health, the lone wolf, bots in friends wars join the diplomacy |
 
 ## The war
 
@@ -132,13 +132,13 @@ practice games always stamp all of them (`js/sim/plans.js`).
 - Invite a lord with an optional dowry (at most 2 invitations open); they answer the next day and the pact starts at that
   night's battle. Two lords who invite each other ally for free. Pacts carry over until broken or betrayed; on day 7 every
   pact ends. An alliance holds at most 3 lords (`BLOC_MAX`) and there must always be two sides.
-- From 21 Nov (`allyV2`, `js/sim/alliances.js`): an alliance is a group. A lord or group joins another only if every member
+- From 20 Nov (`allyV2`, `js/sim/alliances.js`): an alliance is a group. A lord or group joins another only if every member
   of each side agreed with every member of the other, so everyone in an alliance is allied to everyone else. In the game,
   inviting one member of an alliance drafts an invitation to each of them. Before then a pact was between two lords only,
   and chains (A with B, A with C, B and C not allied) were possible.
-- Allies win together if only allies remain. From 21 Nov they share the top places, the one with the most castle health
+- Allies win together if only allies remain. From 20 Nov they share the top places, the one with the most castle health
   left first (1st, 2nd, 3rd: 10, 7, 5 points); before then every surviving ally took 1st place.
-- Lone wolf (from 21 Nov): while exactly one lord still standing is in no pact and at least one alliance stands, that lord's
+- Lone wolf (from 20 Nov): while exactly one lord still standing is in no pact and at least one alliance stands, that lord's
   army and castle deal 10% more damage and have 10% more maximum health (current health scales with it) for each allied lord
   still standing
   (`LONE_WOLF_STEP`). It is checked every second of the battle, so it ends the moment a second lord stands alone (a pact
@@ -146,7 +146,7 @@ practice games always stamp all of them (`js/sim/plans.js`).
 - A pact can be broken cleanly or betrayed mid-battle with a bomb in the ally's keep (half its health). The betrayer scores
   3 points and takes a quarter of the victim's battle spoils; the two deal 20% more damage to each other for the rest of the
   war and can never share an alliance again.
-- Bots in friends wars (from 21 Nov, `wBotDiplomacy` in `js/net/world.js`): each day a bot has a 30% chance to invite a
+- Bots in friends wars (from 20 Nov, `wBotDiplomacy` in `js/net/world.js`): each day a bot has a 30% chance to invite a
   lord with a small dowry; it accepts invitations that pay its price (anything if it is in the bottom half of the board);
   a bot in the bottom half plans to betray about 1 pact in 5. Practice bots follow their own script (`js/sim/bots.js`).
 - The Allies screen shows every alliance, the lords standing alone, whether lone wolf is on, bad blood (who betrayed whom)

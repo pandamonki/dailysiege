@@ -58,7 +58,7 @@ const fairTie = (seed, a, b) => hash(seed, botSeed(String(a)) * 7919 + botSeed(S
 // standing is in no pact and at least one alliance stands, that lord's army and castle deal LONE_WOLF_STEP more damage and have LONE_WOLF_STEP
 // more maximum health (current health scaled with it) for each allied lord still standing. Checked every second; it ends the moment a second
 // lord stands alone or the lone wolf allies, and the extra health goes again.
-let ALLY_V2_FROM = "2026-11-21"; const allyV2For = d => String(d) >= ALLY_V2_FROM, LONE_WOLF_STEP = .1;
+let ALLY_V2_FROM = "2026-11-20"; const allyV2For = d => String(d) >= ALLY_V2_FROM, LONE_WOLF_STEP = .1;
 const ASSIST_SECS = 10, SURVIVOR_PTS = 1, BLOC_MAX = 3, TREACHERY_PTS = 3, TREACHERY_LOOT = .25, DAY_WEIGHT = { 5: 1.5, 6: 1.5, 7: 2 };
 // A lord whose castle falls keeps their hero and soldiers on the field: they fight on to the end of the battle, but can no longer fall back, heal at the castle, teleport home or respawn. Placing is still decided by when the castle fell.
 const ORPHAN_ARMIES = true;
