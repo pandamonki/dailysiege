@@ -177,6 +177,14 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "How to play guide", date: "19 Nov", fixes: [
+    "The Muster Hall's War is over card had dark text on a dark background. It now sits on parchment with dark text.",
+  ], balance: [], changes: [
+    "How to play is rebuilt as five chapter tabs: Basics, Army, Hero, Battle and Allies, each of a few short pages. From Options it floats over the planning screen and rings the real button for anything on screen; new lords read the Basics chapter before choosing a hero.",
+    "Pages about screens a new player can't see yet (contracts, sending and answering an invitation, betrayal, the mercenary camp, the replay and the morning report) show a screenshot with numbered boxes and a line for each number. A chapter gets a tick once read.",
+    "Exact numbers moved from the guide into the page i notes: pay (Treasury), points (Leaderboard), training costs (Train), levels a battle (Hero) and the two-invitation limit (Alliances).",
+    "Towers are drawn 20% shorter on the map. Their pictures in the menus are unchanged.",
+  ] },
   { v: "Item rebalance", date: "18 Nov", fixes: [], balance: [
     "From the battle of 20 Nov: Healing Salve heals 220 (was 300) and costs 60 (was 50). Ring of Health gives +120 health and 8 health a second (was 140 and 10) and costs 100 (was 90) before tier pricing.",
     "Talisman of Will: stuns, roots, slows and silences last 75% shorter (was stuns and roots 60%). Orb of Fire splashes 50% within 1.5 tiles (was 35% within 1.3). Crystalys: 25% chance of 1.8x (was 20% of 1.6x). Pipe of Insight: 60% within 4 tiles (was 50% within 3). Boots of Speed: +0.42 move speed (was +0.35).",
