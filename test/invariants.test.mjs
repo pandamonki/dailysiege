@@ -109,3 +109,10 @@ test("Items v6: the Divine Rapier adds 100 to weapon hits, not to abilities", ()
   assert.match(r.desc, /\+100 damage/);
   assert.match(r.old, /Doubles/);
 });
+
+test("stock taunts fit the taunt limit, and the Bronson is the lone last place", () => {
+  const r = JSON.parse(sim.run(`JSON.stringify({ long: [...BOT_TAUNTS_TV, ...BOT_TAUNTS_TE].filter(t => t.length > TAUNT_MAX),
+    last: isLastPlace({ place: 3 }, [{ place: 1 }, { place: 2 }, { place: 3 }], false), notMid: isLastPlace({ place: 2 }, [{ place: 1 }, { place: 2 }, { place: 3 }], false),
+    notDuel: isLastPlace({ place: 2 }, [{ place: 1 }, { place: 2 }], false), notTeam: isLastPlace({ place: 3 }, [{ place: 1 }, { place: 1 }, { place: 3 }], true) })`));
+  assert.deepEqual(r, { long: [], last: true, notMid: false, notDuel: false, notTeam: false });
+});

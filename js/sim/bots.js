@@ -42,7 +42,7 @@ function botItems(i) { const n = Math.floor(hash(i, 6, 31) * 4), out = []; for (
 // castle stands and what day it is, so the server and every phone get exactly the same ones. They grow more capable as the week goes on.
 const BOT_LORD_NAMES = ["Ser Gareth", "Lady Maren", "Baron Voss", "Dame Isolde", "Lord Corvin", "Ser Tamsin", "Count Rurik", "Lady Elowen", "Baron Thale", "Ser Odric", "Dame Brynn", "Lord Aldous"]; // nicknames, 16 characters at most
 const BOT_LORD_BANNERS = [{ pat: "halves", c2: "#ecdcb4", em: "crown" }, { pat: "stripe", c2: "#1e140c", em: "skull" }, { pat: "cross", c2: "#ecdcb4", em: "star" }, { pat: "chevron", c2: "#e2b33c", em: "sun" }, { pat: "quarters", c2: "#ecdcb4", em: "none" }, { pat: "solid", c2: "#ecdcb4", em: "moon" }, { pat: "stripe", c2: "#e2b33c", em: "tower" }];
-const BOT_TAUNTS_TV = ["GG", "Ez.", "GG EZ", "Get gud.", "Too easy.", "Better luck next time.", "Sit down.", "Gracias, GG."], BOT_TAUNTS_TE = ["Pwnd!", "Noob.", "Ez.", "Get gud.", "Get rekt!", "L + ratio", "Sit down.", "Next!"];
+const BOT_TAUNTS_TV = ["GG", "Ez.", "GG EZ", "Get gud.", "Too easy.", "Better luck next time.", "Sit down.", "Gracias, GG.", "Get Bronson'd.", "Don't be a Bronson."], BOT_TAUNTS_TE = ["Pwnd!", "Noob.", "Ez.", "Get gud.", "Get rekt!", "L + ratio", "Sit down.", "Next!", "You got Bronson'd!", "Bronson behaviour."];
 const BOT_STANCES = ["aggressive", "skirmish", "cautious", "aggressive"];
 const botSeed = uid => { let h = 7; for (let k = 0; k < uid.length; k++) h = (h * 31 + uid.charCodeAt(k)) % 99991; return h; };
 
