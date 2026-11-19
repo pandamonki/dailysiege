@@ -58,6 +58,10 @@ const fairTie = (seed, a, b) => hash(seed, botSeed(String(a)) * 7919 + botSeed(S
 // standing is in no pact and at least one alliance stands, that lord's army and castle deal LONE_WOLF_STEP more damage and have LONE_WOLF_STEP
 // more maximum health (current health scaled with it) for each allied lord still standing. Checked every second; it ends the moment a second
 // lord stands alone or the lone wolf allies, and the extra health goes again.
+// placement v2 (plans stamped placeV2): every place is one point apart, last scores 1 and first scores one per lord, plus a
+// PLACE_WIN_BONUS for winning (1st of 8: 8 + 2 = 10). Before, 10, 7, 5, 4, 3, 2, 1 for 1st to 7th and nothing below.
+let PLACE_V2_FROM = "2026-11-21"; const placeV2For = d => String(d) >= PLACE_V2_FROM, PLACE_WIN_BONUS = 2;
+const placePts = (v2, place, n) => (v2 ? Math.max(0, n - place + 1) + (place === 1 ? PLACE_WIN_BONUS : 0) : [10, 7, 5, 4, 3, 2, 1, 0][place - 1] || 0);
 let ALLY_V2_FROM = "2026-11-20"; const allyV2For = d => String(d) >= ALLY_V2_FROM, LONE_WOLF_STEP = .1;
 const ASSIST_SECS = 10, SURVIVOR_PTS = 1, BLOC_MAX = 3, TREACHERY_PTS = 3, TREACHERY_LOOT = .25, DAY_WEIGHT = { 5: 1.5, 6: 1.5, 7: 2 };
 // A lord whose castle falls keeps their hero and soldiers on the field: they fight on to the end of the battle, but can no longer fall back, heal at the castle, teleport home or respawn. Placing is still decided by when the castle fell.
@@ -1230,14 +1234,14 @@ function runBattle(plans, seed, opts = {}) {
   ents.filter(e => e.kind === "champ" && e.gains < MIN_GAIN && e.heroLvl < maxLvl).forEach(e => { while (e.gains < MIN_GAIN && e.heroLvl < maxLvl) levelUp(e); }); // every hero earns at least two levels a day
   const treach = {}; treachery.forEach(([by, vic]) => { treach[by] = (treach[by] || 0) + 1; const take = Math.round(P[vic].gold * TREACHERY_LOOT); P[by].gold += take; P[vic].gold -= take; }); // the betrayer keeps a share of the victim's spoils for the day
   const W8 = PV ? (DAY_WEIGHT_PICK[opts.dayNo] || 1) : dayWeight(BV, opts.dayNo);
-  const PTS = [10, 7, 5, 4, 3, 2, 1, 0]; // placement points; from 8th place down a lord scores only for kills and castles
+  const PLV2 = plans.some(p => p.placeV2), placeOf = pid => placePts(PLV2, P[pid].place, order.length); // placement points (see placePts)
   // survivor (plans stamped survV1): a lord whose hero is on its feet when the battle ends scores SURVIVOR_PTS more, castle standing or not
   const surv = pid => { const pl = plans.find(q => q.pid === pid), h = P[pid].champ; return !!(pl && pl.survV1 && h && !h.dead); };
   // the battle report's scoreboard (battles from 20 Nov): hero deaths, assists, and damage dealt in all, to heroes and to castles
   const BOARD2 = plans.some(p => p.skV2), board = pid => { const mine = ents.filter(e => e.pid === pid && e.tel && e.kind !== "castle"), sum = k => Math.round(mine.reduce((a, e) => a + (e.tel[k] || 0), 0));
     return { deaths: ents.filter(e => e.pid === pid && e.kind === "champ").reduce((a, e) => a + e.tel.deaths, 0), assists: P[pid].assists || 0, dmg: sum("dealt") + Math.round(P[pid].trapDmg || 0), dmgH: sum("toChamp"), dmgC: sum("toCastle") }; };
   const results = order.map(pid => ({ pid, name: nm(pid), color: P[pid].color, cls: P[pid].cls, place: P[pid].place, kills: P[pid].kills, ukills: P[pid].ukills, castles: P[pid].castles,
-    points: Math.round(((PTS[P[pid].place - 1] || 0) + P[pid].kills + castlePts(FV) * P[pid].castles) * W8) + (treach[pid] || 0) * TREACHERY_PTS + (surv(pid) ? SURVIVOR_PTS : 0), ...(treach[pid] ? { treachery: treach[pid] } : {}), ...(P[pid].loneMax ? { lone: P[pid].loneMax } : {}), ...(surv(pid) ? { survivor: 1 } : {}), fellAt: P[pid].elimT, gold: Math.round(P[pid].gold), ...(BOARD2 ? board(pid) : {}) })).sort((a, b) => a.place - b.place);
+    points: Math.round((placeOf(pid) + P[pid].kills + castlePts(FV) * P[pid].castles) * W8) + (treach[pid] || 0) * TREACHERY_PTS + (surv(pid) ? SURVIVOR_PTS : 0), ...(treach[pid] ? { treachery: treach[pid] } : {}), ...(P[pid].loneMax ? { lone: P[pid].loneMax } : {}), ...(surv(pid) ? { survivor: 1 } : {}), fellAt: P[pid].elimT, gold: Math.round(P[pid].gold), ...(BOARD2 ? board(pid) : {}) })).sort((a, b) => a.place - b.place);
   const TEL_COST = { footman: 50, bowman: 70, knight: 120, healer: 100, raider: 110, mage: 140, sniper: 160, ram: 240, cart: 200, catapult: 220 }; // telemetry keeps the prices from before 15 Nov 2026 so recorded battles replay identically
   const invest = (type, lvl) => { const c = TEL_COST[type] ?? UNITS[type].cost; let g = c; for (let l = 1; l < lvl; l++) g += Math.round(c * .5 * l); return g; };
   const tel = { duration: Math.min(t, SV ? SD_AT + SD_COUNT + SD_LEN : TMAX),

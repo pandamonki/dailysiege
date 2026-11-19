@@ -22,6 +22,7 @@ practice games always stamp all of them (`js/sim/plans.js`).
 | 20 Nov | `shellV2` | Anti-Magic Shell fires the moment the hero engages an enemy hero (when off cooldown); no chosen delay |
 | 20 Nov | `itemV6` | Item rebalance: weaker Healing Salve and Ring of Health; stronger Anti-Magic Shell (7.5s magic immunity), Rune of Homecoming (reusable), Talisman of Will, Orb of Fire, Crystalys, Pipe of Insight and Boots |
 | 20 Nov | `allyV2` | Alliances v2: groups need every member's yes, winning allies share the top places by castle health, the lone wolf, bots in friends wars join the diplomacy |
+| 21 Nov | `placeV2` | Placement: one point per place, last scores 1, plus 2 for winning |
 
 ## The war
 
@@ -127,8 +128,12 @@ practice games always stamp all of them (`js/sim/plans.js`).
 
 ## Points
 
-- Placing: 10, 7, 5, 4, 3, 2, 1 points for 1st to 7th; plus 1 per enemy hero killed, 3 per castle destroyed, 1 for surviving with
-  your hero alive, and points for treachery. Days 5 and 6 count 1.5 times and day 7 twice.
+- Placing, from the 21 Nov battle (`placeV2`, `placePts` in `js/sim/battle.js`): one point per place, so last scores 1 and first
+  scores one per lord, plus 2 for winning (`PLACE_WIN_BONUS`); with 8 lords that is 10, 7, 6, 5, 4, 3, 2, 1. Before then: 10, 7, 5,
+  4, 3, 2, 1 for 1st to 7th and nothing below.
+- Plus 1 per enemy hero killed and 3 per castle destroyed. Placing, kills and castles count 1.5 times on days 5, 6 and 7
+  (`DAY_WEIGHT_PICK`). Then 1 for surviving with your hero alive, 3 for a betrayal whose bomb goes off, and contracts
+  (2 easy, 3 hard, 5 against a rival; doubled on a Glory day).
 - Contracts add points and gold.
 
 ## Battle report
@@ -147,7 +152,7 @@ practice games always stamp all of them (`js/sim/plans.js`).
   inviting one member of an alliance drafts an invitation to each of them. Before then a pact was between two lords only,
   and chains (A with B, A with C, B and C not allied) were possible.
 - Allies win together if only allies remain. From 20 Nov they share the top places, the one with the most castle health
-  left first (1st, 2nd, 3rd: 10, 7, 5 points); before then every surviving ally took 1st place.
+  left first, each scoring their place (only 1st gets the winner's bonus); before then every surviving ally took 1st place.
 - Lone wolf (from 20 Nov): while exactly one lord still standing is in no pact and at least one alliance stands, that lord's
   army and castle deal 10% more damage and have 10% more maximum health (current health scales with it) for each allied lord
   still standing

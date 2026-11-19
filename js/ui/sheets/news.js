@@ -3,6 +3,16 @@
 // Each item is [icon, headline, one short sentence]. Players who have not seen the newest id get the pop-up the next time they plan;
 // the id is remembered on their device, so changing the id is all it takes to show it again. Keep about 8 to 14 items.
 const RELEASES = [
+  { id: "1.13", title: "What's new in v1.13", sub: "Fairer placement points, and fixes for the friends war", items: [
+    ["🏅", "One point per place", "From the 21 Nov battle every place is one point apart, and last place scores 1."],
+    ["🏆", "A bonus for winning", "The winner scores 2 more: with 8 lords that's 10, 7, 6, 5, 4, 3, 2, 1."],
+    ["🔟", "Nobody scores nothing", "In big wars the bottom places used to score 0. Now everyone's place counts."],
+    ["📜", "Clear scoring", "The leaderboard's i note lists every way to score."],
+    ["🔒", "Lords locked in", "A war's lords are fixed when registration closes, so the count can't change mid-war."],
+    ["🗓", "Battles never lost", "Each war's battles are saved apart, so one war can't hide another's."],
+    ["🧙", "Bots of every kind", "Bots now play different heroes instead of all the same."],
+    ["🧭", "A guided tour", "The How to play tour opens each screen as it explains it."],
+  ] },
   { id: "1.12", title: "What's new in v1.12", sub: "Alliances rebuilt, a lone wolf, and a clearer screen everywhere", items: [
     ["🤝", "Alliances are groups", "From the 20 Nov battle up to 3 lords can ally, and a new lord joins only if every member accepts."],
     ["✅", "See your allies' answers", "When a lord invites your alliance, you see who has accepted so far."],

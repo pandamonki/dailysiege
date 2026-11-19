@@ -29,7 +29,7 @@ const HELP = {
   invites: ["Invitations", "Lords who want to ally with you. Accept or decline, or decide later in Allies. If you accept, the alliance starts at the next battle and any dowry is paid to you."],
   gold: ["Treasury", "Your gold, your daily income and what is set aside for alliance offers. Kill spoils and dowries are added after each battle. Pay is 225 gold after the first battle and 30 more each day, plus 70 a day for a Fortress or 130 for a Citadel. The lords at the bottom of the board get catch-up gold."],
   day: ["The war", "The war runs for seven daily battles. Each day you spend gold, place your soldiers and seal your orders before the timer ends."],
-  board: ["Leaderboard", "Standings for the week. Tap a lord to see their hero, castle and banner. Each battle: 10, 7, 5, 4, 3, 2 and 1 points for 1st to 7th place, +1 per enemy hero slain, +3 per castle destroyed and +1 if your hero is alive at the end. Days 5 and 6 count 1.5 times and day 7 twice."],
+  board: ["Leaderboard", "Standings for the week. Tap a lord to see their hero, castle and banner. Each battle: one point per place, so last scores 1 and first scores one per lord, plus 2 for winning (with 8 lords: 10, 7, 6, 5, 4, 3, 2, 1). +1 per enemy hero slain, +3 per castle destroyed and +1 if your hero is alive at the end. Days 5, 6 and 7 count 1.5 times. Contracts and betrayals add more."],
   report: ["Battle report", "What happened in the last battle: who fell, who held the hill and who gained gold. Watch the replay to see how it played out."],
   results: ["Recap", "How the battle went for you. Replay it, check the standings, then head back to plan tomorrow."],
   deploy: ["Deploy here", "Choose who takes this ground. Only soldiers in your reserve can be placed."],

@@ -132,8 +132,9 @@ test("a pact group holds at most three lords", () => {
 });
 
 test("the last days of the week score more", () => {
+  const was = sim.run("PLACE_V2_FROM"); sim.run('PLACE_V2_FROM = "2099-01-01"'); // both days under the same placement table, so only the day weight differs
   const W = world(ids), at = k => fightDay(W, addDays(D1, k), 1), pts = d => d.results.reduce((n, r) => n + r.points, 0);
-  const d1 = at(0), d7 = at(6);
+  const d1 = at(0), d7 = at(6); sim.run(`PLACE_V2_FROM = "${was}"`);
   assert.ok(pts(d7) > pts(d1) * 1.2, `day 7 (${pts(d7)}) is worth about 1.5 times day 1 (${pts(d1)})`); // 1.5x from 16 Nov 2026 (2x before)
 });
 
