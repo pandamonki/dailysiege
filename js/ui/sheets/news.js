@@ -3,6 +3,18 @@
 // Each item is [icon, headline, one short sentence]. Players who have not seen the newest id get the pop-up the next time they plan;
 // the id is remembered on their device, so changing the id is all it takes to show it again. Keep about 8 to 14 items.
 const RELEASES = [
+  { id: "1.11", title: "What's new in v1.11", sub: "A new How to play guide, in chapters with pictures", items: [
+    ["📖", "Five chapters", "How to play is now in tabs: Basics, Army, Hero, Battle and Allies."],
+    ["✂", "Shorter pages", "Each page is a sentence or two. The ideas, not the maths."],
+    ["💛", "Real buttons ringed", "Pages about something on screen ring the button itself."],
+    ["🖼", "Pictures with numbers", "Screens you haven't seen yet are shown with numbered boxes and a line for each."],
+    ["🤝", "Alliances explained", "See how to send, answer and betray an alliance before you need to."],
+    ["🌅", "The morning report", "See what last night's report and the replay show you."],
+    ["✓", "Ticks", "A chapter gets a tick once you've read it."],
+    ["ℹ", "Numbers in the i notes", "Pay, points and training costs are now in each page's i note."],
+    ["🗼", "Shorter towers", "Towers stand a little lower on the map."],
+    ["⚔", "War over card", "The Muster Hall's war over card is easier to read."],
+  ] },
   { id: "1.10", title: "What's new in v1.10", sub: "An item shake-up: the Shell and the Rune reworked, and the weak items made worth buying", items: [
     ["◉", "Anti-Magic Shell", "From the 20 Nov battle it fires the moment you engage an enemy hero. No timing to set."],
     ["✨", "Full magic immunity", "For 7.5s, hero abilities, ultimates and magic attacks do no damage to you."],

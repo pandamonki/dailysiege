@@ -40,10 +40,9 @@ function render(keepScroll = true) {
 }
 let wizCtx = null; // the screen the player was on before opening Options, so the tour can start there
 function open(type, id) { if (type === "title" && sheet && sheet.type !== "title") wizCtx = { type: sheet.type, grp: sheet.grp, tab: sheet.tab }; else if (type !== "title") wizCtx = null; sheet = { type, id }; render(false); }
-function wizStartStep() { const c = wizCtx; wizCtx = null; if (!c) return Math.max(0, WIZARD.findIndex(w => w[0] === "#map"));
-  const find = sel => WIZARD.findIndex(w => w[0] === (sel.startsWith("[") ? "#cmdbar " + sel : sel));
+function wizStartStep() { const c = wizCtx; wizCtx = null; if (!c) return 0; // opened from the title screen: start at the beginning
   const k = c.type === "castle" && c.tab === "shop" ? "#shopbtn" : c.type === "castle" ? (c.grp === "army" || c.tab === "recruit" || c.tab === "train" ? '[data-act="opencastle"][data-v="recruit"]' : '[data-act="opencastle"][data-v="keep"]')
     : c.type === "champ" ? '[data-act="openhero"]' : c.type === "orders" ? (c.grp === "alli" ? '[data-act="openorders"][data-v="alli"]' : '[data-act="openorders"][data-v="ord"]')
     : ["gold", "day", "board", "rep"].includes(c.type) ? ".topchips" : null;
-  const i = k ? find(k) : find("#map"); return i < 0 ? 0 : i; }
+  const i = k ? guideFind(k.startsWith("[") ? "#cmdbar " + k : k) : 0; return i < 0 ? 0 : i; }
 function close() { sheet = null; if (mode === "plan") reportBack = null; render(); }

@@ -180,55 +180,6 @@ function victoryCeremony(R, done) {
   el.querySelector("#vgo").addEventListener("click", () => { alive = false; el.remove(); done(); });
 }
 
-// ----- interactive first-login tour: a steward walks new lords through the planning screen -----
-// The one guide to the game: the tour walks through it on the planning screen, and new lords read the same pages before choosing a hero
-const WIZARD = [
-  [null, "Welcome, m'lord", "I am Aldric, your steward. Your friends have holed up in their castles and declared war. Each evening every army marches out and fights at once. You don't steer the battle, you prepare for it, and the last castle standing wins the day. The war lasts seven days, and every battle adds points to the weekly leaderboard."],
-  [null, "The daily cycle", "Each day has two phases. Planning: spend gold, place your army, level your hero, pick your targets and seal your orders before the timer locks. Battle: everything plays out by itself at the agreed time, and you watch the replay next time you open the game. Your orders are secret: rivals only see what you fielded the day before."],
-  ['.topchips', "The top row", "Day and countdown, gold, your army on the field, ultimate, leaderboard, battle report and options. Every page has a small i in its top corner with a short note on what it is for. You can retake this tour from Options, and it opens at the screen you were on."],
-  ["#map", "The map", "Drag to pan. Pinch or use + and − to zoom. The ⛶ button fits the whole field and the home button returns to your castle. Your army stands under your colour on the glowing ground round your castle. Trees are solid: nothing can stand in them or march through them."],
-  ['#cmdbar [data-act="opencastle"][data-v="keep"]', "Base", "Raise your castle to a Fortress or Citadel for more health, more gold each day and stronger soldiers. Unlock reinforcement waves (60, 100 and 150 gold). Build up to 5 walls (several at once) and 4 traps under Defences; walls can funnel attackers but never seal the castle in. The Armoury forges weapons and armour for your soldiers."],
-  ['#cmdbar [data-act="opencastle"][data-v="recruit"]', "Army", "Recruit soldiers, train them and deploy them. 4 soldiers start on the map; more march out later in the waves you unlock, each with its own trigger and orders. Training is cheap: level 2 costs 30% of a soldier's price and level 3 costs 40%, each level adding 30% health and attack."],
-  ['.topchips [data-act="opencastle"][data-v="recruit"]', "Your army", "The shield counts soldiers on the field out of the 4 you can field, with a red dot for any still to place. New recruits wait in a strip under the map: tap one, then tap a glowing tile. Tap a soldier on the map to select and move it."],
-  [".pdock", "The unit strip", "Under the map. Tap a soldier, a castle or a rival to see its health and stats here, then tap the strip for full details. The buttons beside it are quick actions like Train and Move. The i beside any attack or armour type shows what it is strong and weak against."],
-  ['#cmdbar [data-act="openhero"]', "Hero", "Your champion for the week. It gains up to 3 levels a battle as enemies fall nearby, to level 15, and every level is a skill point you spend in its three trees. One ultimate opens at level 9. Each active skill and the ultimate can be told when to cast; left alone they pick their own moment."],
-  ["#shopbtn", "The shop", "The bag of gold on the right edge of the map opens the shop. Your hero fights with items, up to 6. Tap one to read what it does, then Buy. Tap an item you own to sell it for half its price. On days 2 and 5 a free gift spin offers an item too."],
-  ['#cmdbar [data-act="openorders"][data-v="ord"]', "Orders", "Strategy: pick 3 targets a day, in order, from the leaderboard or by role (board leader, weakest castle and more), and what to hit when you get there. Combat: who each group fights first and if-then commands. Contracts: take one bonus job a day. Rituals: your ultimate and weekly blessing."],
-  [null, "Contracts and twists", "Each day you are offered three contracts: easy, hard and one aimed at a rival. Complete the one you took for up to 5 extra points and 150 extra gold. From day 2 each day also has a twist, like Blood Moon or Market Day. Tap the ! at the top of the map to see today's."],
-  ['#cmdbar [data-act="openorders"][data-v="alli"]', "Allies", "Alliances are an active choice. Nobody is allied by default: you invite, they answer, and the alliance starts at the next battle. The next three steps walk through it."],
-  [null, "1 · Send an invitation", "Open Allies, pick a lord and tap Invite. You can add a gold dowry (optional), which is set aside and paid only if they accept. At most 2 invitations can be open at once. You can change or withdraw a draft until planning ends.",
-    `<div class="mk-row"><b>Sam</b><span class="mk-step">− 150g +</span><span class="mk-btn">Withdraw</span></div><div class="mk-row"><b>Riley</b><span class="mk-chip">Pending · 0g</span></div><p class="mk-cap">Your invitations <b>2/2 open</b></p>`],
-  [null, "2 · Answer an invitation", "After you watch the battle and return to planning, a pop-up shows each invitation sent to you. Accept or Decline, or choose Decide later and answer in the Allies tab. The sender sees Pending until you answer. If you accept, the alliance is announced to everyone at the start of the next battle.",
-    `<div class="mk-card"><div class="mk-row"><span><b>Sam</b> invites you to ally</span><span class="mk-chip">150g dowry</span></div><div class="mk-row"><span class="mk-btn wax">Accept</span><span class="mk-btn">Decline</span></div><p class="mk-cap">You can betray an ally at any point in the game.</p></div>`],
-  [null, "3 · Allies, betrayal and winning", "Allies share a banner on the muster screen and win the day together if only allies remain. At least two opposing sides must always stay in the fight. In Allies you can Keep, Break (clean) or Betray an ally at any time: pick the moment, and your hero plants a bomb that blows up their keep for half its health, and they will remember.",
-    `<div class="mk-row"><b>Sam</b><span class="mk-sel">Allied ▾</span></div><div class="mk-row"><span class="mk-sel">Betray ▾</span><span class="mk-chip bad">Their keep loses half its health</span></div>`],
-  [null, "Mercenary camp (day 4+)", "From day 4 each week a Camp bubble appears at the top of the map. Each day a new, stronger headline group arrives at the top, with three regular groups below. You can bid on one group a day. Bids are sealed and the highest bidder fights with that group for one battle, paying their own bid. Place your bid before sealing. A hired group rests for 2 days for everyone.",
-    `<div class="mk-row"><b>Troll Warlord</b><span class="mk-chip">from 200g</span></div><div class="mk-row"><span class="mk-step">− 240g +</span><span class="mk-btn">Clear</span></div><p class="mk-cap">Your sealed bid is set aside while you plan. Only the winner pays.</p>`],
-  [null, "Gold and points", "Pay is 225 gold after the first battle and 30 more each day, plus 70 for a Fortress or 130 for a Citadel. Kills pay spoils, the top three carry bounties, and the bottom 30% get catch-up gold. Each battle scores 10 points for first place down to 0, +1 per hero slain, +3 per castle taken and +1 if your hero is alive when the battle ends; days 5 to 7 count 1.5 times."],
-  [null, "The battleground", "The hill in the middle of the map is the battleground. Heroes standing there earn bonus experience and gold, so expect company. You can order your army to hold it for the first two minutes."],
-  [".sealbar", "Seal your orders", "The seal screen checks your plan: soldiers placed, skill points spent, targets, contract, castle, alliances and mercenary bids. Rehearse the battle there, then press the seal. You can draft new orders until the timer locks; the orders you sealed stay in effect until you seal new ones. Good luck!"],
-];
-function startWizard(force, at) {
-  try { if (!force && localStorage.getItem("ds.wizard")) return; localStorage.setItem("ds.wizard", "1"); } catch (e) {}
-  let i = at || 0; const old = document.getElementById("wiz"); if (old) old.remove(); document.getElementById("wizring")?.remove();
-  const el = document.createElement("div"); el.id = "wiz"; document.body.appendChild(el);
-  const ring = document.createElement("div"); ring.id = "wizring"; document.body.appendChild(ring);
-  const N = WIZARD.length;
-  // the highlight is a floating ring that follows the target, so it survives the game redrawing its buttons
-  const place = () => { const sel = WIZARD[i][0], tg = sel && document.querySelector(sel), r = tg && tg.getBoundingClientRect();
-    if (!r || !r.width) { ring.style.display = "none"; return; }
-    Object.assign(ring.style, { display: "block", left: r.left - 4 + "px", top: r.top - 4 + "px", width: r.width + 8 + "px", height: r.height + 8 + "px" }); };
-  const timer = setInterval(() => { if (!document.getElementById("wiz")) { clearInterval(timer); ring.remove(); } else place(); }, 250);
-  const paint = () => { const [sel, head, msg, mock] = WIZARD[i];
-    const dots = WIZARD.map((_, k) => `<i class="${k === i ? "on" : k < i ? "done" : ""}"></i>`).join("");
-    el.innerHTML = `<div class="wiz-card"><div class="wiz-face"><img alt="" src="${spriteURL("c-mage")}"></div><div class="wiz-msg"><h3>${esc(head)}</h3><p>${esc(msg)}</p>${mock ? `<div class="wmock">${mock}</div>` : ""}<div class="wiz-dots">${dots}</div><div class="wiz-row"><small>${i + 1}/${N}</small><button class="btn small" id="wskip">${i < N - 1 ? "Skip" : "Close"}</button><button class="btn small" id="wback"${i ? "" : " disabled"}>← Back</button><button class="btn wax small" id="wnext">${i < N - 1 ? "Next →" : "Done"}</button></div></div></div>`;
-    place(); const tg0 = sel && document.querySelector(sel), r0 = tg0 && tg0.getBoundingClientRect(), card = el.firstChild;
-    el.style.top = r0 && sel !== "#map" && r0.top < innerHeight * .3 ? Math.round(r0.bottom + 14) + "px" : "70px";
-    el.querySelector("#wskip").onclick = end; el.querySelector("#wback").onclick = () => { if (i > 0) { i--; paint(); } };
-    el.querySelector("#wnext").onclick = () => { if (i < N - 1) { i++; paint(); } else end(); }; };
-  function end() { clearInterval(timer); ring.remove(); el.remove(); }
-  paint();
-}
 // After the victory screen: today's points fly onto the weekly totals, then the board reorders itself
 function standingsAnim(R, done) {
   if (!R || !R.board || R.rehearsal || !(R.results || []).length) { done(); return; }

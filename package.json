@@ -14,6 +14,7 @@
     "preview": "vite preview",
     "test": "node --test",
     "walkthrough": "node tools/walkthrough.mjs",
+    "guide-shots": "node tools/guide-shots.mjs",
     "golden:update": "node tools/golden-update.mjs",
     "emulators": "npm run build && npm run functions:sync && firebase emulators:start --project demo-dailysiege",
     "functions:sync": "node tools/sync-functions.mjs",

@@ -79,6 +79,15 @@ for (const name of engines) {
     await tap('#sheet [data-act="rkit"][data-v="*"]'); if ((await page.locator("#sheet .kitwrap").count()) < 2) throw new Error("Show all builds opened no builds"); await closeAll(); });
   await step("the results screens appear and close", async () => { await page.waitForTimeout(1500); for (let i = 0; i < 6; i++) { const c = page.locator('button:has-text("Continue"):visible'); if (await c.count()) { await c.first().click(); await page.waitForTimeout(600); } }
     await closeAll(); });
+  await step("the How to play guide: chapter tabs, the tour's ring and every picture", async () => { await closeAll();
+    await js(() => { if (mode === "replay") leaveBattle(); sheet = null; render(); }); await closeAll(); await js(() => startWizard(true, 0)); await page.waitForTimeout(200);
+    for (const ch of await js(() => GUIDE.map(c => c.id))) { await tap(`#wiz [data-gch="${ch}"]`); if (!(await js(c => document.querySelector("#wiz .gtabs .on").dataset.gch === c, ch))) throw new Error("the " + ch + " tab did not open"); }
+    await tap('#wiz [data-gch="army"]'); await page.waitForTimeout(300); const rg = await js(() => [document.getElementById("wizring").style.display, mode, !!document.querySelector('#cmdbar [data-act="opencastle"][data-v="keep"]'), document.getElementById("commands").hidden]); if (rg[0] !== "block") throw new Error("the tour did not ring the Base button " + JSON.stringify(rg));
+    await tap("#wskip"); if (await js(() => !!document.getElementById("wiz"))) throw new Error("Skip did not close the tour");
+    const shots = await js(() => [...new Set(GUIDE.flatMap(c => c.pages).filter(p => p.shot).map(p => p.shot))]);
+    for (const n of shots) { const ok = await js(async n => { const im = new Image(); im.src = "guide/" + n + ".webp"; try { await im.decode(); return im.naturalWidth > 100; } catch { return false; } }, n); if (!ok) throw new Error("the guide picture " + n + " is missing"); }
+    const bad = await js(() => GUIDE.flatMap(c => c.pages).filter(p => p.shot && !(p.keys && p.keys.length)).map(p => p.t)); if (bad.length) throw new Error("pictures without numbered lines: " + bad.join(", "));
+    await js(() => { sheet = { type: "guide", pg: 0 }; render(false); }); await tap('#sheet [data-act="gch"][data-v="rivals"]'); if (!(await js(() => /Contracts/.test(document.querySelector("#sheet").innerText)))) throw new Error("the book's Allies tab did not open"); await closeAll(); });
   await step("no script errors anywhere", async () => { if (errors.length) throw new Error(errors.length + " errors: " + errors.slice(0, 3).join(" ; ")); });
 
   console.log(`\n[${name} walkthrough]\n` + results.map(([s, t]) => `${s === "ok" ? "  ✓" : "  ✗"} ${t}`).join("\n"));

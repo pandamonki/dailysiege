@@ -135,6 +135,16 @@ practice games always stamp all of them (`js/sim/plans.js`).
   fortress (traps, towers, a trapped wall line), champion (more items) or mixed. From 20 Nov each build also has its
   own army plan and fall-back (`js/sim/bots.js`).
 
+## How to play (the guide)
+
+- One guide in five chapter tabs: Basics, Army, Hero, Battle and Allies (`js/ui/guide.js`). Read from Options it floats over
+  the planning screen and rings the real button for anything already on screen. New lords read Basics as pages in the Muster
+  Hall before choosing a hero. A chapter gets a tick once its last page has been seen (kept on the device).
+- Pages about screens a new player can't see yet (invitations, betrayal, the mercenary camp, contracts, the replay and the
+  morning report) show a screenshot with numbered gold boxes and a line for each number. The pictures are in `guide/` and are
+  remade with `npm run build && npm run guide-shots`; rerun it when one of those screens changes.
+- The guide teaches the ideas. Exact numbers (pay, points, training costs, invitation limits) are in each page's i note.
+
 ## Checking the game still works
 
 - `npm test`: the rules and battle tests, including `test/invariants.test.mjs` (battles under today's rules: every

@@ -136,6 +136,7 @@ const A = {
     S.banner = { ...(S.banner || defaultBanner()), [v]: k === "seat" ? null : k }; },
   pact: (v, k) => { ensureDip(); S.pactAct[k] = v; if (v === "betray") S.pactWhen[k] = S.pactWhen[k] || BETRAY_WHEN[0]; },
   gpage: v => { sheet.pg = (sheet.pg || 0) + (+v); },
+  gch: v => { const first = S && S.ob === 1, list = guidePages("book").filter(p => !first || p.ch === "basics"); sheet.pg = Math.max(0, list.findIndex(p => p.ch === v)); },
   rep: () => { reportBack = isLive() ? latestBattleKey() : (LASTP ? "practice" : null); open("report", reportBack || undefined); },
   rwatch: v => { reportBack = v; if (v === "practice") startBattle(); else watchLiveBattle(v, "play"); },
   rreelm: v => { reportBack = v; if (v === "practice") { startBattle(); startReel(false); } else watchLiveBattle(v, "reel"); },

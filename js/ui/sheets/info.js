@@ -149,12 +149,6 @@ function titleSheet() {
       ${inGame ? `<button class="btn small" data-act="open" data-v="game">⚙ Game settings</button>` : ""}${window.DS && DS.user ? `<button class="btn small" data-act="open" data-v="wars">🏰 Your wars${(DS.wars || []).length > 1 ? ` (${DS.wars.length})` : ""}</button>` : ""}${typeof PWA !== "undefined" && PWA.canOffer() ? `<button class="btn small" data-act="pwainstall">📲 Install app</button>` : ""}<button class="btn small" data-act="open" data-v="patch">📜 Patch notes</button>${typeof LIVE === "object" && LIVE.config && (LIVE.config.hall || []).length ? `<button class="btn small" data-act="open" data-v="hall">🏆 Hall of fame</button>` : ""}<button class="btn small" data-act="wizard">🧙 How to play (tour)</button>
     </div></div>`;
 }
-function guideSheet() { // the tour's pages, read as a book (new lords see this before choosing a hero)
-  const pg = Math.max(0, Math.min(WIZARD.length - 1, sheet.pg || 0)), [, t, p, mock] = WIZARD[pg];
-  return head(null, "How to play", `Page ${pg + 1} of ${WIZARD.length}`) + `<div class="body"><h3>${esc(t)}</h3><p>${esc(p)}</p>${mock ? `<div class="wmock">${mock}</div>` : ""}
-    <div class="dots">${WIZARD.map((_, i) => `<i class="${i === pg ? "on" : ""}"></i>`).join("")}</div>
-    <div class="row"><button class="btn" data-act="gpage" data-v="-1" ${pg === 0 ? "disabled" : ""}>← Back</button>${pg < WIZARD.length - 1 ? `<button class="btn wood" data-act="gpage" data-v="1">Next →</button>` : `<button class="btn wax" data-act="gdone">${S && S.ob === 1 ? "Choose my hero →" : "Got it"}</button>`}${S && S.ob === 1 ? `<button class="btn small" data-act="gdone">Skip</button>` : ""}</div></div>`;
-}
 function spellsSheet() {
   return head(null, "Spell book", "Every ability and its recharge") + `<div class="body">${Object.entries(CLASSES).map(([ck, c]) => `<div class="sec"><h3>${c.name}</h3><div class="spellrow">${[...c.abilities.map(a => [a.key, a.name, a.desc]), ["ult", c.ult.name, c.ult.desc]].map(([k, n, d]) => `<div class="spell"><img alt="" src="${spellURL(ck + "_" + k, 64)}"><b>${esc(n)}</b><small>${PASSIVE[ck] === k ? "Passive" : (COOLDOWN[ck][k] * BAL.cd).toFixed(0) + "s recharge"}</small><span>${esc(d)}</span></div>`).join("")}</div></div>`).join("")}</div>`;
 }
@@ -183,6 +177,14 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "How to play guide", date: "19 Nov", fixes: [
+    "The Muster Hall's War is over card had dark text on a dark background. It now sits on parchment with dark text.",
+  ], balance: [], changes: [
+    "How to play is rebuilt as five chapter tabs: Basics, Army, Hero, Battle and Allies, each of a few short pages. From Options it floats over the planning screen and rings the real button for anything on screen; new lords read the Basics chapter before choosing a hero.",
+    "Pages about screens a new player can't see yet (contracts, sending and answering an invitation, betrayal, the mercenary camp, the replay and the morning report) show a screenshot with numbered boxes and a line for each number. A chapter gets a tick once read.",
+    "Exact numbers moved from the guide into the page i notes: pay (Treasury), points (Leaderboard), training costs (Train), levels a battle (Hero) and the two-invitation limit (Alliances).",
+    "Towers are drawn 20% shorter on the map. Their pictures in the menus are unchanged.",
+  ] },
   { v: "Item rebalance", date: "18 Nov", fixes: [], balance: [
     "From the battle of 20 Nov: Healing Salve heals 220 (was 300) and costs 60 (was 50). Ring of Health gives +120 health and 8 health a second (was 140 and 10) and costs 100 (was 90) before tier pricing.",
     "Talisman of Will: stuns, roots, slows and silences last 75% shorter (was stuns and roots 60%). Orb of Fire splashes 50% within 1.5 tiles (was 35% within 1.3). Crystalys: 25% chance of 1.8x (was 20% of 1.6x). Pipe of Insight: 60% within 4 tiles (was 50% within 3). Boots of Speed: +0.42 move speed (was +0.35).",
