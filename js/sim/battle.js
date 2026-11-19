@@ -54,9 +54,10 @@ const ITEM_REGEN_V5 = { hpring: 10, herbs: 5 }, SALVE_V5 = 300, ELIXIR_V5 = .2, 
 const ITEM_V6 = { salve: 220, hpringHp: 120, hpringRegen: 8, bootsSpd: .42, shellDur: 7.5, runeCd: 45, runeLow: .3, runeChannel: 1.5, will: .25, fireSplash: .5, fireR: 1.5, crys: [.25, 1.8], pipe: .6, pipeR: 4, rapier: 100 };
 const AGGRO_R = 4, RECALL_R = 6, RETREAT_END_V2 = .5, METEOR_CASTLE = 700, MAGIC_VS_FORT = .6, HIT_WINDOW = 2.5, BACK_AT = .6;
 const fairTie = (seed, a, b) => hash(seed, botSeed(String(a)) * 7919 + botSeed(String(b)), 17);
-// alliances v2 (plans stamped allyV2): winning allies share the top places by castle health left; when more than LONE_WOLF_AT of the
-// lords start the day in a pact, every lord standing alone earns LONE_WOLF_BONUS more gold and experience, and LONE_WOLF_PTS for each allied castle they take
-let ALLY_V2_FROM = "2026-11-21"; const allyV2For = d => String(d) >= ALLY_V2_FROM, LONE_WOLF_AT = .6, LONE_WOLF_BONUS = .15, LONE_WOLF_PTS = 2;
+// alliances v2 (plans stamped allyV2): winning allies share the top places by castle health left. Lone wolf: while exactly one lord still
+// standing is in no pact and at least one alliance stands, that lord deals LONE_WOLF_STEP more damage and takes damage as if it had
+// LONE_WOLF_STEP more health, for each allied lord still standing. It ends the moment a second lord stands alone or the lone wolf allies.
+let ALLY_V2_FROM = "2026-11-21"; const allyV2For = d => String(d) >= ALLY_V2_FROM, LONE_WOLF_STEP = .1;
 const ASSIST_SECS = 10, SURVIVOR_PTS = 1, BLOC_MAX = 3, TREACHERY_PTS = 3, TREACHERY_LOOT = .25, DAY_WEIGHT = { 5: 1.5, 6: 1.5, 7: 2 };
 // A lord whose castle falls keeps their hero and soldiers on the field: they fight on to the end of the battle, but can no longer fall back, heal at the castle, teleport home or respawn. Placing is still decided by when the castle fell.
 const ORPHAN_ARMIES = true;
@@ -163,8 +164,14 @@ function runBattle(plans, seed, opts = {}) {
   plans.forEach(pl => pl.pacts.forEach(o => { if (P[o]) { P[pl.pid].pacts.add(o); P[o].pacts.add(pl.pid); } }));
   (plans.feuds || []).forEach(k => { const [a, b] = k.split("|"); if (P[a] && P[b]) { P[a].feud.add(b); P[b].feud.add(a); P[a].hostileTo.add(b); P[b].hostileTo.add(a); P[a].pacts.delete(b); P[b].pacts.delete(a); } }); // betrayers and their victims stay rivals for the rest of the war
   const pact0 = []; order.forEach(a => order.forEach(b => { if (a < b && P[a].pacts.has(b)) pact0.push(a + "|" + b); })); // the pacts the day starts with, after bad blood has dissolved any between feuding lords
-  const AV2 = plans.some(p => p.allyV2), allied0 = new Set(pact0.flatMap(k => k.split("|")));
-  const LONE = AV2 && order.length > 2 && allied0.size / order.length > LONE_WOLF_AT, lone = pid => LONE && !allied0.has(pid); // lone wolf: most lords are allied, so those standing alone get a boost
+  const AV2 = plans.some(p => p.allyV2);
+  let loneId = null, loneN = 0; // the lone wolf right now, and how many allied lords stand against it
+  const updateLone = () => { if (!AV2) return; const up = order.filter(pid => P[pid].alive), solo = up.filter(pid => !P[pid].pacts.size), n = up.length - solo.length;
+    const id = solo.length === 1 && n > 0 ? solo[0] : null;
+    if (id && (id !== loneId || n !== loneN)) { P[id].loneMax = Math.max(P[id].loneMax || 0, n); log(`${nm(id)} ${id === mePid ? "stand" : "stands"} alone against ${n} allied lord${n === 1 ? "" : "s"}: lone wolf, +${Math.round(n * LONE_WOLF_STEP * 100)}% damage and health.`, id === mePid ? "you" : undefined); }
+    else if (!id && loneId) log(`${nm(loneId)} ${loneId === mePid ? "are" : "is"} no longer the lone wolf.`);
+    loneId = id; loneN = id ? n : 0; };
+  const loneMul = pid => (pid && pid === loneId ? 1 + LONE_WOLF_STEP * loneN : 1);
   plans.forEach(pl => {
     const p = P[pl.pid], [cr, cc] = pl.castle, def = pl.defences || {};
     p.castle = add({ pid: pl.pid, kind: "castle", x: cc + .5, y: cr + .5, maxhp: BAL.castleHp * (1 + .25 * (def.walls || 0)) * CASTLE_TIERS[Math.max(0, Math.min(2, (pl.castleTier || 1) - 1))].hp * (TW === "iron" ? TWIST_IRON : 1), atk: 20 * [1, 1.5, 2][def.tower || 0], range: (def.tower || 0) >= 2 ? 3.6 : 3, as: 1.5, spd: 0, armor: .25, shot: "#e8e2d0" });
@@ -262,7 +269,6 @@ function runBattle(plans, seed, opts = {}) {
   function giveXp(h, amt) {
     if (!live(h) || h.kind !== "champ") return;
     if (inCentre(h.x, h.y)) amt *= CTR_BONUS;
-    if (lone(h.pid)) amt *= 1 + LONE_WOLF_BONUS;
     h.xp += amt;
     while (h.xp >= xpNeed(h.heroLvl)) { if (h.heroLvl >= maxLvl) { h.xp = 0; break; } if (h.gains >= XP_CAP) { h.xp = xpNeed(h.heroLvl) - 1; break; } h.xp -= xpNeed(h.heroLvl); levelUp(h); }
     if (!fast) xplog.push({ id: h.id, t, x: Math.round(h.xp * 10) / 10, n: xpNeed(h.heroLvl), a: Math.round(amt * 10) / 10, L: h.heroLvl }); // for the replay panel's experience bar (not part of the replay hash)
@@ -389,6 +395,7 @@ function runBattle(plans, seed, opts = {}) {
       if (src && fxv(src, "blind") && rng() < (fxv(src, "blind") === 1 ? .5 : fxv(src, "blind"))) { txt(tgt, "Miss", "#ccc"); return 0; }
     }
     let m = 1;
+    if (loneId && tgt.pid === loneId) m /= loneMul(tgt.pid); // ...and takes damage as if it had more health
     if (src && src.key === "bowman" && tgt.kind === "champ") m *= 1.3; // bowmen are hero-hunters
     if (src) {
       if (src.rapier) { if (RAPIER_V2) { if (src.kind === "champ" && !(o.ab || curAb) && !o.dot && !o.reflected) amt += ITEM_V6.rapier; } else m *= 2; } // Divine Rapier: v6 adds 100 to each weapon hit, abilities untouched; before, it doubled all hero damage
@@ -396,6 +403,7 @@ function runBattle(plans, seed, opts = {}) {
       m *= 1 + fxv(src, "atkbuf");
       if (fxv(src, "weaken")) m *= .8;
       if (P[src.pid].feud.has(tgt.pid)) m *= 1.2;
+      if (loneId) m *= loneMul(src.pid); // the lone wolf hits harder
       if (leaderPid && tgt.pid === leaderPid && src.pid !== leaderPid) m *= 1.1;
     }
     if (t >= SUDDEN) m *= 1.25;
@@ -506,7 +514,7 @@ function runBattle(plans, seed, opts = {}) {
       log(`${poss(pid)} army fights on without a castle.`);
     } else ents.forEach(e => { if (e.pid === pid && !e.dead) { e.dead = true; e.hp = 0; e.respawnAt = null; ev({ ty: "die", id: e.id, x: e.x, y: e.y, fx: 0 }); } });
     if (by && (by === pid || !P[by] || !P[by].alive)) by = null;
-    if (by) { P[by].castles++; st(pid).fellTo = by; quip(by, "te", null); if (lone(by) && allied0.has(pid)) P[by].wolf = (P[by].wolf || 0) + 1; }
+    if (by) { P[by].castles++; st(pid).fellTo = by; quip(by, "te", null); }
     order.forEach(o => { P[o].pacts.delete(pid); });
     log(`${poss(pid)} castle has fallen${by ? ` to ${nm(by)}` : ""}.`, "big");
     { const revenge = by && hl.some(h => (h.kind === "betray" || h.kind === "bomb") && h.pid === pid && h.other === by);
@@ -1084,7 +1092,7 @@ function runBattle(plans, seed, opts = {}) {
     if (SV && !sd && !opts.duel && t >= SD_AT) startSudden();
     for (let i = pending.length - 1; i >= 0; i--) if (pending[i].at <= t) { const pe = pending.splice(i, 1)[0]; curAb = pe.ab; pe.fn(); curAb = null; }
     if (HV3) kit.world();
-    if (tick % 10 === 0) { order.forEach(pid => { const p = P[pid]; if (p.alive && !p.frenzy && p.castle.hp / p.castle.maxhp <= .2) { p.frenzy = true; aoe(p.castle.x, p.castle.y, 3, "#ff5a2a", 1.2); txt(p.castle, "Desperation Frenzy!", "#ff8a4a"); log(`${poss(pid)} defenders fight with Desperation Frenzy!`, "big"); H({ kind: "frenzy", pid, x: p.castle.x, y: p.castle.y, score: 50 }); } }); council(); }
+    if (tick % 10 === 0) { updateLone(); order.forEach(pid => { const p = P[pid]; if (p.alive && !p.frenzy && p.castle.hp / p.castle.maxhp <= .2) { p.frenzy = true; aoe(p.castle.x, p.castle.y, 3, "#ff5a2a", 1.2); txt(p.castle, "Desperation Frenzy!", "#ff8a4a"); log(`${poss(pid)} defenders fight with Desperation Frenzy!`, "big"); H({ kind: "frenzy", pid, x: p.castle.x, y: p.castle.y, score: 50 }); } }); council(); }
     if (tick % 20 === 0 && !opts.duel) centreTick();
     // reinforcement waves (from 12 Nov 2026): each castle sends the garrison out when its conditions are met, never sooner than WAVE_GAP after the last, and forced out at each minute mark
     if (V3 && !opts.duel && !sdOn() && tick % 5 === 0) order.forEach(pid => {
@@ -1218,7 +1226,6 @@ function runBattle(plans, seed, opts = {}) {
   }
   for (let i = 0; i < 10; i++) { t = +(t + FRAME_DT).toFixed(2); record(); }
   ents.filter(e => e.kind === "champ" && e.gains < MIN_GAIN && e.heroLvl < maxLvl).forEach(e => { while (e.gains < MIN_GAIN && e.heroLvl < maxLvl) levelUp(e); }); // every hero earns at least two levels a day
-  if (LONE) order.forEach(pid => { if (lone(pid)) P[pid].gold = Math.round(P[pid].gold * (1 + LONE_WOLF_BONUS)); });
   const treach = {}; treachery.forEach(([by, vic]) => { treach[by] = (treach[by] || 0) + 1; const take = Math.round(P[vic].gold * TREACHERY_LOOT); P[by].gold += take; P[vic].gold -= take; }); // the betrayer keeps a share of the victim's spoils for the day
   const W8 = PV ? (DAY_WEIGHT_PICK[opts.dayNo] || 1) : dayWeight(BV, opts.dayNo);
   const PTS = [10, 7, 5, 4, 3, 2, 1, 0]; // placement points; from 8th place down a lord scores only for kills and castles
@@ -1228,7 +1235,7 @@ function runBattle(plans, seed, opts = {}) {
   const BOARD2 = plans.some(p => p.skV2), board = pid => { const mine = ents.filter(e => e.pid === pid && e.tel && e.kind !== "castle"), sum = k => Math.round(mine.reduce((a, e) => a + (e.tel[k] || 0), 0));
     return { deaths: ents.filter(e => e.pid === pid && e.kind === "champ").reduce((a, e) => a + e.tel.deaths, 0), assists: P[pid].assists || 0, dmg: sum("dealt") + Math.round(P[pid].trapDmg || 0), dmgH: sum("toChamp"), dmgC: sum("toCastle") }; };
   const results = order.map(pid => ({ pid, name: nm(pid), color: P[pid].color, cls: P[pid].cls, place: P[pid].place, kills: P[pid].kills, ukills: P[pid].ukills, castles: P[pid].castles,
-    points: Math.round(((PTS[P[pid].place - 1] || 0) + P[pid].kills + castlePts(FV) * P[pid].castles) * W8) + (treach[pid] || 0) * TREACHERY_PTS + (surv(pid) ? SURVIVOR_PTS : 0) + (P[pid].wolf || 0) * LONE_WOLF_PTS, ...(treach[pid] ? { treachery: treach[pid] } : {}), ...(lone(pid) ? { lone: 1 } : {}), ...(P[pid].wolf ? { wolf: P[pid].wolf } : {}), ...(surv(pid) ? { survivor: 1 } : {}), fellAt: P[pid].elimT, gold: Math.round(P[pid].gold), ...(BOARD2 ? board(pid) : {}) })).sort((a, b) => a.place - b.place);
+    points: Math.round(((PTS[P[pid].place - 1] || 0) + P[pid].kills + castlePts(FV) * P[pid].castles) * W8) + (treach[pid] || 0) * TREACHERY_PTS + (surv(pid) ? SURVIVOR_PTS : 0), ...(treach[pid] ? { treachery: treach[pid] } : {}), ...(P[pid].loneMax ? { lone: P[pid].loneMax } : {}), ...(surv(pid) ? { survivor: 1 } : {}), fellAt: P[pid].elimT, gold: Math.round(P[pid].gold), ...(BOARD2 ? board(pid) : {}) })).sort((a, b) => a.place - b.place);
   const TEL_COST = { footman: 50, bowman: 70, knight: 120, healer: 100, raider: 110, mage: 140, sniper: 160, ram: 240, cart: 200, catapult: 220 }; // telemetry keeps the prices from before 15 Nov 2026 so recorded battles replay identically
   const invest = (type, lvl) => { const c = TEL_COST[type] ?? UNITS[type].cost; let g = c; for (let l = 1; l < lvl; l++) g += Math.round(c * .5 * l); return g; };
   const tel = { duration: Math.min(t, SV ? SD_AT + SD_COUNT + SD_LEN : TMAX),

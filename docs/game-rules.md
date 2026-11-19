@@ -20,7 +20,7 @@ practice games always stamp all of them (`js/sim/plans.js`).
 | 20 Nov | `ordV2` | Army plans and one fall-back condition; no if-then commands or soldier orders |
 | 20 Nov | `skV2` | Skill scaling v2: every rank adds an even step (`TREE_V2`); report records deaths, assists, damage |
 | 20 Nov | `shellV2` | Anti-Magic Shell fires the moment the hero engages an enemy hero (when off cooldown); no chosen delay |
-| 21 Nov | `allyV2` | Alliances v2: groups need every member's yes, winning allies share the top places by castle health, lone wolves, bots in friends wars join the diplomacy |
+| 21 Nov | `allyV2` | Alliances v2: groups need every member's yes, winning allies share the top places by castle health, the lone wolf, bots in friends wars join the diplomacy |
 | 20 Nov | `itemV6` | Item rebalance: weaker Healing Salve and Ring of Health; stronger Anti-Magic Shell (7.5s magic immunity), Rune of Homecoming (reusable), Talisman of Will, Orb of Fire, Crystalys, Pipe of Insight and Boots |
 
 ## The war
@@ -138,9 +138,10 @@ practice games always stamp all of them (`js/sim/plans.js`).
   and chains (A with B, A with C, B and C not allied) were possible.
 - Allies win together if only allies remain. From 21 Nov they share the top places, the one with the most castle health
   left first (1st, 2nd, 3rd: 10, 7, 5 points); before then every surviving ally took 1st place.
-- Lone wolf (from 21 Nov): when more than 60% of the lords start the battle in a pact (`LONE_WOLF_AT`), every lord standing
-  alone earns 15% more gold and experience (`LONE_WOLF_BONUS`) and 2 points for each allied lord's castle they take
-  (`LONE_WOLF_PTS`).
+- Lone wolf (from 21 Nov): while exactly one lord still standing is in no pact and at least one alliance stands, that lord's
+  army deals 10% more damage and takes damage as if it had 10% more health for each allied lord still standing
+  (`LONE_WOLF_STEP`). It is checked every second of the battle, so it ends the moment a second lord stands alone (a pact
+  broken by a betrayal or a fallen castle) or the lone wolf is in a pact.
 - A pact can be broken cleanly or betrayed mid-battle with a bomb in the ally's keep (half its health). The betrayer scores
   3 points and takes a quarter of the victim's battle spoils; the two deal 20% more damage to each other for the rest of the
   war and can never share an alliance again.

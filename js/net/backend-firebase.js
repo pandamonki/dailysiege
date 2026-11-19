@@ -207,7 +207,7 @@
     const uid = g.seat || DS.user.uid, bt = Object.entries(battlesView(g)).sort((a, b) => (a[0] < b[0] ? -1 : 1)), out = {};
     for (const [id, pub] of Object.entries(g.pubs || {})) {
       const base = { fromWeek: pub.fromWeek, joinedAt: pub.joinedAt, nick: pub.nick || "", real: pub.real || "" };
-      if (pub.pending) base.pending = true; if (pub.left) base.left = true; if (pub.bot) base.bot = true; if (pub.sealedFor) base.sealedFor = pub.sealedFor;
+      if (pub.pending) base.pending = true; if (pub.left) base.left = true; if (pub.bot) base.bot = true; if (pub.sealedFor) base.sealedFor = pub.sealedFor; if (pub.allyReplies) base.allyReplies = copy(pub.allyReplies);
       if (id === uid) { // me: my real state and my real orders
         base.plans = Object.fromEntries(Object.entries(g.orders || {}).filter(([, o]) => (o.war || 1) === curWar()).map(([k, o]) => { const p = copy(o); delete p.war; return [k, p]; }));
         if (g.state) base.state = copy(g.state);
@@ -241,7 +241,8 @@
   function publicFrom(doc, cur) { // the public part of my player record
     const st = doc.state || {}, days = Object.keys(doc.plans || {}).sort(), last = days[days.length - 1];
     const pub = { fromWeek: doc.fromWeek || "0000-00-00", joinedAt: doc.joinedAt || Date.now(), nick: doc.nick || "", real: doc.real || "", pending: !!doc.pending,
-      banner: st.banner || (cur && cur.banner) || null, hasRapier: (st.items || []).includes("rapier"), week: st.week || null, war: curWar(), sealedFor: last && doc.plans[last] && doc.plans[last].sealed ? last : null };
+      banner: st.banner || (cur && cur.banner) || null, hasRapier: (st.items || []).includes("rapier"), week: st.week || null, war: curWar(), sealedFor: last && doc.plans[last] && doc.plans[last].sealed ? last : null,
+      allyReplies: { day: st.day || null, r: Object.fromEntries(Object.entries(st.replies || {}).filter(([, v]) => v === "accept" || v === "reject")) } }; // today's answers to invitations, so allies can see them
     if (cur && cur.left !== undefined) pub.left = cur.left;
     if (!cur || pub.joinedAt !== cur.joinedAt) pub.joinedAt = Math.round(pub.joinedAt + clockSkew); // a new sign-up time is stamped in server time
     return copy(pub);

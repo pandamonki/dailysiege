@@ -586,3 +586,9 @@ details.fg-host[open] > summary { margin-bottom: 8px; }
 .ahist { display: grid; gap: 8px; } .ahday { display: grid; grid-template-columns: 54px 1fr; gap: 8px; align-items: start; padding: 6px 0; border-bottom: 1px dashed rgba(62,39,20,.3); }
 .ahday b { font-family: var(--f-display); color: var(--wax); } .ahday ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; } .ahday li { font-size: 14.5px; line-height: 1.5; }
 .ahday .tm { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; } .ahday .sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; border: 1px solid var(--wood-dark); }
+/* an invitation to my alliance: each ally's answer */
+.aans { flex-basis: 100%; display: grid; gap: 4px; margin: 6px 0 2px; padding: 8px 10px; border-radius: 8px; background: rgba(255,255,255,.35); border: 1px dashed rgba(62,39,20,.35); }
+.aans small { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); }
+.aan { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 14.5px; } .aan .sw { width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--wood-dark); }
+.aan b { margin-left: auto; font-size: 13px; } .aan.ok b { color: var(--verdant); } .aan.bad b { color: var(--wax); } .aan.wait b { color: #8a5a0e; font-weight: 400; font-style: italic; }
+.aans em { font-size: 13px; color: var(--ink-soft); }

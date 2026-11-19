@@ -130,24 +130,24 @@ test("Alliances v2: a lord joins an alliance only if every member agrees, and th
   assert.deepEqual(ally(plans, { persist: ["A|B", "A|C", "B|C"], v2: true }), ["A|B", "A|C", "B|C"]);
 });
 
-test("Alliances v2: allies who win together share the top places, and lone wolves are marked when most lords are allied", () => {
-  let team = 0, wolves = 0;
-  for (let g = 0; g < 8 && (!team || !wolves); g++) {
+test("Alliances v2: allies who win together share the top places, and only the last lord outside every pact is the lone wolf", () => {
+  let team = 0;
+  for (let g = 0; g < 8; g++) {
     const r = JSON.parse(sim.run(`(() => { const L = seatLayout(5, true), CL = ["warrior", "mage", "rogue", "archer", "shaman"], ids = [...Array(5)].map((_, k) => "w${g}b" + k);
       const plans = ids.map((uid, i) => { const zone = zoneFor(L.castles[i], L.N, L.castles, L.v2), lvl = 7;
         const p = lordBotPlan({ uid, cls: CL[(${g} + i) % 5], i, ids, L, zone, dayNo: 4, lvl, v2: true, v3: true, fair: true, pick: true, ranks: {}, sup: true, defV2: true });
         return Object.assign(p, { pid: uid, name: uid, color: "#2f5fa8", castle: L.castles[i], level: lvl, trapV2: true, sdV2: true, wallV2: true, engV2: true, ordV2: true, skV2: true, itemV5: true, itemV6: true, shellV2: true, survV1: true, siegeV1: true, allyV2: true, pacts: [] }); });
       const link = (a, b) => { plans[a].pacts.push(ids[b]); plans[b].pacts.push(ids[a]); };
-      link(0, 1); link(0, 2); link(1, 2); // a group of three, lords 3 and 4 alone: 3 of 5 allied is 60%, not over it
-      const a = runBattle(JSON.parse(JSON.stringify(plans)), 900 + ${g}, { N: L.N, balV2: true, balV3: true, ultV2: true, fairV1: true, pickV1: true, balV4: true, suddenV1: true, treesV1: true, heroV3: true, dayNo: 4, fast: true });
-      plans.forEach(p => { p.pacts = []; }); link(0, 1); link(3, 4); // two pairs: 4 of 5 allied (80%), lord 2 is the lone wolf
-      const b = runBattle(JSON.parse(JSON.stringify(plans)), 900 + ${g}, { N: L.N, balV2: true, balV3: true, ultV2: true, fairV1: true, pickV1: true, balV4: true, suddenV1: true, treesV1: true, heroV3: true, dayNo: 4, fast: true });
-      return JSON.stringify({ aTeam: a.team, aPlaces: a.results.map(x => x.place).sort((x, y) => x - y), aLone: a.results.filter(x => x.lone).length, bLone: b.results.filter(x => x.lone).map(x => x.pid), lone2: ids[2], bPlaces: b.results.map(x => x.place).sort((x, y) => x - y) }); })()`));
-    assert.equal(r.aLone, 0, "60% allied is not more than 60%: no lone wolf");
-    assert.deepEqual(r.bLone, [r.lone2], "with 80% allied, the one lord alone is the lone wolf");
-    assert.deepEqual(r.aPlaces, [1, 2, 3, 4, 5], "places stay unique, even when allies win together");
-    assert.deepEqual(r.bPlaces, [1, 2, 3, 4, 5]);
-    wolves++; if (r.aTeam && r.aTeam.length > 1) team++;
+      const go = () => runBattle(JSON.parse(JSON.stringify(plans)), 900 + ${g}, { N: L.N, balV2: true, balV3: true, ultV2: true, fairV1: true, pickV1: true, balV4: true, suddenV1: true, treesV1: true, heroV3: true, dayNo: 4, fast: true });
+      link(0, 1); link(3, 4); const a = go(); // two pairs: lord 2 is the only lord outside a pact, against 4 allied lords
+      plans.forEach(p => { p.pacts = []; }); link(0, 1); link(0, 2); link(1, 2); link(3, 4); const b = go(); // everyone allied: nobody is the lone wolf
+      return JSON.stringify({ aLone: a.results.filter(x => x.lone).map(x => [x.pid, x.lone]), lone2: ids[2], bLone: b.results.filter(x => x.lone).map(x => x.lone), team: a.team || b.team,
+        places: [a, b].map(res => res.results.map(x => x.place).sort((x, y) => x - y)) }); })()`));
+    const two = r.aLone.find(x => x[0] === r.lone2);
+    assert.ok(two && two[1] === 4, "the only lord outside a pact is the lone wolf, counted against the four allied lords");
+    assert.ok(r.bLone.every(n => n <= 3), "with everyone allied nobody starts as the lone wolf (one can only appear once a castle falls and breaks a pact)");
+    r.places.forEach(p => assert.deepEqual(p, [1, 2, 3, 4, 5], "places stay unique, even when allies win together"));
+    if (r.team && r.team.length > 1) team++;
   }
   assert.ok(team > 0, "some battle ended with allies winning together");
 });
