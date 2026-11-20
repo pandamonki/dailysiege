@@ -3,6 +3,7 @@
 // the map, building walls, orders, skills, sealing, the battle replay and the results.
 //   npm run build && node tools/walkthrough.mjs [chromium|firefox|webkit ...]
 // Add a step here whenever a new screen or feature lands (see CLAUDE.md).
+//   WT_DEVICE="iPhone SE (3rd gen)" node tools/walkthrough.mjs   plays on an emulated phone (any name in Playwright's device list)
 /* eslint-disable no-undef -- the functions handed to page.evaluate run inside the game page, where these names are its globals */
 import { createRequire } from "node:module";
 import { preview } from "vite";
@@ -18,7 +19,10 @@ let failed = false;
 
 for (const name of engines) {
   const browser = await pw[name].launch(process.env.PW_EXECUTABLE && name === "chromium" ? { executablePath: process.env.PW_EXECUTABLE } : {}); // PW_EXECUTABLE: a browser already on this machine
-  const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  // WT_DEVICE="iPhone 13" plays as that phone (its screen size, pixel density, touch and user agent) instead of the plain 390x844 window
+  const dev = process.env.WT_DEVICE ? pw.devices[process.env.WT_DEVICE] : null; if (process.env.WT_DEVICE && !dev) throw new Error(`no device called ${process.env.WT_DEVICE}`);
+  const { defaultBrowserType: _bt, ...devOpts } = dev || {}; // eslint-disable-line no-unused-vars -- the engine is chosen on the command line
+  const page = await browser.newPage(dev ? devOpts : { viewport: { width: 390, height: 844 } });
   const errors = [], results = [];
   page.on("pageerror", e => errors.push(String(e && e.stack || e).split("\n").slice(0, 3).join(" | ")));
   page.on("response", res => { if (res.status() >= 400 && res.url().startsWith(base)) errors.push(res.status() + " " + res.url()); });

@@ -1,5 +1,9 @@
 // Installing the game to the home screen, and keeping it cached for instant and offline starts.
 // Does nothing inside Claude (the game runs in a frame there) or when opened as a plain file.
+// iPhone Safari zooms the page in whenever a text box or drop-down with text under 16px is tapped, and stays zoomed. Telling it the page is already at its
+// largest scale stops that on iPhones and iPads only; iOS still lets players pinch to zoom, so nothing is lost there, and other phones are untouched.
+(() => { try { const ios = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1), vp = document.querySelector("meta[name=viewport]");
+  if (ios && vp && !/maximum-scale/.test(vp.content)) vp.content += ",maximum-scale=1"; } catch (e) { /* never stop the game starting */ } })();
 const PWA = (() => {
   const st = { ok: false, reg: null, prompt: null, updated: false };
   const standalone = () => (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
