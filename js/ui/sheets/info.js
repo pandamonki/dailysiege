@@ -186,6 +186,7 @@ const PATCHES = [
     "Battle alerts are in the Menu, to switch on or off for this device; it also explains how to unblock them on iPhone and Android.",
     "Where the phone supports it, the app icon shows a badge while a friends war's orders are unsealed, including after the \"orders lock soon\" alert.",
     "Each of these cards shows at most once per device, only as the first pop-up of an open, and What's new waits for the next open.",
+    "New tops for three final towers on the map: the Fire Tower has a blazing brazier, the Magic Tower a floating crystal crackling with lightning, and the Sniper Tower a heavy crossbow with a gold scope on a stand.",
   ] },
   { v: "Rush boxes and a new trigger", date: "20 Nov", fixes: [], balance: [
     "From the battle of 20 Nov the wave trigger \"When my castle is attacked\" becomes \"When enemies reach my castle\": it fires when an enemy soldier, hero, summon or siege engine comes within 3 tiles of your castle (and nearer to it than to its own castle), or when your castle is first hit, whichever comes first. Towers don't count. Waves set to the old trigger get the new one automatically.",

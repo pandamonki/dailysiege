@@ -12,6 +12,7 @@ const RELEASES = [
     ["🍎", "No more zooming", "On iPhone, tapping a drop-down no longer zooms the page in."],
     ["👆", "Easier to tap", "Small buttons like the i, wave triggers and Rush boxes are easier to hit."],
     ["🤫", "Never nagging", "Each card shows at most once, and never on the same open as another pop-up."],
+    ["🔥", "Fiercer final towers", "Fire Towers carry a blazing brazier, Magic Towers a floating crystal, Sniper Towers a scoped heavy crossbow."],
   ] },
   { id: "1.16", title: "What's new in v1.16", sub: "Choose which waves rush out, and a smarter castle trigger", items: [
     ["☑️", "Rush boxes", "Each wave has a box: ticked, it rushes out when your castle drops below 75%, 50% or 25% health."],

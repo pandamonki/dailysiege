@@ -137,11 +137,52 @@ function buildSprite(sp, pose = "") {
 }
 const SPR = {}; const SPR_URL = {};
 const mixHex = (a, b, t) => { const p = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)); if (!/^#[0-9a-f]{6}$/i.test(a) || !/^#[0-9a-f]{6}$/i.test(b)) return a; const x = p(a), y = p(b); return "#" + x.map((v, i) => Math.round(v + (y[i] - v) * t).toString(16).padStart(2, "0")).join(""); };
+// The final towers' tops, drawn pixel by pixel above the battlements (16 x 11, rows 0..10 sit on row 11), after the tower icons:
+// Fire Tower a blazing brazier, Magic Tower a floating crystal with lightning, Sniper Tower a heavy scoped crossbow on a stand
+const TOWER_TOP_PAL = { B: "#7fc8ff", G: "#a8781c", P: "#d2b2ff", V: "#4a2a80", W: "#fff4c2", Y: "#ffd34d", b: "#bfe8ff", d: "#5a3a1e", e: "#9a2a12", g: "#e2b33c", h: "#9a9aa2", i: "#3a3a40", k: "#24242a", l: "#b07a3e", m: "#5c5c66", o: "#ff8a2a", p: "#b48cff", q: "#f4ecff", r: "#e8461e", s: "#d7dde2", u: "#6f6a5f", v: "#7a50c0", w: "#8a5a2b", y: "#ffe08a" };
+const TOWER_TOPS = {
+  towerF: [
+    ".......Y........",
+    "......YoY...Y...",
+    "...Y..ooY..Yo...",
+    "...oY.oroYYoo...",
+    "...ooYorrooro...",
+    "..oorroWWorroo..",
+    "..orrrWWWWrrro..",
+    "..errrWWWWrrre..",
+    "..iiiiiiiiiiii..",
+    "...immmmmmmmi...",
+    "....iiiiiiii...."],
+  towerM: [
+    ".......q........",
+    "......qPp.......",
+    ".b...qPPpv...b..",
+    "..b..PPppv..b...",
+    "..B..PPppv..B...",
+    ".....Pppvv......",
+    "......ppv.......",
+    ".......v........",
+    "................",
+    ".....vVVVVv.....",
+    "....uuuuuuuu...."],
+  towerS: [
+    "......Gggy......",
+    "......G..g......",
+    "...........s....",
+    "...........h....",
+    "..ddwwwwwwwkiiis",
+    "..ddllllllkmh...",
+    "...........h....",
+    "...........s....",
+    "........k.......",
+    ".......kik......",
+    "......k...k....."],
+};
 // Towers as tall keep towers (style B), at the same pixel size as soldiers but 30 pixels high, so they stand about a tile and a half:
 // pale castle stone with battlements, the owner's banner down the front, and a roof in their colour (Guard, Arrow, Arrow III) or an open top with its weapon
 function towerSprite(key, color) {
   const W = 16, H = 32, g = Array.from({ length: H }, () => Array(W).fill(null)), R = (x, y, w, h, c) => { for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) if (g[j] && i >= 0 && i < W) g[j][i] = c; }, P = (x, y, c) => R(x, y, 1, 1, c);
-  const st = "#a39d8f", dk = "#6f6a5f", lt = "#bdb7a9", hi = "#d2cdc0", roofD = mixHex(color, "#000000", .4), gold = "#e2b33c", door = "#4a2f17", iron = "#3a3a40", ironL = "#6a6a74", wd = "#8a5a2b", wdD = "#5a3a1e";
+  const st = "#a39d8f", dk = "#6f6a5f", lt = "#bdb7a9", hi = "#d2cdc0", roofD = mixHex(color, "#000000", .4), gold = "#e2b33c", door = "#4a2f17", iron = "#3a3a40", ironL = "#6a6a74";
   const open = ["towerB", "towerM", "towerF", "towerS"].includes(key), top = key === "tower" ? 13 : 11; // later stages stand taller
   R(3, top + 2, 10, H - top - 2, st); R(3, top + 2, 1, H - top - 2, lt); R(12, top + 2, 1, H - top - 2, dk); for (let y = top + 5; y < H - 1; y += 3) R(3, y, 10, 1, dk);
   for (let x = 2; x < 14; x += 3) R(x, top, 2, 2, lt); R(2, top + 2, 12, 1, hi);
@@ -151,9 +192,7 @@ function towerSprite(key, color) {
   if (!open) { for (let k = 0; k < 6; k++) R(7 - k, top - 6 + k, 2 + k * 2, 1, color); for (let k = 0; k < 6; k++) P(8 + k, top - 6 + k, roofD); R(7, top - 11, 1, 5, door); R(8, top - 11, 3, 2, color); if (key === "towerA") { P(7, top - 12, gold); } }
   else { const y0 = top - 1;
     if (key === "towerB") { R(5, y0 - 4, 6, 4, iron); R(6, y0 - 6, 4, 2, iron); R(6, y0 - 6, 4, 1, ironL); P(11, y0 - 8, "#9a9aa2"); P(12, y0 - 9, "#c9c9cf"); }
-    if (key === "towerM") { R(7, y0 - 9, 2, 6, "#b48cff"); R(6, y0 - 7, 4, 2, "#c89aff"); P(7, y0 - 9, "#efe2ff"); P(5, y0 - 5, "#c89aff"); P(10, y0 - 8, "#c89aff"); R(7, y0 - 2, 2, 2, "#7a50c0"); }
-    if (key === "towerF") { R(5, y0 - 2, 6, 2, iron); R(6, y0 - 6, 4, 4, "#ff8a2a"); R(7, y0 - 8, 2, 2, "#ffd34d"); P(6, y0 - 7, "#ff6a2a"); P(9, y0 - 7, "#ff6a2a"); }
-    if (key === "towerS") { R(4, y0 - 3, 9, 1, wd); R(12, y0 - 4, 3, 1, "#d7dde2"); R(6, y0 - 5, 2, 2, "#2a2a3a"); R(5, y0 - 3, 1, 2, wdD); } }
+    if (TOWER_TOPS[key]) TOWER_TOPS[key].forEach((row, y) => [...row].forEach((ch, x) => { if (ch !== ".") P(x, y0 - 10 + y, TOWER_TOP_PAL[ch]); })); }
   const cv = document.createElement("canvas"); cv.width = W; cv.height = H; const c = cv.getContext("2d");
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { let cl = g[y][x]; if (!cl) { if ((g[y - 1] && g[y - 1][x]) || (g[y + 1] && g[y + 1][x]) || g[y][x - 1] || g[y][x + 1]) cl = "#1e140c"; else continue; } c.fillStyle = cl; c.fillRect(x, y, 1, 1); }
   return cv;
