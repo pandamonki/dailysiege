@@ -177,6 +177,17 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "Emergency waves", date: "20 Nov", fixes: [
+    "In the replay, the hero's Respawn countdown covered the castle's wave bars. It now sits above them.",
+  ], balance: [
+    "From the battle of 20 Nov, each time a castle drops below 75%, 50% and 25% health its next unsent wave rushes out, at least 10 seconds after the last wave. Waves still go on their own triggers too, at least 30 seconds apart, and one is still forced out at each minute mark.",
+    "From the same battle, waves have no orders of their own. Each wave first fights enemies within 8 tiles of its castle; once that area has been clear for 4 seconds, or the castle has fallen, it follows the army plan. Old plans' wave orders are ignored.",
+  ], changes: [
+    "The replay shows a stopwatch beside each castle's wave bars while its waves wait out the gap since the last one, red when an emergency wave is due. Waiting waves show dim amber, ready ones yellow, gone ones grey.",
+    "The soldier chip at the top now counts every soldier you own, on the field and in waves, out of the field's 4 plus 3 for each unlocked wave.",
+    "The Defences tab shows traps, towers and walls owned out of their limits.",
+    "The wave orders chip is gone from the Deploy tab.",
+  ] },
   { v: "Placement points", date: "20 Nov", fixes: [
     "The leaderboard's i note and the rules said day 7 counts double. Since 16 Nov it counts 1.5 times, like days 5 and 6.",
   ], balance: [
