@@ -177,6 +177,11 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "Ending, deleting and leaving wars", date: "20 Nov", fixes: [], balance: [], changes: [
+    "Hosts can end the war under way early (Host tools): the hall of fame is taken from the battles fought so far, then registration for the next war opens. Nothing is deleted.",
+    "Hosts can delete a war for everyone (Host tools, with a warning and a second tap): every battle, order and army goes, the invite link stops working, and it leaves every lord's list.",
+    "Any lord can leave a war from Your wars (tap twice): it leaves their list and their castle is out from the next battle. The host can't leave their own war.",
+  ] },
   { v: "Install and alerts", date: "20 Nov", fixes: [
     "On iPhone, tapping a drop-down or text box with small text zoomed the whole page in and left it zoomed. It no longer does (pinch-zoom still works).",
     "Small controls (the i buttons, the unit type line, wave trigger chips, Rush boxes and the hold-the-hill box) have bigger touch areas.",

@@ -251,7 +251,8 @@ function warsSheet() {
   const W = (window.DS && DS.wars) || [], draft = esc(LIVE.warLink || "");
   return head(null, "Your wars", W.length > 1 ? `${W.length} wars at once` : "Join or start another war") + `<div class="body">
     ${W.length ? `<div class="wlist">${W.map(w => `<div class="wcard${w.current ? " on" : ""}"><div><b>${w.host === "you" ? "Your war" : `${esc(w.host)}'s war`}${w.war > 1 ? ` · war ${w.war}` : ""}</b><small>${esc(w.status)}</small></div>
-      ${w.current ? `<span class="chip">Playing</span>` : `<button class="btn small wood" data-act="warswitch" data-v="${esc(w.id)}">Open</button>`}</div>`).join("")}</div>` : `<p class="muted">You're not in a war yet.</p>`}
+      <span class="wbtns">${w.current ? `<span class="chip">Playing</span>` : `<button class="btn small wood" data-act="warswitch" data-v="${esc(w.id)}">Open</button>`}${w.host === "you" ? "" : `<button class="btn small ${LIVE.leaveArm === w.id ? "wax" : ""}" data-act="dsleave" data-v="${esc(w.id)}" ${window.DS && DS.busy ? "disabled" : ""}>${LIVE.leaveArm === w.id ? "Tap again to leave" : "Leave"}</button>`}</span></div>`).join("")}</div>
+      ${W.some(w => w.host !== "you") ? `<p class="muted">Leaving takes the war off your list, and your castle is out from the next battle. You can't rejoin it. Wars you host are ended or deleted from Host tools.</p>` : ""}` : `<p class="muted">You're not in a war yet.</p>`}
     <div class="sec"><h3>Join another war</h3><p class="muted">Paste the invite link your host sent you. Your other wars carry on; switch between them here.</p>
       <div class="lrow"><input id="warlink" autocomplete="off" placeholder="https://…/join/…" value="${draft}"><button class="btn wax small" data-act="warjoin">Join</button></div></div>
     ${window.DS && DS.canHost ? `<div class="sec"><h3>Host another war</h3><p class="muted">Set up a new war with its own invite link. Your current wars keep running.</p><button class="btn wood" data-act="warnew">Set up a new war</button></div>` : ""}
@@ -269,7 +270,16 @@ function hostTools() { // remove a lord, or replace the invite link
       <label class="inline">goes to<select id="dsto">${fresh.map(([uid, p]) => `<option value="${uid}">${esc(lordLabel(p) || "New account")} (joined ${new Date(p.joinedAt).toLocaleDateString()})</option>`).join("")}</select></label>
       <div class="row"><button class="btn small ${LIVE.moveSeat ? "wax" : ""}" data-act="dsreassign">${LIVE.moveSeat ? "Tap again to move the castle" : "Move the castle"}</button></div></div>` : ""}
     <p class="muted">Removing a lord blocks that account from this game. In the middle of a war it also takes their castle off the map from the next battle, so the map is redrawn.</p>
-    <div class="row"><button class="btn small" data-act="dsnewinvite">Make a new invite link</button></div><p class="muted">A new link stops the old one working. Lords already in the game are not affected.</p></div>`;
+    <div class="row"><button class="btn small" data-act="dsnewinvite">Make a new invite link</button></div><p class="muted">A new link stops the old one working. Lords already in the game are not affected.</p></div>${endTools()}`;
+}
+// the host's end and delete buttons; each needs a second tap, and deleting shows what will be lost first
+function endTools() {
+  const under = !lobbyOpen(LIVE.config) && !!(LIVE.config && LIVE.config.planDay), busy = window.DS && DS.busy;
+  return `<div class="sec lbox dangerbox"><h3>End or delete this war</h3>
+    ${under ? `<div class="spread"><span>End the war now. The hall of fame is taken from the battles fought so far, then registration for the next war opens. Nothing is deleted.</span><button class="btn small ${LIVE.endArm ? "wax" : ""}" data-act="dsendwar" ${busy ? "disabled" : ""}>${busy === "endwar" ? "Ending…" : LIVE.endArm ? "Tap again to end" : "End this war now"}</button></div>` : ""}
+    ${LIVE.delArm ? `<div class="delwarn"><p><b>Delete this war for everyone?</b> Every battle, replay, order, army and the hall of fame go for good, the invite link stops working, and it disappears from every lord's list. This can't be undone.</p>
+      <div class="row"><button class="btn small wax" data-act="dsdelwar" ${busy ? "disabled" : ""}>${busy === "delwar" ? "Deleting…" : "Yes, delete it forever"}</button><button class="btn small" data-act="dsdelwar" data-v="cancel">Keep it</button></div></div>`
+      : `<div class="spread"><span>Delete the war and everything in it, for everyone.</span><button class="btn small" data-act="dsdelwar" ${busy ? "disabled" : ""}>Delete this war</button></div>`}</div>`;
 }
 async function saveConfig(patch, msg) {
   const next = Object.assign({}, LIVE.config, patch); Object.keys(next).forEach(k => { if (next[k] === undefined || next[k] === null) delete next[k]; });

@@ -216,6 +216,39 @@ test("the host can replace the invite link; the old one stops working", async ()
   assert.equal(await write(P.mallory, `games/${gameId}/members/${await uidOf(P.mallory)}`, { invite: old, at: 3 }), "permission-denied");
 });
 
+test("a lord can leave a war: their castle is out, they lose access, and the war is off their list", async () => {
+  const lords = await P.host.evaluate(() => rosterFor(liveClock().week).length);
+  await P.alice.evaluate(() => DS.leaveWar());
+  await P.alice.waitForFunction(() => !LIVE.config, null, WAIT);
+  await P.host.waitForFunction(n => rosterFor(liveClock().week).length === n - 1, lords, WAIT);
+  assert.equal(await list(P.alice, `games/${gameId}/players`), "permission-denied");
+  assert.equal(await P.alice.evaluate(async g => { const u = await firebase.firestore().doc("users/" + LIVE.uid).get({ source: "server" }); return (u.get("games") || []).includes(g) || u.get("gameId") === g; }, gameId), false);
+});
+
+test("the host cannot leave their own war", async () => {
+  await P.host.evaluate(() => DS.leaveWar());
+  await P.host.waitForFunction(() => !DS.busy, null, WAIT);
+  assert.ok(await P.host.evaluate(() => !!LIVE.config), "still in the game");
+  assert.equal(await read(P.host, `games/${gameId}/members/${U.host}`), "ok");
+});
+
+test("the host can end the war early: the hall of fame is kept and registration reopens", async () => {
+  await P.host.evaluate(() => DS.endWarNow());
+  await P.host.waitForFunction(() => LIVE.config && LIVE.config.lobby === true && (LIVE.config.war || 1) === 2, null, WAIT);
+  const hall = await P.host.evaluate(() => (LIVE.config.hall || []).map(h => h.war));
+  assert.ok(hall.includes(1), "war 1 is in the hall of fame");
+  assert.notEqual(await list(P.host, `games/${gameId}/battles`), "ok:0", "its battles are kept");
+});
+
+test("the host can delete the war: it is gone for everyone, with its invite link", async () => {
+  const code = await P.host.evaluate(() => DS.inviteUrl().split("/").pop());
+  await P.host.evaluate(() => DS.deleteWar());
+  await P.host.waitForFunction(() => !LIVE.config, null, WAIT);
+  assert.equal(await read(P.mallory, `invites/${code}`), "missing", "the invite link is dead");
+  assert.ok(["missing", "permission-denied"].includes(await read(P.host, `games/${gameId}`)), "the game is gone");
+  assert.equal(await P.host.evaluate(async g => { const u = await firebase.firestore().doc("users/" + LIVE.uid).get({ source: "server" }); return (u.get("games") || []).includes(g) || u.get("gameId") === g; }, gameId), false, "and off the host's list");
+});
+
 test("the game is installable and opens with no connection", async () => {
   const p = P.alice;
   // the browser only treats the game as installable if the manifest is linked from the page's <head> and its icons load

@@ -90,6 +90,8 @@ jobs:
           key: playwright-chromium-${{ steps.v.outputs.playwright }}
       - name: Security rules
         run: npm run test:rules
+      - name: Ending, deleting and leaving a war (the server's code on the database emulator)
+        run: npm run test:wars
       - name: Download Chromium (only when the cache missed)
         if: steps.chromium.outputs.cache-hit != 'true'
         run: npx playwright install chromium
