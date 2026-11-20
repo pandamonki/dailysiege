@@ -17,8 +17,7 @@ const TIER_NAME = { 1: "Easy", 2: "Hard", 3: "Rival" };
 
 // a contract is still to be taken for the next battle
 const cxOpen = () => { try { return !!(S && !S.locked && !(isLive() && LIVE.readOnly) && !S.contract && contractsOn() && myOffers().length); } catch (e) { return false; } };
-// the contract board pops up once at the start of each planning phase, until a contract is taken
-const cxDue = () => cxOpen() && S.cxSeen !== planDayKey();
+// no pop-up for the contract board: it sits behind the ! above the map (which pulses until one is taken) and on the seal checklist
 
 // Orders > Contracts: the offers for the next battle and the twist, sized to fit one screen (rehearsal is on the seal screen)
 const twistArt = id => ART.twist[id && TWISTS[id] ? id : "calm"];

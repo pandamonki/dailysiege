@@ -162,10 +162,14 @@ practice games always stamp all of them (`js/sim/plans.js`).
 - Plus 1 per enemy hero killed and 3 per castle destroyed. Placing, kills and castles count 1.5 times on days 5, 6 and 7
   (`DAY_WEIGHT_PICK`). Then 1 for surviving with your hero alive, 3 for a betrayal whose bomb goes off, and contracts
   (2 easy, 3 hard, 5 against a rival; doubled on a Glory day).
-- Contracts add points and gold.
+- Contracts add points and gold. Take one from Orders > Contracts, or from the ! above the map: it shows today's twist and
+  a button to the contracts, and it pulses until a contract is taken. The contract board no longer pops up by itself.
 
 ## Battle report
 
+- In a friends war, the report of a battle this device hasn't shown yet opens first when you next plan, with Watch and
+  Highlights for the replay. Every other pop-up (gift, invitations, tips, What's new, the mercenary camp) waits until it is
+  closed, and if the result lands while the camp, the seal screen or Orders is open, the report takes its place.
 - A card per lord: medal, colour, hero sprite, name, points, and chips for heroes killed / deaths / assists, soldiers
   killed, castles taken, damage dealt, levels and gold. Build opens their skills and items. Deaths, assists and damage are recorded from 20 Nov. An assist is damaging an enemy hero in the
   10 seconds (`ASSIST_SECS`) before another lord kills it.

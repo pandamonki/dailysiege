@@ -50,8 +50,10 @@ function renderCamp() {
   const bd = b.querySelector(".cbadge"); bd.hidden = !n; bd.textContent = n;
   const tb = document.getElementById("twistbtn"), tp = document.getElementById("twistpop"); let tw = null;
   try { tw = S && mode === "plan" && contractsOn() ? myTwist() : null; } catch (e) {}
-  if (tb) { tb.hidden = !tw; tb.classList.toggle("fresh", !!tw && S.twSeen !== planDayKey()); }
-  if (tp) { tp.hidden = !(tw && TWIST_POP); if (!tp.hidden) tp.innerHTML = `${twistStripHTML()}<small class="muted">Tap anywhere to close</small>`; }
+  if (tb) { tb.hidden = !tw; tb.classList.toggle("fresh", !!tw && (S.twSeen !== planDayKey() || cxOpen())); }
+  if (tp) { tp.hidden = !(tw && TWIST_POP); if (!tp.hidden) { const c = contractParse(S.contract), lk = S.locked || (isLive() && LIVE.readOnly);
+    const cx = myOffers().length ? `<button class="btn small ${c || lk ? "wood" : "wax"} twcx" data-act="opentoday">${c ? `Contract: ${esc(c.c.name)}` : lk ? "Today's contracts" : "Pick today's contract"}</button>` : "";
+    tp.innerHTML = `${twistStripHTML()}${cx}<small class="muted">Tap anywhere to close</small>`; } }
 }
 // a day of this war that passed without a battle (the server counted fewer than two lords): said plainly instead of leaving lords waiting
 function skippedNote() { if (!isLive() || !LIVE.config) return ""; const ck = liveClock(), sk = (LIVE.config.skipDays || []).filter(d => d === addDays(ck.planDay, -1) && !LIVE.battles[d]); // only the last day, so it never crowds out the usual hints for long

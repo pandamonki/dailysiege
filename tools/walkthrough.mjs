@@ -81,6 +81,8 @@ for (const name of engines) {
   await step("pick today's targets", async () => { await tap('#cmdbar [data-act="openorders"]'); await tap('#sheet .tabs button:has-text("Strategy")');
     for (let i = 0; i < 6 && !(await js(() => targetsReady())); i++) { const add = page.locator('#sheet [data-act="lmove"][data-v="hostile"]:visible'); if (!(await add.count())) break; await add.first().click(); await page.waitForTimeout(150); }
     if (!(await js(() => targetsReady()))) throw new Error("could not pick enough targets"); await closeAll(); });
+  await step("the ! above the map shows the twist and opens today's contracts", async () => { await closeAll(); if (await page.locator("#twistbtn").isHidden()) throw new Error("no ! button above the map");
+    await tap("#twistbtn"); await tap('#twistpop [data-act="opentoday"]'); if (!(await page.locator('#sheet [data-act="cxpick"]').count())) throw new Error("the contracts tab didn't open"); await closeAll(); });
   await step("learn a hero skill", async () => { await tap('#cmdbar [data-act="openhero"]'); const before = await js(() => freePts());
     if (before > 0 && await page.locator('#sheet [data-act="tnode"]').count()) { await page.locator('#sheet [data-act="tnode"]').last().click(); await page.waitForTimeout(150); const l = page.locator('#sheet [data-act="tlearn"]:not([disabled])'); if (await l.count()) { await l.first().click(); await page.waitForTimeout(150); if ((await js(() => freePts())) >= before) throw new Error("no point was spent"); } }
     await closeAll(); });
