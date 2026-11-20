@@ -5,6 +5,9 @@
 //   resolveNow          the host's "Resolve now" button: the same, at once, for one game (for recovery)
 //   setBots             the host fills or empties seats with bot lords while registration is open
 //   reassignSeat        the host gives a lord's castle to that lord's new account (lost phone)
+//   endWarNow           the host ends the war under way early (hall of fame from the battles so far; registration reopens)
+//   deleteGame          the host deletes the whole game, for everyone (cannot be undone)
+//   leaveGame           a lord leaves a game: out from the next battle, and off their list
 const { onDocumentWritten } = require("firebase-functions/v2/firestore");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
@@ -15,6 +18,7 @@ const { clockFor } = require("./lib/clock");
 const { getMessaging } = require("firebase-admin/messaging");
 const { resolveDue, resolveAllDue, explainNotDue, fightMissing, reassignSeat, remindAll, testMode, diagnose, lockRoster } = require("./lib/resolve");
 const { setBots } = require("./lib/bots");
+const { endWarNow, deleteGame, leaveGame } = require("./lib/wars");
 const { REGION, TRIGGER_REGION } = require("./region");
 
 initializeApp();
@@ -92,4 +96,25 @@ exports.setBots = onCall(async request => {
   if (!removeId && (!Number.isFinite(n) || n < 0 || n > 12)) throw new HttpsError("invalid-argument", "How many bots?");
   try { return await setBots(getFirestore(), gameId, n, { removeId }); }
   catch (e) { throw new HttpsError("failed-precondition", (e && e.message) || "Could not change the bots."); }
+});
+
+// a plain-words failure from lib/wars.js goes back to the player as it is; anything else is logged and reported briefly
+const warErr = (what, gameId) => e => { if (e && e.plain) throw new HttpsError("failed-precondition", e.message); console.error(what, gameId, e); throw new HttpsError("internal", "Something went wrong. Try again."); };
+
+exports.endWarNow = onCall(async request => {
+  const gameId = await hostOnly(request);
+  return endWarNow(getFirestore(), gameId).catch(warErr("endWarNow", gameId));
+});
+
+exports.deleteGame = onCall(async request => {
+  const gameId = await hostOnly(request);
+  if (!request.data || request.data.confirm !== "DELETE") throw new HttpsError("invalid-argument", "Deleting needs confirming.");
+  return deleteGame(getFirestore(), gameId).catch(warErr("deleteGame", gameId));
+});
+
+exports.leaveGame = onCall(async request => {
+  if (!request.auth) throw new HttpsError("unauthenticated", "Sign in first.");
+  const gameId = String((request.data && request.data.gameId) || "");
+  if (!/^[A-Za-z0-9_-]{6,64}$/.test(gameId)) throw new HttpsError("invalid-argument", "Which game?");
+  return leaveGame(getFirestore(), gameId, request.auth.uid).catch(warErr("leaveGame", gameId));
 });

@@ -355,6 +355,9 @@
     warnew: () => { DS.newWar(); },
     testskip: () => { const day = liveClock().planDay; if (LIVE.testArm !== day) { LIVE.testArm = day; return; } LIVE.testArm = null; DS.testSkip(); },
     dsbots: v => { DS.setBots(v); },
+    dsendwar: () => { if (LIVE.endArm) { LIVE.endArm = false; DS.endWarNow(); } else LIVE.endArm = true; redraw(); if (typeof renderLobby === "function") renderLobby(); },
+    dsdelwar: v => { if (v === "cancel") LIVE.delArm = false; else if (LIVE.delArm) { LIVE.delArm = false; DS.deleteWar(); } else LIVE.delArm = true; redraw(); if (typeof renderLobby === "function") renderLobby(); },
+    dsleave: v => { if (LIVE.leaveArm === v) { LIVE.leaveArm = null; DS.leaveWar(v); } else LIVE.leaveArm = v; redraw(); if (typeof renderLobby === "function") renderLobby(); },
     dspush: () => { DS.enablePush(); },
     dspushoff: () => { DS.disablePush(); },
     dsreassign: () => { const from = (document.getElementById("dsfrom") || {}).value, to = (document.getElementById("dsto") || {}).value; if (!from || !to) return; if (!LIVE.moveSeat) { LIVE.moveSeat = true; return; } LIVE.moveSeat = false; DS.reassignSeat(from, to); },
@@ -468,6 +471,24 @@
     const m = String(link || "").trim().match(/(?:\/join\/|[?&]join=|^)([A-Za-z0-9_-]{8,64})\/?$/);
     if (!m) { say("That doesn't look like an invite link. It looks like …/join/abc123."); return; }
     LS.set("ds.invite", m[1]); DS.wantNew = false; reopen();
+  };
+  // ending, deleting and leaving (functions/lib/wars.js): each button needs a second tap, set up in the actions below
+  const errMsg = e => (e && e.message) || "error";
+  DS.endWarNow = async () => { // the host ends the war under way early; registration for the next war opens
+    if (!DS.isHost() || DS.busy) return; DS.busy = "endwar"; redraw();
+    try { await callServer("endWarNow", { gameId: G.id }); say("The war is over. Registration for the next war is open."); } catch (e) { say("Couldn't end the war: " + errMsg(e)); }
+    DS.busy = null; redraw();
+  };
+  DS.deleteWar = async () => { // the host deletes the whole game for everyone
+    if (!DS.isHost() || DS.busy) return; DS.busy = "delwar"; redraw();
+    try { await callServer("deleteGame", { gameId: G.id, confirm: "DELETE" }); DS.busy = null; say("The war was deleted."); DS.leaveGame(); return; } catch (e) { say("Couldn't delete the war: " + errMsg(e)); }
+    DS.busy = null; redraw();
+  };
+  DS.leaveWar = async gid => { // a lord leaves a war: this one, or another in their list
+    gid = gid || DS.gameId; if (!DS.user || !gid || DS.busy) return; DS.busy = "leave"; redraw();
+    try { await callServer("leaveGame", { gameId: gid }); DS.busy = null; say("You've left that war."); if (gid === DS.gameId) { DS.leaveGame(); return; } await listWars(); }
+    catch (e) { say("Couldn't leave: " + errMsg(e)); }
+    DS.busy = null; redraw();
   };
   // hosts: set up another war; the others carry on. Once reconnected, go straight to the set-up screen (it used to reconnect
   // quietly behind the war list, so the button seemed to do nothing)

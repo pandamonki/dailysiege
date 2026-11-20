@@ -175,3 +175,10 @@
 .vbox .vbubble { display: table; margin: 4px auto -4px; position: relative; z-index: 1; }
 .vbox .vhero { display: block; margin: 0 auto; }
 .vawards b { display: block; }
+/* Your wars: Open / Playing and Leave side by side */
+.wbtns { display: flex; gap: 6px; flex: none; align-items: center; }
+/* host tools: ending and deleting a war */
+.dangerbox { border-color: #8a2a1a; }
+.dangerbox .spread + .spread { margin-top: 10px; }
+.delwarn { border: 2px solid #b8322a; border-radius: 8px; background: #fbe3dc; padding: 10px 12px; }
+.delwarn p { margin: 0 0 8px; line-height: 1.4; }
