@@ -139,6 +139,17 @@ async function writeMine(full) {
 
 // ----- connecting -----
 let liveTimer = null;
+// the newest battle of this war that this device hasn't shown yet: its report comes before any other pop-up
+function unseenBattle() {
+  if (gameMode !== "friends" || !isLive()) return null;
+  const ck = liveClock(), newest = Object.keys(LIVE.battles).filter(k => LIVE.battles[k].week === ck.week).sort().pop();
+  let seen = null; try { seen = localStorage.getItem(seenKey()); } catch (e) {}
+  return newest && newest !== seen ? newest : null;
+}
+// screens the battle report may replace when the result lands while one is open (an earlier pop-up, or orders left open
+// overnight); the replaced pop-ups are marked unseen again so they follow the report
+const AUTO_POPS = ["spin", "invites", "camp", "seal", "orders"];
+function yieldToReport() { if (!sheet) return; if (sheet.type === "camp" && S) S.mercSeen = null; if (sheet.type === "invites" && S) S.invSeen = null; }
 function liveChanged() {
   if (typeof WAR_VIEW !== "undefined" && WAR_VIEW) return; // a finished war's battle is on screen: catch up when it closes
   syncLobby();
@@ -146,9 +157,8 @@ function liveChanged() {
     if (!LIVE.stateLoaded) { if (enterLive()) home(); }
     else { const before = S.day; resolveBattles(); const rolled = rollover(); if (!rolled && S.day === liveClock().planDay && payDays(liveClock())) { const hs = heroState(LIVE.uid, liveClock().week, liveClock().planDay); queueSave(true); }
       if (S.day === liveClock().planDay) { const hs2 = heroState(LIVE.uid, liveClock().week, liveClock().planDay); if (S.lvl !== hs2.lvl || S.xp !== hs2.xp) { S.lvl = hs2.lvl; S.xp = hs2.xp; queueSave(true); } } refreshLiveWorld(); sanitizePlace(); if (S.day !== before) queueSave(true); }
-    const ck = liveClock(), newest = Object.keys(LIVE.battles).filter(k => LIVE.battles[k].week === ck.week).sort().pop();
-    let seen = null; try { seen = localStorage.getItem(seenKey()); } catch (e) {}
-    if (newest && newest !== seen && mode === "plan" && !sheet && LIVE.stateLoaded && LIVE.namesLoaded) { openReportFor(newest); return; }
+    const newest = unseenBattle();
+    if (newest && mode === "plan" && (!sheet || AUTO_POPS.includes(sheet.type)) && LIVE.stateLoaded && LIVE.namesLoaded) { yieldToReport(); openReportFor(newest); return; }
   }
   render();
 }

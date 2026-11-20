@@ -100,7 +100,9 @@ practice games always stamp all of them (`js/sim/plans.js`).
 
 ## Orders (from 20 Nov)
 
-- **Targets:** up to 3 lords a day, in order. The army goes after the first one still standing.
+- **Targets:** at least 1 and up to 3 a day, in order, before you can seal. The army goes after the first one still standing.
+  The target list shows the bounty on the top three of the board beside their Target button (♛ +gold for killing their hero or
+  taking their castle), and their castles wear a crown on the map: gold for 1st, silver for 2nd, bronze for 3rd.
 - **Army plan:** what the army does once the fight in front of it is over.
   - Conquest (default): their hero, then their army, then their castle, then the next lord.
   - Hero hunt: hero to hero; soldiers only when they are in the way.
@@ -162,10 +164,15 @@ practice games always stamp all of them (`js/sim/plans.js`).
 - Plus 1 per enemy hero killed and 3 per castle destroyed. Placing, kills and castles count 1.5 times on days 5, 6 and 7
   (`DAY_WEIGHT_PICK`). Then 1 for surviving with your hero alive, 3 for a betrayal whose bomb goes off, and contracts
   (2 easy, 3 hard, 5 against a rival; doubled on a Glory day).
-- Contracts add points and gold.
+- Contracts add points and gold. Take one from Orders > Contracts, or from the Daily Noticeboard (the ! above the map): it
+  shows the next battle's twist, the alliance changes at the last battle, and buttons to the contracts and the day's targets.
+  It pulses each new day, and until a contract and a target are picked. The contract board no longer pops up by itself.
 
 ## Battle report
 
+- In a friends war, the report of a battle this device hasn't shown yet opens first when you next plan, with Watch and
+  Highlights for the replay. Every other pop-up (gift, invitations, tips, What's new, the mercenary camp) waits until it is
+  closed, and if the result lands while the camp, the seal screen or Orders is open, the report takes its place.
 - A card per lord: medal, colour, hero sprite, name, points, and chips for heroes killed / deaths / assists, soldiers
   killed, castles taken, damage dealt, levels and gold. Build opens their skills and items. Deaths, assists and damage are recorded from 20 Nov. An assist is damaging an enemy hero in the
   10 seconds (`ASSIST_SECS`) before another lord kills it.

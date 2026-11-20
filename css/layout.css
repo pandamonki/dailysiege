@@ -177,6 +177,16 @@ html, body { overflow: hidden; overscroll-behavior: none; }
 #twistpop { position: absolute; top: 50px; left: 50%; transform: translateX(-50%); width: min(300px, calc(100% - 24px)); z-index: 7; padding: 8px; border-radius: 12px; border: 2px solid var(--wood-dark); background: var(--parchment); color: var(--ink); box-shadow: 0 6px 18px rgba(0,0,0,.45); }
 #twistpop[hidden] { display: none; }
 #twistpop .twstrip { margin: 0; background: none; padding: 0; }
+#twistpop { max-height: calc(100% - 60px); overflow-y: auto; }
+#twistpop .nbh { margin: 0 0 6px; font-family: var(--f-display); font-size: 20px; color: var(--wax); text-align: center; }
+#twistpop .nbsec { margin-top: 8px; padding-top: 6px; border-top: 1px solid rgba(62,39,20,.2); }
+#twistpop .nbsec > small { display: block; text-transform: uppercase; letter-spacing: .05em; font-size: 11px; color: var(--ink-soft); }
+#twistpop .nbsec ul { margin: 4px 0 0; padding-left: 0; list-style: none; font-size: 14px; }
+#twistpop .nbsec li { margin: 3px 0; }
+#twistpop .tm { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; }
+#twistpop .nbsec p { margin: 4px 0 0; font-size: 13px; }
+#twistpop .twcx { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
+#twistpop .twcx > :only-child { grid-column: 1 / -1; }
 #twistpop > small { display: block; text-align: center; margin-top: 4px; font-size: 11px; }
 /* replay: every lord's castle down the left edge, crossed out when it falls */
 #ctrack { position: absolute; left: 6px; top: 50%; transform: translateY(-50%); z-index: 5; display: flex; flex-direction: column; gap: 4px; padding: 5px 4px; border-radius: 10px; background: rgba(20,12,6,.55); pointer-events: none; }

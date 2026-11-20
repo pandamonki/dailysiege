@@ -36,9 +36,10 @@ function boardRows() { // [{id,name,color,banner,cls,lvl,pts,last}]
 let BOUNTY_CACHE = { k: null, m: {} };
 function bountyMap() { // gold on the heads of the top three: base + board position + hero level x 5
   const k = gameMode + "|" + (isLive() ? Object.keys(LIVE.battles).length : DAY) + "|" + RIVALS.length;
-  if (BOUNTY_CACHE.k !== k) { const rows = boardRows().sort((a, b) => b.pts - a.pts || b.lvl - a.lvl), n = rows.length, m = {}; rows.forEach((r, i) => { if (i < 3 && n > 3) m[r.id] = bountyGold(i + 1, r.lvl); }); BOUNTY_CACHE = { k, m }; }
+  if (BOUNTY_CACHE.k !== k) { const rows = boardRows().sort((a, b) => b.pts - a.pts || b.lvl - a.lvl), n = rows.length, m = {}, rk = {}; rows.forEach((r, i) => { if (i < 3 && n > 3) { m[r.id] = bountyGold(i + 1, r.lvl); rk[r.id] = i + 1; } }); BOUNTY_CACHE = { k, m, rk }; }
   return BOUNTY_CACHE.m;
 }
+const bountyRank = id => { bountyMap(); return BOUNTY_CACHE.rk[id] || 0; }; // 1, 2 or 3 for the lords with a bounty (gold, silver, bronze crown), else 0
 function boardSheet() {
   const rows = boardRows().sort((a, b) => b.pts - a.pts || b.lvl - a.lvl), n = rows.length, low = Math.max(1, Math.round(n * .3));
   const me = rows.findIndex(r => r.me), catchUp = isLive() && me > -1 ? catchUpGold(n, n - 1 - me) : 0;
@@ -177,6 +178,13 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "Report first after a battle", date: "20 Nov", fixes: [], balance: [], changes: [
+    "After a battle, its report (with Watch and Highlights for the replay) now opens before any other pop-up. The mercenary camp and other pop-ups follow once it is closed.",
+    "The contract board no longer pops up by itself. The ! above the map is now the Daily Noticeboard: the next battle's twist, the alliance changes at the last battle, and buttons to pick your contract and targets. It pulses until both are done.",
+    "You only need one target to seal now (you can still pick up to three).",
+    "The targets list shows the bounty on each of the top three lords (♛ +gold) beside their Target button.",
+    "Bounty castles wear a crown on the map: gold for the leader, then silver and bronze.",
+  ] },
   { v: "Ending, deleting and leaving wars", date: "20 Nov", fixes: [], balance: [], changes: [
     "Hosts can end the war under way early (Host tools): the hall of fame is taken from the battles fought so far, then registration for the next war opens. Nothing is deleted.",
     "Hosts can delete a war for everyone (Host tools, with a warning and a second tap): every battle, order and army goes, the invite link stops working, and it leaves every lord's list.",
