@@ -3,6 +3,7 @@
 // the map, building walls, orders, skills, sealing, the battle replay and the results.
 //   npm run build && node tools/walkthrough.mjs [chromium|firefox|webkit ...]
 // Add a step here whenever a new screen or feature lands (see CLAUDE.md).
+//   WT_DEVICE="iPhone SE (3rd gen)" node tools/walkthrough.mjs   plays on an emulated phone (any name in Playwright's device list)
 /* eslint-disable no-undef -- the functions handed to page.evaluate run inside the game page, where these names are its globals */
 import { createRequire } from "node:module";
 import { preview } from "vite";
@@ -18,7 +19,10 @@ let failed = false;
 
 for (const name of engines) {
   const browser = await pw[name].launch(process.env.PW_EXECUTABLE && name === "chromium" ? { executablePath: process.env.PW_EXECUTABLE } : {}); // PW_EXECUTABLE: a browser already on this machine
-  const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  // WT_DEVICE="iPhone 13" plays as that phone (its screen size, pixel density, touch and user agent) instead of the plain 390x844 window
+  const dev = process.env.WT_DEVICE ? pw.devices[process.env.WT_DEVICE] : null; if (process.env.WT_DEVICE && !dev) throw new Error(`no device called ${process.env.WT_DEVICE}`);
+  const { defaultBrowserType: _bt, ...devOpts } = dev || {}; // eslint-disable-line no-unused-vars -- the engine is chosen on the command line
+  const page = await browser.newPage(dev ? devOpts : { viewport: { width: 390, height: 844 } });
   const errors = [], results = [];
   page.on("pageerror", e => errors.push(String(e && e.stack || e).split("\n").slice(0, 3).join(" | ")));
   page.on("response", res => { if (res.status() >= 400 && res.url().startsWith(base)) errors.push(res.status() + " " + res.url()); });
@@ -54,6 +58,11 @@ for (const name of engines) {
   await step("a wave's rush box unticks, reaches the battle plan and ticks again", async () => { await closeAll(); await tap('#cmdbar [data-v="recruit"]'); await tap('#sheet .tabs button:has-text("Deploy")');
     await tap('#sheet [data-act="wrush"][data-k="1"]'); if (await js(() => garrisonPlan()[1].rush !== false || garrisonPlan()[0].rush !== true)) throw new Error("unticking Wave 2 did not reach the plan");
     await tap('#sheet [data-act="wrush"][data-k="1"]'); if (await js(() => garrisonPlan()[1].rush !== true)) throw new Error("ticking Wave 2 again did not reach the plan"); await closeAll(); });
+  await step("the install and battle-alert cards show for every alert state", async () => { await closeAll();
+    for (const [st, k, want] of [["ask", "alerts", "Turn on alerts"], ["ask", "seal", "results are in"], ["on", "menu", "Turn off on this device"], ["install", "menu", "Add to Home Screen"], ["blocked", "menu", "Try again"], ["ask", "install", "Play it like an app"]]) {
+      const txt = await js(([st, k]) => { window.DS = window.DS || {}; const was = DS.pushState; DS.pushState = () => st; sheet = { type: "apptip", k }; render(); const t = document.querySelector("#sheet").innerText; DS.pushState = was; return t; }, [st, k]);
+      if (!txt.includes(want)) throw new Error(`${k} card (${st}) is missing "${want}"`); }
+    await closeAll(); });
   await step("buy, place and inspect a tower", async () => { await tap('#cmdbar [data-v="keep"]'); await tap('#sheet .tabs button:has-text("Defences")'); await tap('#sheet [data-act="dsel"][data-v="tw1"]'); await tap('#sheet [data-act="trap"][data-v="tower"]');
     const [r, q] = (await freeTiles())[2]; await tapTile(r, q); if (!(await js(() => S.traps.some(t => t.type === "tower" && placedAt(t.id))))) throw new Error("the tower is not on the map");
     await tapTile(r, q); await page.waitForTimeout(150); if (!(await js(() => /Upgrade/.test(document.getElementById("pdock").innerText)))) throw new Error("the tower's strip has no Upgrade button"); });

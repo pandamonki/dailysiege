@@ -356,6 +356,7 @@
     testskip: () => { const day = liveClock().planDay; if (LIVE.testArm !== day) { LIVE.testArm = day; return; } LIVE.testArm = null; DS.testSkip(); },
     dsbots: v => { DS.setBots(v); },
     dspush: () => { DS.enablePush(); },
+    dspushoff: () => { DS.disablePush(); },
     dsreassign: () => { const from = (document.getElementById("dsfrom") || {}).value, to = (document.getElementById("dsto") || {}).value; if (!from || !to) return; if (!LIVE.moveSeat) { LIVE.moveSeat = true; return; } LIVE.moveSeat = false; DS.reassignSeat(from, to); },
   });
 
@@ -410,7 +411,7 @@
     if (!DS.user || DS.emulator || !pushKey() || typeof PWA === "undefined") return "off";
     if (PWA.isIOS() && !PWA.standalone()) return "install";
     if (!("Notification" in window) || !("PushManager" in window) || !("serviceWorker" in navigator)) return "off";
-    return Notification.permission === "denied" ? "blocked" : Notification.permission === "granted" && LS.get("ds.push") ? "on" : "ask";
+    return Notification.permission === "denied" ? "blocked" : Notification.permission === "granted" && LS.get("ds.push") && !LS.get("ds.pushOff") ? "on" : "ask";
   };
   async function savePushToken() { // (re)register this device with the server; tokens can change, so this runs at each start too
     await loadScript("js/vendor/firebase/firebase-messaging-compat.js").catch(() => {});
@@ -420,12 +421,22 @@
     LS.set("ds.push", token); return true;
   }
   DS.enablePush = async () => {
+    LS.set("ds.pushOff", null); // switching on again after a "turn off"
     try { const perm = await Notification.requestPermission(); if (perm !== "granted") { say(perm === "denied" ? "Notifications are blocked for this site." : "No problem. You can turn alerts on later."); redraw(); return; }
       say((await savePushToken()) ? "Battle alerts are on for this device." : "Couldn't turn alerts on. Try again later."); }
     catch (e) { console.warn("push", e); say("Couldn't turn alerts on (" + ((e && (e.code || e.message)) || "error") + ")."); }
     redraw();
   };
-  const refreshPush = () => { try { if (DS.pushState() !== "off" && DS.pushState() !== "install" && "Notification" in window && Notification.permission === "granted") savePushToken().catch(() => {}); } catch (e) {} };
+  const refreshPush = () => { try { if (!LS.get("ds.pushOff") && DS.pushState() !== "off" && DS.pushState() !== "install" && "Notification" in window && Notification.permission === "granted") savePushToken().catch(() => {}); } catch (e) {} };
+  // Turn alerts off on this device: the server forgets this device's address and the game stops re-registering it at each start.
+  // (A website can't take back the phone's permission itself; switching on again needs no new permission prompt.)
+  DS.disablePush = async () => {
+    const token = LS.get("ds.push"); LS.set("ds.pushOff", "1"); LS.set("ds.push", null);
+    try { if (token) await fs.collection("users").doc(DS.user.uid).set({ fcmTokens: fb.firestore.FieldValue.arrayRemove(token) }, { merge: true }); } catch (e) { console.warn("push off", e); }
+    try { await loadScript("js/vendor/firebase/firebase-messaging-compat.js"); await fb.messaging().deleteToken(); } catch (e) {}
+    try { if (navigator.clearAppBadge) navigator.clearAppBadge(); } catch (e) {}
+    say("Battle alerts are off for this device."); redraw();
+  };
 
   DS.leaveGame = async () => { const gid = DS.gameId; stopGame(); try { await fs.collection("users").doc(DS.user.uid).set({ gameId: fb.firestore.FieldValue.delete(), ...(gid ? { games: fb.firestore.FieldValue.arrayRemove(gid) } : {}) }, { merge: true }); } catch (e) {} onAuthChange(); };
 

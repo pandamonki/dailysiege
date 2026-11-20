@@ -13,3 +13,4 @@ render();
 requestAnimationFrame(loop);
 connectLive();
 open("title");
+appBootDone();

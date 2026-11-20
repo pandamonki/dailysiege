@@ -73,7 +73,7 @@
 .gr-wh { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
 .gr-wh b { font-family: var(--f-display); font-weight: 400; font-size: 17px; margin-right: 2px; }
 .gr-wn { display: grid; gap: 2px; width: 22px; } .gr-wn i { display: block; height: 5px; border: 1.5px solid var(--leather); background: #e8b923; border-radius: 2px; }
-.gr-chip { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border: 1.5px solid var(--wood-dark); border-radius: 999px; background: var(--parchment-2); font-size: 12px; color: var(--ink); white-space: nowrap; cursor: pointer; }
+.gr-chip { all: unset; box-sizing: border-box; position: relative; display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border: 1.5px solid var(--wood-dark); border-radius: 999px; background: var(--parchment-2); font-size: 12px; color: var(--ink); white-space: nowrap; cursor: pointer; }
 .gr-chip::after { content: '▾'; font-size: 10px; color: var(--ink-soft); }
 .gr-chip.w { background: var(--wood); color: var(--parchment); } .gr-chip.w::after { color: var(--parchment); }
 .gr-chip:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
@@ -151,10 +151,12 @@
 .gr-dl .sw::after { content: ''; position: absolute; left: 50%; top: 1.5px; width: 1.5px; height: 4px; margin-left: -.75px; background: var(--ink); }
 .gr-pop .gr-poplead { margin: 4px 8px 6px; font-size: 12px; color: var(--ink-soft); line-height: 1.35; }
 /* a wave's emergency box (waves v2): ticked, the wave may rush out when the castle drops below 75%, 50% or 25% */
-.gr-rush { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 7px; margin: 6px 0 2px; padding: 2px 0; font-size: 12.5px; color: var(--ink); cursor: pointer; }
+.gr-rush { all: unset; box-sizing: border-box; position: relative; z-index: 1; display: flex; align-items: center; gap: 7px; min-height: 34px; margin: 2px 0 0; padding: 2px 0; font-size: 12.5px; color: var(--ink); cursor: pointer; }
 .gr-rush i { flex: none; width: 16px; height: 16px; border: 1.5px solid var(--wood-dark); border-radius: 4px; background: var(--parchment); position: relative; }
 .gr-rush.on i { background: #b8322a; border-color: #6e1410; }
 .gr-rush.on i::after { content: ''; position: absolute; left: 4.5px; top: 1px; width: 4px; height: 8px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
 .gr-rush small { color: var(--ink-soft); font-size: 11.5px; }
 .gr-rush[disabled] { opacity: .55; cursor: default; }
 .gr-rush:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+/* Phones: the wave trigger chips get taller touch areas (their look stays the same); the Rush box sits above them (z-index) */
+.gr-chip::before { content: ''; position: absolute; inset: -9px -2px; }
