@@ -8,6 +8,7 @@
 //                                not barred), every account tied to that castle loses access, and the game is off their lists. The host cannot leave their own game.
 const { FieldValue } = require("firebase-admin/firestore");
 const { endWar } = require("./resolve");
+const { startDate } = require("./clock");
 
 const failed = msg => Object.assign(new Error(msg), { plain: true });
 
@@ -15,8 +16,10 @@ async function endWarNow(db, gameId, { now = Date.now() } = {}) {
   const ref = db.collection("games").doc(gameId), snap = await ref.get();
   if (!snap.exists) throw failed("This game was not found.");
   const cfg = snap.data();
-  if (cfg.lobby || !cfg.planDay) throw failed("No war is under way: registration is open.");
   const war = cfg.war || 1;
+  // under way: the war has its first day (registration has closed; the lobby flag can stay set all war) and the clock is this war's
+  // (just after a war ends the old clock lingers until keepGameClock clears it, so a second tap can't end the new war)
+  if (!cfg.planDay || !startDate(cfg) || (cfg.clockWar || war) !== war) throw failed("No war is under way: registration is open.");
   await endWar(db, ref, now);
   return { ended: war };
 }

@@ -14,7 +14,7 @@ before(() => { initializeApp({ projectId: "demo-dailysiege" }); db = getFirestor
 // a game in the middle of war 1: a host, two lords (one playing from a replacement account), a bot, a fought battle and an invite
 async function makeGame(id) {
   const g = db.collection("games").doc(id), b = db.batch();
-  b.set(g, { host: "host1", war: 1, lobby: false, planDay: "2026-11-20", startDate: "2026-11-18", inviteCode: "code" + id, tz: "UTC", lockHour: 20 });
+  b.set(g, { host: "host1", war: 1, lobby: true, lobbyEnds: 1, planDay: "2026-11-20", startDate: "2026-11-18", clockWar: 1, inviteCode: "code" + id, tz: "UTC", lockHour: 20 }); // as a real war: the lobby flag stays set once registration closes
   for (const uid of ["host1", "lordA", "lordB", "bot1"]) b.set(g.collection("players").doc(uid), { nick: uid, joinedAt: 1, fromWeek: "2026-11-18", ...(uid === "bot1" ? { bot: true } : {}) });
   for (const uid of ["host1", "lordA", "lordB"]) b.set(g.collection("members").doc(uid), { invite: "code" + id, at: 1 });
   b.set(g.collection("members").doc("lordB2"), { invite: "code" + id, at: 2, seat: "lordB" }); // lordB's new phone
@@ -45,6 +45,11 @@ test("leaving is refused for the host and for someone not in the game", async ()
   await assert.rejects(wars.leaveGame(db, "no-such-game", "lordA"), /not found/);
 });
 
+test("ending is refused while registration is open", async () => {
+  const g = await makeGame("end-game-0"); await g.update({ startDate: null, planDay: null, lobbyEnds: Date.now() + 864e5 });
+  await assert.rejects(wars.endWarNow(db, "end-game-0"), /No war is under way/);
+});
+
 test("ending early: the hall of fame comes from the battles so far, registration reopens, nothing is deleted", async () => {
   const g = await makeGame("end-game-1");
   assert.deepEqual(await wars.endWarNow(db, "end-game-1", { now: 5000 }), { ended: 1 });
@@ -53,7 +58,9 @@ test("ending early: the hall of fame comes from the battles so far, registration
   assert.deepEqual(cfg.hall.map(h => [h.war, h.top.map(t => t.pid)]), [[1, ["host1", "lordA", "lordB"]]]);
   assert.equal((await g.collection("battles").doc("2026-11-18").get()).exists, true);
   assert.equal((await g.collection("players").doc("lordA").collection("private").doc("state").get()).exists, true);
-  await assert.rejects(wars.endWarNow(db, "end-game-1"), /No war is under way/, "can't end it twice");
+  await assert.rejects(wars.endWarNow(db, "end-game-1"), /No war is under way/, "a second tap can't end the next war (its clock is still the old one's)");
+  await g.update({ startDate: null, planDay: null }); // once the clock is cleared: registration is open
+  await assert.rejects(wars.endWarNow(db, "end-game-1"), /No war is under way/);
 });
 
 test("deleting: the game and everything in it is gone, the invite is dead, and it is off every list", async () => {
