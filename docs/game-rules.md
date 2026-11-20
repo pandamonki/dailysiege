@@ -22,7 +22,7 @@ practice games always stamp all of them (`js/sim/plans.js`).
 | 20 Nov | `shellV2` | Anti-Magic Shell fires the moment the hero engages an enemy hero (when off cooldown); no chosen delay |
 | 20 Nov | `itemV6` | Item rebalance: weaker Healing Salve and Ring of Health; stronger Anti-Magic Shell (7.5s magic immunity), Rune of Homecoming (reusable), Talisman of Will, Orb of Fire, Crystalys, Pipe of Insight and Boots |
 | 20 Nov | `allyV2` | Alliances v2: groups need every member's yes, winning allies share the top places by castle health, the lone wolf, bots in friends wars join the diplomacy |
-| 20 Nov | `waveV2` | Emergency waves: as the castle drops below 75%, 50% and 25% health, the next unsent wave rushes out, at least 10 seconds apart; waves lose their own orders, defend the castle area first, then follow the army plan |
+| 21 Nov | `waveV2` | Emergency waves: as the castle drops below 75%, 50% and 25% health, the next unsent wave rushes out, at least 10 seconds apart; waves lose their own orders, defend the castle area first, then follow the army plan |
 | 21 Nov | `placeV2` | Placement: one point per place, last scores 1, plus 2 for winning |
 
 ## The war
@@ -121,9 +121,9 @@ practice games always stamp all of them (`js/sim/plans.js`).
   points), forest round the rim and small tree blockades between bases. Trees and walls block movement.
 - Militia muster at every castle on a timer. Reinforcement waves march on their triggers.
 - Waves: each wave goes when its own trigger is met, at least 30 seconds after the last, and one is forced out at each
-  minute mark. From 20 Nov (`waveV2`) a castle in trouble also sends waves early: each time it drops below 75%, 50%
+  minute mark. From 21 Nov (`waveV2`) a castle in trouble also sends waves early: each time it drops below 75%, 50%
   and 25% health, the next unsent wave rushes out, at least 10 seconds after the last wave, so they never all leave at once.
-  Also from 20 Nov waves have no orders of their own: every wave first fights enemies within 8 tiles of its castle,
+  Also from 21 Nov waves have no orders of their own: every wave first fights enemies within 8 tiles of its castle,
   and once that area has been clear for 4 seconds (or the castle has fallen) it follows the lord's army plan.
 - In the replay each castle shows one bar per wave: bright yellow when ready, dim amber while waiting out the gap since
   the last wave, dark grey once gone. A small stopwatch beside them drains over the wait; it turns red when an emergency
