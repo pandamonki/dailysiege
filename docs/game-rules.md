@@ -124,6 +124,9 @@ practice games always stamp all of them (`js/sim/plans.js`).
 - Waves: each wave goes when its own trigger is met, at least 30 seconds after the last, and one is forced out at each
   minute mark. From 20 Nov (`waveV2`) a castle in trouble also sends waves early: each time it drops below 75%, 50%
   and 25% health, the next unsent wave rushes out, at least 10 seconds after the last wave, so they never all leave at once.
+  Each wave has a Rush box on the Deploy tab, ticked unless the lord unticks it. Only ticked waves rush out, the earliest
+  first; unticked waves still go by their trigger or deadline. Below its k-th mark a castle counts every wave already out
+  (however it went), so unticking never makes the other waves rush sooner. Older plans count as ticked.
   Also from 20 Nov waves have no orders of their own: every wave first fights enemies within 8 tiles of its castle,
   and once that area has been clear for 4 seconds (or the castle has fallen) it follows the lord's army plan.
   From 20 Nov (`waveV3`) there is no forced wave each minute. Instead each wave has its own deadline: Wave 1 0:45,

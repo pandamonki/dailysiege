@@ -37,7 +37,7 @@ const supplyFull = () => fieldCount() >= S.slots && garrisonCount() >= garrisonC
 function ensureGarrison() {
   const cw = cleanWaves(S.garrison), seen = new Set();
   S.garrison = cw.map((w, i) => { const old = (S.garrison && S.garrison[i] && S.garrison[i].slots) || [];
-    return { when: w.when, at: w.at, order: w.order, slots: [...Array(WAVE_SLOTS)].map((_, j) => { const id = old[j], u = id && S.owned.find(x => x.id === id); if (!u || seen.has(id)) return null; seen.add(id); return id; }) }; });
+    return { when: w.when, at: w.at, order: w.order, rush: w.rush, slots: [...Array(WAVE_SLOTS)].map((_, j) => { const id = old[j], u = id && S.owned.find(x => x.id === id); if (!u || seen.has(id)) return null; seen.add(id); return id; }) }; });
   if (supplyV2Now()) supplyV2Fix();
 }
 // the first time the new supply rules apply to a save: refund beds, fix the field at FIELD_MAX, and keep any waves already holding soldiers open for free
@@ -99,7 +99,7 @@ function reserveUnit(id) {
   if (!findUnit(id)) return "No such soldier."; if (inGarrison(id) && fieldCount() >= S.slots) return "Your field supply is full.";
   unGarrison(id); const k = placedAt(id); if (k) delete S.place[k]; return null;
 }
-const garrisonPlan = () => (S.garrison || []).map((w, i) => !waveOpen(i) ? { when: w.when, at: w.at, order: w.order, slots: [] } : w).map(w => ({ when: w.when, at: w.at, order: w.order, units: w.slots.map(id => id && S.owned.find(u => u.id === id)).filter(Boolean).map(u => ({ type: u.type, lvl: u.lvl, id: u.id, hp: u.hp ?? 1 })) }));
+const garrisonPlan = () => (S.garrison || []).map((w, i) => !waveOpen(i) ? { when: w.when, at: w.at, order: w.order, rush: w.rush, slots: [] } : w).map(w => ({ when: w.when, at: w.at, order: w.order, rush: w.rush !== false, units: w.slots.map(id => id && S.owned.find(u => u.id === id)).filter(Boolean).map(u => ({ type: u.type, lvl: u.lvl, id: u.id, hp: u.hp ?? 1 })) }));
 const pieces = () => ["champ", ...S.owned.filter(u => !inGarrison(u.id)).map(u => u.id), ...(S.walls || []).map(w => w.id), ...S.traps.map(t => t.id)];
 const unplaced = () => pieces().filter(p => !placedAt(p));
 const findUnit = id => S.owned.find(u => u.id === id);

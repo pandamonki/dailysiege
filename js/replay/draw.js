@@ -51,10 +51,11 @@ function drawReplay(t) {
   // Waves are WAVE_GAP apart; from waveV2 a castle below one of its WAVE_EMERGENCY marks with a wave owed sends it once WAVE_EMERGENCY_GAP has passed.
   const waveStatus = (wv, pid, frac, time) => { const ts0 = (wv.t[pid] || []).filter(x => x <= time), left = wv.total - ts0.length, last = ts0.length ? ts0[ts0.length - 1] : null;
     if (!left || last == null || frac <= 0 || (R.sudden && time >= R.sudden.t0)) return { total: wv.total, left };
-    const since = time - last, owed = R.waveV2 && WAVE_EMERGENCY.filter(f => frac < f).length > ts0.length;
+    const off = (R.waveRushOff || {})[pid] || [], gone = (wv.i[pid] || []).filter(([x]) => x <= time).map(([, i]) => i);
+    const since = time - last, owed = R.waveV2 && WAVE_EMERGENCY.filter(f => frac < f).length > ts0.length && [...Array(wv.total).keys()].some(i => !off.includes(i) && !gone.includes(i));
     const gap = owed ? WAVE_EMERGENCY_GAP : WAVE_GAP;
     return since < gap ? { total: wv.total, left, cd: { rem: gap - since, of: gap, rush: !!owed } } : { total: wv.total, left }; };
-  const wv = R.waves ? { total: WAVE_COUNT, t: replay.waveT || (replay.waveT = (R.events || []).reduce((o, e) => { if (e.ty === "wave") (o[e.pid] = o[e.pid] || []).push(e.t); return o; }, {})) } : null;
+  const wv = R.waves ? { i: replay.waveI || (replay.waveI = (R.events || []).reduce((o, e) => { if (e.ty === "wave") (o[e.pid] = o[e.pid] || []).push([e.t, e.i]); return o; }, {})), total: WAVE_COUNT, t: replay.waveT || (replay.waveT = (R.events || []).reduce((o, e) => { if (e.ty === "wave") (o[e.pid] = o[e.pid] || []).push(e.t); return o; }, {})) } : null;
   R.meta.forEach((m, k) => {
     const b = k * 4; if (b >= f0.d.length) return;
     let x = f0.d[b], y = f0.d[b + 1]; const hp = f0.d[b + 2], fl = f0.d[b + 3];
