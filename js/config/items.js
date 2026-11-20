@@ -20,7 +20,7 @@ const ITEMS = {
   jerkin:      { name: "Leather Jerkin",     g: "▣", col: "#a8783c", cost: 35,  tier: 1, kind: "passive", desc: "+6% health." },
   sandals:     { name: "Swift Sandals",      g: "›", col: "#7ac0a0", cost: 30,  tier: 1, kind: "passive", desc: "+6% move speed." },
   buckler:     { name: "Iron Buckler",       g: "◍", col: "#9aa8b8", cost: 40,  tier: 1, kind: "passive", desc: "Take 4% less damage from everything." },
-  herbs:       { name: "Mending Herbs",      g: "❦", col: "#6ac86a", cost: 40,  tier: 1, kind: "passive", desc: "Regenerate 0.6% of your health every second." },
+  herbs:       { name: "Mending Herbs",      g: "❦", col: "#6ac86a", cost: 50,  tier: 1, kind: "passive", desc: "Regenerate 0.6% of your health every second." },
   boots:       { name: "Boots of Speed",     g: "»", col: "#5aa0d8", cost: 80,  tier: 1, kind: "passive", desc: "+10% move speed. Catch the fleeing, or run from the strong." },
   gauntlets:   { name: "Gauntlets of Power", g: "✊", col: "#c9962f", cost: 100, tier: 1, kind: "passive", desc: "+15% attack damage." },
   ringprot:    { name: "Ring of Protection", g: "◎", col: "#8aa0b8", cost: 90,  tier: 1, kind: "passive", desc: "Take 8% less damage from everything." },
@@ -32,7 +32,7 @@ const ITEMS = {
   fireorb:     { name: "Orb of Fire",        g: "♨", col: "#ff7a2a", cost: 130, tier: 2, kind: "passive", orb: 1, desc: "A blazing orb circles you. Your attacks explode: 35% of the damage splashes onto foes within 1.3 tiles of the target." },
   corruptorb:  { name: "Orb of Corruption",  g: "☯", col: "#b050e0", cost: 130, tier: 2, kind: "passive", orb: 1, desc: "A dark orb circles you. Your attacks corrupt the target: it takes 15% more damage from everyone for 3s." },
   evasion:     { name: "Talisman of Evasion", g: "≋", col: "#d8e8a0", cost: 110, tier: 2, kind: "passive", desc: "20% chance to dodge a normal attack." },
-  hpring:      { name: "Ring of Health",     g: "♡", col: "#e06a7a", cost: 100,  tier: 1, kind: "passive", desc: "+8% health, and you regenerate 1.2% of your health every second." },
+  hpring:      { name: "Ring of Health",     g: "♡", col: "#e06a7a", cost: 125,  tier: 1, kind: "passive", desc: "+8% health, and you regenerate 1.2% of your health every second." },
   fang:        { name: "Vampiric Fang",      g: "♥", col: "#b8322a", cost: 130, tier: 2, kind: "passive", desc: "Heal for 12% of the damage you deal." },
   thornmail:   { name: "Spiked Mail",        g: "✶", col: "#9aa3ab", cost: 110, tier: 2, kind: "passive", desc: "Reflects 15% of the damage you take from melee attackers." },
   talisman:    { name: "Talisman of Will",   g: "✦", col: "#b48cff", cost: 90,  tier: 2, kind: "passive", desc: "Stuns and snares on you last 60% shorter." },
@@ -77,6 +77,8 @@ const ITEM_DESC_V6 = {
   pipe: "Aura: you and allies within 4 tiles take 60% less damage from enemy hero abilities and ultimates.",
   rapier: "+100 damage on every attack (abilities are not affected). Drops where you fall: any hero can grab it and keep it.",
 };
+// Items v7 (balance v5, battles from BAL_V5_FROM; ITEM_V7 in sim/battle.js): the regeneration items were too strong for their price
+const ITEM_DESC_V7 = { herbs: "Regenerate 3 health every second.", hpring: "+120 health, and you regenerate 5 health every second.", mender: "Aura: heals allies within 3 tiles for 5 health per second." };
 const ITEM_DESC_V5 = {
   whetstone: "+6 attack damage.", jerkin: "+100 health.", sandals: "+0.2 tiles a second move speed.", buckler: "Blocks 3 damage from every normal hit you take.",
   herbs: "Regenerate 5 health every second.", boots: "+0.35 tiles a second move speed. Catch the fleeing, or run from the strong.", gauntlets: "+12 attack damage.",
@@ -87,8 +89,13 @@ const ITEM_DESC_V5 = {
   banner: "Aura: allies within 3 tiles deal 24% more damage.", standard: "Aura: allies within 3 tiles take 18% less damage.",
   mender: "Aura: heals allies within 3 tiles for 8 health per second.", pipe: "Aura: you and allies within 3 tiles take 50% less damage from enemy hero abilities and ultimates.",
 };
+// the attack damage a hero's items add on top of its own (flat items): shown in green beside the base damage
+const ITEM_ATK = { whetstone: 6, gauntlets: 12, daedalus: 12, rapier: 100 };
+const itemAtk = items => (items || []).reduce((a, k) => a + (ITEM_ATK[k] || 0), 0);
+const atkSplit = (base, extra) => `<span class="batk">${Math.round(base)}</span>${extra ? `<span class="iatk">+${Math.round(extra)}</span>` : ""}`;
 // day: a replayed battle is described as it was fought
 const itemDesc = (k, day) => { const it = ITEMS[k]; if (!it) return ""; const d = day || (typeof isLive === "function" && isLive() ? liveClock().planDay : null);
+  if ((!d || balV5For(d)) && ITEM_DESC_V7[k]) return ITEM_DESC_V7[k];
   if ((!d || itemsV6For(d)) && ITEM_DESC_V6[k]) return ITEM_DESC_V6[k];
   if (k === "antimagic" && (!d || shellV2For(d))) return it.descV2;
   if (!d || itemsV5For(d)) return ITEM_DESC_V5[k] || it.desc; return balV4For(d) && ITEM_DESC_V4[k] ? ITEM_DESC_V4[k] : it.desc; };

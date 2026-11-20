@@ -8,7 +8,7 @@ function autoZoomMul() { if (replay.zmul == null) replay.zmul = AUTO_ZOOM_START;
 function autoZoomBy(k) { const b = replay.zbase || 1.7; replay.zmul = Math.max(minZoom() / b, Math.min(MAX_ZOOM / b, autoZoomMul() * k)); }
 function autoCam() {
   const R = replay.res, f = replayFrameAt(replay.time); if (!f) return;
-  if (replay.hi == null) { replay.hi = R.meta.findIndex(m => m.pid === R.me && m.kind === "champ"); replay.ci = R.meta.findIndex(m => m.pid === R.me && m.kind === "castle"); }
+  { const hi = followIdx(); if (replay.hi !== hi) { replay.hi = hi; const fp = hi >= 0 ? R.meta[hi].pid : R.me; replay.ci = R.meta.findIndex(m => m.pid === fp && m.kind === "castle"); replay.camMode = null; } } // the followed hero (your own unless you picked another)
   const hb = replay.hi * 4, cb = replay.ci * 4, f0 = replayFrameAt(Math.max(0, replay.time - 3));
   const castleAlive = replay.ci >= 0 && f.d[cb + 2] > 0, heroDown = replay.hi < 0 || (f.d[hb + 3] & 1);
   const hit = castleAlive && f0.d[cb + 2] - f.d[cb + 2] >= 1, arena = !!(R.sudden && replay.time >= R.sudden.t0);
@@ -42,18 +42,29 @@ function buildReplayUI() {
     <ol class="ticker" id="ticker"></ol>`;
   replay.logN = -1; updateReplayUI();
 }
-// a small castle for every lord down the side of the replay, crossed out when it falls, so the match can be followed without the whole map in view
+// every lord along the top of the replay: their castle and their hero, each with a health bar. A castle is crossed out when it falls, a hero greys
+// out while it is down. Tap a hero to follow it with the camera (and see it in the panel below), tap a castle to look at it.
 const CASTLE_SVG = c => `<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 15V6h2V4h2v2h1V3h2v3h1V4h2v2h2v9H9.5v-3a1.5 1.5 0 0 0-3 0v3z" fill="${c}" stroke="#1e140c" stroke-width="1" stroke-linejoin="round"/></svg>`;
 function updateCastleTrack() {
   const el = document.getElementById("ctrack"); if (!el) return;
-  if (!replay || mode !== "replay") { el.hidden = true; replay && (replay.ctKey = null); return; }
+  if (!replay || mode !== "replay" || replay.reel) { el.hidden = true; replay && (replay.ctKey = null); return; }
   const R = replay.res, f = replayFrameAt(replay.time); if (!f) return;
-  if (!replay.ctIdx) replay.ctIdx = R.order.map(pid => [pid, R.meta.findIndex(m => m.pid === pid && m.kind === "castle")]).filter(x => x[1] >= 0);
-  const st = replay.ctIdx.map(([pid, i]) => [pid, i * 4 + 2 < f.d.length && f.d[i * 4 + 2] > 0]), key = st.map(x => +x[1]).join("");
-  el.hidden = false; if (replay.ctKey === key) return; replay.ctKey = key;
+  if (!replay.ctIdx) replay.ctIdx = R.order.map(pid => [pid, R.meta.findIndex(m => m.pid === pid && m.kind === "castle"), R.meta.findIndex(m => m.pid === pid && m.kind === "champ")]).filter(x => x[1] >= 0);
   const nm = pid => (R.names && R.names[pid]) || (R.results.find(r => r.pid === pid) || {}).name || "";
-  el.innerHTML = st.map(([pid, up]) => `<span class="ct${up ? "" : " down"}${pid === R.me ? " me" : ""}" title="${esc(nm(pid))}${up ? "" : " · castle fallen"}">${CASTLE_SVG((R.colors || {})[pid] || "#888")}</span>`).join("");
+  const fol = followIdx(), key = R.order.join() + "|" + fol;
+  el.hidden = false;
+  if (replay.ctKey !== key) { replay.ctKey = key;
+    el.innerHTML = replay.ctIdx.map(([pid, ci, hi]) => { const col = (R.colors || {})[pid] || "#888", m = hi >= 0 ? R.meta[hi] : null;
+      return `<div class="ctl${pid === R.me ? " me" : ""}" style="--c:${col}">${m ? `<button class="cth${hi === fol ? " on" : ""}" data-act="rfollow" data-v="${hi}" aria-label="Follow ${esc(nm(pid))}'s hero" title="${esc(nm(pid))}"><img alt="" src="${portraitFor(m, col) || spriteURL("c-" + m.cls, col)}"><i class="hb"><b></b></i></button>` : ""}
+        <button class="ct" data-act="rlook" data-v="${ci}" aria-label="${esc(nm(pid))}'s castle" title="${esc(nm(pid))}">${CASTLE_SVG(col)}<i class="hb"><b></b></i></button></div>`; }).join(""); }
+  const cells = el.children;
+  replay.ctIdx.forEach(([pid, ci, hi], j) => { const cell = cells[j]; if (!cell) return;
+    const bar = (btn, i) => { if (!btn || i < 0) return; const b = i * 4, hp = b + 2 < f.d.length ? Math.max(0, f.d[b + 2]) : 0, down = b + 3 >= f.d.length || !!(f.d[b + 3] & 1) || hp <= 0;
+      btn.classList.toggle("down", down); btn.querySelector("b").style.width = (down ? 0 : Math.min(100, hp / R.meta[i].maxhp * 100)).toFixed(1) + "%"; };
+    bar(cell.querySelector(".cth"), hi); bar(cell.querySelector(".ct"), ci); });
 }
+// the hero the camera follows: the one the viewer picked, else their own
+function followIdx() { const R = replay.res; if (replay.follow != null && R.meta[replay.follow] && R.meta[replay.follow].kind === "champ") return replay.follow; return R.meta.findIndex(m => m.pid === R.me && m.kind === "champ"); }
 function updateReplayUI() {
   updateCastleTrack();
   if (!replay) return;
@@ -63,7 +74,7 @@ function updateReplayUI() {
   const sc = document.getElementById("rscrub"); if (document.activeElement !== sc) sc.value = replay.time.toFixed(1);
   document.getElementById("rplay").textContent = replay.playing ? "❚❚" : "▶";
   document.getElementById("rspeed").textContent = replay.speed + "×";
-  { const ra = document.getElementById("rauto"); if (ra) { ra.textContent = replay.auto ? (replay.camMode === "base" ? "🎥 Following: keep" : replay.camMode === "arena" ? "🎥 Following: arena" : replay.camMode === "other" ? "🎥 Following the fight" : replay.camMode === "field" ? "🎥 Whole field" : "🎥 Following hero") : "🎥 Follow hero"; ra.className = "btn small" + (replay.auto ? " wood" : ""); } }
+  { const ra = document.getElementById("rauto"); if (ra) { ra.textContent = replay.auto ? (replay.camMode === "base" ? "🎥 Following: keep" : replay.camMode === "arena" ? "🎥 Following: arena" : replay.camMode === "other" ? "🎥 Following the fight" : replay.camMode === "field" ? "🎥 Whole field" : replay.follow != null && replay.res.meta[replay.follow] && replay.res.meta[replay.follow].pid !== replay.res.me ? "🎥 Following " + ((replay.res.names || {})[replay.res.meta[replay.follow].pid] || "hero") : "🎥 Following hero") : "🎥 Follow hero"; ra.className = "btn small" + (replay.auto ? " wood" : ""); } }
   const L = replay.res.logs, n = lowerBound(L, replay.time + 1e-6);
   if (n !== replay.logN) {
     replay.logN = n;

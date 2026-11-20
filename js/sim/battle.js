@@ -51,6 +51,11 @@ const ITEM_STATS = { whetstone: { atk: .07 }, gauntlets: { atk: .15 }, daedalus:
 const ITEM_FLAT = { whetstone: { atk: 6 }, gauntlets: { atk: 12 }, daedalus: { atk: 12 }, jerkin: { hp: 100 }, hpring: { hp: 140 }, vanguard: { hp: 260 }, sandals: { spd: .2 }, boots: { spd: .35 }, buckler: { block: 3 }, ringprot: { block: 6 }, shiva: { block: 5 } };
 const ITEM_REGEN_V5 = { hpring: 10, herbs: 5 }, SALVE_V5 = 300, ELIXIR_V5 = .2, STANDARD_V5 = .18;
 // Items v6 (plans stamped itemV6, battles from ITEMS_V6_FROM): Salve and Ring of Health toned down; Shell, Rune, Will, Fire orb, Crystalys, Pipe and Boots boosted
+// Items v7 (plans stamped balV5): the cheap regeneration items were too strong for their price
+const ITEM_V7 = { herbs: 3, hpringRegen: 5, mender: 5 };
+// Home healing (plans stamped balV5): a hero within HOME_HEAL_R tiles of its own castle that has neither hit nor been hit for HOME_HEAL_WAIT seconds
+// heals HOME_HEAL of its health a second. Any hit, given or taken, stops it and starts the wait again.
+const HOME_HEAL_R = 2.5, HOME_HEAL_WAIT = 2, HOME_HEAL = .08;
 const ITEM_V6 = { salve: 220, hpringHp: 120, hpringRegen: 8, bootsSpd: .42, shellDur: 7.5, runeCd: 45, runeLow: .3, runeChannel: 1.5, will: .25, fireSplash: .5, fireR: 1.5, crys: [.25, 1.8], pipe: .6, pipeR: 4, rapier: 100 };
 const AGGRO_R = 4, RECALL_R = 6, RETREAT_END_V2 = .5, METEOR_CASTLE = 700, MAGIC_VS_FORT = .6, HIT_WINDOW = 2.5, BACK_AT = .6;
 const fairTie = (seed, a, b) => hash(seed, botSeed(String(a)) * 7919 + botSeed(String(b)), 17);
@@ -63,7 +68,7 @@ const fairTie = (seed, a, b) => hash(seed, botSeed(String(a)) * 7919 + botSeed(S
 let PLACE_V2_FROM = "2026-11-21"; const placeV2For = d => String(d) >= PLACE_V2_FROM, PLACE_WIN_BONUS = 2;
 const placePts = (v2, place, n) => (v2 ? Math.max(0, n - place + 1) + (place === 1 ? PLACE_WIN_BONUS : 0) : [10, 7, 5, 4, 3, 2, 1, 0][place - 1] || 0);
 let ALLY_V2_FROM = "2026-11-20"; const allyV2For = d => String(d) >= ALLY_V2_FROM, LONE_WOLF_STEP = .1;
-const ASSIST_SECS = 10, SURVIVOR_PTS = 1, BLOC_MAX = 3, TREACHERY_PTS = 3, TREACHERY_LOOT = .25, DAY_WEIGHT = { 5: 1.5, 6: 1.5, 7: 2 };
+const ASSIST_SECS = 10, SURVIVOR_PTS = 1, BLOC_MAX = 3, TREACHERY_PTS = 3, TREACHERY_LOOT = .25, BETRAY_CASTLE_X = 3, DAY_WEIGHT = { 5: 1.5, 6: 1.5, 7: 2 };
 // A lord whose castle falls keeps their hero and soldiers on the field: they fight on to the end of the battle, but can no longer fall back, heal at the castle, teleport home or respawn. Placing is still decided by when the castle fell.
 const ORPHAN_ARMIES = true;
 const dayWeight = (v2, dayNo) => (v2 && DAY_WEIGHT[dayNo]) || 1;
@@ -87,6 +92,7 @@ function runBattle(plans, seed, opts = {}) {
   const EV2 = plans.some(p => p.engV2); // engines v2: heroes and soldiers drop what they are doing for an enemy siege engine near their own castle
   const WV2 = plans.some(p => p.wallV2); // walls v2: every fence blocks everyone, its owner's soldiers too, so they route round through the gaps
   const RAPIER_V2 = plans.some(p => p.itemV6); // Divine Rapier v6: +100 on weapon hits instead of double damage
+  const BV5 = plans.some(p => p.balV5); // balance v5: hero attack and armour class, out-of-combat healing at home, 20s waves, betrayal castle bonus, regen items toned down
   const SD2 = plans.some(p => p.sdV2); // sudden death v2: a half-size arena nobody can leave, and no respawn timers inside it
   let sd = null; // sudden death: null until SD_AT, then { t0, go, skip, winners }
   const sdOn = () => !!sd && !sd.skip, tmax = () => (sdOn() ? SD_AT + SD_COUNT + SD_LEN : TMAX);
@@ -251,7 +257,7 @@ function runBattle(plans, seed, opts = {}) {
   });
   if (HV3) kit.postSetup();
   const meta = () => ents.map(e => ({ kind: e.kind, pid: e.pid, key: e.key, merc: !!e.merc, champ: e.kind === "champ", maxhp: e.maxhp, tile: e.kind === "castle" ? [Math.floor(e.y), Math.floor(e.x)] : null,
-    atk: e.atk, range: e.range, as: e.as, spd: e.spd, armor: Math.min(.8, (e.armor || 0) + (e.dmgRed || 0)), atype: e.atype || null, armour: e.armour || null,
+    atk: e.atk, fatk: e.kind === "champ" ? (e.flatAtk || 0) : 0, range: e.range, as: e.as, spd: e.spd, armor: Math.min(.8, (e.armor || 0) + (e.dmgRed || 0)), atype: BV5 && e.kind === "champ" ? "hero" : e.atype || null, armour: BV5 && e.kind === "champ" ? "hero" : e.armour || null,
     lvl: e.kind === "champ" ? (e.lvl0 || 1) : (e.lvl || null), xp0: e.kind === "champ" ? (e.xp0 || 0) : null, lvlTo: e.kind === "champ" ? e.heroLvl : null, items: e.itemSet ? [...e.itemSet] : null, cls: e.cls || null, ranks: e.ranks0 || e.ranks || null, tree: e.tr0 || null, picks: e.picks || null, evade: e.evade || 0,
     ctier: e.kind === "castle" ? (P[e.pid].castleTier || 1) : null, banner: e.kind === "castle" ? (P[e.pid].banner || null) : null,
     gear: e.kind === "champ" ? (P[e.pid].gear || {}) : null, defences: e.kind === "castle" ? (P[e.pid].defences || {}) : null, heal: e.healer || e.healAmt || 0 }));
@@ -319,10 +325,10 @@ function runBattle(plans, seed, opts = {}) {
       const AB = V4 ? AURA_BOOST : 1;
       if (s.has("banner")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => setFx(o, "atkbuf", 1.3, .12 * AB));
       if (s.has("standard")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => setFx(o, "guard", 1.3, e.itemV5 ? STANDARD_V5 : Math.min(.6, .12 * AB)));
-      if (s.has("hpring") && e.hp < e.maxhp) heal(e, e.itemV6 ? ITEM_V6.hpringRegen : e.itemV5 ? ITEM_REGEN_V5.hpring : e.maxhp * .012, true, e, "Ring of Health");
-      if (s.has("herbs") && e.hp < e.maxhp) heal(e, e.itemV5 ? ITEM_REGEN_V5.herbs : e.maxhp * .006, true, e, "Mending Herbs");
+      if (s.has("hpring") && e.hp < e.maxhp) heal(e, BV5 ? ITEM_V7.hpringRegen : e.itemV6 ? ITEM_V6.hpringRegen : e.itemV5 ? ITEM_REGEN_V5.hpring : e.maxhp * .012, true, e, "Ring of Health");
+      if (s.has("herbs") && e.hp < e.maxhp) heal(e, BV5 ? ITEM_V7.herbs : e.itemV5 ? ITEM_REGEN_V5.herbs : e.maxhp * .006, true, e, "Mending Herbs");
       if (s.has("pipe")) friendsNear(e.pid, e.x, e.y, e.itemV6 ? ITEM_V6.pipeR : 3).forEach(o => setFx(o, "spellward", 1.3, e.itemV6 ? ITEM_V6.pipe : Math.min(.6, .25 * AB)));
-      if (s.has("mender")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => { if (o.hp < o.maxhp) heal(o, 4 * AB, true, e, "Mender's Charm"); });
+      if (s.has("mender")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => { if (o.hp < o.maxhp) heal(o, BV5 ? ITEM_V7.mender : 4 * AB, true, e, "Mender's Charm"); });
     }
     if (s.has("antimagic") && e.shellV2) e.engT = shellEngaged(e) ? t : null; // shell v2: it fires the moment you engage an enemy hero, whenever it is off cooldown
     else if (s.has("antimagic")) { if (enemiesNear(e, e.x, e.y, 7).some(x => x.kind === "champ")) { if (e.engT == null) e.engT = t; } else e.engT = null; } // the clock on the Shell starts when an enemy hero comes into view
@@ -381,7 +387,7 @@ function runBattle(plans, seed, opts = {}) {
     return best || pth[Math.min(1, pth.length - 1)];
   }
   function hitWall(e, w) {
-    const wx = w.x0 + .5, wy = w.y0 + .5, wd = e.atk * (1 + fxv(e, "atkbuf")) * (V4 && e.atype === "magic" ? MAGIC_VS_FORT : TYPE_TABLE[e.atype || "blade"].fortified) * (e.key === "raider" ? 1.4 : 1) * (HV3 ? kit.wallMul(e) : 1); st(w.pid).wallHit += Math.min(wd, Math.max(0, w.hp)); w.hp -= wd;
+    const wx = w.x0 + .5, wy = w.y0 + .5, wd = e.atk * (1 + fxv(e, "atkbuf")) * (BV5 && e.kind === "champ" ? TYPE_TABLE.hero.fortified : V4 && e.atype === "magic" ? MAGIC_VS_FORT : TYPE_TABLE[e.atype || "blade"].fortified) * (e.key === "raider" ? 1.4 : 1) * (HV3 ? kit.wallMul(e) : 1); st(w.pid).wallHit += Math.min(wd, Math.max(0, w.hp)); w.hp -= wd;
     ev({ ty: "slash", x: wx, y: wy, c: "#d9c9a0" });
     if (w.hp <= 0) { w.hp = 0; aoe(wx, wy, .9, "#a08050", .6); }
   }
@@ -419,7 +425,7 @@ function runBattle(plans, seed, opts = {}) {
     }
     if (t >= SUDDEN) m *= 1.25;
     // attack type against armour type (the only matchup rule)
-    { const at = o.atype || (src && src.atype) || "pure", ar = tgt.armour || "medium"; m *= V4 && at === "magic" && ar === "fortified" ? MAGIC_VS_FORT : TYPE_TABLE[at][ar]; }
+    { let at = o.atype || (src && src.atype) || "pure", ar = tgt.armour || "medium"; if (BV5) { if (src && src.kind === "champ" && !o.atype) at = "hero"; if (tgt.kind === "champ") ar = "hero"; } m *= V4 && at === "magic" && ar === "fortified" ? MAGIC_VS_FORT : TYPE_TABLE[at][ar]; }
     if (src && src.vsEngine && (tgt.cart || tgt.ram || tgt.cat)) m *= src.vsEngine; // a Fire Tower's burning arrows against siege engines
     if (src && (src.kind === "unit" || src.kind === "summon") && tgt.kind === "champ") m *= HERO_GUARD;
     // the Rogue's one class trait: finishing blows
@@ -464,6 +470,7 @@ function runBattle(plans, seed, opts = {}) {
     } else if (o.trapPid) P[o.trapPid].trapDmg = (P[o.trapPid].trapDmg || 0) + eff;
     const tp = P[tgt.pid]; tp.hitT = t;
     if (src) {
+      src.dealT = t; // for home healing: any hit given counts as combat
       tgt.lastBy = src.pid;
       if (tgt.kind === "castle") { tp.castleHitT = t; tp.castleHitBy = src.pid; }
       const ls = (src.lifesteal || 0) + (P[src.pid].blessing === "vamp" && src.kind !== "castle" ? .15 : 0) + fxv(src, "lsbuf") + (src.cls === "rogue" && src.kind === "champ" ? .12 : 0); if (ls) heal(src, dmg * ls, true, src, "Lifesteal");
@@ -525,7 +532,7 @@ function runBattle(plans, seed, opts = {}) {
       log(`${poss(pid)} army fights on without a castle.`);
     } else ents.forEach(e => { if (e.pid === pid && !e.dead) { e.dead = true; e.hp = 0; e.respawnAt = null; ev({ ty: "die", id: e.id, x: e.x, y: e.y, fx: 0 }); } });
     if (by && (by === pid || !P[by] || !P[by].alive)) by = null;
-    if (by) { P[by].castles++; st(pid).fellTo = by; quip(by, "te", null); }
+    if (by) { P[by].castles++; if (BV5 && betrayedBy[pid] && betrayedBy[pid].has(by)) { P[by].bcastles = (P[by].bcastles || 0) + 1; log(`A betrayal kill! ${nm(by)} razed the castle of the ally they betrayed.`, "big"); } st(pid).fellTo = by; quip(by, "te", null); }
     order.forEach(o => { P[o].pacts.delete(pid); });
     log(`${poss(pid)} castle has fallen${by ? ` to ${nm(by)}` : ""}.`, "big");
     { const revenge = by && hl.some(h => (h.kind === "betray" || h.kind === "bomb") && h.pid === pid && h.other === by);
@@ -534,12 +541,13 @@ function runBattle(plans, seed, opts = {}) {
         score: revenge ? 88 : upset ? 92 : top3(pid) ? 70 + (4 - RANKS[pid]) * 3 : 30 }); }
     aoe(p.castle.x, p.castle.y - .3, 1.6, "#ff9a3c", 1.2);
   }
-  const feudsNew = new Set();
+  const feudsNew = new Set(), betrayedBy = {}; // betrayedBy: victim -> the lords who bombed their keep in this battle
   const treachery = []; // bombs that went off: [betrayer, victim]
   function betray(pid, target, quiet) {
     if (!P[pid].pacts.has(target)) return;
     { const kc = P[target].castle; if (!P[target].alive || !kc || kc.hp <= 0) return; } // keep already destroyed: nothing to betray
     P[pid].pacts.delete(target); P[target].pacts.delete(pid);
+    (betrayedBy[target] || (betrayedBy[target] = new Set())).add(pid);
     P[target].revenge.add(pid); P[target].hostileTo.add(pid); P[pid].feud.add(target); P[target].feud.add(pid); P[pid].hostileTo.add(target); feudsNew.add([pid, target].sort().join("|"));
     { const c = P[target].castle; if (c && P[target].alive && c.hp > 0) { const FUSE = 1.8; ev({ ty: "fuse", pid: target, x: c.x, y: c.y, dur: FUSE }); log(`Betrayal! ${nm(pid)} planted a bomb in ${lposs(target)} keep. It's about to blow!`, "big");
       pending.push({ at: +(t + FUSE).toFixed(2), ab: null, fn: () => { if (!P[target].alive || c.hp <= 0) return; c.lastBy = pid; aoe(c.x, c.y - .3, 2.6, "#ffb347", 1.4); deal(null, c, c.maxhp * .5, { aoe: 1, big: 1, atype: "pure" }); log(`The bomb goes off! ${nm(pid)} blew up ${lposs(target)} keep.`, "big"); if (BV) treachery.push([pid, target]); } }); } }
@@ -916,6 +924,8 @@ function runBattle(plans, seed, opts = {}) {
     if (e.kind === "summon" && t >= e.life) { e.dead = true; ev({ ty: "die", id: e.id, x: e.x, y: e.y, fx: 0, ex: 1 }); aoe(e.x, e.y, .6, "#bfe3ff", .5); return; }
     if (fxv(e, "stun")) return;
     if (e.kind === "champ" && e.itemSet) itemTick(e);
+    if (BV5 && e.kind === "champ" && !e.orphan && e.hp < e.maxhp && p.castle && p.castle.hp > 0 && !sdOn() && d(e, p.castle) < HOME_HEAL_R && t - e.hitT >= HOME_HEAL_WAIT && t - (e.dealT ?? -99) >= HOME_HEAL_WAIT) { // home healing, out of combat
+      heal(e, e.maxhp * HOME_HEAL * DT, true, null, "Home"); if (!e.homeHealT || t - e.homeHealT > 3) { e.homeHealT = t; txt(e, "Resting", "#9cf09c"); } }
     // castle towers
     if (e.kind === "castle") {
       e.atkT -= DT; if (e.atkT > 0) return;
@@ -1115,8 +1125,8 @@ function runBattle(plans, seed, opts = {}) {
     if (V3 && !opts.duel && !sdOn() && tick % 5 === 0) order.forEach(pid => {
       const p = P[pid]; if (!p.alive || !p.waves) return;
       const c = p.castle, sent = p.waves.filter(w => w.done).length;
-      if (p.waveV2 && sent < WAVE_COUNT && t - p.lastWave >= WAVE_EMERGENCY_GAP && sent < WAVE_EMERGENCY.filter(f => c.hp / c.maxhp < f).length) { const k = p.waves.findIndex(w => !w.done && w.rush !== false); if (k >= 0) { deployWave(p, k, true); return; } } // emergency: the castle is losing ground; only waves whose rush box is ticked
-      if (t - p.lastWave < WAVE_GAP) return;
+      if (p.waveV2 && sent < WAVE_COUNT && t - p.lastWave >= (p.balV5 ? WAVE_GAP_V5 : WAVE_EMERGENCY_GAP) && sent < WAVE_EMERGENCY.filter(f => c.hp / c.maxhp < f).length) { const k = p.waves.findIndex(w => !w.done && w.rush !== false); if (k >= 0) { deployWave(p, k, true); return; } } // emergency: the castle is losing ground; only waves whose rush box is ticked
+      if (t - p.lastWave < (p.balV5 ? WAVE_GAP_V5 : WAVE_GAP)) return; // balance v5: a flat 20s between waves, emergency or not
       const soldiers = ents.some(x => !x.dead && x.pid === pid && x.kind === "unit" && !x.free && !x.militia && !x.merc);
       const met = w => w.when === "timer" ? t >= w.at : w.when === "castle_hit" ? p.castleHitT > 0 || (p.waveV4 && enemyAtGate(pid)) : w.when === "castle_low" ? c.hp / c.maxhp < .5 : w.when === "hero_dies" ? p.heroDied : w.when === "army_dead" ? t > 5 && !soldiers : w.when === "enemy_hero" ? p.enemyHeroDied : anyUlt;
       let i = p.waves.findIndex(w => !w.done && met(w));
@@ -1256,7 +1266,7 @@ function runBattle(plans, seed, opts = {}) {
   const BOARD2 = plans.some(p => p.skV2), board = pid => { const mine = ents.filter(e => e.pid === pid && e.tel && e.kind !== "castle"), sum = k => Math.round(mine.reduce((a, e) => a + (e.tel[k] || 0), 0));
     return { deaths: ents.filter(e => e.pid === pid && e.kind === "champ").reduce((a, e) => a + e.tel.deaths, 0), assists: P[pid].assists || 0, dmg: sum("dealt") + Math.round(P[pid].trapDmg || 0), dmgH: sum("toChamp"), dmgC: sum("toCastle") }; };
   const results = order.map(pid => ({ pid, name: nm(pid), color: P[pid].color, cls: P[pid].cls, place: P[pid].place, kills: P[pid].kills, ukills: P[pid].ukills, castles: P[pid].castles,
-    points: Math.round((placeOf(pid) + P[pid].kills + castlePts(FV) * P[pid].castles) * W8) + (treach[pid] || 0) * TREACHERY_PTS + (surv(pid) ? SURVIVOR_PTS : 0), ...(treach[pid] ? { treachery: treach[pid] } : {}), ...(P[pid].loneMax ? { lone: P[pid].loneMax } : {}), ...(surv(pid) ? { survivor: 1 } : {}), fellAt: P[pid].elimT, gold: Math.round(P[pid].gold), ...(BOARD2 ? board(pid) : {}) })).sort((a, b) => a.place - b.place);
+    points: Math.round((placeOf(pid) + P[pid].kills + castlePts(FV) * (P[pid].castles + (BETRAY_CASTLE_X - 1) * (P[pid].bcastles || 0))) * W8) + (treach[pid] || 0) * TREACHERY_PTS + (surv(pid) ? SURVIVOR_PTS : 0), ...(treach[pid] ? { treachery: treach[pid] } : {}), ...(P[pid].bcastles ? { bcastles: P[pid].bcastles } : {}), ...(P[pid].loneMax ? { lone: P[pid].loneMax } : {}), ...(surv(pid) ? { survivor: 1 } : {}), fellAt: P[pid].elimT, gold: Math.round(P[pid].gold), ...(BOARD2 ? board(pid) : {}) })).sort((a, b) => a.place - b.place);
   const TEL_COST = { footman: 50, bowman: 70, knight: 120, healer: 100, raider: 110, mage: 140, sniper: 160, ram: 240, cart: 200, catapult: 220 }; // telemetry keeps the prices from before 15 Nov 2026 so recorded battles replay identically
   const invest = (type, lvl) => { const c = TEL_COST[type] ?? UNITS[type].cost; let g = c; for (let l = 1; l < lvl; l++) g += Math.round(c * .5 * l); return g; };
   const tel = { duration: Math.min(t, SV ? SD_AT + SD_COUNT + SD_LEN : TMAX),
@@ -1272,5 +1282,5 @@ function runBattle(plans, seed, opts = {}) {
     : []; if (!BV) order.forEach(a => order.forEach(b => { if (a < b && P[a].alive && P[b].alive && P[a].pacts.has(b)) pairsEnd.push(a + "|" + b); }));
   const trapsUsed = traps.filter(tr => tr.used && !tr.ranger).map(tr => tr.pid + "|" + Math.round(tr.y - .5) + "," + Math.round(tr.x - .5));
   order.forEach(pid => { const c = P[pid].castle; st(pid).castleEnd = c && c.maxhp ? Math.max(0, c.hp) / c.maxhp : 0; });
-  return { stats: ST, twist: TW, ...(sdOn() ? { sudden: { t0: sd.t0, go: sd.go, ...(SD2 ? { r: sd.r } : {}) } } : {}), ...(V3 && !opts.duel ? { waves: true, ...(plans.some(p => p.waveV2) ? { waveV2: true, ...(order.some(pid => (P[pid].waves || []).some(w => w.rush === false)) ? { waveRushOff: Object.fromEntries(order.map(pid => [pid, (P[pid].waves || []).map((w, i) => (w.rush === false ? i : -1)).filter(i => i >= 0)]).filter(([, a]) => a.length)) } : {}) } : {}) } : {}), me: mePid, feudsNew: [...feudsNew], trapsUsed, awards, ultCast: order.filter(pid => P[pid].ultCast), lvl: lvlOut, rapierEnd: rapierOwner ? rapierHolder : null, rapier: rapierOwner && rapierHolder && rapierHolder !== rapierOwner ? { from: rapierOwner, to: rapierHolder } : null, pairsEnd, team: teamWin, wallMeta: walls.map(w => ({ pid: w.pid, x: w.x0, y: w.y0, dir: w.dir, maxhp: w.maxhp, tier: w.tier, ...(w.born != null ? { born: w.born } : {}) })), tel, frames, events, cdlog, xplog, logs, hl, ranks: RANKS, meta: meta(), results, order, colors: Object.fromEntries(order.map(p => [p, P[p].color])), traps, duration: t };
+  return { stats: ST, twist: TW, ...(sdOn() ? { sudden: { t0: sd.t0, go: sd.go, ...(SD2 ? { r: sd.r } : {}) } } : {}), ...(V3 && !opts.duel ? { waves: true, ...(plans.some(p => p.waveV2) ? { waveV2: true, ...(BV5 ? { waveGap: WAVE_GAP_V5 } : {}), ...(order.some(pid => (P[pid].waves || []).some(w => w.rush === false)) ? { waveRushOff: Object.fromEntries(order.map(pid => [pid, (P[pid].waves || []).map((w, i) => (w.rush === false ? i : -1)).filter(i => i >= 0)]).filter(([, a]) => a.length)) } : {}) } : {}) } : {}), me: mePid, feudsNew: [...feudsNew], trapsUsed, awards, ultCast: order.filter(pid => P[pid].ultCast), lvl: lvlOut, rapierEnd: rapierOwner ? rapierHolder : null, rapier: rapierOwner && rapierHolder && rapierHolder !== rapierOwner ? { from: rapierOwner, to: rapierHolder } : null, pairsEnd, pacts0: pact0, team: teamWin, wallMeta: walls.map(w => ({ pid: w.pid, x: w.x0, y: w.y0, dir: w.dir, maxhp: w.maxhp, tier: w.tier, ...(w.born != null ? { born: w.born } : {}) })), tel, frames, events, cdlog, xplog, logs, hl, ranks: RANKS, meta: meta(), results, order, colors: Object.fromEntries(order.map(p => [p, P[p].color])), traps, duration: t };
 }

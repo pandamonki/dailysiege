@@ -166,12 +166,25 @@ function betrayCinematic(h, R, resume) {
   document.body.appendChild(el); sting("betray");
   setTimeout(() => { el.remove(); resume(); }, 2600);
 }
+// The heroes on the victory screen: the winner (and every ally who won with them) dancing; the winner's allies whose castles fell sit slumped
+// beside them; and a winner who betrayed an ally this battle has that hero lying face down at their feet with a dagger in its back.
+const DAGGER_SVG = `<svg class="vknife" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.2 9.3 3v6.6H6.7V3z" fill="#e4e8ee" stroke="#3b4650" stroke-width=".7" stroke-linejoin="round"/><path d="M8 2v7.4" stroke="#9aa4ae" stroke-width=".5"/><rect x="4.6" y="9.6" width="6.8" height="1.5" rx=".6" fill="#c9a24a" stroke="#5a3a08" stroke-width=".6"/><rect x="7" y="11.1" width="2" height="3.4" rx=".5" fill="#6a3a1c" stroke="#2a160a" stroke-width=".6"/></svg>`;
+function victoryHeroesHTML(R, win) {
+  const res = pid => R.results.find(r => r.pid === pid) || {}, img = (pid, cls) => `<img class="${cls}" alt="" src="${spriteURL("c-" + res(pid).cls, (R.colors && R.colors[pid]) || res(pid).color || MY_COLOR)}">`;
+  const stand = R.team && R.team.length > 1 ? R.team.slice() : [win.pid], feud = new Set(R.feudsNew || []);
+  const bets = (R.hl || []).filter(h => h.kind === "betray" && stand.includes(h.pid) && R.results.some(r => r.pid === h.other)), victims = [...new Set(bets.map(h => h.other))];
+  const corpses = p => [...new Set(bets.filter(h => h.pid === p).map(h => h.other))].map(v => `<span class="vcorpse" title="Betrayed">${img(v, "vbody")}${DAGGER_SVG}</span>`).join("");
+  const par = {}, f = x => (par[x] == null || par[x] === x ? (par[x] = x) : (par[x] = f(par[x]))); (R.pacts0 || []).filter(k => !feud.has(k)).forEach(k => { const [a, b] = k.split("|"); par[f(a)] = f(b); });
+  const fallen = R.order.filter(p => !stand.includes(p) && !victims.includes(p) && stand.some(q => f(q) === f(p)) && res(p).cls);
+  const many = stand.length + fallen.length > 1;
+  return `<div class="vheroes${many ? " many" : ""}${victims.length ? " bodies" : ""}">${stand.map(p => `<span class="vh">${img(p, "vhero dance")}${corpses(p)}</span>`).join("")}${fallen.map(p => `<span class="vh dead" title="Fallen ally">${img(p, "vhero slump")}</span>`).join("")}</div>`;
+}
 function victoryCeremony(R, done) {
   const win = (R.results || []).slice().sort((a, b) => a.place - b.place)[0]; if (!win) { done(); return; }
   const N = p => (R.names && R.names[p]) || (R.results.find(r => r.pid === p) || {}).name || "Someone", you = win.pid === R.me;
   const el = document.createElement("div"); el.className = "victory";
   const A = R.awards, aw = A ? [["🏆", "MVP", A.mvp.pid, `${A.mvp.pts} points`], ["⚔", "Most Kills", A.kills.pid, `${A.kills.n} kills`], ["☠", "Highest K/D", A.kd.pid, `${A.kd.v} per death`], ["🥉", "Bronze Spoils", A.spoils.pid, `${A.spoils.g}g looted`]] : [];
-  el.innerHTML = `<canvas class="confetti"></canvas><div class="vbox"><div class="vt">${R.team ? "Victory, together!" : you ? "VICTORY!" : esc(N(win.pid)) + " wins!"}</div>${(() => { const tv = tauntOf(R, win.pid, "tv"); return tv ? `<div class="vbubble">${esc(tv)}</div>` : ""; })()}<img class="vhero dance" alt="" src="${spriteURL("c-" + win.cls, (R.colors && R.colors[win.pid]) || win.color || MY_COLOR)}"><div class="vs">${esc(N(win.pid))} · ${esc(clsName(win.cls))}</div>
+  el.innerHTML = `<canvas class="confetti"></canvas><div class="vbox"><div class="vt">${R.team ? "Victory, together!" : you ? "VICTORY!" : esc(N(win.pid)) + " wins!"}</div>${(() => { const tv = tauntOf(R, win.pid, "tv"); return tv ? `<div class="vbubble">${esc(tv)}</div>` : ""; })()}${victoryHeroesHTML(R, win)}<div class="vs">${R.team && R.team.length > 1 ? R.team.map(p => esc(N(p))).join(" · ") : `${esc(N(win.pid))} · ${esc(clsName(win.cls))}`}</div>
     <div class="vawards">${aw.map(([g, t, p, d]) => `<div><span>${g}</span><b>${t}</b><small>${esc(N(p))}<br>${d}</small></div>`).join("")}</div><button class="btn wax" id="vgo">Continue →</button></div>`;
   document.body.appendChild(el); sting("win");
   const cv = el.querySelector("canvas"), c = cv.getContext && cv.getContext("2d"); let alive = true;

@@ -9,7 +9,7 @@ function tapAt(clientX, clientY) {
   if (r < 0 || q < 0 || r >= N || q >= N) return;
   if (WALL_BUILD && !sel) { buildWallAt(r, q); render(); return; } // wall building: each tap puts down a new fence and pays for it
   const key = `${r},${q}`, near = sel ? null : pieceNear(wx / ts, wy / ts);
-  if (!near && r === CASTLE[0] && q === CASTLE[1]) { sel = null; if (!psel || psel.t !== "castle") { psel = { t: "castle" }; render(); return; } S.phase = "muster"; open("castle"); return; } // first tap shows it in the strip, the next opens it
+  if (!near && r === CASTLE[0] && q === CASTLE[1]) { sel = null; psel = { t: "castle" }; render(); return; } // a tap shows it in the strip; its buttons (Upgrade, Base, Army) open the rest (no second-tap castle menu)
   const rv = near ? null : RIVALS.find(x => x.pos[0] === r && x.pos[1] === q) || RIVALS.find(x => RARMY.some(u => u.rid === x.id && u.r === r && u.c === q));
   if (rv) { sel = null; const ru = RARMY.findIndex(u => u.rid === rv.id && u.r === r && u.c === q), same = psel && psel.t === "rival" && psel.id === rv.id && psel.u === (ru >= 0 ? ru : null); if (!same) { psel = { t: "rival", id: rv.id, u: ru >= 0 ? ru : null }; render(); return; } open("rival", rv.id); return; }
   if (isCentre(r, q) && !sel && !near) { toast("The centre hill. Hold it for bonus points."); return; }

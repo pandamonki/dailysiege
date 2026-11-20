@@ -199,7 +199,7 @@ function targetBoardHTML(compact) {
   const rows = boardRows().sort((a, b) => b.pts - a.pts || b.lvl - a.lvl), hostile = S.lists.hostile, full = hostile.length >= PICK_MAX;
   return `<div class="tboard${compact ? " compact" : ""}">${rows.map((r, i) => { const n = hostile.indexOf(r.id) + 1;
     return `<div class="tbr${r.me ? " me" : ""}${n ? " on" : ""}"><span class="rk">${i + 1}</span><i class="sw" style="background:${r.color}"></i><span class="nm"><b>${esc(r.me ? "You" : r.name)}</b>${r.cls && !compact ? `<small>${esc(CLASSES[r.cls].name)}</small>` : ""}</span><span class="pt">${r.pts} pts</span>
-      ${r.me ? `<span class="tbt self">—</span>` : n ? `<button class="tbt on" data-act="lmove" data-v="neutral" data-k="${r.id}" ${dis()} aria-label="Stop attacking ${esc(r.name)}">Target ${n} ✕</button>` : `<button class="tbt" data-act="lmove" data-v="hostile" data-k="${r.id}" ${full ? "disabled" : dis()}>Target</button>`}</div>`; }).join("")}</div>`;
+      ${r.me ? `<span class="tbt self">—</span>` : !n && allyShielded(r.id) ? `<button class="tbt ally" data-act="sealgo" data-v="alliances" aria-label="${esc(r.name)} is your ally: open Alliances">🤝 Ally</button>` : n ? `<button class="tbt on" data-act="lmove" data-v="neutral" data-k="${r.id}" ${dis()} aria-label="Stop attacking ${esc(r.name)}">Target ${n} ✕</button>` : `<button class="tbt" data-act="lmove" data-v="hostile" data-k="${r.id}" ${full ? "disabled" : dis()}>Target</button>`}</div>`; }).join("")}</div>`;
 }
 function pickTab() {
   const hostile = S.lists.hostile, roles = Object.keys(PICK_ROLES).filter(k => !hostile.includes(k)), full = hostile.length >= PICK_MAX;
@@ -373,11 +373,12 @@ function sealWarnings() { return ""; } // the checklist below carries every remi
 // the seal checklist: [state, text, where to fix it]; state is "ok", "need" (must fix to seal), "warn" (a reminder) or "info"
 function sealChecks() {
   const L = [], ck = (st, t, go) => L.push([st, t, go]), day = isLive() ? liveClock().dayNo : DAY, ct = ctNow();
-  ck(placedAt("champ") ? "ok" : "need", placedAt("champ") ? "Hero is on the field" : "<b>Put your hero on the field</b>", "map");
+  if (!placedAt("champ")) ck("need", "<b>Put your hero on the field</b>", "map"); // only shown when something is wrong
   const un = S.owned.filter(u => !placedAt(u.id) && !inGarrison(u.id)).length;
   ck(un ? "warn" : "ok", un ? `<b>${un} soldier${un > 1 ? "s" : ""} not placed</b>, so ${un > 1 ? "they" : "it"} won't fight` : `All ${S.owned.length} soldier${S.owned.length === 1 ? "" : "s"} placed or in waves`, "deploy");
   const wt = (S.walls || []).concat(S.traps).filter(x => !placedAt(x.id)).length;
   if ((S.walls || []).length || S.traps.length) ck(wt ? "warn" : "ok", wt ? `<b>${wt} wall${wt > 1 ? "s or traps" : " or trap"} not set</b> on the field` : "Walls and traps are set", "map");
+  { const at = S.lists.hostile.filter(allyShielded); if (at.length) ck("need", `<b>${at.map(id => esc(tgtName(id))).join(", ")} ${at.length > 1 ? "are allies" : "is an ally"}</b>: take them off your targets, or set the pact to Betray`, "strategy"); }
   const fp = freePts(); ck(fp ? "warn" : "ok", fp ? `<b>${fp} skill point${fp > 1 ? "s" : ""} unspent</b>` : "All skill points spent", "hero");
   if (pickV1Now()) ck(targetsReady() ? "ok" : "need", targetsReady() ? `Targets: ${S.lists.hostile.map(id => esc(tgtName(id))).join(" → ")}` : `<b>Pick ${TARGETS_NEED() - S.lists.hostile.length} more target${TARGETS_NEED() - S.lists.hostile.length > 1 ? "s" : ""}</b> (${TARGETS_NEED()} a day)`, "strategy");
   if (contractsOn() && myOffers().length) { const c = contractParse(S.contract); ck(c ? "ok" : "warn", c ? `Contract: ${esc(c.c.name)}` : "<b>No contract taken</b>", "contracts"); }
@@ -412,7 +413,7 @@ function sealSheet() {
   return head(null, "Seal Your Orders", `Battle in ${countdown()}`) + `<div class="body">
     ${isLive() && S.sealedSnap ? `<div class="warnbox"><b class="wt">Your sealed orders are still in effect</b><p class="muted">You're drafting changes. They won't be fought until you press the seal again. If you don't, the orders you already sealed are used.</p></div>` : ""}
     <div class="sec tight"><h3>Checklist ${left ? `<span class="cnt">${left} to check</span>` : `<span class="cnt ok">ready</span>`}</h3>
-      <ul class="checks2">${checks.map(([st, t, go]) => `<li class="c-${st}"><i>${st === "ok" ? "✓" : st === "need" ? "!" : st === "warn" ? "!" : "·"}</i><span>${t}</span>${st !== "ok" && go !== "map" ? `<button class="btn small" data-act="sealgo" data-v="${go}">${GO_LABEL[go]}</button>` : ""}</li>`).join("")}</ul></div>
+      <ul class="checks2">${checks.map(([st, t, go]) => `<li class="c-${st}"><i>${st === "ok" ? "✓" : st === "need" ? "!" : st === "warn" ? "!" : "·"}</i><span>${t}</span>${GO_LABEL[go] ? `<button class="btn small" data-act="sealgo" data-v="${go}">${GO_LABEL[go]}</button>` : ""}</li>`).join("")}</ul></div>
     <div class="sec tight"><h3>Who you attack</h3>${targetSlotsHTML()}<h4 class="minih">The leaderboard</h4>${targetBoardHTML(true)}<div class="row"><button class="btn small" data-act="sealgo" data-v="strategy">Roles and more orders</button></div></div>
     <div class="sec tight"><h3>${ultBolt()}Ultimate</h3>${ultPlanHTML()}</div>
     <div class="sec tight"><h3>Weekly ritual</h3>${blessPlanHTML()}</div>
