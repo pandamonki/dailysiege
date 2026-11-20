@@ -32,7 +32,7 @@ const GUIDE = [
     { sel: "#shopbtn", act: ["shop"], ring: "#sheet .shopg", t: "The shop", p: "The bag of gold on the edge of the map is the shop. Your hero can carry 6 items. Tap one to read what it does, then Buy." },
   ] },
   { id: "battle", name: "Battle", pages: [
-    { sel: '#cmdbar [data-act="openorders"][data-v="ord"]', act: ["openorders", "ord"], ring: "#sheet .tabs", t: "Orders", p: "Strategy: pick three targets in order and your army's plan. Combat: who each group fights first. Rituals: when your ultimate fires." },
+    { sel: '#cmdbar [data-act="openorders"][data-v="ord"]', act: ["openorders", "ord"], ring: "#sheet .tabs", t: "Orders", p: "Strategy: pick one to three targets in order and your army's plan. Combat: who each group fights first. Rituals: when your ultimate fires." },
     { t: "The battleground", p: "The hill in the middle of the map is worth fighting for.", shot: "hill", keys: ["Heroes standing on the hill earn extra experience and gold, so expect company"] },
     { t: "Scoring", p: "Each battle ranks every lord, and the higher you finish the more points you get. Slaying heroes and taking castles add more. The most points after seven days wins the war." },
     { t: "The morning report", p: "Next time you open the game, last night's report is waiting.", shot: "report",
@@ -41,7 +41,7 @@ const GUIDE = [
       keys: ["The camera follows your hero. Tap any soldier or hero to see it", "Play, pause and change speed, or open the report and stats"] },
   ] },
   { id: "rivals", name: "Allies", pages: [
-    { t: "Contracts and twists", p: "Each day you can take one contract for bonus points and gold. Each day also has a twist. Tap the ! above the map to see it, with buttons to pick your contract and targets.", shot: "contracts",
+    { t: "Contracts and twists", p: "Each day you can take one contract for bonus points and gold. Each day also has a twist. Tap the ! above the map for the Daily Noticeboard: the twist, alliance news, and buttons to pick your contract and targets.", shot: "contracts",
       keys: ["Today's three contracts: easy, hard and one aimed at a rival", "Today's twist"] },
     { sel: '#cmdbar [data-act="openorders"][data-v="alli"]', act: ["openorders", "alli"], ring: "#sheet .sec", t: "Allies", p: "Nobody is allied at the start. You invite a lord, they answer the next day, and the alliance starts at the next battle. Up to 3 lords can ally, and everyone must agree. Allies left standing share the top places." },
     { t: "Sending an invitation", p: "Open Allies and tap Invite next to a lord.", shot: "invite",

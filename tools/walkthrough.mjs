@@ -81,7 +81,8 @@ for (const name of engines) {
   await step("pick today's targets", async () => { await tap('#cmdbar [data-act="openorders"]'); await tap('#sheet .tabs button:has-text("Strategy")');
     for (let i = 0; i < 6 && !(await js(() => targetsReady())); i++) { const add = page.locator('#sheet [data-act="lmove"][data-v="hostile"]:visible'); if (!(await add.count())) break; await add.first().click(); await page.waitForTimeout(150); }
     if (!(await js(() => targetsReady()))) throw new Error("could not pick enough targets"); await closeAll(); });
-  await step("the ! above the map shows the twist and opens contracts and targets", async () => { await closeAll(); if (await page.locator("#twistbtn").isHidden()) throw new Error("no ! button above the map");
+  await step("the Daily Noticeboard shows the twist and opens contracts and targets", async () => { await closeAll(); if (await page.locator("#twistbtn").isHidden()) throw new Error("no ! button above the map");
+    await tap("#twistbtn"); if (!(await page.locator("#twistpop .nbh").count())) throw new Error("the noticeboard has no heading"); await closeAll(); await page.mouse.click(5, 5);
     await tap("#twistbtn"); await tap('#twistpop [data-act="opentoday"]'); if (!(await page.locator('#sheet [data-act="cxpick"]').count())) throw new Error("the contracts tab didn't open"); await closeAll();
     await tap("#twistbtn"); await tap('#twistpop [data-act="sealgo"][data-v="strategy"]'); if (!(await page.locator("#sheet #tgtlist").count())) throw new Error("the targets didn't open"); await closeAll(); });
   await step("learn a hero skill", async () => { await tap('#cmdbar [data-act="openhero"]'); const before = await js(() => freePts());

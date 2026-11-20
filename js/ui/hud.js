@@ -48,14 +48,20 @@ function renderCamp() {
   const sb = document.getElementById("shopbtn"); if (sb) sb.hidden = !(S && mode === "plan" && !(isLive() && LIVE.readOnly));
   const gb = document.getElementById("giftbtn"); if (gb) gb.hidden = !(S && S.spin && !spinStale() && mode === "plan" && !(isLive() && LIVE.readOnly));
   const bd = b.querySelector(".cbadge"); bd.hidden = !n; bd.textContent = n;
-  const tb = document.getElementById("twistbtn"), tp = document.getElementById("twistpop"); let tw = null;
-  try { tw = S && mode === "plan" && contractsOn() ? myTwist() : null; } catch (e) {}
-  if (tb) { tb.hidden = !tw; tb.classList.toggle("fresh", !!tw && (S.twSeen !== planDayKey() || cxOpen() || (!S.locked && !targetsReady()))); }
-  if (tp) { tp.hidden = !(tw && TWIST_POP); if (!tp.hidden) { const c = contractParse(S.contract), lk = S.locked || (isLive() && LIVE.readOnly);
-    const cx = myOffers().length ? `<button class="btn small ${c || lk ? "wood" : "wax"}" data-act="opentoday">${c ? `Contract: ${esc(c.c.name)}` : lk ? "Contracts" : "Pick a contract"}</button>` : "";
-    const tg = S.lists.hostile.length, tgOk = targetsReady();
-    const tgb = `<button class="btn small ${tgOk || lk ? "wood" : "wax"}" data-act="sealgo" data-v="strategy">${tgOk ? `Targets ✓` : `Pick targets (${tg}/${TARGETS_NEED()})`}</button>`;
-    tp.innerHTML = `${twistStripHTML(false, true)}<div class="twcx">${cx}${tgb}</div><small class="muted">Tap anywhere to close</small>`; } }
+  // the Daily Noticeboard (the ! above the map): the next battle's twist, the alliance changes at the last battle, and
+  // buttons to the day's contracts and targets. It pulses each new day, and until a contract and a target are picked.
+  const tb = document.getElementById("twistbtn"), tp = document.getElementById("twistpop"); let on = false, tw = null;
+  try { on = !!S && mode === "plan" && !S.lobbyPrep; tw = on && contractsOn() ? myTwist() : null; } catch (e) {}
+  if (tb) { tb.hidden = !on; tb.classList.toggle("fresh", on && (S.twSeen !== planDayKey() || cxOpen() || (!S.locked && !targetsReady()))); }
+  if (tp) { tp.hidden = !(on && TWIST_POP); if (!tp.hidden) tp.innerHTML = noticeboardHTML(tw); }
+}
+function noticeboardHTML(tw) {
+  const lk = S.locked || (isLive() && LIVE.readOnly), c = contractParse(S.contract);
+  let ally = ""; try { const ev = lastAllyChanges(); if (ev) { const { byId, me } = knownAlliances(), line = allyLineFn(byId, me);
+    ally = `<div class="nbsec"><small>Alliances since the last battle</small>${ev.length ? `<ul>${ev.map(e => `<li>${line(e)}</li>`).join("")}</ul>` : `<p class="muted">No changes.</p>`}</div>`; } } catch (e) {}
+  const cx = myOffers().length ? `<button class="btn small ${c || lk ? "wood" : "wax"}" data-act="opentoday">${c ? `Contract: ${esc(c.c.name)}` : lk ? "Contracts" : "Pick a contract"}</button>` : "";
+  const tgOk = targetsReady(), tgb = `<button class="btn small ${tgOk || lk ? "wood" : "wax"}" data-act="sealgo" data-v="strategy">${tgOk ? `Targets ✓ (${S.lists.hostile.length})` : "Pick targets"}</button>`;
+  return `<h3 class="nbh">Daily Noticeboard</h3>${tw ? twistStripHTML(false, true) : ""}${ally}<div class="twcx">${cx}${tgb}</div><small class="muted">Tap anywhere to close</small>`;
 }
 // a day of this war that passed without a battle (the server counted fewer than two lords): said plainly instead of leaving lords waiting
 function skippedNote() { if (!isLive() || !LIVE.config) return ""; const ck = liveClock(), sk = (LIVE.config.skipDays || []).filter(d => d === addDays(ck.planDay, -1) && !LIVE.battles[d]); // only the last day, so it never crowds out the usual hints for long
