@@ -58,6 +58,11 @@ for (const name of engines) {
   await step("a wave's rush box unticks, reaches the battle plan and ticks again", async () => { await closeAll(); await tap('#cmdbar [data-v="recruit"]'); await tap('#sheet .tabs button:has-text("Deploy")');
     await tap('#sheet [data-act="wrush"][data-k="1"]'); if (await js(() => garrisonPlan()[1].rush !== false || garrisonPlan()[0].rush !== true)) throw new Error("unticking Wave 2 did not reach the plan");
     await tap('#sheet [data-act="wrush"][data-k="1"]'); if (await js(() => garrisonPlan()[1].rush !== true)) throw new Error("ticking Wave 2 again did not reach the plan"); await closeAll(); });
+  await step("the install and battle-alert cards show for every alert state", async () => { await closeAll();
+    for (const [st, k, want] of [["ask", "alerts", "Turn on alerts"], ["ask", "seal", "results are in"], ["on", "menu", "Turn off on this device"], ["install", "menu", "Add to Home Screen"], ["blocked", "menu", "Try again"], ["ask", "install", "Play it like an app"]]) {
+      const txt = await js(([st, k]) => { window.DS = window.DS || {}; const was = DS.pushState; DS.pushState = () => st; sheet = { type: "apptip", k }; render(); const t = document.querySelector("#sheet").innerText; DS.pushState = was; return t; }, [st, k]);
+      if (!txt.includes(want)) throw new Error(`${k} card (${st}) is missing "${want}"`); }
+    await closeAll(); });
   await step("buy, place and inspect a tower", async () => { await tap('#cmdbar [data-v="keep"]'); await tap('#sheet .tabs button:has-text("Defences")'); await tap('#sheet [data-act="dsel"][data-v="tw1"]'); await tap('#sheet [data-act="trap"][data-v="tower"]');
     const [r, q] = (await freeTiles())[2]; await tapTile(r, q); if (!(await js(() => S.traps.some(t => t.type === "tower" && placedAt(t.id))))) throw new Error("the tower is not on the map");
     await tapTile(r, q); await page.waitForTimeout(150); if (!(await js(() => /Upgrade/.test(document.getElementById("pdock").innerText)))) throw new Error("the tower's strip has no Upgrade button"); });

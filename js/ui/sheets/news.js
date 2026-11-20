@@ -3,6 +3,16 @@
 // Each item is [icon, headline, one short sentence]. Players who have not seen the newest id get the pop-up the next time they plan;
 // the id is remembered on their device, so changing the id is all it takes to show it again. Keep about 8 to 14 items.
 const RELEASES = [
+  { id: "1.17", title: "What's new in v1.17", sub: "Easier install and battle alerts, on iPhone and Android", items: [
+    ["📲", "Install in one step", "On Android, a card offers a one-tap Install. On iPhone, it shows the Add to Home Screen steps."],
+    ["🔔", "Battle alerts, asked once", "We ask once: an hour before orders lock (only if unsealed), and when results are in."],
+    ["✉️", "A ping after sealing", "Seal your orders with alerts off and we offer, once, to tell you when results are in."],
+    ["⚙️", "Alerts in the Menu", "Battle alerts sit in the Menu, to switch on or off for this device any time."],
+    ["🔴", "Badge on the app icon", "Where your phone supports it, the icon shows a badge until your orders are sealed."],
+    ["🍎", "No more zooming", "On iPhone, tapping a drop-down no longer zooms the page in."],
+    ["👆", "Easier to tap", "Small buttons like the i, wave triggers and Rush boxes are easier to hit."],
+    ["🤫", "Never nagging", "Each card shows at most once, and never on the same open as another pop-up."],
+  ] },
   { id: "1.16", title: "What's new in v1.16", sub: "Choose which waves rush out, and a smarter castle trigger", items: [
     ["☑️", "Rush boxes", "Each wave has a box: ticked, it rushes out when your castle drops below 75%, 50% or 25% health."],
     ["🔒", "Keep a wave back", "Untick a wave to save it for its own trigger or deadline."],

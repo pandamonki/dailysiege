@@ -146,7 +146,7 @@ function titleSheet() {
   return `<div class="splash-art" role="img" aria-label="Daily Siege: castles and armies around a hill at sunset"></div><div class="splash-menu">
     <div class="menu3">
       <button class="btn wax big" data-act="playgo">⚔ Play with friends<small>${lobbyOpen(LIVE.config) ? (inGame ? (LIVE.players[LIVE.uid].pending ? "Finish registering for the war" : "Muster hall · registration open") : "Registration is open. Join the war") : inGame ? "Friends game · day " + (live ? DAY : liveClock().dayNo) + " of 7" : LIVE.config ? "Join your friends' next war" : can ? "Host a war and invite friends" : "Daily siege with friends"}</small></button>
-      ${inGame ? `<button class="btn small" data-act="open" data-v="game">⚙ Game settings</button>` : ""}${window.DS && DS.user ? `<button class="btn small" data-act="open" data-v="wars">🏰 Your wars${(DS.wars || []).length > 1 ? ` (${DS.wars.length})` : ""}</button>` : ""}${typeof PWA !== "undefined" && PWA.canOffer() ? `<button class="btn small" data-act="pwainstall">📲 Install app</button>` : ""}<button class="btn small" data-act="open" data-v="patch">📜 Patch notes</button>${typeof LIVE === "object" && LIVE.config && (LIVE.config.hall || []).length ? `<button class="btn small" data-act="open" data-v="hall">🏆 Hall of fame</button>` : ""}<button class="btn small" data-act="wizard">🧙 How to play (tour)</button>
+      ${inGame ? `<button class="btn small" data-act="open" data-v="game">⚙ Game settings</button>` : ""}${window.DS && DS.user ? `<button class="btn small" data-act="open" data-v="wars">🏰 Your wars${(DS.wars || []).length > 1 ? ` (${DS.wars.length})` : ""}</button>` : ""}${typeof PWA !== "undefined" && PWA.canOffer() ? `<button class="btn small" data-act="pwainstall">📲 Install app</button>` : ""}${alertsMenuButton()}<button class="btn small" data-act="open" data-v="patch">📜 Patch notes</button>${typeof LIVE === "object" && LIVE.config && (LIVE.config.hall || []).length ? `<button class="btn small" data-act="open" data-v="hall">🏆 Hall of fame</button>` : ""}<button class="btn small" data-act="wizard">🧙 How to play (tour)</button>
     </div></div>`;
 }
 function spellsSheet() {
@@ -177,6 +177,16 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "Install and alerts", date: "20 Nov", fixes: [
+    "On iPhone, tapping a drop-down or text box with small text zoomed the whole page in and left it zoomed. It no longer does (pinch-zoom still works).",
+    "Small controls (the i buttons, the unit type line, wave trigger chips, Rush boxes and the hold-the-hill box) have bigger touch areas.",
+  ], balance: [], changes: [
+    "Phones get a one-time Install card: a one-tap Install on Android Chrome where offered, the menu steps otherwise, and the Add to Home Screen steps on iPhone.",
+    "In a friends war, a one-time card offers battle alerts as soon as this device can get them (Android at once; iPhone once opened from the Home Screen). If you seal your orders with alerts off, a one-time offer follows.",
+    "Battle alerts are in the Menu, to switch on or off for this device; it also explains how to unblock them on iPhone and Android.",
+    "Where the phone supports it, the app icon shows a badge while a friends war's orders are unsealed, including after the \"orders lock soon\" alert.",
+    "Each of these cards shows at most once per device, only as the first pop-up of an open, and What's new waits for the next open.",
+  ] },
   { v: "Rush boxes and a new trigger", date: "20 Nov", fixes: [], balance: [
     "From the battle of 20 Nov the wave trigger \"When my castle is attacked\" becomes \"When enemies reach my castle\": it fires when an enemy soldier, hero, summon or siege engine comes within 3 tiles of your castle (and nearer to it than to its own castle), or when your castle is first hit, whichever comes first. Towers don't count. Waves set to the old trigger get the new one automatically.",
   ], changes: [

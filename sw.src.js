@@ -35,6 +35,7 @@ self.addEventListener("fetch", e => {
 self.addEventListener("push", e => {
   const read = () => { try { const j = e.data ? e.data.json() : {}; return j.data || j.notification || j; } catch { return {}; } }; // an unreadable message still shows a plain notification
   const d = read();
+  if (d.tag && /^reminder/.test(d.tag) && self.navigator && self.navigator.setAppBadge) self.navigator.setAppBadge(1).catch(() => {}); // orders not sealed: badge the app icon until the game clears it
   e.waitUntil(self.registration.showNotification(d.title || "Daily Siege", { body: d.body || "", icon: "/app/icon-192.png", badge: "/app/icon-192.png", tag: d.tag || "daily-siege", data: { link: d.link || "/" } }));
 });
 self.addEventListener("notificationclick", e => {

@@ -608,3 +608,7 @@ details.fg-host[open] > summary { margin-bottom: 8px; }
 .sheet header .hbtn + .x { position: relative; z-index: 1; } /* the close button always wins a tap between the two */
 .tline::before { content: ''; position: absolute; inset: -9px 0; }
 .lbox .inline input[type=checkbox] { width: 20px; height: 20px; flex: none; vertical-align: middle; margin: 0 6px 0 0; }
+/* the install and battle-alert cards (js/ui/sheets/alerts.js) */
+.tipcard p { margin: 0 0 10px; line-height: 1.45; }
+.tipsteps { margin: 0 0 12px; padding-left: 22px; line-height: 1.5; } .tipsteps li { margin-bottom: 6px; }
+.shareic { width: 18px; height: 18px; vertical-align: -3px; color: #2f6fd6; }

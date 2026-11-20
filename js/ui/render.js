@@ -18,7 +18,7 @@ function renderSheet() {
   if (!sheet) { sh.hidden = veil.hidden = true; return; }
   const p = document.getElementById("paper"), scroll = p.querySelector(".body")?.scrollTop || 0;
   const html = { castle: castleSheet, champ: champSheet, unit: () => unitSheet(sheet.id), trap: () => trapSheet(sheet.id), rival: () => rivalSheet(sheet.id),
-    title: titleSheet, bcheck: bcheckSheet, patch: patchSheet, gold: goldSheet, day: daySheet, board: boardSheet, report: () => reportSheet(sheet.id), invites: inviteSheet, whatsnew: newsSheet, camp: campSheet, wars: warsSheet, warend: warEndSheet, hall: hallSheet, spin: spinSheet, rhero: () => rivalHeroSheet(sheet.id), guide: guideSheet, spells: spellsSheet, wall: () => wallSheet(sheet.id),
+    title: titleSheet, bcheck: bcheckSheet, patch: patchSheet, gold: goldSheet, day: daySheet, board: boardSheet, report: () => reportSheet(sheet.id), invites: inviteSheet, apptip: appTipSheet, whatsnew: newsSheet, camp: campSheet, wars: warsSheet, warend: warEndSheet, hall: hallSheet, spin: spinSheet, rhero: () => rivalHeroSheet(sheet.id), guide: guideSheet, spells: spellsSheet, wall: () => wallSheet(sheet.id),
     council: councilSheet, uorder: () => uorderSheet(sheet.id), game: gameSheet, install: installSheet, orders: ordersSheet, seal: sealSheet, results: resultsSheet, lab: labSheet, balance: balanceSheet, deploy: () => deploySheet(sheet.id) }[sheet.type]();
   if (sheet.type === "spin" && p.dataset.spin === html && !sh.hidden) return; // the reels are mid-spin: a redraw with the same markup must not restart them
   p.dataset.spin = sheet.type === "spin" ? html : "";
@@ -28,8 +28,10 @@ function renderSheet() {
 }
 function render(keepScroll = true) {
   try { if (!sheet && !reportBack && warEndDue()) sheet = { type: "warend" }; } catch (e) {}
-  try { if (mode === "plan" && !sheet && !reportBack && !document.getElementById("wizring") && S && !S.ob) { if (spinCheck()) { sheet = { type: "spin" }; } else if (inviteDue()) { S.invSeen = planDayKey(); sheet = { type: "invites" }; } else if (newsDue()) { sheet = { type: "whatsnew" }; } else if (cxDue()) { S.cxSeen = planDayKey(); S.phase = "orders"; ensureDip(); sheet = { type: "orders", grp: "ord", tab: "contracts", pop: true }; } else if (mercDue()) { S.mercSeen = mercSeenKey(); sheet = { type: "camp", news: true }; } } } catch (e) {}
+  const noSheet = mode === "plan" && !sheet; let tipK = null; try { if (mode === "plan" && !sheet && !reportBack && !document.getElementById("wizring") && S && !S.ob) { if (spinCheck()) { sheet = { type: "spin" }; } else if (inviteDue()) { S.invSeen = planDayKey(); sheet = { type: "invites" }; } else if ((tipK = appTipDue())) { sheet = { type: "apptip", k: tipK }; } else if (!appTipBlocksNews() && newsDue()) { sheet = { type: "whatsnew" }; } else if (cxDue()) { S.cxSeen = planDayKey(); S.phase = "orders"; ensureDip(); sheet = { type: "orders", grp: "ord", tab: "contracts", pop: true }; } else if (mercDue()) { S.mercSeen = mercSeenKey(); sheet = { type: "camp", news: true }; } } } catch (e) {}
+  if (noSheet && sheet && sheet.type !== "apptip") notePopup(); // our install/alerts cards only ever come first on an open
   if (sheet) sheet.keep = keepScroll;
+  syncAppBadge();
   const rp = mode === "replay";
   document.getElementById("hint").hidden = rp; document.getElementById("tray").hidden = rp;
   document.getElementById("rbar").hidden = !rp; document.getElementById("commands").hidden = rp;
