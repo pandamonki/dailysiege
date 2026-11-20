@@ -1116,7 +1116,8 @@ function runBattle(plans, seed, opts = {}) {
       const soldiers = ents.some(x => !x.dead && x.pid === pid && x.kind === "unit" && !x.free && !x.militia && !x.merc);
       const met = w => w.when === "timer" ? t >= w.at : w.when === "castle_hit" ? p.castleHitT > 0 : w.when === "castle_low" ? c.hp / c.maxhp < .5 : w.when === "hero_dies" ? p.heroDied : w.when === "army_dead" ? t > 5 && !soldiers : w.when === "enemy_hero" ? p.enemyHeroDied : anyUlt;
       let i = p.waves.findIndex(w => !w.done && met(w));
-      if (i < 0 && p.waves.filter(w => w.done).length < Math.floor(t / WAVE_FORCE_EVERY)) i = p.waves.findIndex(w => !w.done);
+      if (i < 0 && p.waveV3) i = p.waves.findIndex((w, k) => !w.done && t >= WAVE_FORCE_AT[k]); // waves v3: each wave's own deadline
+      else if (i < 0 && p.waves.filter(w => w.done).length < Math.floor(t / WAVE_FORCE_EVERY)) i = p.waves.findIndex(w => !w.done);
       if (i >= 0) deployWave(p, i);
     });
     // reinforcements: every living castle musters militia on a timer, so the field never empties into hero-only sieges

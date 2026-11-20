@@ -177,6 +177,11 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "Wave deadlines", date: "20 Nov", fixes: [], balance: [
+    "From the battle of 20 Nov, each wave has its own deadline instead of one wave being forced out at each minute mark: Wave 1 goes by 0:45, Wave 2 by 1:30 and Wave 3 by 2:15, unless its trigger happens first. Waves are still at least 30 seconds apart, and emergency waves still rush out when the castle drops.",
+  ], changes: [
+    "On the Deploy tab each wave shows its deadline as a stopwatch badge beside its trigger, so it reads like \"Castle attacked or 0:45\". The trigger menu explains this, and a set time can only be picked before the deadline.",
+  ] },
   { v: "Emergency waves", date: "20 Nov", fixes: [
     "In the replay, the hero's Respawn countdown covered the castle's wave bars. It now sits above them.",
   ], balance: [

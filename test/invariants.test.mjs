@@ -11,7 +11,7 @@ const tough = loadSim(); tough.run("BAL.castleHp *= 1000"); // castles that cann
 const WAR = (game, day) => `(() => { const L = seatLayout(8, true), CL = ["warrior", "mage", "rogue", "archer", "shaman"], ids = [...Array(8)].map((_, k) => "g${game}b" + k);
   const plans = ids.map((uid, i) => { const zone = zoneFor(L.castles[i], L.N, L.castles, L.v2), lvl = Math.min(15, 1 + 2 * (${day} - 1));
     const p = lordBotPlan({ uid, cls: CL[(${game} + i) % 5], i, ids, L, zone, dayNo: ${day}, lvl, v2: true, v3: true, fair: true, pick: true, ranks: {}, sup: true, defV2: true });
-    return Object.assign(p, { pid: uid, name: uid, color: "#2f5fa8", castle: L.castles[i], level: lvl, trapV2: true, sdV2: true, wallV2: true, engV2: true, ordV2: true, skV2: true, waveV2: true, itemV5: true, itemV6: true, shellV2: true, survV1: true, siegeV1: true }); });
+    return Object.assign(p, { pid: uid, name: uid, color: "#2f5fa8", castle: L.castles[i], level: lvl, trapV2: true, sdV2: true, wallV2: true, engV2: true, ordV2: true, skV2: true, waveV2: true, waveV3: true, itemV5: true, itemV6: true, shellV2: true, survV1: true, siegeV1: true }); });
   const opts = { N: L.N, ultV2: true, balV2: true, balV3: true, fairV1: true, pickV1: true, balV4: true, suddenV1: true, treesV1: true, heroV3: true, dayNo: ${day} };
   const full = runBattle(JSON.parse(JSON.stringify(plans)), 4000 + ${game} * 31 + ${day}, { ...opts, fast: false }), fast = runBattle(JSON.parse(JSON.stringify(plans)), 4000 + ${game} * 31 + ${day}, { ...opts, fast: true });
   return { full, fast, plans, L }; })()`;
@@ -136,7 +136,7 @@ test("Alliances v2: allies who win together share the top places, and only the l
     const r = JSON.parse(sim.run(`(() => { const L = seatLayout(5, true), CL = ["warrior", "mage", "rogue", "archer", "shaman"], ids = [...Array(5)].map((_, k) => "w${g}b" + k);
       const plans = ids.map((uid, i) => { const zone = zoneFor(L.castles[i], L.N, L.castles, L.v2), lvl = 7;
         const p = lordBotPlan({ uid, cls: CL[(${g} + i) % 5], i, ids, L, zone, dayNo: 4, lvl, v2: true, v3: true, fair: true, pick: true, ranks: {}, sup: true, defV2: true });
-        return Object.assign(p, { pid: uid, name: uid, color: "#2f5fa8", castle: L.castles[i], level: lvl, trapV2: true, sdV2: true, wallV2: true, engV2: true, ordV2: true, skV2: true, waveV2: true, itemV5: true, itemV6: true, shellV2: true, survV1: true, siegeV1: true, allyV2: true, pacts: [] }); });
+        return Object.assign(p, { pid: uid, name: uid, color: "#2f5fa8", castle: L.castles[i], level: lvl, trapV2: true, sdV2: true, wallV2: true, engV2: true, ordV2: true, skV2: true, waveV2: true, waveV3: true, itemV5: true, itemV6: true, shellV2: true, survV1: true, siegeV1: true, allyV2: true, pacts: [] }); });
       const link = (a, b) => { plans[a].pacts.push(ids[b]); plans[b].pacts.push(ids[a]); };
       const go = () => runBattle(JSON.parse(JSON.stringify(plans)), 900 + ${g}, { N: L.N, balV2: true, balV3: true, ultV2: true, fairV1: true, pickV1: true, balV4: true, suddenV1: true, treesV1: true, heroV3: true, dayNo: 4, fast: true });
       link(0, 1); link(3, 4); const a = go(); // two pairs: lord 2 is the only lord outside a pact, against 4 allied lords
@@ -199,5 +199,14 @@ test("waves defend first: for their first seconds out, wave soldiers stay in the
       return JSON.stringify({ R: WAVE_DEF_R, far: out }); })()`));
     assert.ok(r.far.length > 0, `game ${g}: no wave went out`);
     r.far.forEach(x => assert.ok(x <= r.R, `game ${g}: a wave soldier went ${x.toFixed(1)} tiles from its castle in its first seconds`));
+  }
+});
+
+test("wave deadlines: each wave goes by its own deadline (plus the gap after the last wave) while its castle stands", () => {
+  for (const [g, d] of GAMES) {
+    const r = JSON.parse(sim.run(`(() => { const { full } = ${WAR(g, d)}; return JSON.stringify({ at: WAVE_FORCE_AT, gap: WAVE_GAP, sd: full.sudden ? full.sudden.t0 : null, dur: full.duration,
+      lords: full.results.map(x => ({ fell: x.fellAt, w: full.events.filter(e => e.ty === "wave" && e.pid === x.pid).map(e => [e.i, e.t]) })) }); })()`));
+    r.lords.forEach((x, n) => r.at.forEach((dl, k) => { const due = dl + r.gap + 1, end = Math.min(x.fell ?? 1e9, r.sd ?? 1e9, r.dur);
+      if (end > due) assert.ok(x.w.some(([i, t]) => i === k && t <= due), `game ${g} lord ${n}: wave ${k + 1} not out by ${due}s (waves ${JSON.stringify(x.w)})`); }));
   }
 });
