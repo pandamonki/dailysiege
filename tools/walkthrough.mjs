@@ -46,6 +46,9 @@ for (const name of engines) {
   }
   await step("buy and place a trap", async () => { await tap('#cmdbar [data-v="keep"]'); await tap('#sheet .tabs button:has-text("Defences")'); await tap('#sheet [data-act="dsel"][data-v="spike"]'); await tap('#sheet [data-act="trap"][data-v="spike"]');
     const [r, q] = (await freeTiles())[0]; await tapTile(r, q); if (!(await js(() => S.traps.some(t => t.type === "spike" && placedAt(t.id))))) throw new Error("the trap is not on the map"); });
+  await step("the Defences tab shows traps, towers and walls out of their limits", async () => { await closeAll(); await tap('#cmdbar [data-v="keep"]'); await tap('#sheet .tabs button:has-text("Defences")');
+    const want = await js(() => [`${trapCount(false)}/${TRAP_CAP}`, `${trapCount(true)}/${TOWER_CAP}`, `${S.walls.length}/${wallLimit(ctNow())}`]);
+    const got = await page.locator("#sheet .dcaps .dcap b").allInnerTexts(); if (got.join() !== want.join()) throw new Error(`limits show ${got.join(" ")}, expected ${want.join(" ")}`); await closeAll(); });
   await step("buy, place and inspect a tower", async () => { await tap('#cmdbar [data-v="keep"]'); await tap('#sheet .tabs button:has-text("Defences")'); await tap('#sheet [data-act="dsel"][data-v="tw1"]'); await tap('#sheet [data-act="trap"][data-v="tower"]');
     const [r, q] = (await freeTiles())[2]; await tapTile(r, q); if (!(await js(() => S.traps.some(t => t.type === "tower" && placedAt(t.id))))) throw new Error("the tower is not on the map");
     await tapTile(r, q); await page.waitForTimeout(150); if (!(await js(() => /Upgrade/.test(document.getElementById("pdock").innerText)))) throw new Error("the tower's strip has no Upgrade button"); });

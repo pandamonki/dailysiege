@@ -26,7 +26,7 @@ function renderTop() {
   document.getElementById("chips").innerHTML =
     chip("open", "day", UIIMG("day"), `${DAY}/7`, "Day of the war and battle countdown") +
     chip("open", "gold", UIIMG("gold"), avail(), "Gold and tomorrow's income") +
-    chip("opencastle", "recruit", UIIMG("units"), `${fieldCount()}/${S.slots}${un ? `<sup class="dot">${un}</sup>` : ""}`, un ? `${un} soldier${un === 1 ? "" : "s"} still to place` : "Soldiers and supply", un ? "hot" : "") +
+    chip("opencastle", "recruit", UIIMG("units"), `${armyCount()}/${armyRoom()}${un ? `<sup class="dot">${un}</sup>` : ""}`, un ? `${un} soldier${un === 1 ? "" : "s"} still to place` : "Soldiers, out of the room on the field and in unlocked waves", un ? "hot" : "") +
     chip("ulti", null, UIIMG("ultimate"), u[1], u[3], u[2]) +
     chip("open", "board", UIIMG("board"), "Board", "Leaderboard") +
     chip("rep", null, UIIMG("report"), "Report", "Last battle report") +

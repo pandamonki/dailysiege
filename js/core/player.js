@@ -25,10 +25,13 @@ const fieldCount = () => S.owned.filter(u => !inGarrison(u.id)).length; // soldi
 const garrisonCount = () => garrisonIds().length;
 const mapV2Now = () => (typeof isLive === "function" && isLive() ? mapV2For(liveClock().week) : true); // the bigger fields, wall and trap limits (practice always)
 const supplyV2Now = () => (typeof isLive === "function" && isLive() ? supplyV2For(liveClock().planDay) : true); // practice always uses bought waves
+const waveV2Now = () => (typeof isLive === "function" && isLive() ? waveV2For(liveClock().planDay) : true); // waves defend first and follow the army plan: no orders of their own
 const wavesOpen = () => (supplyV2Now() ? Math.max(0, Math.min(WAVE_COUNT, S.wavesOpen || 0)) : WAVE_COUNT);
 const waveOpen = i => i < wavesOpen();
 const waveUnlockCost = () => WAVE_UNLOCK_COSTS[wavesOpen()]; // the next wave's price (undefined once all are open)
 const garrisonCap = () => WAVE_SLOTS * wavesOpen();
+// the top chip: every soldier you own (field and waves) out of all the room you have (the field plus each unlocked wave); before the wave rules, the field alone
+const armyCount = () => (supplyV2Now() ? S.owned.length : fieldCount()), armyRoom = () => (supplyV2Now() ? S.slots + garrisonCap() : S.slots);
 const supplyFull = () => fieldCount() >= S.slots && garrisonCount() >= garrisonCap();
 function ensureGarrison() {
   const cw = cleanWaves(S.garrison), seen = new Set();

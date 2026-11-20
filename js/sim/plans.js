@@ -40,6 +40,6 @@ function buildPlans() {
   plans.feuds = (S.feuds || []).slice();
   resolveAlliances(plans, { persist: S.pairs || [], final: DAY === 7, prevDay: DAY - 1, feuds: plans.feuds, blocMax: BLOC_MAX, v2: true });
   if (DAY >= MERC_DAY) { const mer = resolveMercs(plans, { day: DAY, dayNo: DAY, v2: mercV2Now(), N, cool: id => mercWait(id) }); plans.notes = (plans.notes || []).concat(mer.notes); plans.mercs = mer.hires; }
-  plans.forEach(p => { p.itemV5 = true; p.survV1 = true; p.siegeV1 = true; p.trapV2 = true; p.sdV2 = true; p.wallV2 = true; p.engV2 = true; p.ordV2 = true; p.skV2 = true; p.shellV2 = true; p.itemV6 = true; p.allyV2 = true; p.placeV2 = true; }); // practice always fights with the flat items
+  plans.forEach(p => { p.itemV5 = true; p.survV1 = true; p.siegeV1 = true; p.trapV2 = true; p.sdV2 = true; p.wallV2 = true; p.engV2 = true; p.ordV2 = true; p.skV2 = true; p.shellV2 = true; p.itemV6 = true; p.allyV2 = true; p.placeV2 = true; p.waveV2 = true; }); // practice always fights with the flat items
   return plans;
 }

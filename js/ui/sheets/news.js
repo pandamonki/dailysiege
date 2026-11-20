@@ -3,6 +3,18 @@
 // Each item is [icon, headline, one short sentence]. Players who have not seen the newest id get the pop-up the next time they plan;
 // the id is remembered on their device, so changing the id is all it takes to show it again. Keep about 8 to 14 items.
 const RELEASES = [
+  { id: "1.14", title: "What's new in v1.14", sub: "Reinforcement waves that save your castle, and clearer limits", items: [
+    ["🚨", "Emergency waves", "When your castle drops below 75%, 50% and 25% health, your next wave rushes out to defend it."],
+    ["⏱", "Never all at once", "Emergency waves leave at least 10 seconds apart, so they can't flood the map together."],
+    ["🛡", "Waves defend first", "Every wave clears enemies near your castle before it joins the attack."],
+    ["🗺", "Then your army plan", "Once your castle is safe, a wave follows your army plan like the rest of your army."],
+    ["✂️", "Simpler waves", "Waves no longer have orders of their own. You just choose when each one goes."],
+    ["🕰", "Wave stopwatch", "In the replay, a stopwatch by each castle shows how long until its next wave can go. Red means an emergency wave is coming."],
+    ["🟨", "Ready or waiting", "Wave bars are yellow when ready, dim while waiting and grey once gone."],
+    ["👥", "Your whole army", "The soldier count at the top counts your field and your waves, out of all your room."],
+    ["🪤", "Defence limits", "The Defences tab shows your traps, towers and walls out of their limits."],
+    ["🏰", "Two guards", "The guard you pick joins your castle's own free guard; it doesn't replace it."],
+  ] },
   { id: "1.13", title: "What's new in v1.13", sub: "Fairer placement points, and fixes for the friends war", items: [
     ["🏅", "One point per place", "From the 21 Nov battle every place is one point apart, and last place scores 1."],
     ["🏆", "A bonus for winning", "The winner scores 2 more: with 8 lords that's 10, 7, 6, 5, 4, 3, 2, 1."],
