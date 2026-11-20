@@ -1,13 +1,13 @@
 // The Garrison screen (Army sheet): every soldier you own in one pool, and the three reinforcement waves below it.
 // Drag a soldier into a wave slot (or tap it, then tap a slot); drag it back to the pool, or tap the cross, to send it to reserve.
-const whenLabel = w => w.when === "timer" ? `At ${Math.floor(w.at / 60)}:${String(w.at % 60).padStart(2, "0")}` : { castle_hit: "Castle attacked", castle_low: "Castle below half", hero_dies: "Hero dies", army_dead: "All soldiers die", enemy_hero: "Enemy hero dies", ult: "Any ultimate" }[w.when];
+const whenLabel = w => w.when === "timer" ? `At ${Math.floor(w.at / 60)}:${String(w.at % 60).padStart(2, "0")}` : { castle_hit: waveV4Now() ? "Enemies at my castle" : "Castle attacked", castle_low: "Castle below half", hero_dies: "Hero dies", army_dead: "All soldiers die", enemy_hero: "Enemy hero dies", ult: "Any ultimate" }[w.when];
 const waveDeadline = i => (waveV3Now() ? WAVE_FORCE_AT[i] : null); // the latest a wave can go (waves v3), else null
 const whenLabelAt = (w, i) => { const dl = waveDeadline(i); return dl != null && w.when === "timer" && w.at >= dl ? timeLabel(dl) : whenLabel(w); };
 const timeLabel = x => `At ${Math.floor(x / 60)}:${String(x % 60).padStart(2, "0")}`;
 const waveStatus = id => { const wi = (S.garrison || []).findIndex(w => w.slots.includes(id)); return wi > -1 ? ["wv", `Wave ${wi + 1}`] : placedAt(id) ? ["dep", "On the map"] : ["res", "Reserve"]; };
 function garrisonPopHTML(i) {
   const p = sheet.wpop; if (!p || p.w !== i) return "";
-  const w = S.garrison[i], opts = p.kind === "when" ? WAVE_WHEN.map(([k, n]) => [`when:${k}`, n + (k === "timer" ? " …" : ""), w.when === k])
+  const w = S.garrison[i], opts = p.kind === "when" ? WAVE_WHEN.map(([k, n]) => [`when:${k}`, (k === "castle_hit" && waveV4Now() ? "When enemies reach my castle" : n) + (k === "timer" ? " …" : ""), w.when === k, k === "castle_hit" && waveV4Now() ? `Any enemy within ${WAVE_NEAR_R} tiles, or the castle is hit` : ""])
     : p.kind === "time" ? WAVE_TIMES.filter(x => waveDeadline(i) == null || x < waveDeadline(i)).map(x => [`time:${x}`, timeLabel(x), w.when === "timer" && w.at === x]) : WAVE_ORDERS.map(([k, n, d]) => [`order:${k}`, n, w.order === k, d]);
   const dl = waveDeadline(i), lead = dl != null ? `<p class="gr-poplead">Wave ${i + 1} goes ${p.kind === "time" ? "at the time you pick" : "when this happens"}, or at <b>${timeLabel(dl).slice(3)}</b> if that hasn't happened yet.</p>` : "";
   return `<div class="gr-pop" role="listbox">${lead}${opts.map(([v, n, on, d]) => `<div class="${on ? "on" : ""}" data-act="wopt" data-k="${i}" data-v="${v}" role="option"><span>${n}${d ? `<small>${d}</small>` : ""}</span>${on ? "<em>✓</em>" : ""}</div>`).join("")}</div>`;

@@ -177,7 +177,9 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
-  { v: "Rush boxes", date: "20 Nov", fixes: [], balance: [], changes: [
+  { v: "Rush boxes and a new trigger", date: "20 Nov", fixes: [], balance: [
+    "From the battle of 20 Nov the wave trigger \"When my castle is attacked\" becomes \"When enemies reach my castle\": it fires when an enemy soldier, hero, summon or siege engine comes within 3 tiles of your castle (and nearer to it than to its own castle), or when your castle is first hit, whichever comes first. Towers don't count. Waves set to the old trigger get the new one automatically.",
+  ], changes: [
     "Each wave on the Deploy tab has a Rush box, ticked to start with. Only waves with it ticked rush out when your castle drops below 75%, 50% or 25% health; untick one to keep it for its own trigger or deadline. In the replay, the stopwatch only turns red when a ticked wave is still waiting.",
   ] },
   { v: "Wave deadlines", date: "20 Nov", fixes: [], balance: [

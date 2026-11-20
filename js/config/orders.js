@@ -41,6 +41,11 @@ let WAVE_V2_FROM = "2026-11-20"; const waveV2For = d => String(d) >= WAVE_V2_FRO
 // Wave deadlines (plans stamped waveV3, battles from WAVE_V3_FROM): each wave has its own latest time, WAVE_FORCE_AT, instead of one wave being forced
 // out at every minute mark. A wave goes when its condition is met or at its deadline, whichever comes first (still WAVE_GAP after the last wave).
 let WAVE_V3_FROM = "2026-11-20"; const waveV3For = d => String(d) >= WAVE_V3_FROM, WAVE_FORCE_AT = [45, 90, 135];
+// Enemies reach my castle (plans stamped waveV4, battles from WAVE_V4_FROM): the "castle_hit" trigger now fires when an enemy soldier, hero, summon or
+// siege engine is within WAVE_NEAR_R tiles of the castle and nearer to it than to its own castle (so armies standing in their own base next door
+// don't count), or when the castle is first hit (a catapult or archer can strike from further out). It is never later than the old trigger.
+// Castles can be under 7 tiles apart, so the radius is kept small: at 5 tiles it fired in the first seconds for most castles as armies marched past.
+let WAVE_V4_FROM = "2026-11-20"; const waveV4For = d => String(d) >= WAVE_V4_FROM, WAVE_NEAR_R = 3;
 const WAVE_WHEN = [["timer", "At a set time"], ["castle_hit", "When my castle is attacked"], ["castle_low", "When my castle drops below half"], ["hero_dies", "When my hero dies"], ["army_dead", "When all my soldiers die"], ["enemy_hero", "When an enemy hero dies"], ["ult", "When any ultimate is cast"]];
 const WAVE_TIMES = [20, 30, 45, 60, 75, 90, 120, 150];
 const WAVE_ORDERS = [["default", "Default orders", "Each soldier follows its group's combat orders"], ["castle", "March on castle", "Heads for the enemy castle; turns only on melee attackers"], ["hero", "Hunt heroes", "Goes after the nearest enemy hero"], ["nearest", "Nearest enemies", "Fights the closest enemy soldiers and heroes, wherever they are"]];
