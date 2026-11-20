@@ -185,7 +185,16 @@ function drawCastle(r, q, color, t, label, rel, st, ban, tier) {
     ctx.fillStyle = "rgba(255,255,255,.3)"; ctx.fillRect(bx, byy, bw * Math.max(0, st.frac), bh * .35);
     if (st.waves) { // reinforcement waves still in the garrison: one yellow bar each, grey once the wave has marched out
       const n = st.waves.total, gap = ts * .05, gw = (bw - gap * (n - 1)) / n, gh = ts * .09, gy = byy - gh - ts * .08;
-      for (let i = 0; i < n; i++) { const x0 = bx + i * (gw + gap); ctx.fillStyle = "rgba(20,12,6,.9)"; ctx.fillRect(x0 - 1.5, gy - 1.5, gw + 3, gh + 3); ctx.fillStyle = i < st.waves.left ? "#e8b923" : "#7d776b"; ctx.fillRect(x0, gy, gw, gh); if (i < st.waves.left) { ctx.fillStyle = "rgba(255,255,255,.35)"; ctx.fillRect(x0, gy, gw, gh * .35); } }
+      const cd = st.waves.cd; // waiting out the gap since the last wave: the waves still home show dim amber, not ready yellow
+      for (let i = 0; i < n; i++) { const x0 = bx + i * (gw + gap), home = i < st.waves.left; ctx.fillStyle = "rgba(20,12,6,.9)"; ctx.fillRect(x0 - 1.5, gy - 1.5, gw + 3, gh + 3); ctx.fillStyle = home ? (cd ? "#8a6a1e" : "#e8b923") : "#4a463f"; ctx.fillRect(x0, gy, gw, gh); if (home && !cd) { ctx.fillStyle = "rgba(255,255,255,.35)"; ctx.fillRect(x0, gy, gw, gh * .35); } }
+      if (cd) { // the cooldown clock, just right of the bars: its face drains as the wait runs down and the hand sweeps; red when an emergency wave is waiting to rush out
+        const r = ts * .17, ccx = bx + bw + r + ts * .07, ccy = gy + gh / 2, f = Math.max(0, Math.min(1, cd.rem / cd.of)), a0 = -Math.PI / 2, hand = a0 + (1 - f) * Math.PI * 2;
+        ctx.fillStyle = "rgba(20,12,6,.9)"; ctx.beginPath(); ctx.arc(ccx, ccy, r + 2, 0, 7); ctx.fill();
+        ctx.fillStyle = "#ece0c2"; ctx.beginPath(); ctx.arc(ccx, ccy, r, 0, 7); ctx.fill();
+        ctx.fillStyle = cd.rush ? "#d4402f" : "#c9962a"; ctx.beginPath(); ctx.moveTo(ccx, ccy); ctx.arc(ccx, ccy, r, hand, a0 + Math.PI * 2); ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = "#3e2714"; ctx.lineWidth = Math.max(1, ts * .025); ctx.beginPath(); ctx.moveTo(ccx, ccy); ctx.lineTo(ccx + Math.cos(hand) * r * .9, ccy + Math.sin(hand) * r * .9); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(ccx - r * .35, ccy - r - 2); ctx.lineTo(ccx + r * .35, ccy - r - 2); ctx.stroke(); // the stopwatch's crown
+      }
     }
   }
   }

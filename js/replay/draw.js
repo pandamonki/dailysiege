@@ -47,6 +47,13 @@ function drawReplay(t) {
   R.traps.forEach(tr => { if (tr.pid === R.me && !(tr.t0 != null && time < tr.t0) && !(tr.usedT && time >= tr.usedT)) drawTrap(ctx, tr.type, tr.x * ts, (tr.y + .05) * ts, ts * .9); });
   const items = [];
   (R.wallMeta || []).forEach((w, wi) => { const hp = f0.w ? f0.w[wi] : w.maxhp; if (hp == null || (w.born != null && time < w.born)) return; items.push([w.y + .2, () => drawWallTile(ctx, w.y, w.x, w.tier, Math.max(0, hp) / w.maxhp, R.colors[w.pid], t, w.dir, hp > 0 ? wallLinks(R.wallMeta.filter((o, oi) => o.pid === w.pid && (f0.w ? f0.w[oi] > 0 : true) && !(o.born != null && time < o.born)).map(o => [o.y, o.x]), w.y, w.x) : 0)]); });
+  // a castle's waves for the replay: how many are still home, and while they can't go yet, how long until they can (the clock beside the bars).
+  // Waves are WAVE_GAP apart; from waveV2 a castle below one of its WAVE_EMERGENCY marks with a wave owed sends it once WAVE_EMERGENCY_GAP has passed.
+  const waveStatus = (wv, pid, frac, time) => { const ts0 = (wv.t[pid] || []).filter(x => x <= time), left = wv.total - ts0.length, last = ts0.length ? ts0[ts0.length - 1] : null;
+    if (!left || last == null || frac <= 0 || (R.sudden && time >= R.sudden.t0)) return { total: wv.total, left };
+    const since = time - last, owed = R.waveV2 && WAVE_EMERGENCY.filter(f => frac < f).length > ts0.length;
+    const gap = owed ? WAVE_EMERGENCY_GAP : WAVE_GAP;
+    return since < gap ? { total: wv.total, left, cd: { rem: gap - since, of: gap, rush: !!owed } } : { total: wv.total, left }; };
   const wv = R.waves ? { total: WAVE_COUNT, t: replay.waveT || (replay.waveT = (R.events || []).reduce((o, e) => { if (e.ty === "wave") (o[e.pid] = o[e.pid] || []).push(e.t); return o; }, {})) } : null;
   R.meta.forEach((m, k) => {
     const b = k * 4; if (b >= f0.d.length) return;
@@ -54,7 +61,7 @@ function drawReplay(t) {
     if (f1.d.length > b && !(f1.d[b + 3] & 1)) { const x1 = f1.d[b], y1 = f1.d[b + 1]; if (Math.hypot(x1 - x, y1 - y) < 1.5) { x += (x1 - x) * a; y += (y1 - y) * a; } }
     const color = R.colors[m.pid], frac = hp / m.maxhp, fr = friendly(m.pid);
     if (m.kind === "castle") { if (replay.sel === k) items.push([m.tile[0] - .01, () => { ctx.strokeStyle = "#ffe082"; ctx.lineWidth = ts * .08; ctx.strokeRect(m.tile[1] * ts + 2, m.tile[0] * ts - ts * .3, ts - 4, ts * 1.25); }]);
-      items.push([m.tile[0], () => drawCastle(m.tile[0], m.tile[1], color, t, R.names[m.pid], null, { frac, dead: fl & 1, friendly: fr, waves: wv ? { total: wv.total, left: wv.total - (wv.t[m.pid] || []).filter(x => x <= time).length } : null }, m.banner, m.ctier)]); return; }
+      items.push([m.tile[0], () => drawCastle(m.tile[0], m.tile[1], color, t, R.names[m.pid], null, { frac, dead: fl & 1, friendly: fr, waves: wv ? waveStatus(wv, m.pid, frac, time) : null }, m.banner, m.ctier)]); return; }
     { atkIndex(); const dv = lastDie(k, time); const dead = (fl & 1) || (dv && f1.d.length > b + 3 && (f1.d[b + 3] & 1));
       if (dead) { if (dv && time - dv.t < deathLen(m)) items.push([dv.y - .4 + .3, () => drawDeath(m, k, color, dv, time - dv.t, t)]); return; } }
     const pose = poseOf(k, time, x, y, f0, f1);
@@ -177,7 +184,7 @@ function drawLongFx(time) { // effects that outlast the 2-second window: respawn
     if (e.ty === "rune") { drawRuneFx(e, time); return; }
     if (e.ty === "runeport") { drawRuneportFx(e, time); return; }
     if (e.ty === "respawn") {
-      if (time < e.t0 || time >= e.t1) return; const left = Math.ceil(e.t1 - time), px = e.x * ts, py = (e.y - 1.25) * ts, col = (replay.res.colors || {})[e.pid] || "#fff";
+      if (time < e.t0 || time >= e.t1) return; const left = Math.ceil(e.t1 - time), px = e.x * ts, py = (e.y - 1.8) * ts, col = (replay.res.colors || {})[e.pid] || "#fff";
       ctx.font = `700 ${Math.round(ts * .3)}px Alegreya, Georgia, serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
       const w = ts * 1.5, h = ts * .46; ctx.fillStyle = "rgba(30,20,12,.78)"; ctx.fillRect(px - w / 2, py - h / 2, w, h); ctx.fillStyle = col; ctx.fillRect(px - w / 2, py + h / 2 - 3, w * (1 - (e.t1 - time) / (e.t1 - e.t0)), 3);
       ctx.fillStyle = "#f4e6c4"; ctx.fillText("Respawn " + left + "s", px, py - 1); ctx.textAlign = "start";

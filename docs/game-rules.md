@@ -125,6 +125,9 @@ practice games always stamp all of them (`js/sim/plans.js`).
   and 25% health, the next unsent wave rushes out, at least 10 seconds after the last wave, so they never all leave at once.
   Also from 20 Nov waves have no orders of their own: every wave first fights enemies within 8 tiles of its castle,
   and once that area has been clear for 4 seconds (or the castle has fallen) it follows the lord's army plan.
+- In the replay each castle shows one bar per wave: bright yellow when ready, dim amber while waiting out the gap since
+  the last wave, dark grey once gone. A small stopwatch beside them drains over the wait; it turns red when an emergency
+  wave is due and will rush out as soon as the wait ends.
 - The castle guard you pick on the Deploy tab is extra: every castle still keeps its own free guard. The picked guard
   gets no bonus stats; it just stays near the castle and defends instead of attacking.
 - The top soldier chip counts every soldier you own (field and waves) out of all your room: 4 on the field plus 3 for
