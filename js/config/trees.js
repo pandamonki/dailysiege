@@ -176,8 +176,19 @@ const TREE_V2 = {
     "Focused Aim": [[4, 7, 10, 13]], "Headshot": [[60, 105, 150, 195]], "Hunter's Mark": [[8, 14]], "Armour Piercer": [[30, 50]] },
 };
 Object.keys(TREE_V2).forEach(cls => TREES[cls].forEach(tr => tr.nodes.forEach(n => { if (TREE_V2[cls][n.name]) n.w = TREE_V2[cls][n.name]; })));
+// Skill rebalance with balance v5 (plans stamped balV5, battles from BAL_V5_FROM): measured with 600 bot wars a round (win rate by main tree).
+// Berserker and the Sniper were ahead, Pyromancy, Arcane, Storm, Shadow, Venom and Tactician behind. Nodes not listed keep their TREE_V2 values.
+const TREE_V5 = {
+  warrior: { "Cleave": [[8, 14, 20, 26]], "Executioner's Whirlwind": [[5, 9, 13, 17]], "Bloodthirst": [[2, 3]], "Blood Rage": [[3, 5]], "Marching Cadence": [[10, 17, 24, 31]], "Command Banner": [[12, 20, 28, 36]] },
+  archer: { "Eagle Eye": [[.2, .35, .5, .65], [3, 6, 9, 12]], "Headshot": [[50, 90, 130, 170]] },
+  rogue: { "Ambush": [[40, 70, 100, 130], [1, 1.25, 1.5, 1.75]], "Poisoned Blades": [[4, 6, 8, 10], [15, 25, 35, 45]] },
+  mage: { "Fireball": [[85, 140, 195, 250]], "Arcane Mastery": [[.3, .45, .6, .75], [6, 9, 12, 15]], "Mana Shield": [[25, 40]], "Empowered Synergies": [[25, 40], [12, 20]] },
+  shaman: { "Static Surge": [[5, 9, 13, 17], [30, 45, 60, 75]], "Chain Lightning": [[3, 4, 4, 5], [75, 120, 165, 210]] },
+};
+TREES.warrior[1].nodes[5].desc5 = "For 5s you cannot drop below 1 health, ignore crowd control, attack 50% faster, and your attacks splash and stun soldiers. Heals 15% on cast. Casts itself below 40% health with 3+ enemies within 2.5 tiles.";
+Object.keys(TREE_V5).forEach(cls => TREES[cls].forEach(tr => tr.nodes.forEach(n => { if (TREE_V5[cls][n.name]) n.w5 = TREE_V5[cls][n.name]; })));
 // which values the screens show: the coming battle's (live wars before SKILLS_V2_FROM show the old ones; practice always the new)
-const treeV2Now = () => { try { return typeof isLive === "function" && isLive() && typeof liveClock === "function" ? skillsV2For(liveClock().planDay) : true; } catch { return true; } };
+const treeV2Now = () => { try { const live = typeof isLive === "function" && isLive() && typeof liveClock === "function", d = live ? liveClock().planDay : null; return live ? (balV5For(d) ? 5 : skillsV2For(d)) : 5; } catch { return true; } }; // 5: the balance v5 values (TREE_V5) on top of v2
 
 // skill icons: every hero has its own art per skill (icons/skills/<class>_<tree>_<node>.webp)
 const TREE_ART_CLASSES = ["warrior", "shaman", "rogue", "mage", "archer"];
@@ -191,6 +202,12 @@ const CHAMP_V3 = {
   mage:    { hp: 420, atk: 28, armor: 0,   mres: .20, range: 2.5, as: 1.2, spd: 1.6, shot: "#ff8a2a" },
   rogue:   { hp: 480, atk: 33, armor: .08, mres: .05, range: 1.1, as: .8,  spd: 2.4 },
 };
+
+// balance v5 (plans stamped balV5): base stats changed from CHAMP_V3. The warrior was ahead of every other class, the mage and rogue behind.
+const CHAMP_V5 = { warrior: { hp: 700, armor: .25 }, archer: { atk: 24 }, mage: { atk: 30 }, rogue: { hp: 510 } };
+const champBase = (cls, v5) => (v5 && CHAMP_V5[cls] ? { ...CHAMP_V3[cls], ...CHAMP_V5[cls] } : CHAMP_V3[cls]);
+// Avatar of War (Berserker ultimate) from balance v5: shorter, a smaller heal and a lighter splash. It won far more than any other build.
+const AVATAR_V5 = { dur: 5, heal: .15, splash: .35 };
 
 // ----- learning rules -----
 const emptyTree = () => ({ b1: [0, 0, 0, 0, 0, 0], b2: [0, 0, 0, 0, 0, 0], b3: [0, 0, 0, 0, 0, 0] });
@@ -215,9 +232,9 @@ function treeCanLearn(tr, b, i, L) {
   const n = treeNeeds(tr, b, i, L); return !n.maxed && n.list.every(x => x.ok);
 }
 // the value of a node at a rank: nodeVal(cls, treeIndex, nodeIndex, valueIndex, rank)
-const nodeVals = (n, v2) => (v2 && n.w ? n.w : n.v);
+const nodeVals = (n, v2) => (v2 === 5 && n.w5 ? n.w5 : v2 && n.w ? n.w : n.v); // v2: false (first values), true (TREE_V2) or 5 (TREE_V5 over TREE_V2)
 const nodeVal = (cls, bi, i, vi, rank, v2 = treeV2Now()) => ext(nodeVals(TREES[cls][bi].nodes[i], v2)[vi], rank);
-const nodeDesc = (cls, bi, i, rank, v2 = treeV2Now()) => { const n = TREES[cls][bi].nodes[i]; return n.desc.replace(/\{(\d)\}/g, (_, k) => { const a = nodeVals(n, v2)[+k]; if (!a) return "?"; const x = ext(a, Math.max(1, rank || 1)); return Number.isInteger(x) ? x : +x.toFixed(2); }); };
+const nodeDesc = (cls, bi, i, rank, v2 = treeV2Now()) => { const n = TREES[cls][bi].nodes[i]; return (v2 === 5 && n.desc5 ? n.desc5 : n.desc).replace(/\{(\d)\}/g, (_, k) => { const a = nodeVals(n, v2)[+k]; if (!a) return "?"; const x = ext(a, Math.max(1, rank || 1)); return Number.isInteger(x) ? x : +x.toFixed(2); }); };
 // spell animations for every active skill: the sim plays "v3_<class>_<tree>_<node>" through the usual SPELL_ART effects
 const treeSp = (cls, bi, i) => `v3_${cls}_${TREE_BKEY[bi]}_${TREE_NODE[i]}`;
 Object.keys(TREES).forEach(cls => TREES[cls].forEach((tr, bi) => tr.nodes.forEach((n, i) => { if (n.art) SPELL_ART[treeSp(cls, bi, i)] = { n: n.name, c: n.art[0], sym: n.art[1], fx: n.art[2], r: n.art[3], ...(n.art[4] ? { at: n.art[4] } : {}) }; })));

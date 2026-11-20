@@ -55,7 +55,7 @@ function champSheetV3() {
   const tab = sheet.tab === "items" || sheet.tab === "stats" ? sheet.tab : "abilities";
   const sel = treeSelection(), learned = treeHasUlt(S.tree), cool = typeof ultCooling === "function" && ultCooling();
   const slots = Array.from({ length: ITEM_SLOTS }, (_, i) => S.items[i] || null);
-  const b = CHAMP_V3[S.cls], ty = heroTypes(S.cls, balV5Now());
+  const b = champBase(S.cls, balV5Now()), ty = heroTypes(S.cls, balV5Now());
   const sr = (ic, l, v) => `<div><span><i class="sic">${ic}</i>${l}</span><b>${v}</b></div>`;
   const stats = `<div class="xpbar" title="Experience toward the next level"><i style="width:${Math.round(xp / nd * 100)}%"></i><span>Level ${L} · ${xp}/${nd} XP</span></div>
     <p class="muted xpnote">Every level is one skill point, up to level ${MAX_HERO_LVL_V3}.</p>
@@ -86,7 +86,7 @@ function rTreeNode(cls, tree, bi, i, on) {
 function rivalHeroSheet(id) {
   const r = RIVALS.find(x => x.id === id), h = rivalHeroData(r);
   if (!r || !h) return head(null, r ? `${r.name}'s hero` : "Rival hero", "Nothing scouted yet") + `<div class="body"><p class="muted">You haven't seen this hero fight yet. After a battle you can see its skills and items here.</p></div>`;
-  const tab = sheet.tab === "items" ? "items" : "abilities", c = CLASSES[h.cls], v3 = heroV3Now() && h.tree, b = v3 ? CHAMP_V3[h.cls] : CHAMP[h.cls], L = h.level;
+  const tab = sheet.tab === "items" ? "items" : "abilities", c = CLASSES[h.cls], v3 = heroV3Now() && h.tree, b = v3 ? champBase(h.cls, balV5Now()) : CHAMP[h.cls], L = h.level;
   const hp = Math.round(b.hp * (v3 ? hpLvV3(L) : 1 + .08 * (L - 1))), atk = Math.round(b.atk * (v3 ? atkLvV3(L) : 1 + .06 * (L - 1)));
   const stats = `<div class="stats"><span>${IC.hp(hp)}</span><span>${IC.atk(atkSplit(atk, itemAtk(h.items)))}</span></div>${typeInfo(heroTypes(h.cls, balV5Now()), "rhero")}`;
   let abil;
@@ -109,7 +109,7 @@ function rivalHeroSheet(id) {
   return head(spriteURL("c-" + h.cls, r.color), `${esc(r.name)}'s ${c.name}`, `Level ${L} · as it fought yesterday`) + `<div class="body">${heroTabs(tab, 0)}${stats}${tab === "items" ? items : abil}
     <div class="row"><button class="btn small" data-act="open" data-v="rival" data-k="${esc(r.id)}">About ${esc(r.name)}</button></div></div>`;
 }
-const champNowV3 = () => { const b = CHAMP_V3[S.cls], L = level(); return { hp: Math.round(b.hp * hpLvV3(L)), atk: Math.round(b.atk * atkLvV3(L)) }; };
+const champNowV3 = () => { const b = champBase(S.cls, balV5Now()), L = level(); return { hp: Math.round(b.hp * hpLvV3(L)), atk: Math.round(b.atk * atkLvV3(L)) }; };
 // the ultimate a v3 hero has learned, for the orders screen and the top bar
 function treeUlt() {
   for (let bi = 0; bi < 3; bi++) if (S.tree && S.tree[TREE_BKEY[bi]][5] > 0) { const n = TREES[S.cls][bi].nodes[5]; return { name: n.name, desc: nodeDesc(S.cls, bi, 5, 1), ic: n.ic }; }

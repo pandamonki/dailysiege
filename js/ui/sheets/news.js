@@ -3,7 +3,7 @@
 // Each item is [icon, headline, one short sentence]. Players who have not seen the newest id get the pop-up the next time they plan;
 // the id is remembered on their device, so changing the id is all it takes to show it again. Keep about 8 to 14 items.
 const RELEASES = [
-  { id: "1.18", title: "What's new in v1.18", sub: "Stronger heroes, sharper betrayals and a better replay", items: [
+  { id: "1.18", title: "What's new in v1.18", sub: "Stronger, fairer heroes, sharper betrayals and a better replay", items: [
     ["🦸", "Hero class", "From the 22 Nov battle every hero deals Hero damage and wears Hero armour: 20% extra against all soldiers, 10% less from their weapons."],
     ["🏠", "Rest at home", "A hero at its own castle with no fighting for 2 seconds heals 8% of its health a second."],
     ["💍", "Regen items toned down", "Mending Herbs 3 a second (50g), Ring of Health 5 a second (125g), Mender's Charm 5 a second."],
@@ -16,8 +16,8 @@ const RELEASES = [
     ["💰", "Clearer mercenary bids", "Set your amount with + and −, then press Place bid. Tiles show your bid."],
     ["🤝", "Allies side by side", "The pre-battle screen groups each alliance together."],
     ["🏆", "Victory together", "Allied winners share the victory screen, fallen allies slumped beside them, and a betrayer stands over their victim."],
-    ["⚔", "Hero details", "Item damage shows in green, and the hero strip has a Stats button. The castle strip has Upgrade."],
-    ["🧹", "Tidier map", "No Turn button on walls, no second-tap castle menu, smaller Arrow Volley, and every seal checklist line has a button."],
+    ["⚖️", "Hero rebalance", "Warrior and Berserker toned down; mage, rogue and the weaker skill branches boosted. Every class now wins about as often."],
+    ["🧹", "Tidier map", "Item damage in green, Stats and castle Upgrade buttons, no wall Turn or second castle tap, smaller Arrow Volley."],
   ] },
   { id: "1.17", title: "What's new in v1.17", sub: "Easier install and battle alerts, on iPhone and Android", items: [
     ["📲", "Install in one step", "On Android, a card offers a one-tap Install. On iPhone, it shows the Add to Home Screen steps."],

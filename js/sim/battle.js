@@ -197,7 +197,7 @@ function runBattle(plans, seed, opts = {}) {
     const lvl = pl.level || 1, g = pl.gear || {};
     pl.pieces.forEach(pc => {
       if (pc.kind === "champ") {
-        const b = HV3 ? CHAMP_V3[pl.cls] : CHAMP[pl.cls], hpMul = HV3 ? hpLvV3(lvl) : (1 + .08 * (lvl - 1)) * vigMul(pl.ranks.a4), atkMul = HV3 ? atkLvV3(lvl) : (1 + .06 * (lvl - 1)) * vigMul(pl.ranks.a4);
+        const b = HV3 ? champBase(pl.cls, !!pl.balV5) : CHAMP[pl.cls], hpMul = HV3 ? hpLvV3(lvl) : (1 + .08 * (lvl - 1)) * vigMul(pl.ranks.a4), atkMul = HV3 ? atkLvV3(lvl) : (1 + .06 * (lvl - 1)) * vigMul(pl.ranks.a4);
         const e = add({ order: pl.ordV2 ? "army" : pc.order || "army", pid: pl.pid, kind: "champ", cls: pl.cls, key: "c-" + pl.cls, x: pc.c + .5, y: pc.r + .5, maxhp: b.hp * hpMul, atk: b.atk * atkMul, range: b.range, as: b.as,
           spd: b.spd * ((g.charm || 0) >= 1 ? 1.15 : 1), armor: b.armor,
           cdMul: (g.charm || 0) >= 2 ? .8 : 1, phoenix: (g.charm || 0) >= 3, respawns: opts.duel ? 0 : 2, shot: b.shot, ranks: { ...pl.ranks }, ranks0: { ...pl.ranks }, picks: pl.picks, triggers: pl.triggers, cds: {} });

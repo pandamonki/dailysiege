@@ -185,6 +185,10 @@ const PATCHES = [
     "From the 22 Nov battle: Mending Herbs 3 health a second (was 5), Ring of Health 5 a second (was 8), Mender's Charm 5 a second (was 8). Mending Herbs now costs 50 gold (was 40), Ring of Health 125 (was 100).",
     "From the 22 Nov battle: every reinforcement wave goes at least 20 seconds after the last, whether by trigger, deadline or emergency rush (was 30 seconds, or 10 for a rush).",
     "From the 22 Nov battle: razing the castle of an ally you betrayed in the same battle scores 3 times the castle points (9 instead of 3, before the day's weighting).",
+    "Hero rebalance from the 22 Nov battle, measured over 1,800 bot battles (every class now wins 11 to 14.5% of 8-lord battles; before, 9 to 18%). Warrior 700 health (was 760) and 25% armour (was 28%); Archer attack 24 (was 25); Mage attack 30 (was 28); Rogue 510 health (was 480).",
+    "Berserker (it won about 1 battle in 4): Executioner's Whirlwind base damage 5/9/13/17 a hit (was 20/30/40/50), Cleave 8/14/20/26% (was 15/25/35/45), Bloodthirst 2/3%, Blood Rage 3/5%. Avatar of War lasts 5s (was 7) and heals 15% (was 25%), and its splash is 35% (was 50%).",
+    "Tactician: Marching Cadence 10/17/24/31%, Command Banner 12/20/28/36%. Sniper: Headshot 50/90/130/170. Marksman: Eagle Eye's crit chance 3/6/9/12%.",
+    "Rogue: Ambush 40/70/100/130, Poisoned Blades 4/6/8/10 a stack. Mage: Fireball 85/140/195/250, Arcane Mastery +.3/.45/.6/.75 tiles and 6/9/12/15% resist, Mana Shield 25/40%, Empowered Synergies 25/40% and 12/20%. Shaman: Chain Lightning 75/120/165/210, Static Surge +5/9/13/17% and 30/45/60/75% arcs.",
   ], changes: [
     "Replay: every lord's castle and hero sit along the top with health bars. Tap a hero to follow it with the camera; tap a castle to look at it. The unit panel has a Follow button for any hero.",
     "Arrow Volley's falling arrows are smaller.",

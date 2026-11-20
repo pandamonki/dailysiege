@@ -26,7 +26,7 @@ practice games always stamp all of them (`js/sim/plans.js`).
 | 20 Nov | `waveV3` | Wave deadlines: each wave goes by its own time (0:45, 1:30, 2:15) instead of one forced out each minute |
 | 20 Nov | `waveV4` | "Castle attacked" wave trigger becomes "enemies reach my castle" (within 3 tiles, or the first hit) |
 | 21 Nov | `placeV2` | Placement: one point per place, last scores 1, plus 2 for winning |
-| 22 Nov | `balV5` | Balance v5: Hero damage and armour class for every hero, resting at home heals, regen items toned down, waves a flat 20s apart, triple castle points for a betrayal kill |
+| 22 Nov | `balV5` | Balance v5: hero rebalance (stats and skills), Hero damage and armour class for every hero, resting at home heals, regen items toned down, waves a flat 20s apart, triple castle points for a betrayal kill |
 
 ## The war
 
@@ -78,6 +78,10 @@ practice games always stamp all of them (`js/sim/plans.js`).
   Hero armour, whatever its class. Hero damage does 120% to light, medium and heavy armour and 50% to castles and walls; Hero armour
   takes 90% from blade, pierce, magic and precision and 80% from siege; hero against hero is 100%. Ability hits that name their own
   type (pure poison, siege blasts) keep it. Before then each class had its own types (`CLASS_TYPES`).
+- Hero rebalance (from 22 Nov, `balV5`): base stats `CHAMP_V5` over `CHAMP_V3` (warrior 700 health and 25% armour, archer attack 24,
+  mage attack 30, rogue 510 health), skill values `TREE_V5` over `TREE_V2` in `js/config/trees.js` (Berserker, Tactician, Sniper,
+  Marksman, Rogue, Mage and Shaman nodes), and a shorter Avatar of War (`AVATAR_V5`: 5s, 15% heal, 35% splash). Tuned on 1,800
+  bot battles of 8 lords: every class wins 11 to 14.5%.
 - Resting at home (from 22 Nov, `HOME_HEAL` in `js/sim/battle.js`): a hero within 2.5 tiles of its own castle that has neither hit nor
   been hit for 2 seconds heals 8% of its health a second, until full or until a hit stops it. Not in sudden death or once its castle
   has fallen. A hero that falls back to heal (its stance) still heals 10% a second at home as before, whatever the fighting.

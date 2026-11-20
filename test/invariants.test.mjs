@@ -214,14 +214,14 @@ test("wave deadlines: each wave goes by its own deadline (plus the gap after the
 test("the rush box: only ticked waves rush out in an emergency; unticked waves still go by trigger or deadline", () => {
   const RUN = (g, d, off) => JSON.parse(sim.run(`(() => { const { plans, L } = ${WAR(g, d)}; plans.forEach(p => (p.waves = p.waves || [{}, {}, {}]).forEach((w, i) => { if (${JSON.stringify(off)}.includes(i)) w.rush = false; }));
     const res = runBattle(JSON.parse(JSON.stringify(plans)), 4242, { N: L.N, ultV2: true, balV2: true, balV3: true, fairV1: true, pickV1: true, balV4: true, suddenV1: true, treesV1: true, heroV3: true, dayNo: ${d}, fast: false });
-    return JSON.stringify({ at: WAVE_FORCE_AT, gap: WAVE_GAP, sd: res.sudden ? res.sudden.t0 : null, dur: res.duration, off: res.waveRushOff || {}, w: res.events.filter(e => e.ty === "wave").map(e => [e.pid, e.i, e.t, !!e.rush]),
+    return JSON.stringify({ at: WAVE_FORCE_AT, gap: res.waveGap || WAVE_GAP, slack: res.waveGap ? 2 : 1, sd: res.sudden ? res.sudden.t0 : null, dur: res.duration, off: res.waveRushOff || {}, w: res.events.filter(e => e.ty === "wave").map(e => [e.pid, e.i, e.t, !!e.rush]),
       lords: res.results.map(x => ({ pid: x.pid, fell: x.fellAt })) }); })()`));
   let rushes = 0;
   for (const [g, d] of GAMES) {
     const none = RUN(g, d, [0, 1, 2]); // every box unticked: nobody rushes, and every wave still goes by its deadline
     assert.equal(none.w.filter(x => x[3]).length, 0, `game ${g}: a wave rushed with every box unticked`);
     assert.equal(Object.keys(none.off).length, none.lords.length, `game ${g}: the replay is not told which waves may not rush`);
-    none.lords.forEach(L => none.at.forEach((dl, k) => { const due = dl + none.gap + 1, end = Math.min(L.fell ?? 1e9, none.sd ?? 1e9, none.dur);
+    none.lords.forEach(L => none.at.forEach((dl, k) => { const due = dl + none.slack * none.gap + 1, /* with 20s waves (balance v5) a wave past its deadline can queue one gap behind another whose trigger came first */ end = Math.min(L.fell ?? 1e9, none.sd ?? 1e9, none.dur);
       if (end > due) assert.ok(none.w.some(([p, i, t]) => p === L.pid && i === k && t <= due), `game ${g}: unticked wave ${k + 1} missed its deadline`); }));
     const first = RUN(g, d, [0]); // Wave 1 unticked: emergencies use Waves 2 and 3 only
     first.w.filter(x => x[3]).forEach(([, i]) => { rushes++; assert.notEqual(i, 0, `game ${g}: unticked Wave 1 rushed`); });
