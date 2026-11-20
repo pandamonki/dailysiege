@@ -7,7 +7,8 @@ function ext(arr, r) { const i = Math.max(0, (r || 1) - 1), n = arr.length; retu
 function vigMul(r) { return 1 + VIG_PER * (r || 0); }
 const isPassive = k => k === "a4" || PASSIVE[S.cls] === k;
 const cls = () => CLASSES[S.cls];
-const level = () => Math.min(heroMaxLvl(heroV3Now()), S && S.lvl != null ? S.lvl : heroV3Now() ? 2 * DAY - 1 : DAY);
+const pracLvl = d => lvlV2Now() ? 1 + 3 * (d - 1) + Math.floor((d - 1) / 2) : 2 * d - 1; // a practice hero's level on day d when none is recorded (3 to 4 a day from lvlV2)
+const level = () => Math.min(heroMaxLvl(heroV3Now(), lvlV2Now()), S && S.lvl != null ? S.lvl : heroV3Now() ? pracLvl(DAY) : DAY);
 const spent = () => (heroV3Now() ? treeSpentAll(S.tree) : S.ranks.a1 + S.ranks.a2 + S.ranks.a3 + S.ranks.ult + (S.ranks.a4 || 0));
 const freePts = () => (heroV3Now() ? treeFree(S.tree, level()) : Math.max(0, level() - spent()));
 const ultLearned = () => (heroV3Now() ? treeHasUlt(S.tree) : (S.ranks.ult || 0) > 0); // has the hero learned an ultimate (old abilities or skill tree)
@@ -143,12 +144,14 @@ function myPieces() {
   }).filter(Boolean);
 }
 const finalToday = () => (typeof isLive === "function" && isLive() ? liveClock().dayNo : DAY) === 7;
+const finV2Now = () => (typeof isLive === "function" && isLive() ? finV2For(liveClock().planDay) : true);
+const pactsEndToday = () => finalToday() && !finV2Now(); // before finV2 every pact ended at dawn on day 7; now they hold until only one alliance is left
 function carriedPartners() { // players I was still allied with at the end of the last battle
   const live = isLive(), me = live ? LIVE.uid : "you", src = live ? carriedPairs(liveClock().planDay) : (S.pairs || []);
   return src.map(s => s.split("|")).filter(p => p.includes(me)).map(p => (p[0] === me ? p[1] : p[0])).filter(id => RIVALS.some(r => r.id === id));
 }
 // an ally can't be put on the target list unless the pact is set to Betray (or Break) for this battle
-const allyShielded = id => !finalToday() && carriedPartners().includes(id) && !["betray", "break"].includes((S.pactAct || {})[id]);
+const allyShielded = id => !pactsEndToday() && carriedPartners().includes(id) && !["betray", "break"].includes((S.pactAct || {})[id]);
 function pactPlan() { // what I've decided about each carried alliance: keep, break at the start, or betray when the set condition is met
   const breaks = [], pbetray = {};
   carriedPartners().forEach(id => { const a = (S.pactAct || {})[id]; if (a === "break") breaks.push(id); else if (a === "betray") pbetray[id] = (S.pactWhen || {})[id] || BETRAY_WHEN[0]; });

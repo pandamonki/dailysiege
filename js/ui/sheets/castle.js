@@ -159,7 +159,7 @@ function champSheet() {
   return head(spriteURL("c-" + S.cls), `${c.name} Hero`, `Level ${L} · ${freePts()} skill point${freePts() === 1 ? "" : "s"} to spend`) + `<div class="body">
     ${S.ob === 2 ? `<div class="obbox"><b>Step 1 of 2 · Choose your hero</b><span>Pick a class below, then spend your first skill point on an ability.</span><button class="btn wax" data-act="obnext">Next: design your banner →</button></div>` : ""}
     <div class="xpbar" title="Experience toward the next level"><i style="width:${Math.round(xp / nd * 100)}%"></i><span>Level ${L} · ${xp}/${nd} XP</span></div>
-    <p class="muted xpnote">Gains up to ${XP_CAP} levels a day in battle. Every level is one skill point.</p>
+    <p class="muted xpnote">Gains ${lvlV2Now() ? MIN_GAIN_V2 : MIN_GAIN} to ${xpCapNow()} levels a day in battle. Every level is one skill point.</p>
     <div class="stats"><span>${IC.hp(now.hp)}</span><span>${IC.atk(atkSplit(now.atk, itemAtk(S.items)))}</span></div>${typeInfo(heroTypes(S.cls, balV5Now()), "hero")}
     <div class="row"><button class="btn small wood" data-act="move" data-v="champ" ${dis()}>Move on the map</button><span class="muted">then tap a glowing tile</span></div>
     ${canChange ? `<div><button class="btn wood" data-act="heropick" ${dis()}>Change hero…</button></div>` : ""}

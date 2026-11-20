@@ -30,10 +30,10 @@ function portraitFor(m, color) {
 const UD_STATS = { atk: ["Attack", "Damage per hit, before the target's armour."], arm: ["Armour", "Armour type and the share of damage it blocks."], as: ["Attack speed", "Seconds between attacks. Lower is faster."], rng: ["Range", "How far it can attack, in tiles."], spd: ["Move speed", "Tiles walked per second."], evd: ["Dodge", "Chance to avoid a normal attack."], heal: ["Healing", "Health restored per cast."], lvl: ["Level", "Higher levels give more health and damage."], xp: ["Experience", "Heroes learn from every enemy that falls within 8 tiles. Fighting in the centre earns more."] };
 let cdIdx = null, xpIdx = null;
 function xpState(k, m, time) { // experience bar at this moment: { x, n, L, a, t }
-  const R = replay.res, max = m.tree ? MAX_HERO_LVL_V3 : MAX_HERO_LVL;
+  const R = replay.res, max = m.tree ? heroMaxLvl(true, !!R.lvlV2) : MAX_HERO_LVL;
   if (!xpIdx || xpIdx.R !== R) { xpIdx = { R, m: {} }; (R.xplog || []).forEach(c => (xpIdx.m[c.id] = xpIdx.m[c.id] || []).push(c)); }
   const a = xpIdx.m[k] || []; let c = null; for (let i = 0; i < a.length && a[i].t <= time; i++) c = a[i];
-  const L = c ? c.L : (m.lvl || 1), n = c ? c.n : xpNeed(L); return { x: c ? c.x : (m.xp0 || 0), n, L, a: c ? c.a : 0, t: c ? c.t : -99, max: L >= max };
+  const L = c ? c.L : (m.lvl || 1), n = c ? c.n : (R.lvlV2 ? xpNeedV2 : xpNeed)(L); return { x: c ? c.x : (m.xp0 || 0), n, L, a: c ? c.a : 0, t: c ? c.t : -99, max: L >= max };
 }
 function cdState(id, key, time) { // { ready, left, max, used } for a skill or item at this moment of the replay
   const R = replay.res; if (!R.cdlog) return { ready: true };

@@ -216,9 +216,42 @@ function drawTauntFx(e, time) {
   ctx.save(); ctx.globalAlpha = .55 * Math.min(1, (e.dur - age) / .5); ctx.setLineDash([ts * .14, ts * .1]); ctx.lineDashOffset = -time * ts; ctx.strokeStyle = "#ff6a4a"; ctx.lineWidth = ts * .05; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.setLineDash([]);
   ctx.globalAlpha = 1; ctx.font = `700 ${Math.round(ts * .34)}px Alegreya, Georgia, serif`; ctx.textAlign = "center"; ctx.fillStyle = "#ff6a4a"; ctx.strokeStyle = "#1e140c"; ctx.lineWidth = 3; ctx.strokeText("!", x1, y1 - ts * .7 - Math.sin(time * 8) * 2); ctx.fillText("!", x1, y1 - ts * .7 - Math.sin(time * 8) * 2); ctx.restore();
 }
-const SHOT_DUR = { rock: .8, arrow: .28, bullet: .1, orb: .32, spirit: .36, heal: .42, bone: .32 };
+const SHOT_DUR = { rock: .8, arrow: .28, bullet: .1, orb: .32, spirit: .36, heal: .42, bone: .32, tarrow: .3, tfire: .36, tbomb: .62, tarc: .22, tsnipe: .12 };
+// level 3 towers: big, bright shots so it is plain they are firing (a flash on the tower, a glowing projectile, a burst where it lands)
+const TOWER_SHOT = { tarrow: 1, tfire: 1, tbomb: 1, tarc: 1, tsnipe: 1 };
+function drawTowerShot(e, age) {
+  const sk = e.sk, dur = SHOT_DUR[sk], u = ts, x1 = e.x1 * ts, y1 = (e.y1 - .55) * ts, x2 = e.x2 * ts, y2 = e.y2 * ts, dx = x2 - x1, dy = y2 - y1, p = Math.min(1, age / dur), q = Math.max(0, (age - dur) / .5), col = e.c || "#fff";
+  const arcH = sk === "tbomb" ? .5 * Math.hypot(dx, dy) + ts * .7 : sk === "tarrow" ? .1 * Math.hypot(dx, dy) : 0, at = pp => [x1 + dx * pp, y1 + dy * pp - arcH * 4 * pp * (1 - pp)];
+  const glow = (x, y, r, c, a) => { const g = ctx.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, hexA(c, a)); g.addColorStop(1, hexA(c, 0)); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); };
+  const rr = i => hash(Math.round(e.x1 * 40) + i, Math.round(e.y2 * 40), Math.round(e.t * 10));
+  ctx.save(); ctx.globalCompositeOperation = "lighter";
+  if (age < .2) { const f = 1 - age / .2; glow(x1, y1, u * (.55 + .4 * (1 - f)), col, .9 * f); ctx.strokeStyle = hexA("#ffffff", .8 * f); ctx.lineWidth = u * .05; ctx.beginPath(); ctx.arc(x1, y1, u * (.2 + .45 * (1 - f)), 0, 7); ctx.stroke(); } // muzzle flash on the tower
+  if (p < 1) {
+    const [px, py] = at(p);
+    if (sk === "tarc") { // a crackling bolt of lightning straight to the target
+      ctx.strokeStyle = hexA(col, .9); ctx.lineWidth = u * .07; ctx.lineJoin = "round"; for (let k = 0; k < 2; k++) { ctx.beginPath(); ctx.moveTo(x1, y1); for (let i = 1; i < 7; i++) { const f = i / 7, j = (rr(i + k * 9 + Math.floor(age * 30)) - .5) * u * .45; ctx.lineTo(x1 + dx * f - dy / Math.hypot(dx, dy) * j, y1 + dy * f + dx / Math.hypot(dx, dy) * j); } ctx.lineTo(x2, y2); ctx.stroke(); ctx.lineWidth = u * .025; ctx.strokeStyle = "rgba(255,255,255,.9)"; }
+      glow(x2, y2, u * .5, col, .7);
+    } else if (sk === "tsnipe") { // a thick white-hot tracer
+      ctx.lineCap = "round"; ctx.strokeStyle = hexA(col, .7); ctx.lineWidth = u * .16; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(px, py); ctx.stroke(); ctx.strokeStyle = "#ffffff"; ctx.lineWidth = u * .06; ctx.stroke();
+    } else {
+      const trail = sk === "tfire" ? 8 : sk === "tbomb" ? 6 : 5;
+      for (let i = trail; i > 0; i--) { const [tx, ty] = at(Math.max(0, p - i * .045)); glow(tx + (rr(i) - .5) * u * .12, ty + (rr(i + 5) - .5) * u * .12, u * (.22 - i * .018), sk === "tfire" ? (i % 2 ? "#ffd23a" : "#ff5a1a") : sk === "tbomb" ? "#ffb04a" : col, .7 - i * .07); }
+      if (sk === "tbomb") { ctx.globalCompositeOperation = "source-over"; ctx.fillStyle = "rgba(0,0,0,.3)"; ctx.beginPath(); ctx.ellipse(x1 + dx * p, y1 + dy * p + u * .6, u * .16, u * .06, 0, 0, 7); ctx.fill(); ctx.fillStyle = "#1a1a1e"; ctx.beginPath(); ctx.arc(px, py, u * .17, 0, 7); ctx.fill(); ctx.globalCompositeOperation = "lighter"; glow(px + u * .12, py - u * .14, u * .14, "#fff1a0", .95); }
+      else if (sk === "tarrow") { [-1, 0, 1].forEach(k => { const ox = -dy / Math.hypot(dx, dy) * k * u * .16, oy = dx / Math.hypot(dx, dy) * k * u * .16; glow(px + ox, py + oy, u * .16, "#ffe8a0", .9); ctx.fillStyle = "#fffbe8"; ctx.beginPath(); ctx.arc(px + ox, py + oy, u * .05, 0, 7); ctx.fill(); }); }
+      else { glow(px, py, u * .34, "#ff7a1a", .95); glow(px, py, u * .16, "#fff3b0", 1); }
+    }
+  } else if (q < 1) { // the impact
+    const big = sk === "tbomb" ? 1.25 : sk === "tsnipe" ? .8 : .7, c2 = sk === "tbomb" || sk === "tfire" ? "#ff7a1a" : col;
+    glow(x2, y2, u * big * (.5 + .7 * q), c2, .9 * (1 - q)); glow(x2, y2, u * big * .35 * (1 - q), "#ffffff", .9 * (1 - q));
+    ctx.strokeStyle = hexA(sk === "tbomb" ? "#ffd27a" : col, 1 - q); ctx.lineWidth = u * .07 * (1 - q); ctx.beginPath(); ctx.ellipse(x2, y2 + u * .2, u * big * (.3 + q), u * big * (.15 + q * .5), 0, 0, 7); ctx.stroke();
+    const n = sk === "tbomb" ? 12 : 7; for (let i = 0; i < n; i++) { const an = i * (6.283 / n) + rr(i) * .6, d = u * big * (.2 + q * .8), h = sk === "tbomb" || sk === "tfire" ? Math.sin(q * 3.1) * u * .4 : 0; ctx.fillStyle = hexA(i % 2 ? "#ffffff" : c2, 1 - q); ctx.fillRect(x2 + Math.cos(an) * d - 2, y2 + Math.sin(an) * d * .6 - h - 2, 5, 5); }
+    if (sk === "tsnipe" && q < .5) { ctx.strokeStyle = hexA("#ffffff", 1 - q * 2); ctx.lineWidth = u * .05; for (let i = 0; i < 4; i++) { const an = i * 1.571 + .785; ctx.beginPath(); ctx.moveTo(x2 + Math.cos(an) * u * .15, y2 + Math.sin(an) * u * .15); ctx.lineTo(x2 + Math.cos(an) * u * (.5 + q), y2 + Math.sin(an) * u * (.5 + q)); ctx.stroke(); } }
+  }
+  ctx.restore();
+}
 // ranged auto-attacks: an arrow in flight, a rifle tracer, an arcane orb, a spirit wisp, healing orbs and a spinning bone shard, each with its own impact
 function drawShotFx(e, age) {
+  if (TOWER_SHOT[e.sk]) { if (age <= SHOT_DUR[e.sk] + .5) drawTowerShot(e, age); return; }
   const sk = e.sk, dur = SHOT_DUR[sk] || .25; if (age > dur + .3) return;
   const sc = e.sc || 1, u = ts * sc, x1 = e.x1 * ts, y1 = e.y1 * ts, x2 = e.x2 * ts, y2 = e.y2 * ts, p = Math.min(1, age / dur), dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy) || 1, col = e.c || "#ffffff";
   const arcH = sk === "rock" ? .7 * L + ts * .9 : sk === "arrow" ? .12 * L : sk === "heal" ? .2 * L + ts * .15 : sk === "bone" ? .08 * L : 0, q = Math.max(0, (age - dur) / .3);
@@ -388,6 +421,20 @@ function drawSuddenOverlay() {
     say(String(n), vh * .54, 64 * s * pop, "#ffd34d");
   } else if (time - sdn.go < 1.4) { const k = (time - sdn.go) / 1.4; say("FIGHT!", vh * .46, 52 * s * (1 + .25 * (1 - k)), "#ff5a3a", 1 - k * k); }
   else { say("SUDDEN DEATH", vh * .05, 15 * s, "#ff8a6a", .8); }
+  ctx.restore();
+}
+
+// The last alliance breaks (the war's final battle, plans stamped finV2): a banner across the screen for a few seconds
+function drawLastAllyOverlay() {
+  const la = replay.res && replay.res.lastAlly; if (!la) return; const age = replay.time - la.t; if (age < 0 || age > 4.2) return;
+  const serif = "Alegreya, Georgia, serif", s = Math.min(1, vw / 420), cx = vw / 2, a = Math.min(1, age * 3, (4.2 - age) / .6), pop = 1 + .3 * Math.max(0, 1 - age / .3);
+  ctx.save(); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  const say = (txt, y, size, col) => { ctx.globalAlpha = a; ctx.font = `800 ${size}px ${serif}`; ctx.lineWidth = Math.max(4, size / 6); ctx.strokeStyle = "rgba(20,8,4,.9)"; ctx.strokeText(txt, cx, y, vw - 24); ctx.fillStyle = col; ctx.fillText(txt, cx, y, vw - 24); };
+  ctx.globalAlpha = a * .6; ctx.fillStyle = "#2a0a24"; ctx.fillRect(0, vh * .3, vw, vh * .24);
+  ctx.globalAlpha = a; ctx.fillStyle = "#e2b33c"; ctx.fillRect(0, vh * .3, vw, 3); ctx.fillRect(0, vh * .54 - 3, vw, 3);
+  say("THE LAST ALLIANCE BREAKS", vh * .39, 30 * s * pop, "#ffd34d");
+  const nm = p => (replay.res.names && replay.res.names[p]) || "A lord";
+  say(`${la.pids.map(nm).join(" vs ")}`, vh * .45, 17 * s, "#f6e4b8"); say("Only one banner can win the war", vh * .5, 15 * s, "#ff8a6a");
   ctx.restore();
 }
 

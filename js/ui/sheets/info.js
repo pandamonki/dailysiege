@@ -26,7 +26,7 @@ function typesHTML() {
 // ----- leaderboard, battle report, guide, spell book -----
 function boardRows() { // [{id,name,color,banner,cls,lvl,pts,last}]
   if (!isLive()) {
-    const ids = ["you", ...RIVALS.map(r => r.id)], botLvl = Math.min(heroMaxLvl(heroV3Now()), 2 * DAY - 1); // the same levels the practice battle uses
+    const ids = ["you", ...RIVALS.map(r => r.id)], botLvl = Math.min(heroMaxLvl(heroV3Now(), lvlV2Now()), pracLvl(DAY)); // the same levels the practice battle uses
     return ids.map(id => { const rv = RIVALS.find(r => r.id === id); return { id, me: id === "you", name: rv ? rv.name : "You", color: rv ? rv.color : MY_COLOR, banner: rv ? rv.banner : S.banner, cls: rv ? (seeArmies() ? rv.cls : null) : S.cls, lvl: rv ? botLvl : level(), pts: PRACTICE_BOARD[id] || 0, last: null }; });
   }
   const ck = liveClock(), roster = rosterFor(ck.week), pts = standings(ck.week), lastKey = Object.keys(LIVE.battles).filter(k => LIVE.battles[k].week === ck.week).sort().pop(), lb = lastKey && LIVE.battles[lastKey];
@@ -110,6 +110,36 @@ function heroKit(pl) {
   (pl.items || []).forEach(k => { if (ITEMS[k]) out.push({ k: "i" + k, img: itemURL(k), name: ITEMS[k].name, sub: "Item", desc: itemDesc(k), item: true }); });
   return out;
 }
+// A lord's net worth: the gold their plan has put into soldiers (with training), hero items, castle tiers, gear, traps, towers and walls
+function planWorth(pl) {
+  if (!pl) return 0; let g = 0; const pcs = pl.pieces || [];
+  pcs.forEach(pc => { if (pc.kind === "unit" && UNITS[pc.type]) { if (pc.merc) { g += pc.bid || 0; return; } g += UNITS[pc.type].cost; for (let l = 1; l < (pc.lvl || 1); l++) g += trainCost(pc.type, l); }
+    else if (pc.kind === "trap") g += pc.type === "tower" ? towerSpent(pc.tk && UNITS[pc.tk] ? pc.tk : "tower") : ((TRAPS[pc.type] || {}).cost || 0);
+    else if (pc.kind === "wall") g += WALL_COST; });
+  (pl.items || []).forEach(k => { if (ITEMS[k]) g += itemCost(k); });
+  for (let t = 1; t < (pl.castleTier || 1); t++) g += (CASTLE_TIERS[t] || {}).cost || 0;
+  Object.entries(pl.gear || {}).forEach(([k, n]) => { for (let i = 0; i < (n || 0); i++) g += ((GEAR[k] || [])[i] || {}).cost || 0; });
+  return Math.round(g);
+}
+// damage dealt split three ways (battles from 20 Nov record it): to heroes, to castles, and the rest (soldiers, summons, walls)
+const dmgSplit = r => r && r.dmg != null ? { all: r.dmg, hero: r.dmgH || 0, castle: r.dmgC || 0, unit: Math.max(0, r.dmg - (r.dmgH || 0) - (r.dmgC || 0)) } : null;
+const kNum = v => v >= 10000 ? Math.round(v / 1000) + "k" : v >= 1000 ? (v / 1000).toFixed(1) + "k" : String(Math.round(v));
+function worthStatsHTML(worth, dm) {
+  return `<div class="wstats"><div><span>💰 Net worth</span><b>${worth.toLocaleString()}g</b></div>${dm ? `<div><span>⚔ Hero damage</span><b>${kNum(dm.hero)}</b></div><div><span>🗡 Unit damage</span><b>${kNum(dm.unit)}</b></div><div><span>🏰 Castle damage</span><b>${kNum(dm.castle)}</b></div>` : ""}</div>`;
+}
+// a lord's soldiers, grouped by type and level, and their upgrades (castle tier, gear, towers, traps, walls)
+function armyListHTML(pl) {
+  const pips = (n, m) => `<span class="pips sm">${Array.from({ length: m }, (_, i) => `<i class="pip${i < n ? " on" : ""}"></i>`).join("")}</span>`;
+  const grp = {}; (pl.pieces || []).filter(pc => pc.kind === "unit" && UNITS[pc.type]).forEach(u => { const k = u.type + "|" + (u.lvl || 1); grp[k] = (grp[k] || 0) + 1; });
+  return Object.keys(grp).length ? Object.entries(grp).map(([k, n]) => { const [t, l] = k.split("|"); return `<div class="irow ab"><img alt="" src="${spriteURL(t)}"><span><b>${n > 1 ? n + " × " : ""}${UNITS[t].name}</b></span>${pips(+l, 3)}</div>`; }).join("") : `<p class="muted">No soldiers.</p>`;
+}
+function upgradesListHTML(pl) {
+  const pips = (n, m) => `<span class="pips sm">${Array.from({ length: m }, (_, i) => `<i class="pip${i < n ? " on" : ""}"></i>`).join("")}</span>`, gear = pl.gear || {}, pcs = pl.pieces || [];
+  const towers = pcs.filter(pc => pc.kind === "trap" && pc.type === "tower").map(pc => UNITS[pc.tk] ? UNITS[pc.tk].name : TRAPS.tower.name), traps = pcs.filter(pc => pc.kind === "trap" && pc.type !== "tower").map(pc => (TRAPS[pc.type] || {}).name).filter(Boolean), walls = pcs.filter(pc => pc.kind === "wall").length;
+  return `<div class="irow"><span>Castle</span><b>${esc(tierName(pl.castleTier || 1))}</b>${pips(pl.castleTier || 1, 3)}</div>`
+    + GEAR_SLOTS.map(([k, l]) => `<div class="irow"><span>${l}</span><b>${gear[k] ? esc(GEAR[k][gear[k] - 1].name) : "None"}</b>${pips(gear[k] || 0, 3)}</div>`).join("")
+    + `<div class="irow"><span>Towers</span><b>${towers.length ? towers.map(esc).join(", ") : "None"}</b></div><div class="irow"><span>Traps</span><b>${traps.length ? traps.map(esc).join(", ") : "None"}</b></div><div class="irow"><span>Walls</span><b>${walls}</b></div>`;
+}
 function heroKitTiles(pl, pid) {
   const kit = heroKit(pl); if (!kit.length) return "";
   const [tp, tk] = String(sheet.rtip || "").split("|"), open = tp === pid ? kit.find(x => x.k === tk) : null;
@@ -128,9 +158,10 @@ function lordSheet(d, pid, nm) {
     + [["walls", "Bastion"], ["tower", "Tower"]].map(([k, l]) => `<div class="irow"><span>${l}</span><b>${def[k] ? esc(DEFENCES[k][def[k] - 1].name) : "None"}</b>${pips(def[k] || 0, 2)}</div>`).join("");
   return head(`icons/ui/hero_${pl.cls}.webp`, nm(pid), `${C.name} · level ${pl.level} · ${tierName(pl.castleTier || 1)}`) + `<div class="body insp">
     <button class="btn small" data-act="rinspx">← Scoreboard</button>
+    <div class="sec"><h3>This battle</h3>${worthStatsHTML(planWorth(pl), dmgSplit(d.results.find(r => r.pid === pid)))}</div>
     <div class="sec"><h3>Hero abilities</h3>${pl.tree ? heroKit(pl).filter(x => !x.item).map(x => `<div class="irow ab"><img alt="" src="${x.img}"><span><b>${esc(x.name)}</b><small class="muted">${esc(x.desc)}</small></span><small>${esc(x.sub)}</small></div>`).join("") || `<p class="muted">No skills learned.</p>` : abil.map(([k, n, ds, m]) => `<div class="irow ab">${art(k) ? `<img alt="" src="${art(k)}">` : ""}<span><b>${esc(n)}</b><small class="muted">${esc(ds)}</small></span>${pips(rk[k] || 0, m)}</div>`).join("")}${pl.tree ? "" : `<div class="irow ab"><span><b>Vigour</b><small class="muted">+2% health and damage per rank</small></span>${pips(rk.a4 || 0, 6)}</div>`}</div>
     <div class="sec"><h3>Items</h3>${(pl.items || []).length ? `<div class="islots tiny">${pl.items.map(k => ITEMS[k] ? `<div class="islot" title="${esc(ITEMS[k].name)}"><img alt="" src="${itemURL(k)}"><small>${esc(ITEMS[k].name)}</small></div>` : "").join("")}</div>` : `<p class="muted">No items.</p>`}</div>
-    <div class="sec"><h3>Upgrades</h3>${gearRows}</div>
+    <div class="sec"><h3>Upgrades</h3>${pl.pieces && pl.pieces.some(pc => pc.kind === "trap") || !def.walls && !def.tower ? upgradesListHTML(pl) : gearRows}</div>
     <div class="sec"><h3>Army</h3>${Object.keys(grp).length ? Object.entries(grp).map(([k, n]) => { const [t, l] = k.split("|"); return `<div class="irow ab"><img alt="" src="${spriteURL(t)}"><span><b>${n > 1 ? n + " × " : ""}${UNITS[t] ? UNITS[t].name : t}</b></span>${pips(+l, 3)}</div>`; }).join("") : `<p class="muted">No soldiers.</p>`}<p class="muted">${walls} wall${walls === 1 ? "" : "s"} · ${traps} trap${traps === 1 ? "" : "s"} placed</p></div>
   </div>`;
 }
@@ -178,6 +209,21 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "v1.19: the crowning, the last alliance and faster heroes", date: "20 Nov", fixes: [
+    "After the war's last battle the day 7 report opens first (Watch and Highlights work from it); closing it goes on to the war results.",
+  ], balance: [
+    "From the 23 Nov battle (finV2): on day 7 pacts no longer end at dawn. They hold into the battle, and the moment one alliance is all that is left standing (or all that is left in sudden death) its pacts break, a banner announces it, and the allies fight on until one lord wins. Allies never share the war's last victory.",
+    "From the 23 Nov battle (lvlV2): heroes gain at least 3 and at most 4 levels a battle (was 2 to 3), up to level 25 (was 15). So after six battles a hero is level 19 to 25. Every level is still one skill point.",
+    "With lvlV2 each level adds 7% of the hero's base health (was 12%) and 5.25% of its base attack (was 9%), so a level 25 hero has the health and attack a level 15 hero had. Each level needs a flat 130 experience, so about a third of heroes reach 4 levels in a battle.",
+  ], changes: [
+    "The crowning: the first time the war results open, every other lord bows in a line below a podium, trumpets sound, and a bronze crown lands on 3rd, then silver on 2nd, then after a drum roll the big gold crown on 1st, with confetti and the winner's victory taunt. Each cheers when crowned; the winner dances and 2nd and 3rd shake their heads. Replay it with the Crowning button.",
+    "War results: tap a lord for tabs: Stats (net worth, hero, unit and castle damage over the war, days won, kills and every day's points), Skills, Items, Army and Upgrades as they fought the last battle. The battle report's lord page shows net worth and the damage split too.",
+    "War highlights play the five biggest moments of the whole war (betrayals, huge ultimates, carnage, giants falling, the last alliance breaking, the final castle), at most two of a kind.",
+    "Muster Hall: a gold crown with a count beside each lord who has won a war in this game.",
+    "Victory screen: fallen allies float beside the winners as ghosts with a wispy tail, cheering the alliance on.",
+    "Level 3 towers: a flash on the tower each shot, and a bigger projectile and impact for each type (triple blazing arrows, fire bolts, lobbed bombs, chain lightning, sniper tracers).",
+    "Map strip: the hero's Stats button has a drawn bar-chart icon instead of the emoji, and the castle's Upgrade button no longer shows its cost (its hint names the tier and cost).",
+  ] },
   { v: "v1.18: hero class, betrayal kills and the replay", date: "20 Nov", fixes: [
     "Mercenary camp: + and − now change the amount you are about to bid, from the group's minimum, and nothing is bid until you press Place bid (or Change bid). The group's tile and card show your bid, not the minimum.",
   ], balance: [

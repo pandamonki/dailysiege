@@ -620,4 +620,20 @@ details.fg-host[open] > summary { margin-bottom: 8px; }
 .pd-stats .iatk, .ud-stat .iatk, #ud .iatk { color: #7ee07e; }
 /* five quick buttons (the hero: Abilities, Items, Stats, Move, Orders): a little narrower each */
 .pd-act.n5 { width: 192px; gap: 2px; } .pd-act.n5 .pd-b { width: 37px; } .pd-act.n5 .pd-b small { font-size: 9.5px; }
-.pd-b span em.pcost { font-style: normal; font-size: 11px; font-weight: 700; letter-spacing: -.2px; }
+.pd-b span svg.pd-svg { width: 22px; height: 22px; display: block; }
+/* a lord's week in the war results: tabs, then stats or their final build */
+.wdet.wl { display: block; }
+.wdet.wl > div { display: block; border: 0; padding: 0; }
+.wtabs { display: flex; gap: 3px; margin-bottom: 6px; overflow-x: auto; scrollbar-width: none; }
+.wtabs button { flex: 1 0 auto; min-height: 32px; padding: 4px 8px; border: 2px solid #8a6418; border-radius: 8px; background: #f6ecd0; color: var(--ink); font: inherit; font-size: 12px; font-weight: 700; }
+.wtabs button.on { background: #8a6418; color: #fff4d6; }
+.wtabs button:disabled { opacity: .45; }
+.wl .wgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 14px; margin-top: 6px; }
+.wl .wgrid > div, .wstats > div { display: flex; justify-content: space-between; border-bottom: 1px dashed rgba(90,58,32,.3); padding: 3px 0; }
+.wl .wdays { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin-top: 6px; }
+.wstats { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 14px; font-size: 13px; }
+.wstats > div:first-child { grid-column: 1 / -1; font-size: 14px; }
+.wstats span { color: var(--ink-soft); }
+.wl .wnote { font-size: 11.5px; margin: 6px 0 2px; }
+.wl .irow { font-size: 13px; }
+.wl .pips { display: flex; gap: 3px; flex: none; }

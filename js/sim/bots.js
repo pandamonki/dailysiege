@@ -27,7 +27,7 @@ function autoTree(lvl, seed, cls, slot) { // slot: the bot's place in the roster
   const seq = [[0, 0], [0, 0], [0, 1], [0, 1], [0, 1], [0, 3], [0, sides ? 4 : 3], [0, 5]];
   if (depth) seq.push([0, 0], [0, 0], [0, 1], [1, 0], [1, 0], [1, 1]); else seq.push([1, 0], [1, 0], [1, 1], [1, 1], [1, 1], [1, 3]);
   seq.push([0, 3], [0, 0], [0, 1], [0, 2], [0, 2], [1, 3], [1, 1], [1, 0], [0, 4], [1, 2], [1, 4]);
-  const bk = [main, other], L = Math.min(lvl, MAX_HERO_LVL_V3);
+  const bk = [main, other], L = Math.min(lvl, MAX_HERO_LVL_V4);
   TREE_NAME_CLS = cls || "warrior";
   seq.forEach(([w, i]) => { if (treeCanLearn(tr, TREE_BKEY[bk[w]], i, L)) tr[TREE_BKEY[bk[w]]][i]++; });
   return tr;

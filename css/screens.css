@@ -182,14 +182,74 @@
 .dangerbox .spread + .spread { margin-top: 10px; }
 .delwarn { border: 2px solid #b8322a; border-radius: 8px; background: #fbe3dc; padding: 10px 12px; }
 .delwarn p { margin: 0 0 8px; line-height: 1.4; }
-/* victory heroes: allies who won together side by side, fallen allies slumped beside them, a betrayed hero face down at the winner's feet */
+/* victory heroes: allies who won together side by side, fallen allies floating beside them as ghosts, a betrayed hero face down at the winner's feet */
 .vheroes { display: flex; justify-content: center; align-items: flex-end; gap: 4px; flex-wrap: wrap; }
 .vheroes .vh { display: block; }
 .vheroes.many .vhero { width: 92px; }
-.vheroes .vh.dead .vhero.slump { animation: none; filter: grayscale(.85) brightness(.6); transform: rotate(-24deg) translate(6px, 18px) scaleY(.82); transform-origin: 50% 100%; opacity: .85; }
+.vheroes .vh.ghost { animation: vghostfloat 2.4s ease-in-out infinite; margin-bottom: 26px; }
+.vheroes .vh.ghost .vhero.vghost { animation: vghostcheer 1.2s ease-in-out infinite; opacity: .72; filter: grayscale(1) brightness(1.7) sepia(.25) hue-rotate(160deg) drop-shadow(0 0 6px rgba(170,225,255,.9));
+  -webkit-mask-image: linear-gradient(to bottom, #000 58%, transparent 80%); mask-image: linear-gradient(to bottom, #000 58%, transparent 80%); }
+.vheroes .vh.ghost .vtail { position: absolute; left: 50%; bottom: -14px; width: 44%; height: 46px; transform: translateX(-50%); transform-origin: 50% 0; animation: vtailwag 1.1s ease-in-out infinite; filter: drop-shadow(0 0 4px rgba(170,225,255,.8)); pointer-events: none; }
+@keyframes vghostfloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@keyframes vghostcheer { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg) translateY(-3px); } }
+@keyframes vtailwag { 0%, 100% { transform: translateX(-50%) skewX(10deg); } 50% { transform: translateX(-50%) skewX(-10deg); } }
+@media (prefers-reduced-motion: reduce) { .vheroes .vh.ghost, .vheroes .vh.ghost .vhero.vghost, .vheroes .vh.ghost .vtail { animation: none; } }
 .vheroes.bodies { margin-bottom: 30px; }
 .vheroes .vh { position: relative; }
 .vcorpse { position: absolute; left: 50%; bottom: -34px; z-index: 1; display: block; width: 104px; height: 50px; transform: translateX(-50%); pointer-events: none; }
 .vcorpse .vbody { position: absolute; left: 50%; top: 50%; width: 64px; image-rendering: pixelated; transform: translate(-50%, -50%) rotate(-90deg); filter: grayscale(.75) brightness(.5) sepia(.35); }
 .vcorpse .vknife { position: absolute; left: 50%; top: -8px; width: 34px; height: 34px; transform: translateX(-4px) rotate(195deg); filter: drop-shadow(0 0 1px #000) drop-shadow(0 1px 0 #1e140c); }
 .vcorpse::after { content: ""; position: absolute; left: 18%; right: 18%; bottom: 2px; height: 9px; border-radius: 50%; background: rgba(140,20,14,.6); z-index: -1; }
+/* the crowning: the war's grand finale (warCrowning in js/ui/sheets/warend.js) */
+.crowning { position: fixed; inset: 0; z-index: 92; background: radial-gradient(ellipse at 50% 30%, #5a2a6ef2, #1a0e22fa 70%); display: flex; align-items: center; justify-content: center; overflow: auto; }
+.crowning .confetti { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
+.cr-rays { position: absolute; left: 50%; top: 32%; width: 900px; height: 900px; margin: -450px 0 0 -450px; pointer-events: none; opacity: 0; transition: opacity 1s;
+  background: repeating-conic-gradient(from 0deg, rgba(255,214,90,.16) 0 8deg, transparent 8deg 20deg); border-radius: 50%; -webkit-mask-image: radial-gradient(#000 20%, transparent 65%); mask-image: radial-gradient(#000 20%, transparent 65%); animation: crspin 30s linear infinite; }
+.crowning.won .cr-rays { opacity: 1; }
+@keyframes crspin { to { transform: rotate(360deg); } }
+.cr-box { position: relative; z-index: 2; text-align: center; padding: 16px; width: 100%; max-width: 460px; }
+.cr-t { font-family: var(--f-display); font-size: 42px; color: #ffe082; text-shadow: 0 3px 0 #5a3a08, 0 0 18px rgba(255,200,80,.5); animation: vpop .6s; }
+.cr-s { color: #f4e6c4; font-size: 18px; margin-bottom: 6px; }
+.cr-bubble { opacity: 0; animation: none; margin: 4px auto 0; }
+.crowning.won .cr-bubble { animation: vsay .35s ease-out 1s forwards; }
+.cr-podium { display: flex; justify-content: center; align-items: flex-end; gap: 6px; margin-top: 8px; }
+.cr-pod { flex: 1 1 0; max-width: 130px; display: flex; flex-direction: column; align-items: center; }
+.cr-who { position: relative; height: 104px; display: flex; align-items: flex-end; justify-content: center; }
+.cr-p1 .cr-who { height: 124px; }
+.cr-hero { width: 84px; image-rendering: pixelated; display: block; transform-origin: 50% 100%; }
+.cr-p1 .cr-hero { width: 104px; }
+.cr-step { width: 100%; border: 3px solid #5a3a08; border-bottom: 0; border-radius: 8px 8px 0 0; background: linear-gradient(#e9cf8c, #b98d3a); box-shadow: inset 0 0 0 3px var(--c); color: #2b1b0c; display: flex; flex-direction: column; align-items: center; padding: 4px 4px 8px; }
+.cr-step b { font-family: var(--f-display); font-size: 30px; line-height: 1; }
+.cr-step small { font-weight: 700; font-size: 13px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cr-step em { font-style: normal; font-size: 12px; opacity: .8; }
+.cr-p1 .cr-step { height: 112px; } .cr-p2 .cr-step { height: 82px; } .cr-p3 .cr-step { height: 62px; }
+.cr-p3 .cr-step { background: linear-gradient(#e2b183, #a8692f); } .cr-p2 .cr-step { background: linear-gradient(#eef1f4, #a9b3bc); } .cr-p1 .cr-step { background: linear-gradient(#ffe48a, #d4a020); }
+/* crowns wait high above, then drop onto the head */
+.cr-crown { position: absolute; left: 50%; top: -6px; width: 34px; z-index: 2; transform: translate(-50%, -260px) rotate(-30deg); opacity: 0; filter: drop-shadow(0 2px 2px rgba(0,0,0,.6)); }
+.cr-crown svg { display: block; width: 100%; }
+.cr-p1 .cr-crown { width: 50px; top: -12px; }
+.cr-p2 .cr-crown { width: 40px; }
+.cr-pod.crowned .cr-crown { animation: crdrop .7s cubic-bezier(.3,1.4,.6,1) forwards; }
+.cr-p1.crowned .cr-crown { animation: crdrop .9s cubic-bezier(.3,1.4,.6,1) forwards, crglow 1.4s ease-in-out .9s infinite; }
+@keyframes crdrop { 0% { opacity: 1; transform: translate(-50%, -260px) rotate(-30deg); } 70% { transform: translate(-50%, 4px) rotate(6deg); opacity: 1; } 100% { opacity: 1; transform: translate(-50%, 0) rotate(0); } }
+@keyframes crglow { 50% { filter: drop-shadow(0 0 10px #ffe082) drop-shadow(0 2px 2px rgba(0,0,0,.6)); } }
+/* the court bows; the crowned cheer; the winner dances; the runners-up shake their heads */
+.cr-court { display: flex; justify-content: center; flex-wrap: wrap; gap: 2px 4px; margin: 12px 0 14px; padding-top: 8px; border-top: 2px solid rgba(233,207,140,.35); }
+.cr-bow { display: flex; flex-direction: column; align-items: center; width: 56px; }
+.cr-bow .cr-hero { width: 52px; }
+.cr-bow small { color: #e9dcbc; font-size: 10px; max-width: 56px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.crowning.bowing .cr-bow .cr-hero { animation: crbow 2.4s ease-in-out var(--d) infinite; }
+@keyframes crbow { 0%, 15% { transform: none; } 35%, 70% { transform: rotate(28deg) translateY(4px) scaleY(.9); } 90%, 100% { transform: none; } }
+.cr-pod.crowned .cr-hero { animation: vbob 1s ease-in-out infinite; }
+.cr-pod.cheer .cr-hero { animation: crcheer .55s ease-out 2; }
+@keyframes crcheer { 0% { transform: none; } 40% { transform: translateY(-26px) scale(1.08); } 70% { transform: translateY(0) scale(1.1, .9); } 100% { transform: none; } }
+.crowning.won .cr-p1 .cr-hero { animation: vdance 1.6s ease-in-out infinite; }
+.crowning.won .cr-p2:not(.cheer) .cr-hero, .crowning.won .cr-p3:not(.cheer) .cr-hero { animation: crshake 1.8s ease-in-out .9s infinite; filter: saturate(.7) brightness(.85); }
+@keyframes crshake { 0%, 100% { transform: rotate(0) translateY(3px); } 15% { transform: rotate(-7deg) translateY(3px); } 30% { transform: rotate(7deg) translateY(3px); } 45% { transform: rotate(-7deg) translateY(3px); } 60% { transform: rotate(0) translateY(5px) scaleY(.94); } }
+.crowning.roll .cr-p1 .cr-hero { animation: crjitter .08s linear infinite; }
+@keyframes crjitter { 50% { transform: translateX(1px); } }
+@media (prefers-reduced-motion: reduce) { .crowning .cr-hero, .cr-rays { animation: none !important; } .cr-pod.crowned .cr-crown { animation: none; opacity: 1; transform: translate(-50%, 0); } }
+/* Muster Hall: a gold crown with the number of wars each lord has won */
+.wcrown { position: relative; display: inline-block; width: 30px; height: 22px; margin-left: 6px; vertical-align: -4px; filter: drop-shadow(0 1px 0 rgba(0,0,0,.35)); }
+.wcrown svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.wcrown b { position: absolute; left: 0; right: 0; top: 8px; text-align: center; font-size: 11px; line-height: 1; font-weight: 800; color: #4a2c04; }

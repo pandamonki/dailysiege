@@ -50,6 +50,13 @@ let WAVE_V4_FROM = "2026-11-20"; const waveV4For = d => String(d) >= WAVE_V4_FRO
 // attack and armour class (HERO_ATK / HERO_ARM in config/balance.js); a hero home and out of combat heals; regen items toned down; a castle
 // destroyed by the lord who betrayed it scores BETRAY_CASTLE_X times the castle points.
 let BAL_V5_FROM = "2026-11-22"; const balV5For = d => String(d) >= BAL_V5_FROM, WAVE_GAP_V5 = 20;
+// Final-day alliances and faster levelling (plans stamped finV2 and lvlV2, battles from FIN_V2_FROM):
+// - finV2: on day 7 pacts no longer dissolve at dawn. They hold into the battle and break only when one alliance is all that is
+//   left standing; then a banner announces it and the last allies fight it out for the war. Betray before you are betrayed.
+// - lvlV2: heroes gain 3 to 4 levels a battle (MIN_GAIN_V2 / XP_CAP_V2) up to level MAX_HERO_LVL_V4, with smaller steps per level
+//   (HP_STEP_V4 / ATK_STEP_V4 in config/trees.js) so a level 25 hero is as strong in health and attack as a level 15 hero was.
+let FIN_V2_FROM = "2026-11-23"; const finV2For = d => String(d) >= FIN_V2_FROM, lvlV2For = d => String(d) >= FIN_V2_FROM;
+const lvlV2Now = () => { try { return typeof isLive === "function" && isLive() && typeof liveClock === "function" ? lvlV2For(liveClock().planDay) : true; } catch (e) { return true; } };
 const WAVE_WHEN = [["timer", "At a set time"], ["castle_hit", "When my castle is attacked"], ["castle_low", "When my castle drops below half"], ["hero_dies", "When my hero dies"], ["army_dead", "When all my soldiers die"], ["enemy_hero", "When an enemy hero dies"], ["ult", "When any ultimate is cast"]];
 const WAVE_TIMES = [20, 30, 45, 60, 75, 90, 120, 150];
 const WAVE_ORDERS = [["default", "Default orders", "Each soldier follows its group's combat orders"], ["castle", "March on castle", "Heads for the enemy castle; turns only on melee attackers"], ["hero", "Hunt heroes", "Goes after the nearest enemy hero"], ["nearest", "Nearest enemies", "Fights the closest enemy soldiers and heroes, wherever they are"]];

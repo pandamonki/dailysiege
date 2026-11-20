@@ -5,7 +5,7 @@ it in the same pull request as any change to the rules** (see CLAUDE.md). When t
 is right and this file is the bug. Exact numbers live in the files named in brackets; this page gives the shape and the
 key values.
 
-Last checked against the code: 20 Nov 2026 (v1.18).
+Last checked against the code: 20 Nov 2026 (v1.19).
 
 ## Dated rules
 
@@ -27,6 +27,8 @@ practice games always stamp all of them (`js/sim/plans.js`).
 | 20 Nov | `waveV4` | "Castle attacked" wave trigger becomes "enemies reach my castle" (within 3 tiles, or the first hit) |
 | 21 Nov | `placeV2` | Placement: one point per place, last scores 1, plus 2 for winning |
 | 22 Nov | `balV5` | Balance v5: hero rebalance (stats and skills), Hero damage and armour class for every hero, resting at home heals, regen items toned down, waves a flat 20s apart, triple castle points for a betrayal kill |
+| 23 Nov | `finV2` | Final-day alliances: day 7 pacts hold until one alliance is all that is left, then break and the allies fight on |
+| 23 Nov | `lvlV2` | Faster levelling: 3 to 4 levels a battle, up to level 25, smaller steps per level |
 
 ## The war
 
@@ -65,10 +67,14 @@ practice games always stamp all of them (`js/sim/plans.js`).
 ## Heroes
 
 - One hero a war, one of five classes (Warrior, Shaman, Rogue, Mage, Archer/Ranger) with three skill trees each
-  (`js/config/trees.js`, `docs/hero-skill-trees.md`). Every level gives one skill point; the cap is level 15.
+  (`js/config/trees.js`, `docs/hero-skill-trees.md`). Every level gives one skill point; the cap is level 15 (25 from 23 Nov, `lvlV2`).
 - The class is chosen when registering and can be changed only while registration is open. Once the war begins it is
   fixed for the whole war; the next war's registration is the next chance to pick again.
 - A hero gains at least 2 and at most 3 levels a day (`MIN_GAIN`, `XP_CAP`).
+- Faster levelling (from 23 Nov, `lvlV2`): a hero starts at level 1 and gains at least 3 and at most 4 levels a battle (`MIN_GAIN_V2`,
+  `XP_CAP_V2`), up to level 25 (`MAX_HERO_LVL_V4`), so after six battles it is level 19 to 25. Each level needs a flat 130 experience
+  (`XP_V2`); about a third of heroes reach 4 in a battle. Each level adds 7% of base health and 5.25% of base attack (`HP_STEP_V4`,
+  `ATK_STEP_V4`; before it 12% and 9%), so a level 25 hero matches the old level 15. The ultimate still needs level 9.
 - Active skills cast themselves at their own best moment; a "Cast when" condition can be added on top.
 - A fallen hero respawns at its castle (up to twice a battle, waiting longer at higher levels), except in sudden death.
 - From 20 Nov (`skV2`) every skill rank adds an even step worth at least about two thirds of rank 1 (`TREE_V2` in
@@ -194,14 +200,29 @@ practice games always stamp all of them (`js/sim/plans.js`).
 - Replay: every lord's castle and hero sit along the top of the map with health bars. Tap a hero to have the camera follow it, a
   castle to look at it; the unit panel has a Follow button for any hero, and the home button goes back to your own hero.
 - Pre-battle screen: each alliance's lords sit side by side under one ALLIANCE box, biggest alliance first, then lords alone.
-- Victory screen: allies who win together all appear; the winner's allies whose castles fell sit slumped beside them; a winner
+- Victory screen: allies who win together all appear; the winner's allies whose castles fell float beside them as ghosts (a wispy tail
+  instead of legs), cheering them on; a winner
   who betrayed an ally that battle has the betrayed hero face down at their feet with a dagger in its back.
 - Gift (day 2 and 5): Roll spins three reels, Stop slows them onto the three items (fixed in advance), the first is picked; one
   description and one Pick button below.
 - Mercenary camp: + and − set the amount (from the minimum) and Place bid submits it; tiles show your bid.
-- Map strip: the hero has Abilities, Items, Stats, Move and Orders; the castle has Upgrade (next tier and cost), Base and Army; a
+- Level 3 towers fire big, bright shots in the replay: a flash on the tower and a projectile and burst for each type.
+- Map strip: the hero has Abilities, Items, Stats (a drawn bar-chart icon), Move and Orders; the castle has Upgrade (its hint names the next tier and cost, like the other upgrade buttons), Base and Army; a
   wall has only Sell. Tapping the castle again does nothing more.
 - Seal checklist: every line has a button to fix it; "hero on the field" shows only when the hero is missing.
+
+## The end of a war
+
+- After the war's last battle the day 7 report opens first (`warReportFirst` in `js/ui/sheets/warend.js`); closing it opens the war
+  results.
+- The crowning plays over the war results the first time they open, and again from the Crowning button: the other lords bow in a line
+  under a podium, trumpets, a bronze crown on 3rd, silver on 2nd, then a drum roll and the gold crown on 1st with confetti and the
+  winner's victory taunt. Each cheers when crowned; then the winner dances while 2nd and 3rd shake their heads.
+- War results: podium, final standings and war prizes. Tap a lord for tabs: Stats (net worth, which is the gold in their final army, hero
+  items, castle and defences; hero, unit and castle damage over the war; days won, kills, spoils, each day's points), Skills, Items,
+  Army and Upgrades as they fought the last battle.
+- Top 5 moments: the war's highlights are the five biggest moments of the whole war (at most two of a kind), played in order.
+- Muster Hall: a gold crown with a count beside each lord who has won a war in this game (from the hall of fame).
 
 ## Battle report
 
@@ -209,19 +230,22 @@ practice games always stamp all of them (`js/sim/plans.js`).
   Highlights for the replay. Every other pop-up (gift, invitations, tips, What's new, the mercenary camp) waits until it is
   closed, and if the result lands while the camp, the seal screen or Orders is open, the report takes its place.
 - A card per lord: medal, colour, hero sprite, name, points, and chips for heroes killed / deaths / assists, soldiers
-  killed, castles taken, damage dealt, levels and gold. Build opens their skills and items. Deaths, assists and damage are recorded from 20 Nov. An assist is damaging an enemy hero in the
+  killed, castles taken, damage dealt, levels and gold. Build opens their skills and items; tapping a lord shows net worth and damage to heroes, soldiers and castles, then skills, items, upgrades and army. Deaths, assists and damage are recorded from 20 Nov. An assist is damaging an enemy hero in the
   10 seconds (`ASSIST_SECS`) before another lord kills it.
 
 ## Alliances
 
 - Invite a lord with an optional dowry (at most 2 invitations open); they answer the next day and the pact starts at that
   night's battle. Two lords who invite each other ally for free. Pacts carry over until broken or betrayed; on day 7 every
-  pact ends. An alliance holds at most 3 lords (`BLOC_MAX`) and there must always be two sides.
+  pact ends (before 23 Nov; see below). An alliance holds at most 3 lords (`BLOC_MAX`) and there must always be two sides.
 - From 20 Nov (`allyV2`, `js/sim/alliances.js`): an alliance is a group. A lord or group joins another only if every member
   of each side agreed with every member of the other, so everyone in an alliance is allied to everyone else. In the game,
   inviting one member of an alliance drafts an invitation to each of them. Before then a pact was between two lords only,
   and chains (A with B, A with C, B and C not allied) were possible.
-- Allies win together if only allies remain. From 20 Nov they share the top places, the one with the most castle health
+- Final-day alliances (from 23 Nov, `finV2`): day 7 pacts no longer end at dawn. They hold into the battle, and the moment one alliance
+  is all that is left standing (or all that is left in sudden death) its pacts break: a banner, "The last alliance breaks", announces it,
+  and the allies fight on until one lord wins. Allies never share the war's last victory. The idea: betray before you are betrayed.
+- Allies win together if only allies remain (days 1 to 6). From 20 Nov they share the top places, the one with the most castle health
   left first, each scoring their place (only 1st gets the winner's bonus); before then every surviving ally took 1st place.
 - Lone wolf (from 20 Nov): while exactly one lord still standing is in no pact and at least one alliance stands, that lord's
   army and castle deal 10% more damage and have 10% more maximum health (current health scales with it) for each allied lord

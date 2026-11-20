@@ -71,6 +71,8 @@ for (const name of engines) {
     await tap('#pdock [data-act="openhero"][data-v="stats"]'); if (!(await js(() => sheet && sheet.tab === "stats"))) throw new Error("Stats did not open the hero's stats"); await closeAll();
     const [cr, cq] = await js(() => CASTLE); await tapTile(cr, cq); await tapTile(cr, cq); if (await sheetOpen()) throw new Error("a second tap on the castle opened a menu");
     if (!(await js(() => /Upgrade|Max tier/.test(document.getElementById("pdock").innerText)))) throw new Error("the castle strip has no Upgrade button");
+    if (await js(() => /\d+g/.test((document.querySelector('#pdock [data-act="castleup"]') || {}).innerText || ""))) throw new Error("the castle's Upgrade button still shows its gold cost");
+    if (await js(() => /📊/.test(document.getElementById("pdock").innerHTML))) throw new Error("the Stats button still uses the emoji icon");
     if (await js(() => { psel = { t: "wall", id: (S.walls[0] || {}).id }; render(); return S.walls.length && !!document.querySelector('#pdock [data-act="wrot"]'); })) throw new Error("a wall still has a Turn button");
     await js(() => { psel = null; render(); }); });
   await step("the gift: Roll, Stop, the reels land, pick another and take it", async () => { await closeAll();
@@ -137,6 +139,25 @@ for (const name of engines) {
     for (const n of shots) { const ok = await js(async n => { const im = new Image(); im.src = "guide/" + n + ".webp"; try { await im.decode(); return im.naturalWidth > 100; } catch { return false; } }, n); if (!ok) throw new Error("the guide picture " + n + " is missing"); }
     const bad = await js(() => GUIDE.flatMap(c => c.pages).filter(p => p.shot && !(p.keys && p.keys.length)).map(p => p.t)); if (bad.length) throw new Error("pictures without numbered lines: " + bad.join(", "));
     await js(() => { sheet = { type: "guide", pg: 0 }; render(false); }); await tap('#sheet [data-act="gch"][data-v="rivals"]'); if (!(await js(() => /Contracts/.test(document.querySelector("#sheet").innerText)))) throw new Error("the book's Allies tab did not open"); await closeAll(); });
+  await step("the war's end: the crowning plays, the results open a lord's stats and build tabs, and the Muster Hall shows war crowns", async () => { await closeAll();
+    await js(() => { if (mode === "replay") leaveBattle(); sheet = null; render(); });
+    // a finished war made from the practice battle just fought: seven days of the same result
+    await js(() => { const R = LASTP || {}, res = (R.results || []).map(r => Object.assign({}, r)), plans = buildPlans(); const battles = {};
+      for (let d = 1; d <= 7; d++) battles["2026-01-0" + d] = { week: "2026-01-01", results: res, inputs: { plans, N } };
+      window.__pw = { war: 3, battles }; });
+    await js(() => warCrowning(window.__pw)); await page.waitForTimeout(400);
+    if (!(await js(() => !!document.querySelector(".crowning .cr-podium .cr-p1")))) throw new Error("the crowning shows no podium");
+    await page.waitForTimeout(7200); if (!(await js(() => document.querySelector(".crowning").classList.contains("won") && document.querySelectorAll(".crowning .cr-pod.crowned").length >= 2))) throw new Error("the crowns were not placed");
+    await tap(".crowning #crgo"); if (await js(() => !!document.querySelector(".crowning"))) throw new Error("Continue did not close the crowning");
+    await js(() => { LIVE.prevWar = window.__pw; LIVE.uid = LIVE.uid || "you"; sheet = { type: "warend" }; render(); }); await page.waitForTimeout(300);
+    if (!(await js(() => !!document.querySelector(".crowning")))) throw new Error("the crowning did not play the first time the war results opened");
+    await tap(".crowning #crgo"); await js(() => { sheet = { type: "warend" }; render(); }); await page.waitForTimeout(200);
+    if (await js(() => !!document.querySelector(".crowning"))) throw new Error("the crowning played a second time");
+    const pid = await js(() => warSummary(window.__pw).rank[0].pid); await tap(`#sheet [data-act="wlord"][data-v="${pid}"]`);
+    if (!(await js(() => /Net worth/.test(document.querySelector("#sheet .wdet").innerText)))) throw new Error("the lord's stats have no net worth");
+    for (const t of ["skills", "items", "army", "ups"]) { await tap(`#sheet [data-act="wltab"][data-v="${t}"]`); if (!(await js(() => document.querySelector("#sheet .wtab-body").children.length > 0))) throw new Error("the " + t + " tab is empty"); }
+    await js(() => { LIVE.prevWar = null; sheet = null; render(); });
+    if (!(await js(() => /<b>2<\/b>/.test(warCrownHTML(2))))) throw new Error("the war crown has no count"); });
   await step("no script errors anywhere", async () => { if (errors.length) throw new Error(errors.length + " errors: " + errors.slice(0, 3).join(" ; ")); });
 
   console.log(`\n[${name} walkthrough]\n` + results.map(([s, t]) => `${s === "ok" ? "  ✓" : "  ✗"} ${t}`).join("\n"));
