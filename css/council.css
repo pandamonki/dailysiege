@@ -143,3 +143,10 @@
 .gr-t.guard.empty { border-style: dashed !important; background: rgba(201,150,47,.12) !important; color: #6b4a1a; text-align: center; line-height: 1.2; }
 .gr-r5 > .gr-t.guard::after { content: ""; position: absolute; right: -5px; top: 6px; bottom: 6px; width: 2px; background: rgba(62,39,20,.35); border-radius: 1px; }
 .gr-t.guard b, .gr-t.guard.sel b { color: #2a1a0c !important; text-shadow: none !important; }
+/* a wave's deadline (waves v3): "or ⏱ 0:45" after its trigger chip, so it reads "Castle attacked or 0:45" */
+.gr-dl { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; padding: 3px 8px 3px 6px; border-radius: 999px; background: rgba(62, 39, 20, .08); border: 1.5px dashed var(--wood-dark); font-size: 12px; font-weight: 700; color: var(--ink); white-space: nowrap; }
+.gr-dl em { font-style: normal; font-weight: 400; color: var(--ink-soft); margin-right: 1px; }
+.gr-dl .sw { position: relative; width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--ink); box-sizing: border-box; }
+.gr-dl .sw::before { content: ''; position: absolute; left: 50%; top: -4px; width: 4px; height: 2px; margin-left: -2px; background: var(--ink); }
+.gr-dl .sw::after { content: ''; position: absolute; left: 50%; top: 1.5px; width: 1.5px; height: 4px; margin-left: -.75px; background: var(--ink); }
+.gr-pop .gr-poplead { margin: 4px 8px 6px; font-size: 12px; color: var(--ink-soft); line-height: 1.35; }

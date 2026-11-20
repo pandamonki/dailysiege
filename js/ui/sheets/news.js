@@ -3,6 +3,16 @@
 // Each item is [icon, headline, one short sentence]. Players who have not seen the newest id get the pop-up the next time they plan;
 // the id is remembered on their device, so changing the id is all it takes to show it again. Keep about 8 to 14 items.
 const RELEASES = [
+  { id: "1.15", title: "What's new in v1.15", sub: "Every wave now has its own deadline", items: [
+    ["⏱", "Wave deadlines", "Wave 1 goes by 0:45, Wave 2 by 1:30 and Wave 3 by 2:15."],
+    ["🎯", "Or sooner", "A wave goes earlier if its trigger happens first."],
+    ["👀", "See it at a glance", "On the Deploy tab, a stopwatch beside each trigger shows its deadline."],
+    ["📖", "Clear choices", "The trigger menu explains the rule, and set times stop before the deadline."],
+    ["↔️", "Still spaced out", "Waves still leave at least 30 seconds apart, so they never all come at once."],
+    ["🚨", "Emergencies still count", "Waves still rush out when your castle drops below 75%, 50% and 25%."],
+    ["🛡", "Defend first", "Every wave still clears enemies near your castle before following your army plan."],
+    ["🕰", "Replay stopwatch", "In the replay, the stopwatch by each castle still shows when its next wave can go."],
+  ] },
   { id: "1.14", title: "What's new in v1.14", sub: "Reinforcement waves that save your castle, and clearer limits", items: [
     ["🚨", "Emergency waves", "When your castle drops below 75%, 50% and 25% health, your next wave rushes out to defend it."],
     ["⏱", "Never all at once", "Emergency waves leave at least 10 seconds apart, so they can't flood the map together."],
