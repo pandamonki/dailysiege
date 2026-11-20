@@ -198,12 +198,12 @@ PIXFX.v3_mage_b3_t4 = { under: true, dur: 1.1, n: 10, box: R => { R = Math.min(R
 // ----- Archer -----
 function pxArrow(P, x, y, c) { P.rect(x, y, 1, 6, "#8a5a2b"); P.px(x, y + 6, "#e8e8f0"); P.px(x, y + 7, "#c0c4cc"); P.px(x - 1, y - 1, c); P.px(x + 1, y - 1, c); P.px(x, y, c); }
 // Arrow Volley: arrows thud into the ground around the target and stay standing for a moment.
-PIXFX.v3_archer_b1_t2 = { dur: .6, n: 6, box: R => { const w = 2 * R + 24; return [w, 76, w / 2, 60]; },
+PIXFX.v3_archer_b1_t2 = { dur: .6, n: 6, box: R => { const w = 2 * R + 16; return [w, 56, w / 2, 44]; },
   draw(P, f, n, R) {
     for (let k = 0; k < 7; k++) { const x = Math.round((pxHash(k, 1) - .5) * 2 * R * .8), y = Math.round((pxHash(k, 2) - .5) * R * .9), land = Math.floor(pxHash(k, 3) * 3);
-      if (f < land) { const h = (land - f) * 16; P.line(x + 5, y - h - 10, x, y - h, "#e8e0b8"); P.line(x + 6, y - h - 10, x + 1, y - h, "#b8b090"); P.rect(x - 1, y - h, 2, 2, "#ffffff"); }
-      else { if (f === land) { P.rect(x - 4, y, 3, 1, "#c8c0a8"); P.rect(x + 2, y, 3, 1, "#c8c0a8"); P.rect(x - 2, y + 1, 5, 1, "#a8a088"); }
-        if (f < n - 1 || k % 2) { P.rect(x, y - 11, 2, 11, "#8a5a2b"); P.rect(x, y - 11, 1, 11, "#c9955a"); P.rect(x - 1, y - 14, 4, 3, "#e0443a"); P.rect(x, y - 14, 2, 1, "#ff9a8a"); P.rect(x, y - 1, 2, 1, "#c0c4cc"); } } }
+      if (f < land) { const h = (land - f) * 10; P.line(x + 3, y - h - 6, x, y - h, "#e8e0b8"); P.px(x, y - h, "#ffffff"); } // smaller arrows (was 11px shafts and long streaks: too big over the fight)
+      else { if (f === land) { P.rect(x - 2, y, 2, 1, "#c8c0a8"); P.rect(x + 1, y, 2, 1, "#c8c0a8"); }
+        if (f < n - 1 || k % 2) { P.rect(x, y - 6, 1, 6, "#c9955a"); P.rect(x - 1, y - 8, 3, 2, "#e0443a"); P.px(x, y - 8, "#ff9a8a"); } } }
   } };
 // Spike Trap: iron spikes spring up out of the ground, glint, then sink away.
 PIXFX.v3_archer_b2_t2 = { under: true, dur: .6, n: 7, box: () => [48, 40, 24, 24],

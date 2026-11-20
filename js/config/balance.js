@@ -50,16 +50,21 @@ const ATK_TYPES = {
   precision: { name: "Precision", note: "Daggers. Deadly to light armour, poor against heavy." },
   siege:     { name: "Siege",     note: "Axes and rams. Built for castles." },
   pure:      { name: "Pure",      note: "Traps and attrition. Ignores armour class." },
+  hero:      { name: "Hero",      note: "Heroes, from 22 Nov. Strong against every soldier's armour, weaker against castles." },
 };
-const ARMOUR_TYPES = { light: "Light", medium: "Medium", heavy: "Heavy", fortified: "Fortified" };
+const ARMOUR_TYPES = { light: "Light", medium: "Medium", heavy: "Heavy", fortified: "Fortified", hero: "Hero" };
 const TYPE_TABLE = {
-  blade:     { light: 1.15, medium: 1.25, heavy: .9,  fortified: .5 },
-  pierce:    { light: 1.5,  medium: .75,  heavy: .9,  fortified: .35 },
-  magic:     { light: 1.25, medium: 1,    heavy: 1.25, fortified: .35 },
-  precision: { light: 1.5,  medium: .75,  heavy: .5,  fortified: .45 },
-  siege:     { light: .9,   medium: .75,  heavy: 1,   fortified: 1.6 },
-  pure:      { light: 1,    medium: 1,    heavy: 1,   fortified: 1 },
+  blade:     { light: 1.15, medium: 1.25, heavy: .9,  fortified: .5,  hero: .9 },
+  pierce:    { light: 1.5,  medium: .75,  heavy: .9,  fortified: .35, hero: .9 },
+  magic:     { light: 1.25, medium: 1,    heavy: 1.25, fortified: .35, hero: .9 },
+  precision: { light: 1.5,  medium: .75,  heavy: .5,  fortified: .45, hero: .9 },
+  siege:     { light: .9,   medium: .75,  heavy: 1,   fortified: 1.6, hero: .8 },
+  pure:      { light: 1,    medium: 1,    heavy: 1,   fortified: 1,   hero: 1 },
+  hero:      { light: 1.2,  medium: 1.2,  heavy: 1.2, fortified: .5,  hero: 1 },
 };
+// Hero class (plans stamped balV5, from BAL_V5_FROM): every hero attacks with the Hero type and wears Hero armour, whatever its class, so no
+// soldier is a hard counter. Ability hits that name their own type (pure poison, siege blasts) keep it. Before then CLASS_TYPES applied.
+const heroTypes = (cls, v5) => (v5 ? ["hero", "hero"] : CLASS_TYPES[cls]);
 
 const HERO_GUARD = .9;     // heroes take 10% less from soldiers, so massed bowmen can't melt them
 const FINISH_AT = .5, FINISH_BONUS = 1.6; // Rogue: +60% against anything below half health

@@ -13,7 +13,7 @@ function makeTreeKit(X) {
   const backline = o => !o.dead && o.kind !== "castle" && o.kind !== "totem" && (o.range || 1.1) >= 2;
   const foes = (e, x, y, r) => enemiesNear(e, x, y, r).filter(o => o.kind !== "totem");
   const rk = (e, bi, i) => (e.tr ? e.tr[bi][i] : 0);
-  const V2 = e => !!(P[e.pid] && P[e.pid].skV2); // skill scaling v2 (battles from 20 Nov)
+  const V2 = e => (P[e.pid] && P[e.pid].skV2 ? (P[e.pid].balV5 ? 5 : true) : false); // skill scaling v2 (battles from 20 Nov); 5 = the balance v5 values (TREE_V5) // skill scaling v2 (battles from 20 Nov)
   const V = (e, bi, i, vi) => nodeVal(e.cls, bi, i, vi, rk(e, bi, i), V2(e));
   let hc = { k: -1, m: {} }; // the heroes of each lord, worked out once a tick
   const heroes = pid => { const k = X.tickNo(); if (hc.k !== k) hc = { k, m: {} }; return hc.m[pid] || (hc.m[pid] = ents.filter(h => h.kind === "champ" && h.tr && h.pid === pid)); };
@@ -283,7 +283,7 @@ function makeTreeKit(X) {
     if (!dealt || !live(o)) { if (c === "mage" && rk(e, 2, 4)) e.msl = (e.msl || 0) + 1; return dealt; }
     if (c === "warrior") {
       if (rk(e, 1, 0)) { const f = V(e, 1, 0, 0) / 100; foes(e, o.x, o.y, 1.2).filter(x => x !== o).sort((a, b) => d(a, o) - d(b, o) || a.id - b.id).slice(0, 2).forEach(x => deal(e, x, e.atk * f, { aoe: 1 })); }
-      if (e.avatar) { aoe(o.x, o.y, 1.2, "#ffe082", .3); foes(e, o.x, o.y, 1.2).forEach(x => { if (x !== o) deal(e, x, e.atk * .5, { aoe: 1 }); if (x.kind !== "champ") cc(x, "stun", .5); }); if (o.kind !== "champ") cc(o, "stun", .5); }
+      if (e.avatar) { aoe(o.x, o.y, 1.2, "#ffe082", .3); foes(e, o.x, o.y, 1.2).forEach(x => { if (x !== o) deal(e, x, e.atk * (P[e.pid] && P[e.pid].balV5 ? AVATAR_V5.splash : .5), { aoe: 1 }); if (x.kind !== "champ") cc(x, "stun", .5); }); if (o.kind !== "champ") cc(o, "stun", .5); }
     }
     if (c === "shaman" && rk(e, 0, 0)) { const x = minBy(foes(e, o.x, o.y, 2).filter(q => q !== o), q => d(q, o)); if (x) { shot(o, x, "#8fd3ff", 1); deal(e, x, e.atk * V(e, 0, 0, 1) / 100, { aoe: 1 }); } }
     if (c === "mage") {
@@ -353,7 +353,7 @@ function makeTreeKit(X) {
   };
   FN["warrior.1.5"] = e => {
     if (e.hp / e.maxhp >= .4 || foes(e, e.x, e.y, 2.5).length < 3) return false;
-    const now = T(); e.avatar = now + 7; setFx(e, "undying", 7); setFx(e, "ccimm", 7); setFx(e, "asbuf", 7, .5); heal(e, e.maxhp * .25, false, e, "Avatar of War"); return true;
+    const now = T(), v5 = !!(P[e.pid] && P[e.pid].balV5), dur = v5 ? AVATAR_V5.dur : 7; e.avatar = now + dur; setFx(e, "undying", dur); setFx(e, "ccimm", dur); setFx(e, "asbuf", dur, .5); heal(e, e.maxhp * (v5 ? AVATAR_V5.heal : .25), false, e, "Avatar of War"); return true;
   };
   FN["warrior.2.1"] = (e, r) => {
     const o = e.tgt; if (!live(o) || !(o.kind === "champ" || siege(o)) || d(e, o) > 2) return false;

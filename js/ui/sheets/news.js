@@ -3,6 +3,22 @@
 // Each item is [icon, headline, one short sentence]. Players who have not seen the newest id get the pop-up the next time they plan;
 // the id is remembered on their device, so changing the id is all it takes to show it again. Keep about 8 to 14 items.
 const RELEASES = [
+  { id: "1.18", title: "What's new in v1.18", sub: "Stronger, fairer heroes, sharper betrayals and a better replay", items: [
+    ["🦸", "Hero class", "From the 22 Nov battle every hero deals Hero damage and wears Hero armour: 20% extra against all soldiers, 10% less from their weapons."],
+    ["🏠", "Rest at home", "A hero at its own castle with no fighting for 2 seconds heals 8% of its health a second."],
+    ["💍", "Regen items toned down", "Mending Herbs 3 a second (50g), Ring of Health 5 a second (125g), Mender's Charm 5 a second."],
+    ["⏱", "Waves 20s apart", "Every wave waits 20 seconds after the last, emergency or not."],
+    ["🗡", "Betrayal kills pay", "Raze the castle of an ally you betrayed that battle for 9 points instead of 3."],
+    ["🎯", "No targeting allies", "Allies can't go on your target list unless the pact is set to Betray."],
+    ["👑", "Every lord on top", "The replay shows each lord's castle and hero with health bars along the top."],
+    ["🎥", "Follow any hero", "Tap a hero up top, or Follow in the panel, and the camera stays with them."],
+    ["🎁", "Roll for your gift", "Roll the reels, press Stop, then pick from the three items they land on."],
+    ["💰", "Clearer mercenary bids", "Set your amount with + and −, then press Place bid. Tiles show your bid."],
+    ["🤝", "Allies side by side", "The pre-battle screen groups each alliance together."],
+    ["🏆", "Victory together", "Allied winners share the victory screen, fallen allies slumped beside them, and a betrayer stands over their victim."],
+    ["⚖️", "Hero rebalance", "Warrior and Berserker toned down; mage, rogue and the weaker skill branches boosted. Every class now wins about as often."],
+    ["🧹", "Tidier map", "Item damage in green, Stats and castle Upgrade buttons, no wall Turn or second castle tap, smaller Arrow Volley."],
+  ] },
   { id: "1.17", title: "What's new in v1.17", sub: "Easier install and battle alerts, on iPhone and Android", items: [
     ["📲", "Install in one step", "On Android, a card offers a one-tap Install. On iPhone, it shows the Add to Home Screen steps."],
     ["🔔", "Battle alerts, asked once", "We ask once: an hour before orders lock (only if unsealed), and when results are in."],

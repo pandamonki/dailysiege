@@ -135,6 +135,7 @@
 .tbt { font: 700 12px/1 var(--f-body); padding: 7px 4px; border-radius: 6px; border: 2px solid var(--wood-dark); background: rgba(255,250,230,.8); color: var(--ink); cursor: pointer; }
 .tbt.on { background: var(--wax); color: var(--parchment); border-color: #6e1712; }
 .tbt.self { border: 0; background: none; text-align: center; color: var(--ink-soft); }
+.tbt.ally { background: #dfeedd; border-color: #4f7a4a; color: #2c5528; }
 .tbt:disabled { opacity: .45; cursor: default; }
 .tboard.compact .tbr { grid-template-columns: 22px 14px minmax(0, 1fr) auto auto 84px; }
 .tby { font: 700 12px/1 var(--f-body); white-space: nowrap; text-align: right; color: var(--wax); }

@@ -47,25 +47,34 @@ function endSpin() { S.spin = null; sheet = (sheet && sheet.back) || null; }
 const REEL_N = 24, REEL_PX = 52, REEL_SETTLE = 3.7; // images on each reel, the height of one, and the seconds before everything has stopped
 // Open the gift from its button (it was closed, or came in while something else was open)
 function spinOpen() { if (S && S.spin) sheet = { type: "spin" }; }
+// The gift screen: three reels and one description panel. It starts on "Roll for your gift"; Roll sets the reels spinning, Stop slows them
+// down until they land on the three items (always the same three: the roll is for show, the offer is fixed by rollSpin). The first item is
+// picked with a golden glow; tapping another shows its description instead, and the one button takes whichever is picked.
+// stage lives on the gift itself once it has landed (rolled), so closing and reopening never asks for a second roll.
+function spinStage() { const sp = S.spin; if (sp.rolled) return sheet.t0 && Date.now() - sheet.t0 < REEL_SETTLE * 1000 ? "stopping" : "done"; return sheet.stage === "spin" ? "spin" : "ready"; }
 function spinSheet() {
   const sp = S.spin, pool = spinPool(sp.tier, []), full = S.items.length >= ITEM_SLOTS, pend = sheet.pend;
-  if (!sheet.t0) sheet.t0 = Date.now();
-  // The page redraws whenever any lord's data changes, which used to restart the reels every few seconds so they never visibly spun. The spin now runs for a fixed
-  // time from the moment the sheet opened, and renderSheet leaves the sheet alone while its markup is unchanged (see spinKeep), so redraws do not touch the animation.
-  const go = Date.now() - sheet.t0 < REEL_SETTLE * 1000;
-  const reel = (k, i) => `<div class="strip" style="--d:${(1.5 + .55 * i).toFixed(2)}s;--end:-${(REEL_N - 1) * REEL_PX}px">${Array.from({ length: REEL_N }, (_, j) => `<img alt="" src="${itemURL(j === REEL_N - 1 ? k : pool[(j * 7 + i * 3 + j * j) % pool.length], REEL_PX)}">`).join("")}</div>`;
-  const text = k => `<div class="spinres"><b>${esc(ITEMS[k].name)}</b><span class="muted">${esc(itemDesc(k))}</span></div>`;
-  const btn = k => `<button class="btn wax" data-act="spinpick" data-v="${k}">Take it</button>`;
+  const close = `<button class="x" data-act="close" aria-label="Close for now">✕</button>`;
   // slots full: the choice of what to replace comes first, so it is never hidden below the three items
-  if (pend) return `<header><div><h2>Day ${sp.day} gift</h2><div class="sub">Your item slots are full</div></div><button class="x" data-act="close" aria-label="Close">✕</button></header><div class="body">
+  if (pend) return `<header><div><h2>Day ${sp.day} gift</h2><div class="sub">Your item slots are full</div></div>${close}</header><div class="body">
     <p class="note gold"><b>Pick an item to swap for ${esc(ITEMS[pend].name)}.</b> The one you choose is sold for half price.</p>
     <div class="islots rep">${S.items.map(j => `<button class="islot" data-act="spinrep" data-v="${j}"><img alt="" src="${itemURL(j)}"><b>${esc(ITEMS[j].name)}</b><span class="muted">+${Math.floor(itemCost(j) / 2)}g</span></button>`).join("")}</div>
     <div class="row"><button class="btn" data-act="spinno">Choose differently</button></div></div>`;
-  return `<header><div><h2>Day ${sp.day} gift</h2><div class="sub">${sp.bonus ? "Underdog bonus: " : ""}pick one free tier ${sp.tier} item</div></div><button class="x" data-act="close" aria-label="Close for now">✕</button></header><div class="body">
-    <div class="spin${go ? " go" : ""}">
-      <div class="spinrow">${sp.offer.map((k, i) => `<div class="reel">${reel(k, i)}</div>`).join("")}</div>
-      <div class="spinrow spintext">${sp.offer.map(text).join("")}</div>
-      <div class="spinrow spinbtns">${sp.offer.map(btn).join("")}</div></div>
-    ${full ? `<p class="muted">Your item slots are full: taking an item will ask which one to swap out.</p><div class="row"><button class="btn" data-act="spingold">Take ${SPIN_GOLD} gold instead</button></div>` : ""}
+  // The page redraws whenever any lord's data changes. renderSheet leaves this sheet alone while its markup is unchanged (see render.js), so a redraw never restarts the reels.
+  const stage = spinStage(), pick = sp.offer.includes(sheet.sel) ? sheet.sel : sp.offer[0];
+  const loop = i => { const imgs = Array.from({ length: 8 }, (_, j) => pool[(j * 5 + i * 3 + j * j) % pool.length]); return `<div class="strip loop" style="--d:${(.5 + .07 * i).toFixed(2)}s;--end:-${8 * REEL_PX}px">${imgs.concat(imgs).map(k => `<img alt="" src="${itemURL(k, REEL_PX)}">`).join("")}</div>`; };
+  const land = (k, i) => `<div class="strip" style="--d:${(1.5 + .55 * i).toFixed(2)}s;--end:-${(REEL_N - 1) * REEL_PX}px">${Array.from({ length: REEL_N }, (_, j) => `<img alt="" src="${itemURL(j === REEL_N - 1 ? k : pool[(j * 7 + i * 3 + j * j) % pool.length], REEL_PX)}">`).join("")}</div>`;
+  const reels = sp.offer.map((k, i) => stage === "ready" ? `<div class="reel idle"><span>?</span></div>`
+    : stage === "spin" ? `<div class="reel">${loop(i)}</div>`
+    : `<button class="reel pick${k === pick && stage === "done" ? " on" : ""}" data-act="spinsel" data-v="${k}" aria-label="${esc(ITEMS[k].name)}" aria-pressed="${k === pick}">${land(k, i)}</button>`).join("");
+  const desc = stage === "done" || stage === "stopping" ? `<div class="spindesc"><b>${esc(ITEMS[pick].name)}</b><span class="muted">${esc(itemDesc(pick))}</span></div>`
+    : `<div class="spindesc"><b>${stage === "spin" ? "The reels are spinning…" : "Roll for your gift"}</b><span class="muted">${stage === "spin" ? "Press Stop and they slow down onto three items. You keep one." : `Three tier ${sp.tier} items are waiting. Roll the reels to see them.`}</span></div>`;
+  const btn = stage === "ready" ? `<button class="btn wax" data-act="spinroll">🎲 Roll</button>` : stage === "spin" ? `<button class="btn wax" data-act="spinstop">✋ Stop</button>`
+    : `<button class="btn wax" data-act="spinpick" data-v="${pick}">Pick ${esc(ITEMS[pick].name)}</button>`;
+  return `<header><div><h2>Day ${sp.day} gift</h2><div class="sub">${sp.bonus ? "Underdog bonus: " : ""}one free tier ${sp.tier} item</div></div>${close}</header><div class="body">
+    <div class="spin st-${stage}${stage === "stopping" ? " go" : ""}">
+      <div class="spinrow">${reels}</div>
+      <div class="spinlow">${desc}<div class="spinbtns">${btn}</div></div></div>
+    ${full && (stage === "done" || stage === "stopping") ? `<p class="muted">Your item slots are full: taking an item will ask which one to swap out.</p><div class="row"><button class="btn" data-act="spingold">Take ${SPIN_GOLD} gold instead</button></div>` : ""}
     <p class="muted">Not now? Close this: the gift waits behind the 🎁 button on the map until you claim it.</p></div>`;
 }

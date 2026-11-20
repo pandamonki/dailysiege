@@ -4,8 +4,8 @@ const typeLine = ([a, r]) => `${ATK_TYPES[a].name} attack · ${ARMOUR_TYPES[r]} 
 // the attack and armour line with an i button that opens what each is strong and weak against (key: unique on the sheet)
 const mulPct = m => Math.round(m * 100) + "%";
 function typeInfo(types, key) {
-  const [a, r] = types, open = sheet && sheet.tinfo === key, arm = { light: "Light", medium: "Medium", heavy: "Heavy", fortified: "Castles" };
-  const deals = Object.keys(arm).map(k => [arm[k], TYPE_TABLE[a][k]]), takes = Object.keys(ATK_TYPES).filter(k => k !== "pure").map(k => [ATK_TYPES[k].name, TYPE_TABLE[k][r]]);
+  const [a, r] = types, open = sheet && sheet.tinfo === key, arm = { light: "Light", medium: "Medium", heavy: "Heavy", fortified: "Castles", ...(balV5Now() ? { hero: "Heroes" } : {}) };
+  const deals = Object.keys(arm).map(k => [arm[k], TYPE_TABLE[a][k]]), takes = Object.keys(ATK_TYPES).filter(k => k !== "pure" && (k !== "hero" || balV5Now())).map(k => [ATK_TYPES[k].name, TYPE_TABLE[k][r]]);
   const chip = ([n, m], good) => `<span class="tm ${m > 1.02 ? (good ? "g" : "b") : m < .98 ? (good ? "b" : "g") : "n"}">${esc(n)} <b>${mulPct(m)}</b></span>`;
   return `<div class="tinfo${open ? " open" : ""}"><button class="tline" data-act="tinfo" data-v="${key}" aria-expanded="${open}"><span>${esc(ATK_TYPES[a].name)} attack · ${esc(ARMOUR_TYPES[r])} armour</span><i class="ibtn" aria-hidden="true">i</i></button>
     ${open ? `<div class="tmx"><div><small>${esc(ATK_TYPES[a].name)} attack deals</small><div class="tms">${deals.map(x => chip(x, true)).join("")}</div><small class="muted">${esc(ATK_TYPES[a].note)}</small></div>
@@ -13,9 +13,9 @@ function typeInfo(types, key) {
 }
 function typesHTML() {
   const cell = v => `<td class="tm ${v > 1.05 ? "up" : v < .95 ? "down" : ""}">${Math.round(v * 100)}%</td>`;
-  const who = (k) => [...Object.entries(CLASS_TYPES).filter(([, t]) => t[1] === k).map(([c]) => CLASSES[c].name), ...Object.entries(UNIT_TYPES).filter(([, t]) => t[1] === k).map(([u]) => UNITS[u].name), ...(k === "fortified" ? ["Castles"] : [])].join(", ");
-  const uses = (k) => [...Object.entries(CLASS_TYPES).filter(([, t]) => t[0] === k).map(([c]) => CLASSES[c].name), ...Object.entries(UNIT_TYPES).filter(([, t]) => t[0] === k).map(([u]) => UNITS[u].name), ...(k === "pierce" ? ["Castle towers"] : []), ...(k === "pure" ? ["Traps"] : [])].join(", ");
-  return `<p class="muted">Every attack has a type and every body has an armour class. The table shows how much damage each attack type deals to each armour class. Heroes' abilities use their class's attack type.</p>
+  const HT = c => heroTypes(c, balV5Now()), who = (k) => [...Object.keys(CLASS_TYPES).filter(c => HT(c)[1] === k).map(c => [c]).map(([c]) => CLASSES[c].name), ...Object.entries(UNIT_TYPES).filter(([, t]) => t[1] === k).map(([u]) => UNITS[u].name), ...(k === "fortified" ? ["Castles"] : [])].join(", ");
+  const uses = (k) => [...Object.keys(CLASS_TYPES).filter(c => HT(c)[0] === k).map(c => [c]).map(([c]) => CLASSES[c].name), ...Object.entries(UNIT_TYPES).filter(([, t]) => t[0] === k).map(([u]) => UNITS[u].name), ...(k === "pierce" ? ["Castle towers"] : []), ...(k === "pure" ? ["Traps"] : [])].join(", ");
+  return `<p class="muted">Every attack has a type and every body has an armour class. The table shows how much damage each attack type deals to each armour class. ${balV5Now() ? "Every hero attacks with the Hero type and wears Hero armour, whatever its class." : "Heroes' abilities use their class's attack type."}</p>
   <div class="tbl"><table><thead><tr><th>Attack ↓ / Armour →</th>${Object.values(ARMOUR_TYPES).map(n => `<th>${n}</th>`).join("")}</tr></thead><tbody>
   ${Object.entries(TYPE_TABLE).map(([k, row]) => `<tr><td>${ATK_TYPES[k].name}</td>${Object.keys(ARMOUR_TYPES).map(r => cell(row[r])).join("")}</tr>`).join("")}</tbody></table></div>
   <div class="sec"><h3>Who uses what</h3>${Object.keys(ATK_TYPES).map(k => `<p><b>${ATK_TYPES[k].name}:</b> ${uses(k) || "–"}. <span class="muted">${ATK_TYPES[k].note}</span></p>`).join("")}
@@ -178,6 +178,30 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "v1.18: hero class, betrayal kills and the replay", date: "20 Nov", fixes: [
+    "Mercenary camp: + and − now change the amount you are about to bid, from the group's minimum, and nothing is bid until you press Place bid (or Change bid). The group's tile and card show your bid, not the minimum.",
+  ], balance: [
+    "From the 22 Nov battle (balV5): every hero attacks with the new Hero damage type (120% against light, medium and heavy armour, 50% against castles and walls) and wears Hero armour (90% from blade, pierce, magic and precision, 80% from siege). Ability hits that name their own type keep it.",
+    "From the 22 Nov battle: a hero within 2.5 tiles of its own castle that has neither hit nor been hit for 2 seconds heals 8% of its health a second. Any hit stops it and restarts the wait.",
+    "From the 22 Nov battle: Mending Herbs 3 health a second (was 5), Ring of Health 5 a second (was 8), Mender's Charm 5 a second (was 8). Mending Herbs now costs 50 gold (was 40), Ring of Health 125 (was 100).",
+    "From the 22 Nov battle: every reinforcement wave goes at least 20 seconds after the last, whether by trigger, deadline or emergency rush (was 30 seconds, or 10 for a rush).",
+    "From the 22 Nov battle: razing the castle of an ally you betrayed in the same battle scores 3 times the castle points (9 instead of 3, before the day's weighting).",
+    "Hero rebalance from the 22 Nov battle, measured over 1,800 bot battles (every class now wins 11 to 14.5% of 8-lord battles; before, 9 to 18%). Warrior 700 health (was 760) and 25% armour (was 28%); Archer attack 24 (was 25); Mage attack 30 (was 28); Rogue 510 health (was 480).",
+    "Berserker (it won about 1 battle in 4): Executioner's Whirlwind base damage 5/9/13/17 a hit (was 20/30/40/50), Cleave 8/14/20/26% (was 15/25/35/45), Bloodthirst 2/3%, Blood Rage 3/5%. Avatar of War lasts 5s (was 7) and heals 15% (was 25%), and its splash is 35% (was 50%).",
+    "Tactician: Marching Cadence 10/17/24/31%, Command Banner 12/20/28/36%. Sniper: Headshot 50/90/130/170. Marksman: Eagle Eye's crit chance 3/6/9/12%.",
+    "Rogue: Ambush 40/70/100/130, Poisoned Blades 4/6/8/10 a stack. Mage: Fireball 85/140/195/250, Arcane Mastery +.3/.45/.6/.75 tiles and 6/9/12/15% resist, Mana Shield 25/40%, Empowered Synergies 25/40% and 12/20%. Shaman: Chain Lightning 75/120/165/210, Static Surge +5/9/13/17% and 30/45/60/75% arcs.",
+  ], changes: [
+    "Replay: every lord's castle and hero sit along the top with health bars. Tap a hero to follow it with the camera; tap a castle to look at it. The unit panel has a Follow button for any hero.",
+    "Arrow Volley's falling arrows are smaller.",
+    "Hero attack shows the hero's own damage, then the damage from items in green (map strip, Stats tab and the replay panel).",
+    "The hero strip on the map has a Stats button; the castle strip has an Upgrade button showing the next tier's cost.",
+    "Walls no longer have a Turn button, and tapping your castle a second time no longer opens the castle menu.",
+    "Seal checklist: the hero-on-the-field line only shows when the hero is missing, and every line has a button to go and fix it.",
+    "Allies can't be added to your targets unless the pact with them is set to Betray (or Break).",
+    "The pre-battle screen seats each alliance's lords side by side, biggest alliance first.",
+    "The gift screen starts with Roll for your gift. Roll spins the reels, Stop slows them onto three items, and the first is picked with a golden glow. Tap another to read about it; one button takes the picked item.",
+    "Victory screen: allies who win together all appear, any allies whose castles fell sit slumped beside them, and a winner who betrayed an ally that battle has the betrayed hero face down at their feet with a dagger in its back.",
+  ] },
   { v: "Report first after a battle", date: "20 Nov", fixes: [], balance: [], changes: [
     "After a battle, its report (with Watch and Highlights for the replay) now opens before any other pop-up. The mercenary camp and other pop-ups follow once it is closed.",
     "The contract board no longer pops up by itself. The ! above the map is now the Daily Noticeboard: the next battle's twist, the alliance changes at the last battle, and buttons to pick your contract and targets. It pulses until both are done.",

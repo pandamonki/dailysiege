@@ -27,6 +27,7 @@ const mapV2Now = () => (typeof isLive === "function" && isLive() ? mapV2For(live
 const supplyV2Now = () => (typeof isLive === "function" && isLive() ? supplyV2For(liveClock().planDay) : true); // practice always uses bought waves
 const waveV2Now = () => (typeof isLive === "function" && isLive() ? waveV2For(liveClock().planDay) : true); // waves defend first and follow the army plan: no orders of their own
 const waveV3Now = () => (typeof isLive === "function" && isLive() ? waveV3For(liveClock().planDay) : true); // each wave has its own deadline (WAVE_FORCE_AT)
+const balV5Now = () => (typeof isLive === "function" && isLive() ? balV5For(liveClock().planDay) : true); // flat 20s waves, hero class, home healing, betrayal castle bonus
 const waveV4Now = () => (typeof isLive === "function" && isLive() ? waveV4For(liveClock().planDay) : true); // "castle attacked" becomes "enemies reach my castle"
 const wavesOpen = () => (supplyV2Now() ? Math.max(0, Math.min(WAVE_COUNT, S.wavesOpen || 0)) : WAVE_COUNT);
 const waveOpen = i => i < wavesOpen();
@@ -146,6 +147,8 @@ function carriedPartners() { // players I was still allied with at the end of th
   const live = isLive(), me = live ? LIVE.uid : "you", src = live ? carriedPairs(liveClock().planDay) : (S.pairs || []);
   return src.map(s => s.split("|")).filter(p => p.includes(me)).map(p => (p[0] === me ? p[1] : p[0])).filter(id => RIVALS.some(r => r.id === id));
 }
+// an ally can't be put on the target list unless the pact is set to Betray (or Break) for this battle
+const allyShielded = id => !finalToday() && carriedPartners().includes(id) && !["betray", "break"].includes((S.pactAct || {})[id]);
 function pactPlan() { // what I've decided about each carried alliance: keep, break at the start, or betray when the set condition is met
   const breaks = [], pbetray = {};
   carriedPartners().forEach(id => { const a = (S.pactAct || {})[id]; if (a === "break") breaks.push(id); else if (a === "betray") pbetray[id] = (S.pactWhen || {})[id] || BETRAY_WHEN[0]; });

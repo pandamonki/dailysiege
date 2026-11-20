@@ -316,6 +316,8 @@ body.inreplay .field { padding-block: 8px 2px; }
 .ud-nm { display: flex; align-items: baseline; gap: 8px; white-space: nowrap; overflow: hidden; }
 .ud-nm b { font-family: var(--f-display); font-weight: 400; font-size: 21px; color: #f3e2b3; line-height: 1; }
 .ud-nm small { font-size: 12.5px; color: #bda57a; overflow: hidden; text-overflow: ellipsis; }
+.ud-nm .ud-fol { margin-left: auto; flex-shrink: 0; align-self: center; padding: 2px 8px; font-size: 12px; }
+.ud-nm span.ud-fol { color: #ffe082; }
 .ud-sub { font-size: 13px; color: #cdb78a; display: flex; align-items: center; gap: 6px; }
 .ud-sub i { width: 11px; height: 11px; border-radius: 3px; border: 1px solid #1a0f07; display: inline-block; }
 .ud-bar { position: relative; height: 17px; border-radius: 3px; background: #120a05; border: 1px solid #000; overflow: hidden; }
@@ -612,3 +614,10 @@ details.fg-host[open] > summary { margin-bottom: 8px; }
 .tipcard p { margin: 0 0 10px; line-height: 1.45; }
 .tipsteps { margin: 0 0 12px; padding-left: 22px; line-height: 1.5; } .tipsteps li { margin-bottom: 6px; }
 .shareic { width: 18px; height: 18px; vertical-align: -3px; color: #2f6fd6; }
+/* hero attack: base damage, then the items' extra in green */
+.pd-stats .batk, .ud-stat .batk { color: #fff; }
+.iatk { color: #3fae4a; font-weight: 700; margin-left: 1px; }
+.pd-stats .iatk, .ud-stat .iatk, #ud .iatk { color: #7ee07e; }
+/* five quick buttons (the hero: Abilities, Items, Stats, Move, Orders): a little narrower each */
+.pd-act.n5 { width: 192px; gap: 2px; } .pd-act.n5 .pd-b { width: 37px; } .pd-act.n5 .pd-b small { font-size: 9.5px; }
+.pd-b span em.pcost { font-style: normal; font-size: 11px; font-weight: 700; letter-spacing: -.2px; }

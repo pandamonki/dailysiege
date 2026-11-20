@@ -9,6 +9,8 @@ const mercDayNo = () => (isLive() ? liveClock().dayNo : DAY);
 const mercToday = () => mercRoster(mercDayNo(), mercWait);
 const mercSeenKey = () => (mercV2Now() ? "d" + planDayKey() : isLive() ? liveClock().week : "p"); // the headliner camp announces itself every day, the old camp once a week
 const mercDue = () => !!S && !S.lobbyPrep && mercOpen() && S.mercSeen !== mercSeenKey();
+// the amount shown on the bid stepper: what you are about to bid (your bid, else the group's minimum, until you change it)
+const mercDraft = k => { const d = sheet && sheet.bidDraft && sheet.bidDraft[k]; if (d != null) return d; const b = (S.bids || {})[k]; return b && b.day === planDayKey() ? b.gold : mercMin(k, mercV2Now()); };
 function bidSummary() { const b = myBids(); return b.length ? b.map(([id, x]) => `${MERCS[id].name} ${x.gold}g`).join(", ") : ""; }
 const mercSprites = m => Object.entries(m.units.reduce((a, t) => { a[t] = (a[t] || 0) + 1; return a; }, {})).map(([t, n]) => `<span class="munit"><img alt="" src="${spriteURL(t)}">${n > 1 ? "×" + n : ""}</span>`).join("");
 // a group's fighters, with the stats the battle uses
@@ -29,11 +31,12 @@ function campSheet() {
   const headCard = `<button class="mhead${pick === R.head ? " on" : ""}" data-act="mpick" data-v="${R.head}" aria-label="${esc(hm.name)}">
       <span class="mtag">New today</span><span class="mhimg">${mercSprites(hm)}</span>
       <span class="mhtx"><b>${esc(hm.name)}</b><small>${esc(hm.note)}</small><span class="mhst">${IC.hp(mercTotal(hm, "hp"))} ${IC.atk(mercTotal(hm, "atk"))} <small>${hm.units.length} fighter${hm.units.length > 1 ? "s" : ""}</small></span></span>
-      <span class="mhpr"><i class="coin"></i>${hm.min}${hb ? `<small class="st st-d">Your bid</small>` : ""}</span></button>`;
-  const tiles = R.tiles.map(id => { const m = MERCS[id], w = mercWait(id); return tile("mpick", id, pick === id, spriteURL(m.units[0]), esc(m.name), { price: w ? null : m.min, lk: !!w, tag: w ? ["r", `Back in ${w}d`] : myBid(id) ? ["d", "Your bid"] : null }); }).join("");
+      <span class="mhpr"><i class="coin"></i>${hb || hm.min}${hb ? `<small class="st st-d">Your bid</small>` : ""}</span></button>`;
+  const tiles = R.tiles.map(id => { const m = MERCS[id], w = mercWait(id); return tile("mpick", id, pick === id, spriteURL(m.units[0]), esc(m.name), { price: w ? null : myBid(id) || m.min, lk: !!w, tag: w ? ["r", `Back in ${w}d`] : myBid(id) ? ["d", `Your bid ${myBid(id)}g`] : null }); }).join("");
   const m = MERCS[pick], wait = mercWait(pick), mine = myBid(pick);
   const det = udet(esc(m.name), m.min, `<p>${esc(m.note)}</p>${mercStatsHTML(m, pick)}${wait ? `<p class="need">⏳ Resting after a battle: back in ${wait} day${wait > 1 ? "s" : ""}.</p>` : ""}`);
-  const bidBar = wait ? "" : abar(`<span class="stepper qty"><button class="btn small" data-act="mbid" data-k="${pick}" data-v="-1" ${dis(!mine)}>−</button><b>${mine ? mine + "g" : "No bid"}</b><button class="btn small" data-act="mbid" data-k="${pick}" data-v="1" ${dis(!mine)}>+</button></span>${mine ? `<button class="btn" data-act="mclear" data-k="${pick}" ${dis()}>Withdraw</button>` : `<button class="btn wax" data-act="mbid" data-k="${pick}" data-v="1" ${dis()}>Bid ${m.min}g</button>`}`);
+  const draft = mercDraft(pick), lo = mercMin(pick, true);
+  const bidBar = wait ? "" : abar(`<span class="stepper qty"><button class="btn small" data-act="mstep" data-k="${pick}" data-v="-1" ${dis(draft <= lo)} aria-label="Bid 10 less">−</button><b>${draft}g</b><button class="btn small" data-act="mstep" data-k="${pick}" data-v="1" ${dis()} aria-label="Bid 10 more">+</button></span>${mine && mine === draft ? `<button class="btn" data-act="mclear" data-k="${pick}" ${dis()}>Withdraw ${mine}g bid</button>` : `<button class="btn wax" data-act="msubmit" data-k="${pick}" ${dis()}>${mine ? `Change bid to ${draft}g` : `Place bid · ${draft}g`}</button>`}`);
   const bid = myBids()[0];
   return head(null, "Mercenary Camp", "Sealed bids · one group a day") + `<div class="body">
     ${sheet.news ? `<p class="note gold"><b>New in the camp today: the ${esc(hm.name)}!</b> ${R.head === MERC_HEAD[0] ? "The mercenaries were drawn by all your bloodshed and now offer their services to the highest bidder." : "A stronger band arrives every day until the week ends."}</p>` : ""}

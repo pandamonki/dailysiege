@@ -189,11 +189,20 @@ html, body { overflow: hidden; overscroll-behavior: none; }
 #twistpop .twcx > :only-child { grid-column: 1 / -1; }
 #twistpop > small { display: block; text-align: center; margin-top: 4px; font-size: 11px; }
 /* replay: every lord's castle down the left edge, crossed out when it falls */
-#ctrack { position: absolute; left: 6px; top: 50%; transform: translateY(-50%); z-index: 5; display: flex; flex-direction: column; gap: 4px; padding: 5px 4px; border-radius: 10px; background: rgba(20,12,6,.55); pointer-events: none; }
+#ctrack { position: absolute; left: 6px; right: 52px; top: 6px; z-index: 5; display: flex; flex-wrap: wrap; justify-content: center; gap: 3px; padding: 4px; border-radius: 10px; background: rgba(20,12,6,.55); pointer-events: none; }
 #ctrack[hidden] { display: none; }
-#ctrack .ct { position: relative; width: 22px; height: 22px; display: block; }
-#ctrack .ct svg { width: 100%; height: 100%; display: block; }
-#ctrack .ct.me { outline: 2px solid #ffe082; outline-offset: 1px; border-radius: 4px; }
+#ctrack .ctl { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 26px; padding: 1px; border-radius: 6px; border-bottom: 2px solid var(--c); }
+#ctrack .ctl.me { background: rgba(255,224,130,.18); }
+#ctrack button { pointer-events: auto; position: relative; display: block; width: 24px; padding: 0; margin: 0; border: 0; background: none; cursor: pointer; }
+#ctrack .cth { height: 30px; border-radius: 4px; }
+#ctrack .cth img { width: 22px; height: 22px; margin: 0 auto; display: block; image-rendering: pixelated; object-fit: contain; }
+#ctrack .cth.on { outline: 2px solid #ffe082; outline-offset: 0; }
+#ctrack .cth.down img { filter: grayscale(1) brightness(.6); opacity: .65; }
+#ctrack .ct { height: 26px; }
+#ctrack .ct svg { width: 20px; height: 20px; margin: 0 auto; display: block; }
+#ctrack .hb { position: absolute; left: 1px; right: 1px; bottom: 0; height: 4px; border-radius: 2px; background: #2a1a10; overflow: hidden; }
+#ctrack .hb b { display: block; height: 100%; width: 100%; background: #6ad06a; }
+#ctrack .ct .hb b { background: #e0b84a; }
 #ctrack .ct.down svg { filter: grayscale(1) brightness(.55); opacity: .7; }
-#ctrack .ct.down::after { content: ""; position: absolute; inset: -1px; background: linear-gradient(45deg, transparent 44%, #e0392b 44% 56%, transparent 56%), linear-gradient(-45deg, transparent 44%, #e0392b 44% 56%, transparent 56%); }
+#ctrack .ct.down::after { content: ""; position: absolute; left: 2px; right: 2px; top: 0; height: 20px; background: linear-gradient(45deg, transparent 44%, #e0392b 44% 56%, transparent 56%), linear-gradient(-45deg, transparent 44%, #e0392b 44% 56%, transparent 56%); }
 .ugrid.tpick { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; margin: 6px 0; } .ugrid.tpick .ucard { padding: 4px 1px; } .ugrid.tpick .ucard b { font-size: 11px; } /* tower upgrade picker: all five Lv3 towers on one row */

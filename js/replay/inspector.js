@@ -72,11 +72,11 @@ function dockModel(k) {
 function dockStats(m) {
   const S = (id, ic, v, sub = "") => `<button class="ud-stat" data-act="dtip" data-v="s:${id}"><em>${ic}</em><b>${v}</b>${sub ? `<small>${sub}</small>` : ""}</button>`;
   if (m.kind === "totem") return S("heal", "✚", `${Math.round(m.heal)}/s`) + S("arm", "🛡", ARMOUR_TYPES[m.armour] || "Medium");
-  return S("atk", "⚔", Math.round(m.atk), m.atype ? ATK_TYPES[m.atype].name : "") + S("arm", "🛡", ARMOUR_TYPES[m.armour] || "–", Math.round(m.armor * 100) + "%") + S("as", "⏱", m.as.toFixed(2) + "s")
+  return S("atk", "⚔", m.fatk ? atkSplit(m.atk - m.fatk, m.fatk) : Math.round(m.atk), m.atype ? ATK_TYPES[m.atype].name : "") + S("arm", "🛡", ARMOUR_TYPES[m.armour] || "–", Math.round(m.armor * 100) + "%") + S("as", "⏱", m.as.toFixed(2) + "s")
     + S("rng", "➶", m.range > 1.5 ? m.range.toFixed(1) : "Melee") + (m.kind === "castle" || m.spd === 0 ? "" : S("spd", "👢", m.spd.toFixed(2)))
     + (m.evade ? S("evd", "≋", Math.round(m.evade * 100) + "%") : m.heal && m.kind === "unit" ? S("heal", "✚", Math.round(m.heal)) : m.lvl && m.kind === "champ" ? `<button class="ud-stat" id="udlvl" data-act="dtip" data-v="s:lvl"><em>★</em><b>Level ${m.lvl}</b></button>` : "");
 }
-function replaySrc(k) { const d = dockModel(k); return { m: d.m, color: d.color, who: d.who, title: d.title, role: d.role, ranks: ranksNow(k, d.m), cd: key => cdState(k, key, replay.time), xp: true }; }
+function replaySrc(k) { const d = dockModel(k); return { m: d.m, color: d.color, who: d.who, title: d.title, role: d.role, ranks: ranksNow(k, d.m), cd: key => cdState(k, key, replay.time), xp: true, follow: k }; }
 // src = what the panel shows: { m (a replay-meta-shaped unit), color, who, title, role, ranks, cd(key) }. Replays and the planning screen both build one.
 function dockHTML(src, opts = {}) {
   const { m, color, who, title, role } = src, img = portraitFor(m, color);
@@ -99,7 +99,7 @@ function dockHTML(src, opts = {}) {
     bot = `<div class="ud-note">${esc(note)}<br><span>Soldiers fight on their own, so there are no skills or items to watch.</span></div>`;
   }
   return `<div class="ud-top"><div class="ud-por" style="--c:${color}">${por}${m.lvl ? `<div class="ud-lv" id="udlv">${m.lvl}</div>` : ""}</div>
-    <div class="ud-id"><div class="ud-nm"><b>${esc(title)}</b><small>${role}</small></div><div class="ud-sub"><i style="background:${color}"></i>${esc(who)}<span class="ud-st" id="udst"></span></div>
+    <div class="ud-id"><div class="ud-nm"><b>${esc(title)}</b><small>${role}</small>${src.follow != null && m.kind === "champ" ? (followIdx() === src.follow && replay.auto ? `<span class="ud-fol on">🎥 Following</span>` : `<button class="btn small ud-fol" data-act="rfollow" data-v="${src.follow}">🎥 Follow</button>`) : ""}</div><div class="ud-sub"><i style="background:${color}"></i>${esc(who)}<span class="ud-st" id="udst"></span></div>
     <div class="ud-bar" id="udbar"><i></i><span></span></div>${opts.actions || (src.xp && m.kind === "champ" ? `<div class="ud-xp" id="udxp" data-act="dtip" data-v="s:xp"><i></i><span></span></div>` : "")}</div></div>
     <div class="ud-stats">${dockStats(m)}</div>${bot}`;
 }

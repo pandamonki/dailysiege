@@ -46,6 +46,10 @@ let WAVE_V3_FROM = "2026-11-20"; const waveV3For = d => String(d) >= WAVE_V3_FRO
 // don't count), or when the castle is first hit (a catapult or archer can strike from further out). It is never later than the old trigger.
 // Castles can be under 7 tiles apart, so the radius is kept small: at 5 tiles it fired in the first seconds for most castles as armies marched past.
 let WAVE_V4_FROM = "2026-11-20"; const waveV4For = d => String(d) >= WAVE_V4_FROM, WAVE_NEAR_R = 3;
+// Balance v5 (plans stamped balV5, battles from BAL_V5_FROM): waves are a flat WAVE_GAP_V5 seconds apart, emergency or not; heroes get their own
+// attack and armour class (HERO_ATK / HERO_ARM in config/balance.js); a hero home and out of combat heals; regen items toned down; a castle
+// destroyed by the lord who betrayed it scores BETRAY_CASTLE_X times the castle points.
+let BAL_V5_FROM = "2026-11-22"; const balV5For = d => String(d) >= BAL_V5_FROM, WAVE_GAP_V5 = 20;
 const WAVE_WHEN = [["timer", "At a set time"], ["castle_hit", "When my castle is attacked"], ["castle_low", "When my castle drops below half"], ["hero_dies", "When my hero dies"], ["army_dead", "When all my soldiers die"], ["enemy_hero", "When an enemy hero dies"], ["ult", "When any ultimate is cast"]];
 const WAVE_TIMES = [20, 30, 45, 60, 75, 90, 120, 150];
 const WAVE_ORDERS = [["default", "Default orders", "Each soldier follows its group's combat orders"], ["castle", "March on castle", "Heads for the enemy castle; turns only on melee attackers"], ["hero", "Hunt heroes", "Goes after the nearest enemy hero"], ["nearest", "Nearest enemies", "Fights the closest enemy soldiers and heroes, wherever they are"]];

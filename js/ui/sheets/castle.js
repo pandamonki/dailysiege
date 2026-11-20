@@ -160,7 +160,7 @@ function champSheet() {
     ${S.ob === 2 ? `<div class="obbox"><b>Step 1 of 2 · Choose your hero</b><span>Pick a class below, then spend your first skill point on an ability.</span><button class="btn wax" data-act="obnext">Next: design your banner →</button></div>` : ""}
     <div class="xpbar" title="Experience toward the next level"><i style="width:${Math.round(xp / nd * 100)}%"></i><span>Level ${L} · ${xp}/${nd} XP</span></div>
     <p class="muted xpnote">Gains up to ${XP_CAP} levels a day in battle. Every level is one skill point.</p>
-    <div class="stats"><span>${IC.hp(now.hp)}</span><span>${IC.atk(now.atk)}</span></div>${typeInfo(CLASS_TYPES[S.cls], "hero")}
+    <div class="stats"><span>${IC.hp(now.hp)}</span><span>${IC.atk(atkSplit(now.atk, itemAtk(S.items)))}</span></div>${typeInfo(heroTypes(S.cls, balV5Now()), "hero")}
     <div class="row"><button class="btn small wood" data-act="move" data-v="champ" ${dis()}>Move on the map</button><span class="muted">then tap a glowing tile</span></div>
     ${canChange ? `<div><button class="btn wood" data-act="heropick" ${dis()}>Change hero…</button></div>` : ""}
     <div class="abtiles five">${abil.map(a => { const rr = S.ranks[a.key] || 0, mx = rankMax(a.key), cd = isPassive(a.key) ? "passive" : abilCD(a.key, rr || 1).toFixed(0) + "s";

@@ -53,7 +53,7 @@ function drawReplay(t) {
     if (!left || last == null || frac <= 0 || (R.sudden && time >= R.sudden.t0)) return { total: wv.total, left };
     const off = (R.waveRushOff || {})[pid] || [], gone = (wv.i[pid] || []).filter(([x]) => x <= time).map(([, i]) => i);
     const since = time - last, owed = R.waveV2 && WAVE_EMERGENCY.filter(f => frac < f).length > ts0.length && [...Array(wv.total).keys()].some(i => !off.includes(i) && !gone.includes(i));
-    const gap = owed ? WAVE_EMERGENCY_GAP : WAVE_GAP;
+    const gap = R.waveGap || (owed ? WAVE_EMERGENCY_GAP : WAVE_GAP); // balance v5 battles: one flat gap
     return since < gap ? { total: wv.total, left, cd: { rem: gap - since, of: gap, rush: !!owed } } : { total: wv.total, left }; };
   const wv = R.waves ? { i: replay.waveI || (replay.waveI = (R.events || []).reduce((o, e) => { if (e.ty === "wave") (o[e.pid] = o[e.pid] || []).push([e.t, e.i]); return o; }, {})), total: WAVE_COUNT, t: replay.waveT || (replay.waveT = (R.events || []).reduce((o, e) => { if (e.ty === "wave") (o[e.pid] = o[e.pid] || []).push(e.t); return o; }, {})) } : null;
   R.meta.forEach((m, k) => {

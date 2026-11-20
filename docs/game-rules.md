@@ -5,7 +5,7 @@ it in the same pull request as any change to the rules** (see CLAUDE.md). When t
 is right and this file is the bug. Exact numbers live in the files named in brackets; this page gives the shape and the
 key values.
 
-Last checked against the code: 18 Nov 2026 (v1.9).
+Last checked against the code: 20 Nov 2026 (v1.18).
 
 ## Dated rules
 
@@ -26,6 +26,7 @@ practice games always stamp all of them (`js/sim/plans.js`).
 | 20 Nov | `waveV3` | Wave deadlines: each wave goes by its own time (0:45, 1:30, 2:15) instead of one forced out each minute |
 | 20 Nov | `waveV4` | "Castle attacked" wave trigger becomes "enemies reach my castle" (within 3 tiles, or the first hit) |
 | 21 Nov | `placeV2` | Placement: one point per place, last scores 1, plus 2 for winning |
+| 22 Nov | `balV5` | Balance v5: hero rebalance (stats and skills), Hero damage and armour class for every hero, resting at home heals, regen items toned down, waves a flat 20s apart, triple castle points for a betrayal kill |
 
 ## The war
 
@@ -73,6 +74,19 @@ practice games always stamp all of them (`js/sim/plans.js`).
 - From 20 Nov (`skV2`) every skill rank adds an even step worth at least about two thirds of rank 1 (`TREE_V2` in
   `js/config/trees.js`); older battles keep the old values.
 - Up to 6 items; gear upgrades (weapon, armour, charm) last the week.
+- Hero class (from 22 Nov, `balV5`, `heroTypes` in `js/config/balance.js`): every hero attacks with the Hero damage type and wears
+  Hero armour, whatever its class. Hero damage does 120% to light, medium and heavy armour and 50% to castles and walls; Hero armour
+  takes 90% from blade, pierce, magic and precision and 80% from siege; hero against hero is 100%. Ability hits that name their own
+  type (pure poison, siege blasts) keep it. Before then each class had its own types (`CLASS_TYPES`).
+- Hero rebalance (from 22 Nov, `balV5`): base stats `CHAMP_V5` over `CHAMP_V3` (warrior 700 health and 25% armour, archer attack 24,
+  mage attack 30, rogue 510 health), skill values `TREE_V5` over `TREE_V2` in `js/config/trees.js` (Berserker, Tactician, Sniper,
+  Marksman, Rogue, Mage and Shaman nodes), and a shorter Avatar of War (`AVATAR_V5`: 5s, 15% heal, 35% splash). Tuned on 1,800
+  bot battles of 8 lords: every class wins 11 to 14.5%.
+- Resting at home (from 22 Nov, `HOME_HEAL` in `js/sim/battle.js`): a hero within 2.5 tiles of its own castle that has neither hit nor
+  been hit for 2 seconds heals 8% of its health a second, until full or until a hit stops it. Not in sudden death or once its castle
+  has fallen. A hero that falls back to heal (its stance) still heals 10% a second at home as before, whatever the fighting.
+- The hero's attack is shown as its own damage with the items' extra in green beside it (Whetstone 6, Gauntlets 12, Daedalus 12,
+  Divine Rapier 100).
 - From 20 Nov (`shellV2`) the Anti-Magic Shell has no timing setting: it fires as soon as the hero engages an enemy hero
   (attacking one within reach, or being attacked by one), whenever it is off cooldown.
 - Items from 20 Nov (`itemV6`, `ITEM_V6` in `js/sim/battle.js`): Healing Salve heals 220 (was 300) and costs 60; Ring of
@@ -83,6 +97,8 @@ practice games always stamp all of them (`js/sim/plans.js`).
   Orb of Fire splashes 50% within 1.5 tiles. Crystalys: 25% chance of 1.8x. Pipe of Insight: 60% within 4 tiles.
   Boots of Speed +0.42 move speed (was +0.35). Divine Rapier: +100 damage on each weapon hit, abilities unaffected
   (was double all hero damage).
+- Regeneration items from 22 Nov (`balV5`, `ITEM_V7`): Mending Herbs 3 a second and costs 50 (was 5, 40 gold); Ring of Health
+  +120 health and 5 a second and costs 125 (was 8, 100 gold); Mender's Charm heals allies 5 a second (was 8).
 
 ## Defences (from 17 Nov)
 
@@ -100,7 +116,9 @@ practice games always stamp all of them (`js/sim/plans.js`).
 
 ## Orders (from 20 Nov)
 
-- **Targets:** at least 1 and up to 3 a day, in order, before you can seal. The army goes after the first one still standing.
+- **Targets:** at least 1 and up to 3 a day, in order, before you can seal. The army goes after the first one still standing. An ally (a pact
+  carried from the last battle) can only be picked when the pact is set to Betray or Break; setting it back to Keep takes them
+  off the list.
   The target list shows the bounty on the top three of the board beside their Target button (♛ +gold for killing their hero or
   taking their castle), and their castles wear a crown on the map: gold for 1st, silver for 2nd, bronze for 3rd.
 - **Army plan:** what the army does once the fight in front of it is over.
@@ -141,6 +159,8 @@ practice games always stamp all of them (`js/sim/plans.js`).
   siege engine within 3 tiles of the castle and nearer to it than to its own castle, or the castle's first hit, whichever
   comes first. Towers never count. Plans that chose "castle attacked" get the new trigger with no change needed. (Castles
   can be under 7 tiles apart, so a wider area fired in the first seconds as armies marched past.)
+- From 22 Nov (`balV5`, `WAVE_GAP_V5`) every wave goes at least 20 seconds after the last, whether it goes by its trigger, its
+  deadline or an emergency rush.
 - In the replay each castle shows one bar per wave: bright yellow when ready, dim amber while waiting out the gap since
   the last wave, dark grey once gone. A small stopwatch beside them drains over the wait; it turns red when an emergency
   wave is due and will rush out as soon as the wait ends.
@@ -161,12 +181,27 @@ practice games always stamp all of them (`js/sim/plans.js`).
 - Placing, from the 21 Nov battle (`placeV2`, `placePts` in `js/sim/battle.js`): one point per place, so last scores 1 and first
   scores one per lord, plus 2 for winning (`PLACE_WIN_BONUS`); with 8 lords that is 10, 7, 6, 5, 4, 3, 2, 1. Before then: 10, 7, 5,
   4, 3, 2, 1 for 1st to 7th and nothing below.
-- Plus 1 per enemy hero killed and 3 per castle destroyed. Placing, kills and castles count 1.5 times on days 5, 6 and 7
+- Plus 1 per enemy hero killed and 3 per castle destroyed. From 22 Nov (`balV5`) a castle razed by the lord who betrayed
+  its owner in the same battle scores 3 times as much (9; `BETRAY_CASTLE_X`). Placing, kills and castles count 1.5 times on days 5, 6 and 7
   (`DAY_WEIGHT_PICK`). Then 1 for surviving with your hero alive, 3 for a betrayal whose bomb goes off, and contracts
   (2 easy, 3 hard, 5 against a rival; doubled on a Glory day).
 - Contracts add points and gold. Take one from Orders > Contracts, or from the Daily Noticeboard (the ! above the map): it
   shows the next battle's twist, the alliance changes at the last battle, and buttons to the contracts and the day's targets.
   It pulses each new day, and until a contract and a target are picked. The contract board no longer pops up by itself.
+
+## Screens
+
+- Replay: every lord's castle and hero sit along the top of the map with health bars. Tap a hero to have the camera follow it, a
+  castle to look at it; the unit panel has a Follow button for any hero, and the home button goes back to your own hero.
+- Pre-battle screen: each alliance's lords sit side by side under one ALLIANCE box, biggest alliance first, then lords alone.
+- Victory screen: allies who win together all appear; the winner's allies whose castles fell sit slumped beside them; a winner
+  who betrayed an ally that battle has the betrayed hero face down at their feet with a dagger in its back.
+- Gift (day 2 and 5): Roll spins three reels, Stop slows them onto the three items (fixed in advance), the first is picked; one
+  description and one Pick button below.
+- Mercenary camp: + and − set the amount (from the minimum) and Place bid submits it; tiles show your bid.
+- Map strip: the hero has Abilities, Items, Stats, Move and Orders; the castle has Upgrade (next tier and cost), Base and Army; a
+  wall has only Sell. Tapping the castle again does nothing more.
+- Seal checklist: every line has a button to fix it; "hero on the field" shows only when the hero is missing.
 
 ## Battle report
 
@@ -193,7 +228,8 @@ practice games always stamp all of them (`js/sim/plans.js`).
   still standing
   (`LONE_WOLF_STEP`). It is checked every second of the battle, so it ends the moment a second lord stands alone (a pact
   broken by a betrayal or a fallen castle) or the lone wolf is in a pact, and the extra health goes with it.
-- A pact can be broken cleanly or betrayed mid-battle with a bomb in the ally's keep (half its health). The betrayer scores
+- A pact can be broken cleanly or betrayed mid-battle with a bomb in the ally's keep (half its health). A lord can set Betray
+  on more than one ally: each armed betrayal sends the hero to that keep, so the bombs go off one after another, never at once. The betrayer scores
   3 points and takes a quarter of the victim's battle spoils; the two deal 20% more damage to each other for the rest of the
   war and can never share an alliance again.
 - Bots in friends wars (from 20 Nov, `wBotDiplomacy` in `js/net/world.js`): each day a bot has a 30% chance to invite a

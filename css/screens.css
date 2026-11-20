@@ -61,7 +61,7 @@
 .ht small.ab { color: var(--wax); } .hs { display: flex; gap: 10px; font-size: 13px; align-items: center; } .hs .ic { display: inline-flex; gap: 3px; align-items: center; } .hs svg { width: 14px; height: 14px; }
 .hgo, .iwrap .go { justify-self: center; font-size: 18px; padding: 10px 22px; font-family: var(--f-display); }
 .hwrap { padding-bottom: 8px; }
-.igrid { position: relative; display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+.igrid { position: relative; display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 18px 10px; }
 .ilines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 2; }
 .ln { stroke-width: 3; stroke-linecap: round; stroke-dasharray: var(--len); stroke-dashoffset: var(--len); animation: draw .6s 1.6s ease-out forwards; }
 .ln.kept { stroke: var(--azure); opacity: .7; } .ln.fresh { stroke: var(--gold); } .ln.broke { stroke: var(--wax); stroke-dasharray: 6 6; stroke-dashoffset: 0; opacity: 0; animation: fadein .4s 1.8s forwards; }
@@ -182,3 +182,14 @@
 .dangerbox .spread + .spread { margin-top: 10px; }
 .delwarn { border: 2px solid #b8322a; border-radius: 8px; background: #fbe3dc; padding: 10px 12px; }
 .delwarn p { margin: 0 0 8px; line-height: 1.4; }
+/* victory heroes: allies who won together side by side, fallen allies slumped beside them, a betrayed hero face down at the winner's feet */
+.vheroes { display: flex; justify-content: center; align-items: flex-end; gap: 4px; flex-wrap: wrap; }
+.vheroes .vh { display: block; }
+.vheroes.many .vhero { width: 92px; }
+.vheroes .vh.dead .vhero.slump { animation: none; filter: grayscale(.85) brightness(.6); transform: rotate(-24deg) translate(6px, 18px) scaleY(.82); transform-origin: 50% 100%; opacity: .85; }
+.vheroes.bodies { margin-bottom: 30px; }
+.vheroes .vh { position: relative; }
+.vcorpse { position: absolute; left: 50%; bottom: -34px; z-index: 1; display: block; width: 104px; height: 50px; transform: translateX(-50%); pointer-events: none; }
+.vcorpse .vbody { position: absolute; left: 50%; top: 50%; width: 64px; image-rendering: pixelated; transform: translate(-50%, -50%) rotate(-90deg); filter: grayscale(.75) brightness(.5) sepia(.35); }
+.vcorpse .vknife { position: absolute; left: 50%; top: -8px; width: 34px; height: 34px; transform: translateX(-4px) rotate(195deg); filter: drop-shadow(0 0 1px #000) drop-shadow(0 1px 0 #1e140c); }
+.vcorpse::after { content: ""; position: absolute; left: 18%; right: 18%; bottom: 2px; height: 9px; border-radius: 50%; background: rgba(140,20,14,.6); z-index: -1; }

@@ -21,8 +21,8 @@ function planSrc(p) {
   if (!p || !S) return null;
   const none = () => ({ ready: true });
   if (p.t === "champ") {
-    const v3 = heroV3Now(), b = v3 ? CHAMP_V3[S.cls] : CHAMP[S.cls], now = v3 ? champNowV3() : champNow(), c = CLASSES[S.cls];
-    return { m: { kind: "champ", key: "c-" + S.cls, cls: S.cls, lvl: level(), maxhp: now.hp, hp: now.hp, atk: now.atk, atype: CLASS_TYPES[S.cls][0], armour: CLASS_TYPES[S.cls][1], armor: b.armor, as: b.as, range: b.range, spd: b.spd, evade: 0,
+    const v3 = heroV3Now(), b = v3 ? champBase(S.cls, balV5Now()) : CHAMP[S.cls], now = v3 ? champNowV3() : champNow(), c = CLASSES[S.cls];
+    return { m: { kind: "champ", key: "c-" + S.cls, cls: S.cls, lvl: level(), maxhp: now.hp, hp: now.hp, atk: now.atk, fatk: itemAtk(S.items), atype: heroTypes(S.cls, balV5Now())[0], armour: heroTypes(S.cls, balV5Now())[1], armor: b.armor, as: b.as, range: b.range, spd: b.spd, evade: 0,
       tree: v3 && S.tree ? TREE_BKEY.map(k => (S.tree[k] || []).slice()) : null, ranks: v3 ? {} : S.ranks, items: (S.items || []).filter(Boolean), gear: S.gear }, color: MY_COLOR, who: "You", title: c.name, role: c.role, ranks: v3 ? {} : S.ranks, cd: none };
   }
   if (p.t === "unit") {
@@ -38,8 +38,8 @@ function planSrc(p) {
     const e = p.u != null ? RARMY[p.u] : null;
     if (e && e.champ) { // a rival's hero: only its class is known, so show the class kit without ranks
       const h = rivalHeroData(r), cl = h ? h.cls : (e.key || "").replace("c-", "") || r.cls, c = CLASSES[cl]; if (!c) return null;
-      const v3 = heroV3Now(), b = v3 ? CHAMP_V3[cl] : CHAMP[cl], L = h ? h.level : Math.max(1, r.lvl || DAY), rk = h ? h.ranks : { a1: 1, a2: 1, a3: 1, ult: 1 }, tree = h && h.tree && v3 ? TREE_BKEY.map(k => (h.tree[k] || []).slice()) : null;
-      return { m: { kind: "champ", key: "c-" + cl, cls: cl, lvl: L, maxhp: Math.round(b.hp * (v3 ? hpLvV3(L) : 1 + .08 * (L - 1))), hp: Math.round(b.hp * (v3 ? hpLvV3(L) : 1 + .08 * (L - 1))), atk: Math.round(b.atk * (v3 ? atkLvV3(L) : 1 + .06 * (L - 1))), atype: CLASS_TYPES[cl][0], armour: CLASS_TYPES[cl][1], armor: b.armor, as: b.as, range: b.range, spd: b.spd, evade: 0,
+      const v3 = heroV3Now(), b = v3 ? champBase(cl, balV5Now()) : CHAMP[cl], L = h ? h.level : Math.max(1, r.lvl || DAY), rk = h ? h.ranks : { a1: 1, a2: 1, a3: 1, ult: 1 }, tree = h && h.tree && v3 ? TREE_BKEY.map(k => (h.tree[k] || []).slice()) : null;
+      return { m: { kind: "champ", key: "c-" + cl, cls: cl, lvl: L, maxhp: Math.round(b.hp * (v3 ? hpLvV3(L) : 1 + .08 * (L - 1))), hp: Math.round(b.hp * (v3 ? hpLvV3(L) : 1 + .08 * (L - 1))), atk: Math.round(b.atk * (v3 ? atkLvV3(L) : 1 + .06 * (L - 1))), fatk: h ? itemAtk(h.items) : 0, atype: heroTypes(cl, balV5Now())[0], armour: heroTypes(cl, balV5Now())[1], armor: b.armor, as: b.as, range: b.range, spd: b.spd, evade: 0,
         tree, ranks: rk, items: h ? h.items.filter(k => ITEMS[k]) : [], gear: h ? h.gear : {} }, color: r.color, who: r.name, title: c.name, role: "Rival hero", ranks: rk, cd: none, hideRanks: !h, scouted: !!h, rival: true };
     }
     if (e) { const b = UNITS[e.key]; if (!b) return null; const L = e.lvl || 1, sim = UNIT_SIM[e.key] || {}, ty = UNIT_TYPES[e.key] || [], mul = 1 + UNIT_LVL_GAIN * (L - 1);
@@ -63,13 +63,13 @@ function planActions(p, src) {
   if (src.rival) { const det = A4("open", "rival", p.id, UIIMG("allies"), "Details", false, "What you know about this lord");
     if (src.m.kind !== "champ") return [det]; const ok = !!src.scouted, no = "You haven't seen this hero fight yet";
     return [A4("rhero", p.id, "abilities", UIIMG("ultimate"), "Abilities", !ok, ok ? "Its skills, from yesterday's battle" : no), A4("rhero", p.id, "items", UIIMG("armoury"), "Items", !ok, ok ? "Its items and gear, from yesterday's battle" : no), det]; }
-  if (p.t === "champ") { const fp = freePts(); return [A4("openhero", "abilities", null, UIIMG("ultimate"), `Abilities${fp ? `<sup class="dot">${fp}</sup>` : ""}`, false, fp ? `Skills (${fp} point${fp === 1 ? "" : "s"} to spend)` : "Skills"), A4("openhero", "items", null, UIIMG("armoury"), "Items", false, "Items and gear"), A4("move", "champ", null, "✥", "Move", lk, "Move your hero to another tile"), ordersV2Now() ? A4("openorders", "ord", null, UIIMG("orders"), "Orders", false, "Army plan, fall back and stance") : A4("open", "uorder", "champ", UIIMG("orders"), "Orders", false, "War orders for your hero")]; }
+  if (p.t === "champ") { const fp = freePts(); return [A4("openhero", "abilities", null, UIIMG("ultimate"), `Abilities${fp ? `<sup class="dot">${fp}</sup>` : ""}`, false, fp ? `Skills (${fp} point${fp === 1 ? "" : "s"} to spend)` : "Skills"), A4("openhero", "items", null, UIIMG("armoury"), "Items", false, "Items and gear"), A4("openhero", "stats", null, "📊", "Stats", false, "Health, attack, armour and speed"), A4("move", "champ", null, "✥", "Move", lk, "Move your hero to another tile"), ordersV2Now() ? A4("openorders", "ord", null, UIIMG("orders"), "Orders", false, "Army plan, fall back and stance") : A4("open", "uorder", "champ", UIIMG("orders"), "Orders", false, "War orders for your hero")]; }
   if (p.t === "unit") { const u = findUnit(p.id), maxed = u.lvl >= 3;
     return [A4("trainunit", p.id, null, "⬆", "Train", false, maxed ? "Fully trained: open its training page" : `Open the training page for this soldier (level ${u.lvl + 1} costs ${upgradeCost(u)} gold)`), A4("move", p.id, null, "✥", "Move", lk, "Move to another tile"), ...(ordersV2Now() ? [] : [A4("open", "uorder", p.id, UIIMG("orders"), "Orders", false, "War orders")]), A4("bench", p.id, null, "⌂", "Barracks", lk, "Send back to the barracks")]; }
-  if (p.t === "castle") return [A4("opencastle", "keep", null, UIIMG("base"), "Base", false, "Build and upgrade"), A4("opencastle", "recruit", null, UIIMG("army"), "Army", false, "Recruit and train")];
+  if (p.t === "castle") { const nx = CASTLE_TIERS[ctNow()]; return [nx ? A4("castleup", null, null, `<em class="pcost">⬆${nx.cost}g</em>`, "Upgrade", lk || avail() < nx.cost, avail() < nx.cost ? `Upgrade to ${nx.name}: needs ${nx.cost} gold` : `Upgrade to ${nx.name} for ${nx.cost} gold`) : A4("opencastle", "keep", null, "⬆", "Max tier", true, "Fully upgraded"), A4("opencastle", "keep", null, UIIMG("base"), "Base", false, "Build and upgrade"), A4("opencastle", "recruit", null, UIIMG("army"), "Army", false, "Recruit and train")]; }
   // defences: walls and towers stay where they stand (sell and rebuild to change them); traps can be moved. Selling takes a second tap.
   const sellAs = (act, gold) => PSELL === p.id ? A4(act, p.id, null, "✓", `Sure? +${gold}g`, lk, `Sell it for ${gold} gold`) : A4("psell", p.id, null, "🪙", "Sell", lk, `Sell for ${gold} gold`);
-  if (p.t === "wall") return [A4("wrot", p.id, null, "↻", "Turn", lk, "Turn it the other way"), sellAs("wsell", Math.floor(WALL_COST / 2))];
+  if (p.t === "wall") return [sellAs("wsell", Math.floor(WALL_COST / 2))];
   const tr = findTrap(p.id);
   if (tr && tr.type === "tower") { const up = TOWER_UP[towerKey(tr)]; return [A4("opencastle", "traps", p.id, "⬆", "Upgrade", false, up ? "Upgrade this tower" : "Fully upgraded: see its details"), sellAs("tsell", Math.floor(towerSpent(towerKey(tr)) / 2))]; }
   return [A4("move", p.id, null, "✥", "Move", lk, "Move"), sellAs("tsell", Math.floor(((TRAPS[tr && tr.type] || {}).cost || 0) / 2))];
@@ -90,9 +90,9 @@ function renderPlanDock() {
     ud.hidden = true; tipEl.hidden = true; document.body.classList.remove("pdx"); return;
   }
   const m = src.m, img = portraitFor(m, src.color), hpf = Math.max(0, Math.min(1, m.hp / m.maxhp));
-  const st = `<span>⚔ <b>${Math.round(m.atk)}</b></span><span>🛡 <b>${ARMOUR_TYPES[m.armour] || "–"}</b></span>${m.kind === "castle" || m.tower ? `<span>➶ <b>${m.range.toFixed(1)}</b></span>` : `<span>👢 <b>${m.spd.toFixed(2)}</b></span>`}`;
+  const st = `<span>⚔ <b>${m.fatk ? atkSplit(m.atk, m.fatk) : Math.round(m.atk)}</b></span><span>🛡 <b>${ARMOUR_TYPES[m.armour] || "–"}</b></span>${m.kind === "castle" || m.tower ? `<span>➶ <b>${m.range.toFixed(1)}</b></span>` : `<span>👢 <b>${m.spd.toFixed(2)}</b></span>`}`;
   el.innerHTML = `<div class="pd"><div class="pd-main"><span class="pd-por" style="--c:${src.color}">${img ? `<img alt="" src="${img}">` : m.kind === "castle" ? `<img class="art" alt="" src="icons/ui/castle${m.ctier}.webp">` : `<b class="gl">W</b>`}${m.lvl ? `<i class="lv">${m.lvl}</i>` : ""}</span>
     <span class="pd-info"><span class="pd-nm"><b>${esc(src.title)}</b>${m.kind === "unit" ? "" : `<small>${esc(src.role)}</small>`}</span><span class="pd-bar${src.rival ? " bad" : ""}"><i style="width:${hpf * 100}%"></i><span>${Math.round(m.hp)} / ${Math.round(m.maxhp)}</span></span><span class="pd-stats">${st}</span></span></div>
-    <div class="pd-act">${acts.map(pdBtn).join("")}</div></div>`;
+    <div class="pd-act${acts.length > 4 ? " n5" : ""}">${acts.map(pdBtn).join("")}</div></div>`;
   ud.hidden = true; tipEl.hidden = true; document.body.classList.remove("pdx"); // the strip stays small and fixed: no tap-to-expand panel over the map
 }

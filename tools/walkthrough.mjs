@@ -66,6 +66,25 @@ for (const name of engines) {
   await step("buy, place and inspect a tower", async () => { await tap('#cmdbar [data-v="keep"]'); await tap('#sheet .tabs button:has-text("Defences")'); await tap('#sheet [data-act="dsel"][data-v="tw1"]'); await tap('#sheet [data-act="trap"][data-v="tower"]');
     const [r, q] = (await freeTiles())[2]; await tapTile(r, q); if (!(await js(() => S.traps.some(t => t.type === "tower" && placedAt(t.id))))) throw new Error("the tower is not on the map");
     await tapTile(r, q); await page.waitForTimeout(150); if (!(await js(() => /Upgrade/.test(document.getElementById("pdock").innerText)))) throw new Error("the tower's strip has no Upgrade button"); });
+  await step("the map strip: hero has Stats, the castle has Upgrade and no second-tap menu, a wall has no Turn", async () => { await closeAll();
+    await js(() => { psel = { t: "champ" }; render(); }); if (!(await page.locator('#pdock [data-act="openhero"][data-v="stats"]').count())) throw new Error("no Stats button for the hero");
+    await tap('#pdock [data-act="openhero"][data-v="stats"]'); if (!(await js(() => sheet && sheet.tab === "stats"))) throw new Error("Stats did not open the hero's stats"); await closeAll();
+    const [cr, cq] = await js(() => CASTLE); await tapTile(cr, cq); await tapTile(cr, cq); if (await sheetOpen()) throw new Error("a second tap on the castle opened a menu");
+    if (!(await js(() => /Upgrade|Max tier/.test(document.getElementById("pdock").innerText)))) throw new Error("the castle strip has no Upgrade button");
+    if (await js(() => { psel = { t: "wall", id: (S.walls[0] || {}).id }; render(); return S.walls.length && !!document.querySelector('#pdock [data-act="wrot"]'); })) throw new Error("a wall still has a Turn button");
+    await js(() => { psel = null; render(); }); });
+  await step("the gift: Roll, Stop, the reels land, pick another and take it", async () => { await closeAll();
+    await js(() => { S.spin = { tier: 1, day: 2, bonus: false, offer: rollSpin("walk", 1, S.items), week: null, at: Date.now(), shown: true }; S.items = S.items.slice(0, 2); sheet = { type: "spin" }; render(); });
+    if (!(await js(() => /Roll for your gift/.test(document.querySelector("#sheet").innerText)))) throw new Error("the gift does not start on Roll for your gift");
+    await tap('#sheet [data-act="spinroll"]'); await tap('#sheet [data-act="spinstop"]'); await page.waitForTimeout(4000);
+    const offer = await js(() => S.spin.offer); if (!(await page.locator(`#sheet .reel.pick.on[data-v="${offer[0]}"]`).count())) throw new Error("the first item is not picked with the glow");
+    await tap(`#sheet [data-act="spinsel"][data-v="${offer[1]}"]`); if (!(await page.locator(`#sheet [data-act="spinpick"][data-v="${offer[1]}"]`).count())) throw new Error("tapping the second item did not pick it");
+    await tap('#sheet [data-act="spinpick"]'); if (!(await js(k => S.items.includes(k) && !S.spin, offer[1]))) throw new Error("the picked item was not taken"); await closeAll(); });
+  await step("the mercenary camp: + and − set the amount, and only Place bid bids", async () => { await closeAll();
+    await js(() => { sheet = { type: "camp" }; render(); }); const k = await js(() => { const R = mercToday(); return R.head; }), lo = await js(k => mercMin(k, true), k);
+    await tap('#sheet [data-act="mstep"][data-v="1"]'); if (await js(k => !!(S.bids || {})[k], k)) throw new Error("+ placed a bid on its own");
+    await tap('#sheet [data-act="msubmit"]'); if ((await js(k => (S.bids[k] || {}).gold, k)) !== lo + 10) throw new Error("Place bid did not bid the shown amount");
+    if (!(await js(b => document.querySelector("#sheet .mhead").innerText.includes(String(b)), lo + 10))) throw new Error("the group's card does not show your bid"); await js(k => { delete S.bids[k]; }, k); await closeAll(); });
   await step("compare and buy a tower upgrade", async () => { await closeAll(); await js(() => { S.castle = 3; const t = S.traps.find(x => x.type === "tower"); t.tk = "tower2"; render(); });
     await tap('#cmdbar [data-v="keep"]'); await tap('#sheet .tabs button:has-text("Defences")'); await tap('#sheet [data-act="dsel"][data-v="tw1"]');
     if (!(await page.locator("#sheet .cmp").count())) throw new Error("no stats comparison"); await tap('#sheet [data-act="tpick"][data-v="towerS"]');
@@ -93,6 +112,11 @@ for (const name of engines) {
     await tap('#sheet [data-act="seal"]'); if (!(await js(() => S.locked))) throw new Error("orders are not sealed"); });
   await step("watch the battle to the end", async () => { await tap('#sheet [data-act="battle"]'); await page.waitForTimeout(500); const go = page.locator('text=To battle'); if (await go.count()) await go.first().click();
     await page.waitForFunction(() => mode === "replay" && replay && replay.res, null, { timeout: 20000 });
+    await js(() => { replay.playing = false; replay.time = 20; updateReplayUI(); });
+    if ((await page.locator("#ctrack .ctl").count()) !== (await js(() => replay.res.order.length))) throw new Error("the top bar does not show every lord");
+    const other = page.locator("#ctrack .ctl:not(.me) .cth").first(); await other.click(); await page.waitForTimeout(150);
+    if (!(await js(() => replay.follow != null && replay.auto && replay.res.meta[replay.follow].kind === "champ"))) throw new Error("tapping a hero did not follow it");
+    if (!(await page.locator("#ud .ud-fol").count())) throw new Error("the unit panel has no Follow");
     await js(() => { replay.time = Math.max(0, replay.res.duration - 2); replay.playing = true; }); // skip to the last seconds
     await page.waitForFunction(() => !replay || replay.done, null, { timeout: 30000 }); });
   await step("the battle report shows every lord and opens their builds", async () => { await page.waitForTimeout(1500); for (let i = 0; i < 6; i++) { const c = page.locator('button:has-text("Continue"):visible'); if (await c.count()) { await c.first().click(); await page.waitForTimeout(600); } }

@@ -38,7 +38,7 @@ const A = {
     const fallback = () => { box.hidden = false; box.value = txt; box.select(); toast("Selected. Copy it from the box."); };
     try { navigator.clipboard.writeText(txt).then(() => toast("Telemetry copied."), fallback); } catch (e) { fallback(); } },
   rplay: () => { if (replay.time >= replay.res.duration) replay.time = 0; replay.playing = !replay.playing; },
-  rauto: () => { replay.auto = !replay.auto; replay.camMode = null; },
+  rauto: () => { replay.auto = !replay.auto; replay.camMode = null; replay.inspectKey = null; },
   rspeed: () => { replay.speed = replay.speed >= 4 ? 1 : replay.speed * 2; },
   rrestart: () => { replay.time = 0; replay.playing = true; replay.done = false; sheet = null; },
   rreport: () => open("results"),
@@ -47,6 +47,8 @@ const A = {
   reelskip: () => { const r = replay && replay.reel; if (!r) return; if (r.phase === "outro") stopReel(!r.rec); else nextClip(r); },
   reelstop: () => { if (WAR_REEL) { WAR_REEL = null; stopReel(false); leaveBattle(); return; } stopReel(true); },
   rjump: v => { replay.time = +v; replay.playing = true; replay.done = false; sheet = null; },
+  rfollow: v => { if (!replay) return; const k = +v, R = replay.res; replay.follow = R.meta[k] && R.meta[k].pid === R.me ? null : k; replay.sel = k; replay.tip = null; replay.auto = true; replay.camMode = null; replay.inspectKey = null; }, // follow any hero with the camera
+  rlook: v => { if (!replay) return; const k = +v, m = replay.res.meta[k]; if (!m || !m.tile) return; replay.sel = k; replay.tip = null; replay.auto = false; flyTo((m.tile[1] + .5) * ts, m.tile[0] * ts, 1.35); },
   unselect: () => { if (replay) { replay.sel = null; replay.tip = null; } },
   dtip: v => { if (replay) replay.tip = replay.tip === v ? null : v; },
   rexit: () => leaveBattle(),
@@ -55,7 +57,7 @@ const A = {
   zin: () => { if (replay && replay.auto) { autoZoomBy(AUTO_ZOOM_STEP); return; } camTarget = null; zoomAt(vw / 2, vh / 2, cam.z * 1.35); },
   zout: () => { if (replay && replay.auto) { autoZoomBy(1 / AUTO_ZOOM_STEP); return; } camTarget = null; zoomAt(vw / 2, vh / 2, cam.z / 1.35); },
   zall: () => { if (replay) replay.auto = false; flyTo(W / 2, W / 2, 0); },
-  zhome: () => { if (replay && !replay.reel) { replay.auto = true; replay.camMode = null; return; } home(); }, // in a replay the home button follows your hero again
+  zhome: () => { if (replay && !replay.reel) { replay.follow = null; replay.auto = true; replay.camMode = null; return; } home(); }, // in a replay the home button follows your hero again
   cancel: () => { sel = null; PLACE_Q = []; WALL_BUILD = null; },
   trainunit: id => { S.phase = "muster"; sel = null; sheet = { type: "castle", tab: "garrison", grp: "army", tsel: id }; }, // the unit strip's Train button: open the training screen on that soldier
   opencastle: (v, k) => { S.phase = "muster"; sel = null; WALL_BUILD = null; sheet = { type: "castle", tab: v, grp: v === "recruit" ? "army" : "base" }; if (v === "armoury") sheet.tab = "keep"; if (k) sheet.dsel = k; }, // k: a tower to open on, from its Upgrade button
@@ -112,6 +114,9 @@ const A = {
   spinrep: j => { const sp = S.spin, k = sheet && sheet.pend; if (!sp || !k || !S.items.includes(j)) return; S.items = S.items.filter(x => x !== j); S.gold += Math.floor(itemCost(j) / 2); S.items.push(k); toast(`${ITEMS[k].name} replaces ${ITEMS[j].name}.`); endSpin(); },
   spinno: () => { if (sheet) sheet.pend = null; },
   spinopen: () => spinOpen(),
+  spinroll: () => { if (sheet && sheet.type === "spin" && S.spin && !S.spin.rolled) sheet.stage = "spin"; },
+  spinstop: () => { if (!sheet || sheet.type !== "spin" || !S.spin || S.spin.rolled) return; S.spin.rolled = true; sheet.t0 = Date.now(); setTimeout(() => { if (sheet && sheet.type === "spin") render(); }, REEL_SETTLE * 1000 + 60); }, // the reels slow and land; then redraw once so the item buttons work
+  spinsel: v => { if (sheet && sheet.type === "spin" && S.spin && S.spin.offer.includes(v)) sheet.sel = v; },
   spingold: () => { if (!S.spin || S.items.length < ITEM_SLOTS) return; S.gold += SPIN_GOLD; toast(`+${SPIN_GOLD} gold.`); endSpin(); },
   wallbuy: v => { const n = Math.max(1, Math.min(+v || 1, wallLimit(ctNow()) - S.walls.length, Math.floor(avail() / WALL_COST))); if (S.walls.length >= wallLimit(ctNow()) || avail() < WALL_COST) return; const ids = [];
     for (let i = 0; i < n; i++) { S.gold -= WALL_COST; const id = "w" + idc++; S.walls.push({ id, dir: "h" }); ids.push(id); }
@@ -136,7 +141,7 @@ const A = {
       const who = takenColours()[k]; if (who) { toast(`${TEAM_COLOR_NAMES[k] || "That colour"} is taken by ${who}.`); return; }
       S.banner = { ...(S.banner || defaultBanner()), c1: k }; MY_COLOR = k; save(); renderLobby(); return; }
     S.banner = { ...(S.banner || defaultBanner()), [v]: k === "seat" ? null : k }; },
-  pact: (v, k) => { ensureDip(); S.pactAct[k] = v; if (v === "betray") S.pactWhen[k] = S.pactWhen[k] || BETRAY_WHEN[0]; },
+  pact: (v, k) => { ensureDip(); S.pactAct[k] = v; if (v === "keep") S.lists.hostile = S.lists.hostile.filter(x => x !== k); if (v === "betray") S.pactWhen[k] = S.pactWhen[k] || BETRAY_WHEN[0]; },
   bcopy: () => { const t = window.__bcheck || ""; try { navigator.clipboard.writeText(t).then(() => toast("Copied. Paste it into your message."), () => toast("Couldn't copy. Take a screenshot instead.")); } catch (e) { toast("Couldn't copy. Take a screenshot instead."); } },
   gpage: v => { sheet.pg = (sheet.pg || 0) + (+v); },
   gch: v => { const first = S && S.ob === 1, list = guidePages("book").filter(p => !first || p.ch === "basics"); sheet.pg = Math.max(0, list.findIndex(p => p.ch === v)); },
@@ -167,7 +172,7 @@ const A = {
   opentoday: () => { S.phase = "orders"; sel = null; ensureDip(); sheet = { type: "orders", grp: "ord", tab: "contracts" }; },
   twistpop: () => { TWIST_POP = !TWIST_POP; if (S) S.twSeen = planDayKey(); },
   sealgo: v => { sel = null; if (["strategy", "contracts", "alliances", "rituals"].includes(v)) { S.phase = "orders"; ensureDip(); sheet = { type: "orders", grp: v === "alliances" ? "alli" : "ord", tab: v }; }
-    else if (v === "hero") open("champ", "champ"); else if (v === "deploy") sheet = { type: "castle", tab: "deployment", grp: "army" }; else if (v === "castle") sheet = { type: "castle", tab: "keep", grp: "base" }; else if (v === "camp") sheet = { type: "camp" }; },
+    else if (v === "hero") open("champ", "champ"); else if (v === "deploy") sheet = { type: "castle", tab: "deployment", grp: "army" }; else if (v === "castle") sheet = { type: "castle", tab: "keep", grp: "base" }; else if (v === "camp") sheet = { type: "camp" }; else if (v === "map") { S.phase = "muster"; sheet = null; } },
   cxpick: v => { if (S.locked || (isLive() && LIVE.readOnly)) return; S.contract = v && myOffers().includes(v) ? v : null; if (S.contract) toast("Contract taken. Seal your orders to keep it."); },
   opencamp: () => { sel = null; sheet = { type: "camp" }; },
   mbid: (v, k) => { ensureDip(); const m = MERCS[k]; if (!m || mercWait(k) || (mercV2Now() && !mercToday().open.includes(k))) return; const b = S.bids[k] && S.bids[k].day === planDayKey() ? S.bids[k].gold : 0, step = 10;
@@ -176,8 +181,16 @@ const A = {
     if (next - b > avail() + freed) { toast("Not enough gold."); return; }
     if (moved.length) { moved.forEach(([id]) => delete S.bids[id]); toast(`Bid moved to the ${m.name}: one group a day.`); }
     if (next) S.bids[k] = { gold: next, day: planDayKey() }; else delete S.bids[k]; },
+  // headliner camp: + and - change the amount you are about to bid (from the group's minimum), and nothing is bid until you press the bid button
+  mstep: (v, k) => { if (!sheet || sheet.type !== "camp" || !MERCS[k]) return; const lo = mercMin(k, mercV2Now()), cur = mercDraft(k), next = Math.max(lo, cur + 10 * Math.sign(+v)), room = avail() + bidsReserved();
+    if (next > cur && next > room) { toast("Not enough gold."); return; } (sheet.bidDraft || (sheet.bidDraft = {}))[k] = next; },
+  msubmit: (_, k) => { ensureDip(); const m = MERCS[k]; if (!m || mercWait(k) || (mercV2Now() && !mercToday().open.includes(k))) return; const amt = mercDraft(k), b = S.bids[k] && S.bids[k].day === planDayKey() ? S.bids[k].gold : 0;
+    const moved = myBids().filter(([id]) => id !== k), freed = moved.reduce((a, [, x]) => a + x.gold, 0);
+    if (amt - b > avail() + freed) { toast("Not enough gold."); return; }
+    if (moved.length) { moved.forEach(([id]) => delete S.bids[id]); toast(`Bid moved to the ${m.name}: one group a day.`); } else toast(b ? `Bid changed to ${amt}g.` : `Bid of ${amt}g placed.`);
+    S.bids[k] = { gold: amt, day: planDayKey() }; },
   mpick: v => { if (sheet && sheet.type === "camp" && MERCS[v]) sheet.pick = v; },
-  mclear: (_, k) => { ensureDip(); delete S.bids[k]; },
+  mclear: (_, k) => { ensureDip(); delete S.bids[k]; if (sheet && sheet.bidDraft) delete sheet.bidDraft[k]; },
   topen: (_, k) => { S.terms[k].mode = S.terms[k].mode === "refuse" ? "accept" : "refuse"; },
   tbet: (_, k) => { S.terms[k].mode = S.terms[k].mode === "betray" ? "accept" : "betray"; },
   pup: v => { const i = +v; [S.prio[i - 1], S.prio[i]] = [S.prio[i], S.prio[i - 1]]; },
@@ -193,7 +206,7 @@ const A = {
   rvopen: v => { sheet.rv = sheet.rv === v ? null : v; },
   rvset: (v, k) => { ensureDip(); if (v === "hostile" && S.lists.hostile.includes(k)) { S.lists.hostile = [k, ...S.lists.hostile.filter(x => x !== k)]; toast("Main target set."); return; } A.lmove(v, k); },
   phase: v => { S.phase = v; sel = null; sheet = null; if (v === "orders") { ensureDip(); open("orders"); } },
-  lmove: (v, k) => { ensureDip(); if (v === "hostile" && pickV1Now() && !S.lists.hostile.includes(k) && S.lists.hostile.length >= PICK_MAX) { toast(`You can pick up to ${PICK_MAX} targets a day.`); return; } ["hostile", "neutral"].forEach(l => { S.lists[l] = S.lists[l].filter(x => x !== k); }); if (PICK_ROLES[k] && v !== "hostile") return; S.lists[v === "hostile" ? "hostile" : "neutral"].push(k); }, // a general role is only ever on the attack list
+  lmove: (v, k) => { ensureDip(); if (v === "hostile" && allyShielded(k)) { toast(`${tgtName(k)} is your ally. Set the pact to Betray in Alliances to target them.`); return; } if (v === "hostile" && pickV1Now() && !S.lists.hostile.includes(k) && S.lists.hostile.length >= PICK_MAX) { toast(`You can pick up to ${PICK_MAX} targets a day.`); return; } ["hostile", "neutral"].forEach(l => { S.lists[l] = S.lists[l].filter(x => x !== k); }); if (PICK_ROLES[k] && v !== "hostile") return; S.lists[v === "hostile" ? "hostile" : "neutral"].push(k); }, // a general role is only ever on the attack list
   lup: (_, k) => { const L = S.lists.hostile, i = L.indexOf(k); if (i > 0) [L[i - 1], L[i]] = [L[i], L[i - 1]]; },
   ldown: (_, k) => { const L = S.lists.hostile, i = L.indexOf(k); if (i > -1 && i < L.length - 1) [L[i + 1], L[i]] = [L[i], L[i + 1]]; },
   preset: v => { ensureDip(); const pick = RIVALS.filter(r => sideOf(r) === v).sort((a, b) => Math.hypot(a.pos[0] - CASTLE[0], a.pos[1] - CASTLE[1]) - Math.hypot(b.pos[0] - CASTLE[0], b.pos[1] - CASTLE[1]))[0];
@@ -231,7 +244,7 @@ document.addEventListener("change", e => {
   if (act === "tmodeset") S.strategy.mode = s.value;
   if (act === "prioset") S.prio[+v] = s.value;
   if (act === "gprioset" && !S.locked) { const l = S.gprio[k].slice(); l[+v] = s.value; S.gprio[k] = cleanGprio({ ...S.gprio, [k]: l.filter(Boolean) })[k]; }
-  if (act === "pactset") { ensureDip(); S.pactAct[k] = s.value; if (s.value === "betray") S.pactWhen[k] = S.pactWhen[k] || BETRAY_WHEN[0]; }
+  if (act === "pactset") { ensureDip(); S.pactAct[k] = s.value; if (s.value === "keep") S.lists.hostile = S.lists.hostile.filter(x => x !== k); if (s.value === "betray") S.pactWhen[k] = S.pactWhen[k] || BETRAY_WHEN[0]; }
   if (act === "tmin") S.terms[k].min = +s.value;
   render();
 });
