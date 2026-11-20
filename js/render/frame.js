@@ -1,4 +1,4 @@
-const rivalLabel = rv => { const b = bountyMap()[rv.id]; return (isLive() && rv.lvl ? `${rv.name} · Lv ${rv.lvl}` : rv.name) + (b ? ` · ♛${b}g` : ""); }; // a rival's hero level as it stood at the end of the last battle
+const rivalLabel = rv => { const b = bountyMap()[rv.id]; return (isLive() && rv.lvl ? `${rv.name} · Lv ${rv.lvl}` : rv.name) + (b ? ` · ♛+${b}g` : ""); }; // a rival's hero level as it stood at the end of the last battle
 // Drawing each frame and the animation loop
 
 function drawCentreRing(t, color) {
@@ -40,8 +40,8 @@ function draw(t) {
   if (S.phase === "orders" && S.lists) drawOrderArrows(t);
   // everything that stands on the map, drawn back to front
   const items = [];
-  RIVALS.forEach(rv => items.push([rv.pos[0], () => drawCastle(rv.pos[0], rv.pos[1], rv.color, t, rivalLabel(rv), S.lists ? (bucketOf(rv.id) === "neutral" ? null : bucketOf(rv.id)) : null, null, rv.banner, rv.ctier || 1)]));
-  items.push([CASTLE[0], () => drawCastle(CASTLE[0], CASTLE[1], MY_COLOR, t, isLive() ? MY_NAME : "You", null, null, S.banner, S.castle || 1)]);
+  RIVALS.forEach(rv => items.push([rv.pos[0], () => drawCastle(rv.pos[0], rv.pos[1], rv.color, t, rivalLabel(rv), S.lists ? (bucketOf(rv.id) === "neutral" ? null : bucketOf(rv.id)) : null, null, rv.banner, rv.ctier || 1, bountyRank(rv.id))]));
+  items.push([CASTLE[0], () => drawCastle(CASTLE[0], CASTLE[1], MY_COLOR, t, isLive() ? MY_NAME : "You", null, null, S.banner, S.castle || 1, bountyRank(isLive() ? LIVE.uid : "you"))]);
   RWALLS.forEach(w => { const rv = RIVALS.find(x => x.id === w.rid); if (!rv) return; const mine = RWALLS.filter(o => o.rid === w.rid).map(o => [o.r, o.c]); wallTiles(w.r, w.c, w.dir).forEach(([a, b]) => items.push([a + .2, () => drawWallTile(ctx, a, b, rv.ctier || 1, 1, rv.color, t, w.dir, wallLinks(mine, a, b))])); });
   if (seeArmies()) RARMY.forEach(u => {
     const rv = RIVALS.find(x => x.id === u.rid), friendly = (S.diplo[u.rid] || {}).rel === "ally";

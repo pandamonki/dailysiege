@@ -180,9 +180,9 @@ function previewOrder() {
     weakhero: id => (CHAMP[rv(id).cls] || CHAMP.warrior).hp * (1 + .08 * ((rv(id).level || DAY) - 1)), weakcastle: id => rv(id).ctier || 1, closest: dist }[st.mode];
   return ids.sort((a, b) => key(a) - key(b));
 }
-// Pick your targets (PICK_V1): three targets a day (TARGETS_NEED), in order. Once they have fallen, the army goes for the lord just above on the board.
+// Pick your targets (PICK_V1): one to three targets a day (at least TARGETS_NEED), in order. Once they have fallen, the army goes for the lord just above on the board.
 // how many targets a lord must pick before sealing: three, or every option there is if fewer
-const TARGETS_NEED = () => Math.min(PICK_MAX, RIVALS.length + Object.keys(PICK_ROLES).length);
+const TARGETS_NEED = () => 1; // at least one target before sealing; up to PICK_MAX
 const targetsReady = () => !pickV1Now() || S.lists.hostile.length >= TARGETS_NEED();
 const ROLE_ICON = { "@weakcastle": "🏚", "@leader": "👑", "@above": "⬆", "@nearcastle": "🏰", "@neararmy": "⚔" };
 const tgtName = id => { const r = RIVALS.find(x => x.id === id); return r ? r.name : PICK_ROLES[id] || ""; };
@@ -192,23 +192,23 @@ function targetSlotsHTML() {
   const hostile = S.lists.hostile;
   return `<ol class="tslots" id="tgtlist">${[0, 1, 2].slice(0, PICK_MAX).map(i => { const id = hostile[i];
     if (id && tgtName(id)) return `<li class="tgt tslot on" data-k="${id}"><span class="grip" aria-label="Drag to reorder">⠿</span><span class="ord">${i + 1}</span>${tgtMark(id)}<span class="tnm"><b>${esc(tgtName(id))}</b>${PICK_ROLES[id] ? `<small>role</small>` : ""}</span><button class="tx" data-act="lmove" data-v="neutral" data-k="${id}" aria-label="Stop attacking ${esc(tgtName(id))}" ${dis()}>✕</button></li>`;
-    return `<li class="tslot empty"><span class="ord">${i + 1}</span><span class="tnm">${i === hostile.length ? (i === 0 ? "<b>Pick your first target</b>" : "<b>Pick your next target</b>") : ""}</span><small class="req">required</small></li>`; }).join("")}</ol>`;
+    return `<li class="tslot empty"><span class="ord">${i + 1}</span><span class="tnm">${i === hostile.length ? (i === 0 ? "<b>Pick your first target</b>" : "<b>Pick your next target</b>") : ""}</span><small class="req">${i < TARGETS_NEED() ? "required" : "optional"}</small></li>`; }).join("")}</ol>`;
 }
 // the board as it stands: rank, points and a target button for every lord (used on the Strategy tab and the seal screen)
 function targetBoardHTML(compact) {
-  const rows = boardRows().sort((a, b) => b.pts - a.pts || b.lvl - a.lvl), hostile = S.lists.hostile, full = hostile.length >= PICK_MAX;
+  const rows = boardRows().sort((a, b) => b.pts - a.pts || b.lvl - a.lvl), hostile = S.lists.hostile, full = hostile.length >= PICK_MAX, bty = bountyMap();
   return `<div class="tboard${compact ? " compact" : ""}">${rows.map((r, i) => { const n = hostile.indexOf(r.id) + 1;
-    return `<div class="tbr${r.me ? " me" : ""}${n ? " on" : ""}"><span class="rk">${i + 1}</span><i class="sw" style="background:${r.color}"></i><span class="nm"><b>${esc(r.me ? "You" : r.name)}</b>${r.cls && !compact ? `<small>${esc(CLASSES[r.cls].name)}</small>` : ""}</span><span class="pt">${r.pts} pts</span>
+    return `<div class="tbr${r.me ? " me" : ""}${n ? " on" : ""}"><span class="rk">${i + 1}</span><i class="sw" style="background:${r.color}"></i><span class="nm"><b>${esc(r.me ? "You" : r.name)}</b>${r.cls && !compact ? `<small>${esc(CLASSES[r.cls].name)}</small>` : ""}</span><span class="pt">${r.pts} pts</span><span class="tby r${bountyRank(r.id)}"${bty[r.id] ? ` title="Bounty: gold for killing their hero or taking their castle"` : ""}>${bty[r.id] ? `♛ +${bty[r.id]}g` : ""}</span>
       ${r.me ? `<span class="tbt self">—</span>` : !n && allyShielded(r.id) ? `<button class="tbt ally" data-act="sealgo" data-v="alliances" aria-label="${esc(r.name)} is your ally: open Alliances">🤝 Ally</button>` : n ? `<button class="tbt on" data-act="lmove" data-v="neutral" data-k="${r.id}" ${dis()} aria-label="Stop attacking ${esc(r.name)}">Target ${n} ✕</button>` : `<button class="tbt" data-act="lmove" data-v="hostile" data-k="${r.id}" ${full ? "disabled" : dis()}>Target</button>`}</div>`; }).join("")}</div>`;
 }
 function pickTab() {
   const hostile = S.lists.hostile, roles = Object.keys(PICK_ROLES).filter(k => !hostile.includes(k)), full = hostile.length >= PICK_MAX;
   const chip = k => `<button class="chip" data-act="lmove" data-v="hostile" data-k="${k}" ${full ? "disabled" : dis()}><i class="rico">${ROLE_ICON[k] || "◎"}</i>${esc(PICK_ROLES[k])}</button>`;
   return `<div class="sec tight"><h3>1 · Today's targets <span class="cnt${hostile.length >= TARGETS_NEED() ? " ok" : ""}">${hostile.length}/${PICK_MAX}</span></h3>
-      <p class="muted">Pick ${PICK_MAX} targets each day, in order, before you seal: lords, roles, or a mix. Your army marches on them one by one and fights anything it meets on the way. After that it goes for ${fallbackLabel()}.</p>
+      <p class="muted">Pick at least one target before you seal, and up to ${PICK_MAX}, in order: lords, roles, or a mix. Your army marches on them one by one and fights anything it meets on the way. After that it goes for ${fallbackLabel()}.</p>
       ${targetSlotsHTML()}
       ${roles.length ? `<h4 class="minih">Or target a role, worked out in battle</h4><div class="chips">${roles.map(chip).join("")}</div>` : ""}
-      <h4 class="minih">Lords, by today's leaderboard</h4>${targetBoardHTML()}</div>
+      <h4 class="minih">Lords, by today's leaderboard</h4>${Object.keys(bountyMap()).length ? `<p class="muted">♛ is a bounty: the extra gold for killing that lord's hero or taking their castle.</p>` : ""}${targetBoardHTML()}</div>
     ${strategyTabRest(S.strategy)}`;
 }
 function fallbackLabel() {
@@ -268,12 +268,22 @@ function allyHistory() {
     if (ev.length) out.push({ day: r.day, ev }); prevEnd = r.end; prevFeuds = prevFeuds.concat(r.feuds); });
   return out.reverse();
 }
+// one line of the alliance history, with each lord as a coloured chip (the Allies screen and the Daily Noticeboard)
+function allyLineFn(byId, me) {
+  const nm = p => esc(p.id === me ? "You" : p.name), chip = p => `<span class="tm"><i class="sw" style="background:${p.color}"></i>${nm(p)}</span>`;
+  const who = id => byId[id] ? chip(byId[id]) : `<span class="tm">A lord</span>`;
+  const list = ids => ids.length > 1 ? ids.slice(0, -1).map(who).join(", ") + " and " + who(ids[ids.length - 1]) : ids.map(who).join("");
+  return e => e.kind === "ally" ? `🤝 ${list(e.ids)} allied` : e.kind === "part" ? `✋ ${who(e.ids[0])} and ${who(e.ids[1])} parted ways` : e.kind === "final" ? "⚑ Every pact ended for the final day" : e.kind === "wolf" ? `🐺 ${list(e.ids)} fought as the lone wolf` : e.known ? `💣 ${who(e.ids[0])} betrayed ${who(e.ids[1])}` : `💣 ${who(e.ids[0])} and ${who(e.ids[1])} fell out in a betrayal`;
+}
+// the alliance changes at the last battle fought: [] when nothing changed, null before the first battle
+function lastAllyChanges() {
+  const live = isLive(), last = live ? (LIVE.battles[latestBattleKey()] || {}).day : ((S.allyLog || []).slice(-1)[0] || {}).day;
+  if (!last) return null; const h = allyHistory()[0]; return h && h.day === last ? h.ev : [];
+}
 function knownAlliancesHTML() {
   const { teams, alone, me, feuds, byId } = knownAlliances(), nm = p => esc(p.id === me ? "You" : p.name);
   const chip = p => `<span class="tm"><i class="sw" style="background:${p.color}"></i>${nm(p)}</span>`;
-  const hist = allyHistory(), who = id => byId[id] ? chip(byId[id]) : `<span class="tm">A lord</span>`;
-  const list = ids => ids.length > 1 ? ids.slice(0, -1).map(who).join(", ") + " and " + who(ids[ids.length - 1]) : ids.map(who).join("");
-  const line = e => e.kind === "ally" ? `🤝 ${list(e.ids)} allied` : e.kind === "part" ? `✋ ${who(e.ids[0])} and ${who(e.ids[1])} parted ways` : e.kind === "final" ? "⚑ Every pact ended for the final day" : e.kind === "wolf" ? `🐺 ${list(e.ids)} fought as the lone wolf` : e.known ? `💣 ${who(e.ids[0])} betrayed ${who(e.ids[1])}` : `💣 ${who(e.ids[0])} and ${who(e.ids[1])} fell out in a betrayal`;
+  const hist = allyHistory(), line = allyLineFn(byId, me);
   const betrayer = (a, b) => { const e = hist.flatMap(h => h.ev).find(x => x.kind === "betray" && x.known && x.ids.includes(a.id) && x.ids.includes(b.id)); return e ? [byId[e.ids[0]], byId[e.ids[1]]] : null; };
   const v2 = allyV2Now(), wolf = v2 && alone.length === 1 && teams.length > 0, foes = teams.reduce((n, t) => n + t.lords.length, 0);
   return `<div class="sec"><h3>Alliances in the war</h3>
@@ -380,7 +390,7 @@ function sealChecks() {
   if ((S.walls || []).length || S.traps.length) ck(wt ? "warn" : "ok", wt ? `<b>${wt} wall${wt > 1 ? "s or traps" : " or trap"} not set</b> on the field` : "Walls and traps are set", "map");
   { const at = S.lists.hostile.filter(allyShielded); if (at.length) ck("need", `<b>${at.map(id => esc(tgtName(id))).join(", ")} ${at.length > 1 ? "are allies" : "is an ally"}</b>: take them off your targets, or set the pact to Betray`, "strategy"); }
   const fp = freePts(); ck(fp ? "warn" : "ok", fp ? `<b>${fp} skill point${fp > 1 ? "s" : ""} unspent</b>` : "All skill points spent", "hero");
-  if (pickV1Now()) ck(targetsReady() ? "ok" : "need", targetsReady() ? `Targets: ${S.lists.hostile.map(id => esc(tgtName(id))).join(" → ")}` : `<b>Pick ${TARGETS_NEED() - S.lists.hostile.length} more target${TARGETS_NEED() - S.lists.hostile.length > 1 ? "s" : ""}</b> (${TARGETS_NEED()} a day)`, "strategy");
+  if (pickV1Now()) ck(targetsReady() ? "ok" : "need", targetsReady() ? `Targets: ${S.lists.hostile.map(id => esc(tgtName(id))).join(" → ")}` : `<b>Pick a target</b> (1 to ${PICK_MAX} a day)`, "strategy");
   if (contractsOn() && myOffers().length) { const c = contractParse(S.contract); ck(c ? "ok" : "warn", c ? `Contract: ${esc(c.c.name)}` : "<b>No contract taken</b>", "contracts"); }
   if (day >= 2 && ct < 2) ck("warn", "Castle is still tier 1. A Fortress pays for itself in two days", "castle");
   else if (day >= 4 && ct < 3) ck("warn", "Castle is a Fortress. A Citadel opens tier 3 soldiers and gear", "castle");

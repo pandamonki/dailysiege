@@ -161,7 +161,16 @@ function castleSprite(tier, color) {
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { let col = g[y][x]; if (!col) { if ((g[y - 1] && g[y - 1][x]) || (g[y + 1] && g[y + 1][x]) || g[y][x - 1] || g[y][x + 1]) col = "#1e140c"; else continue; } c.fillStyle = col; c.fillRect(x, y, 1, 1); }
   return (CASTLE_SPR[id] = cv);
 }
-function drawCastle(r, q, color, t, label, rel, st, ban, tier) {
+// a crown floating over the castle of a lord with a bounty on their head: gold for the board leader, then silver, then bronze
+const CROWN_TONE = { 1: ["#ffd34d", "#a87a10"], 2: ["#e4e8ec", "#7d858c"], 3: ["#d98b4a", "#7a4418"] };
+function drawCrown(cx, cy, s, rank, t) {
+  const [fill, edge] = CROWN_TONE[rank], y = cy + Math.sin(t * 2.2 + cx) * s * .08;
+  ctx.save(); ctx.lineJoin = "round"; ctx.lineWidth = Math.max(1.5, s * .12); ctx.strokeStyle = "#2a1a0c"; ctx.fillStyle = fill;
+  ctx.beginPath(); ctx.moveTo(cx - s, y + s * .55); ctx.lineTo(cx - s, y - s * .45); ctx.lineTo(cx - s * .5, y + s * .05); ctx.lineTo(cx, y - s * .7); ctx.lineTo(cx + s * .5, y + s * .05); ctx.lineTo(cx + s, y - s * .45); ctx.lineTo(cx + s, y + s * .55); ctx.closePath();
+  ctx.stroke(); ctx.fill(); ctx.fillStyle = edge; ctx.fillRect(cx - s, y + s * .3, s * 2, s * .25);
+  ctx.fillStyle = "#c0392b"; ctx.beginPath(); ctx.arc(cx, y + s * .05, s * .14, 0, 7); ctx.fill(); ctx.restore();
+}
+function drawCastle(r, q, color, t, label, rel, st, ban, tier, crown) {
   const cx = (q + .5) * ts, by = (r + .88) * ts, w = ts * 1.05;
   const stone = "#a39d8f", dark = "#6f6a5f", light = "#bdb7a9";
   tier = tier || 1;
@@ -178,6 +187,7 @@ function drawCastle(r, q, color, t, label, rel, st, ban, tier) {
   paintBanner(ctx, ban ? { ...ban, c1: color } : { ...defaultBanner(), c1: color }, color, cx - ts * .14, by - ts * .96, ts * .28, ts * .38); // the lord's crest on the keep
   drawFlag(ctx, cx, by - ts * 1.1, ts * .32, ts * .38, color, t + q, ban && ban.em);
   if (!st) { drawSprite("guard", color, cx + ts * .78, by + ts * .02, .62); }
+  if (crown && CROWN_TONE[crown]) drawCrown(cx, by - ts * (st ? 1.85 : 1.62), ts * .22, crown, t);
   if (st) {
     const bw = ts * 1.1, bh = ts * .12, bx = cx - bw / 2, byy = by - ts * 1.42;
     ctx.fillStyle = "rgba(20,12,6,.9)"; ctx.fillRect(bx - 2, byy - 2, bw + 4, bh + 4);
