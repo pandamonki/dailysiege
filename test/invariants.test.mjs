@@ -267,3 +267,30 @@ test("balance v5: heroes rest and heal at home, only near their own castle", () 
   }
   assert.ok(rests > 0, "no hero ever rested at home");
 });
+
+test("faster levelling (lvlV2): every hero gains 3 or 4 levels a battle, never past level 25", () => {
+  for (const [g, d] of GAMES) {
+    const r = JSON.parse(sim.run(`(() => { const { fast } = ${WAR(g, d).replace("siegeV1: true }", "siegeV1: true, lvlV2: true }")}; return JSON.stringify(Object.values(fast.lvl)); })()`));
+    r.forEach(v => { assert.ok(v.gain >= 3 && v.gain <= 4, `game ${g} day ${d}: a hero gained ${v.gain} levels`); assert.ok(v.from + v.gain <= 25); });
+  }
+  const top = JSON.parse(sim.run(`JSON.stringify([hpLvV3(25, true), hpLvV3(15), atkLvV3(25, true), atkLvV3(15)])`));
+  assert.ok(Math.abs(top[0] - top[1]) < .01 && Math.abs(top[2] - top[3]) < .01, "a level 25 hero matches the old level 15 in health and attack");
+});
+
+test("final-day alliances (finV2): pacts hold until one alliance is left, then break, and only one lord wins", () => {
+  let broke = 0;
+  for (const g of [0, 1, 2, 3, 4, 5]) {
+    const r = JSON.parse(tough.run(`(() => { const L = seatLayout(4, true), CL = ["warrior", "mage", "rogue", "archer", "shaman"], ids = [...Array(4)].map((_, k) => "f${g}b" + k);
+      const plans = ids.map((uid, i) => { const zone = zoneFor(L.castles[i], L.N, L.castles, L.v2);
+        const p = lordBotPlan({ uid, cls: CL[(${g} + i) % 5], i, ids, L, zone, dayNo: 7, lvl: 15, v2: true, v3: true, fair: true, pick: true, ranks: {}, sup: true, defV2: true });
+        return Object.assign(p, { pid: uid, name: uid, color: "#2f5fa8", castle: L.castles[i], level: 15, offers: {}, breaks: [], pbetray: {}, auto: false, trapV2: true, sdV2: true, wallV2: true, engV2: true, ordV2: true, skV2: true, waveV2: true, waveV3: true, waveV4: true, balV5: true, itemV5: true, itemV6: true, shellV2: true, survV1: true, siegeV1: true, finV2: true, allyV2: true }); });
+      resolveAlliances(plans, { persist: [ids[0] + "|" + ids[1]], final: false, prevDay: 6, feuds: [], blocMax: BLOC_MAX, v2: true });
+      const res = runBattle(plans, 9100 + ${g}, { N: L.N, finalDay: true, ultV2: true, balV2: true, balV3: true, fairV1: true, pickV1: true, balV4: true, suddenV1: true, treesV1: true, heroV3: true, dayNo: 7, fast: true });
+      return JSON.stringify({ la: res.lastAlly || null, team: res.team || null, firsts: res.results.filter(x => x.place === 1).length, pacted: plans[0].pacts.includes(ids[1]) }); })()`));
+    assert.ok(r.pacted, `game ${g}: the carried pact held into the final day`);
+    assert.equal(r.team, null, `game ${g}: allies never share the war's last victory`);
+    assert.equal(r.firsts, 1, `game ${g}: one lord wins`);
+    if (r.la) { broke++; assert.deepEqual(r.la.pids.slice().sort(), [`f${g}b0`, `f${g}b1`].sort(), `game ${g}: the alliance that broke was the one left`); }
+  }
+  assert.ok(broke > 0, "the last alliance never broke in any test battle");
+});

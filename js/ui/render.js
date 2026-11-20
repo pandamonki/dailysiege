@@ -27,7 +27,8 @@ function renderSheet() {
   const b = p.querySelector(".body"); if (b && sheet.keep) b.scrollTop = scroll;
 }
 function render(keepScroll = true) {
-  try { if (!sheet && !reportBack && warEndDue()) sheet = { type: "warend" }; } catch (e) {}
+  // after a war: its day 7 report first, then the war results (which play the crowning the first time they open)
+  try { if (!sheet && !reportBack && warEndDue()) { if (!warReportFirst()) sheet = { type: "warend" }; } } catch (e) {}
   const noSheet = mode === "plan" && !sheet; let tipK = null; try { if (mode === "plan" && !sheet && !reportBack && !document.getElementById("wizring") && S && !S.ob) { const ub = unseenBattle(); if (ub) { if (LIVE.stateLoaded && LIVE.namesLoaded) { try { localStorage.setItem(seenKey(), ub); } catch (e) {} reportBack = ub; sheet = { type: "report", id: ub }; } } else if (spinCheck()) { sheet = { type: "spin" }; } else if (inviteDue()) { S.invSeen = planDayKey(); sheet = { type: "invites" }; } else if ((tipK = appTipDue())) { sheet = { type: "apptip", k: tipK }; } else if (!appTipBlocksNews() && newsDue()) { sheet = { type: "whatsnew" }; } else if (mercDue()) { S.mercSeen = mercSeenKey(); sheet = { type: "camp", news: true }; } } } catch (e) {}
   if (noSheet && sheet && sheet.type !== "apptip") notePopup(); // our install/alerts cards only ever come first on an open
   if (sheet) sheet.keep = keepScroll;
@@ -47,4 +48,4 @@ function wizStartStep() { const c = wizCtx; wizCtx = null; if (!c) return 0; // 
     : c.type === "champ" ? '[data-act="openhero"]' : c.type === "orders" ? (c.grp === "alli" ? '[data-act="openorders"][data-v="alli"]' : '[data-act="openorders"][data-v="ord"]')
     : ["gold", "day", "board", "rep"].includes(c.type) ? ".topchips" : null;
   const i = k ? guideFind(k.startsWith("[") ? "#cmdbar " + k : k) : 0; return i < 0 ? 0 : i; }
-function close() { sheet = null; if (mode === "plan") reportBack = null; render(); }
+function close() { sheet = null; if (mode === "plan") reportBack = null; if (mode === "plan" && typeof WAR_VIEW !== "undefined" && WAR_VIEW && !WAR_REEL) { endPrevView(); return; } render(); }

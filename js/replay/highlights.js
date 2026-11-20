@@ -4,11 +4,12 @@
 // Key moments are flagged by the battle sim (res.hl). The reel picks the best few, then plays each as a short
 // directed clip: a title card, the camera on the action, a slow-motion beat at the key instant, and a closing podium.
 const PRACTICE_BOARD = { p1: 34, p3: 27, p5: 22, you: 18, p2: 15, p6: 11, p4: 8, p7: 5 };
-const HL_WIN = { betray: [1.5, 3.5], bomb: [2, 3], burst: [2.5, 1.5], fall: [4, 2], upset: [4, 2.2], revenge: [4, 2.2], giantslayer: [3, 1.6], firstblood: [3, 1.5], rapierdrop: [2.5, 2], frenzy: [2, 2.5], rapierget: [2, 2.5], winner: [4.5, 2.5] };
+const HL_WIN = { split: [1.5, 4], betray: [1.5, 3.5], bomb: [2, 3], burst: [2.5, 1.5], fall: [4, 2], upset: [4, 2.2], revenge: [4, 2.2], giantslayer: [3, 1.6], firstblood: [3, 1.5], rapierdrop: [2.5, 2], frenzy: [2, 2.5], rapierget: [2, 2.5], winner: [4.5, 2.5] };
 function hlText(h, R) {
   const N = p => (R.names && R.names[p]) || "Someone", you = p => p === R.me, V = (p, a, b) => `${N(p)} ${you(p) ? a : b}`;
   const poss = p => (you(p) ? "Your" : N(p) + "'s"), rk = p => (R.ranks && R.ranks[p] ? `#${R.ranks[p]} ` : "");
   switch (h.kind) {
+    case "split": return ["The last alliance breaks!", `${[h.pid, ...(h.others || [])].map(p => you(p) ? "You" : N(p)).join(", ")} turn on each other: only one banner can win the war`];
     case "betray": return ["Betrayal!", `${V(h.pid, "turn", "turns")} on ${you(h.other) ? "you" : N(h.other)} and ${you(h.pid) ? "blow" : "blows"} up ${you(h.other) ? "your" : "their"} keep`];
     case "bomb": return ["Rigged dowry!", `${poss(h.pid)} ${h.gold} gold of barrels explodes in ${you(h.other) ? "your" : N(h.other) + "'s"} castle`];
     case "spree": return [h.streak || "Quad Squad", `${V(h.pid, "cut", "cuts")} down ${h.n} foes in ${Math.max(1, Math.round(h.t2 - h.t0))}s`];
@@ -56,7 +57,7 @@ const REEL_CARD = 1.3, REEL_INTRO = 2.2, REEL_OUTRO = 4;
 const REEL_ZOOM_OUT = 1.35 ** 3; // the reel's camera sits three zoom steps (the zoom buttons' x1.35) further out than it first did, so more of the action is in view
 function startReel(record) {
   if (!replay) return; const clips = warReelClips(buildReel(replay.res));
-  if (!clips.length) { toast("Nothing big happened in this battle."); return; }
+  if (!clips.length) { if (WAR_REEL && warReelNext()) return; toast("Nothing big happened in this battle."); return; }
   replay.reel = { clips, i: -1, phase: "intro", pt: 0, rec: null }; replay.playing = false; replay.sel = null; sheet = null;
   render(); buildReelUI();
   if (record) startRecording();
@@ -155,6 +156,11 @@ function sting(kind) {
   try { _ac = _ac || new (window.AudioContext || window.webkitAudioContext)(); const a = _ac, now = a.currentTime, g = a.createGain(); g.connect(a.destination);
     const note = (f, t0, dur, type, vol) => { const o = a.createOscillator(), e = a.createGain(); o.type = type; o.frequency.value = f; e.gain.setValueAtTime(0, now + t0); e.gain.linearRampToValueAtTime(vol, now + t0 + .02); e.gain.exponentialRampToValueAtTime(.001, now + t0 + dur); o.connect(e); e.connect(g); o.start(now + t0); o.stop(now + t0 + dur + .05); };
     g.gain.value = .5;
+    if (kind === "fanfare") { // trumpets: a rising royal call in bright sawtooth, doubled an octave down
+      [[392, 0], [523, .16], [659, .32], [784, .48], [659, .7], [784, .82], [1047, 1.0]].forEach(([f, t]) => { note(f, t, t >= 1 ? 1.1 : .22, "sawtooth", .16); note(f / 2, t, t >= 1 ? 1.1 : .22, "square", .08); }); return; }
+    if (kind === "drumroll") { for (let i = 0; i < 26; i++) note(70 + Math.random() * 20, i * .055, .06, "square", .12 + i * .006); return; }
+    if (kind === "crown") { note(1568, 0, .5, "triangle", .3); note(2093, .08, .7, "triangle", .25); return; }
+    if (kind === "groan") { note(196, 0, .6, "sawtooth", .12); note(147, .3, .8, "sawtooth", .12); return; }
     if (kind === "betray") { note(110, 0, .9, "sawtooth", .5); note(116.5, 0, .9, "sawtooth", .4); note(55, .05, 1.2, "square", .35); }
     else { [523, 659, 784, 1047].forEach((f, i) => note(f, i * .14, .5, "triangle", .35)); note(1319, .6, .9, "triangle", .35); for (let i = 0; i < 10; i++) note(300 + Math.random() * 600, .2 + Math.random() * .8, .12, "square", .05); }
   } catch (e) {}
@@ -166,9 +172,10 @@ function betrayCinematic(h, R, resume) {
   document.body.appendChild(el); sting("betray");
   setTimeout(() => { el.remove(); resume(); }, 2600);
 }
-// The heroes on the victory screen: the winner (and every ally who won with them) dancing; the winner's allies whose castles fell sit slumped
-// beside them; and a winner who betrayed an ally this battle has that hero lying face down at their feet with a dagger in its back.
+// The heroes on the victory screen: the winner (and every ally who won with them) dancing; the winner's allies whose castles fell float
+// beside them as ghosts (a wispy tail for legs), still cheering the alliance on; and a winner who betrayed an ally this battle has that hero lying face down at their feet with a dagger in its back.
 const DAGGER_SVG = `<svg class="vknife" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.2 9.3 3v6.6H6.7V3z" fill="#e4e8ee" stroke="#3b4650" stroke-width=".7" stroke-linejoin="round"/><path d="M8 2v7.4" stroke="#9aa4ae" stroke-width=".5"/><rect x="4.6" y="9.6" width="6.8" height="1.5" rx=".6" fill="#c9a24a" stroke="#5a3a08" stroke-width=".6"/><rect x="7" y="11.1" width="2" height="3.4" rx=".5" fill="#6a3a1c" stroke="#2a160a" stroke-width=".6"/></svg>`;
+const GHOST_TAIL = `<svg class="vtail" viewBox="0 0 40 40" aria-hidden="true"><path d="M4 0 C6 14 14 16 18 24 C21 30 16 34 22 39 C24 32 30 30 28 22 C26 14 34 10 36 0 Z" fill="rgba(200,236,255,.55)"/><path d="M12 0 C14 10 20 14 22 22" stroke="rgba(255,255,255,.5)" stroke-width="1.5" fill="none"/></svg>`;
 function victoryHeroesHTML(R, win) {
   const res = pid => R.results.find(r => r.pid === pid) || {}, img = (pid, cls) => `<img class="${cls}" alt="" src="${spriteURL("c-" + res(pid).cls, (R.colors && R.colors[pid]) || res(pid).color || MY_COLOR)}">`;
   const stand = R.team && R.team.length > 1 ? R.team.slice() : [win.pid], feud = new Set(R.feudsNew || []);
@@ -177,7 +184,7 @@ function victoryHeroesHTML(R, win) {
   const par = {}, f = x => (par[x] == null || par[x] === x ? (par[x] = x) : (par[x] = f(par[x]))); (R.pacts0 || []).filter(k => !feud.has(k)).forEach(k => { const [a, b] = k.split("|"); par[f(a)] = f(b); });
   const fallen = R.order.filter(p => !stand.includes(p) && !victims.includes(p) && stand.some(q => f(q) === f(p)) && res(p).cls);
   const many = stand.length + fallen.length > 1;
-  return `<div class="vheroes${many ? " many" : ""}${victims.length ? " bodies" : ""}">${stand.map(p => `<span class="vh">${img(p, "vhero dance")}${corpses(p)}</span>`).join("")}${fallen.map(p => `<span class="vh dead" title="Fallen ally">${img(p, "vhero slump")}</span>`).join("")}</div>`;
+  return `<div class="vheroes${many ? " many" : ""}${victims.length ? " bodies" : ""}">${stand.map(p => `<span class="vh">${img(p, "vhero dance")}${corpses(p)}</span>`).join("")}${fallen.map(p => `<span class="vh ghost" title="Fallen ally, still with you">${img(p, "vhero vghost")}${GHOST_TAIL}</span>`).join("")}</div>`;
 }
 function victoryCeremony(R, done) {
   const win = (R.results || []).slice().sort((a, b) => a.place - b.place)[0]; if (!win) { done(); return; }

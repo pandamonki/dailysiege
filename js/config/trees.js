@@ -4,10 +4,12 @@
 
 // The first day heroes use skill trees (battles on or after this day; earlier saved battles replay with the old abilities).
 let HERO_V3_FROM = "2026-11-12"; const heroV3For = d => String(d) >= HERO_V3_FROM;
-const MAX_HERO_LVL_V3 = 15, TREE_ULT_LVL = 9;
-const heroMaxLvl = v3 => (v3 ? MAX_HERO_LVL_V3 : MAX_HERO_LVL);
+const MAX_HERO_LVL_V3 = 15, MAX_HERO_LVL_V4 = 25, TREE_ULT_LVL = 9;
+const heroMaxLvl = (v3, v4) => (v3 ? (v4 ? MAX_HERO_LVL_V4 : MAX_HERO_LVL_V3) : MAX_HERO_LVL); // v4: faster levelling (lvlV2), up to level 25
 // per-level growth: level 15 is about the old level 21 with partial Vigour
-const hpLvV3 = L => 1 + .12 * (L - 1), atkLvV3 = L => 1 + .09 * (L - 1);
+// faster levelling (lvlV2, v4 = true): 25 levels instead of 15, so each level adds less and level 25 matches the old level 15
+const HP_STEP_V4 = .07, ATK_STEP_V4 = .0525;
+const hpLvV3 = (L, v4) => v4 ? 1 + HP_STEP_V4 * (L - 1) : 1 + .12 * (L - 1), atkLvV3 = (L, v4) => v4 ? 1 + ATK_STEP_V4 * (L - 1) : 1 + .09 * (L - 1);
 
 // node order inside a tree: T1 passive, T2 trigger, T2b side talent, T3 synergy, T3b side talent, T4 ultimate
 const TREE_NODE = ["t1", "t2", "t2b", "t3", "t3b", "t4"];
@@ -214,7 +216,7 @@ const emptyTree = () => ({ b1: [0, 0, 0, 0, 0, 0], b2: [0, 0, 0, 0, 0, 0], b3: [
 const cleanTree = tr => { const o = emptyTree(); TREE_BKEY.forEach(b => { const a = tr && tr[b]; if (Array.isArray(a)) o[b] = TREE_MAX.map((m, i) => Math.max(0, Math.min(m, a[i] | 0))); }); return o; };
 const treePts = (tr, b) => ((tr && tr[b]) || []).reduce((s, x) => s + (x || 0), 0);
 const treeSpentAll = tr => TREE_BKEY.reduce((s, b) => s + treePts(tr, b), 0);
-const treeFree = (tr, L) => Math.max(0, Math.min(L, MAX_HERO_LVL_V3) - treeSpentAll(tr)); // one point per level, starting with level 1 (15 in all)
+const treeFree = (tr, L) => Math.max(0, Math.min(L, MAX_HERO_LVL_V4) - treeSpentAll(tr)); // one point per level, starting with level 1 (15 in all before lvlV2, 25 from it; the level itself is capped elsewhere)
 const treeHasUlt = tr => TREE_BKEY.some(b => ((tr && tr[b]) || [])[5] > 0);
 // why a node can't be learned yet: the list of unmet requirements, each { ok, text }
 function treeNeeds(tr, b, i, L) {

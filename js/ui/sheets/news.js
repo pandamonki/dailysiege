@@ -3,6 +3,20 @@
 // Each item is [icon, headline, one short sentence]. Players who have not seen the newest id get the pop-up the next time they plan;
 // the id is remembered on their device, so changing the id is all it takes to show it again. Keep about 8 to 14 items.
 const RELEASES = [
+  { id: "1.19", title: "What's new in v1.19", sub: "A grand war finale, a last-day twist and faster heroes", items: [
+    ["👑", "The crowning", "When a war ends: trumpets, a podium, the court bowing, and bronze, silver and gold crowns for the top three."],
+    ["🎉", "A winner's party", "Confetti and a victory taunt for the champion, who dances while second and third shake their heads."],
+    ["🗡", "The last alliance breaks", "From the 23 Nov battle, day 7 pacts hold until only one alliance is left. Then it breaks and they fight for the war."],
+    ["⚡", "Faster heroes", "From the 23 Nov battle heroes gain 3 to 4 levels a battle, up to level 25: more skill points to spend."],
+    ["⚖️", "Same strength at the top", "Each level adds a little less, so a level 25 hero is as tough as a level 15 hero was."],
+    ["📜", "Day 7 report first", "After the last battle, its report opens first, then the war results."],
+    ["🎬", "Top 5 moments", "War highlights now play the five biggest moments of the whole war."],
+    ["📊", "Deeper war stats", "Tap a lord in the war results for net worth, hero, unit and castle damage, and their skills, items, army and upgrades."],
+    ["👑", "War crowns", "The Muster Hall shows a gold crown with a count for every war a lord has won."],
+    ["👻", "Ghostly allies", "Allies who fell float beside the winner on the victory screen as cheering ghosts."],
+    ["🏹", "Showy towers", "Level 3 towers flash as they fire, with blazing arrows, bombs, lightning and sniper tracers."],
+    ["🧹", "Tidier map strip", "A new Stats icon, and the castle Upgrade button matches the others (the cost is in its hint)."],
+  ] },
   { id: "1.18", title: "What's new in v1.18", sub: "Stronger, fairer heroes, sharper betrayals and a better replay", items: [
     ["🦸", "Hero class", "From the 22 Nov battle every hero deals Hero damage and wears Hero armour: 20% extra against all soldiers, 10% less from their weapons."],
     ["🏠", "Rest at home", "A hero at its own castle with no fighting for 2 seconds heals 8% of its health a second."],

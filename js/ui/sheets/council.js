@@ -13,7 +13,7 @@ function incomingOffer(r) { // an invitation sent to me in the previous planning
   let o = null;
   if (isLive()) { const now = latestPlan(r.live, liveClock().planDay, true), x = now && now.offers && now.offers[LIVE.uid]; if (x && x.day === prevDayKey()) o = x; }
   else { const x = (RIVAL_AI[r.id] && RIVAL_AI[r.id].offers || {}).you; if (x && DAY >= 2 && !(S.declined || {})[r.id]) o = x; }
-  if (!o || carriedPartners().includes(r.id) || finalToday()) return null;
+  if (!o || carriedPartners().includes(r.id) || pactsEndToday()) return null;
   return { gold: o.gold || 0, reply: (S.replies || {})[r.id] || null };
 }
 // alliances v2: when a lord invites my alliance, each of us must accept. What my ally has answered, as far as this device can know:
@@ -130,7 +130,7 @@ function rivalSheet(id) {
 function pactHTML() {
   const ids = carriedPartners(); if (!ids.length) return "";
   const nm = id => esc((RIVALS.find(r => r.id === id) || {}).name || "an ally");
-  if (finalToday()) return `<div class="sec"><h3>Final day</h3><p>${ids.map(nm).join(", ")}: your pact${ids.length > 1 ? "s dissolve" : " dissolves"} at dawn. Only one lord can win the Daily Siege.</p></div>`;
+  if (pactsEndToday()) return `<div class="sec"><h3>Final day</h3><p>${ids.map(nm).join(", ")}: your pact${ids.length > 1 ? "s dissolve" : " dissolves"} at dawn. Only one lord can win the Daily Siege.</p></div>`;
   ensureDip();
   return `<div class="sec"><h3>Alliances carried over</h3>${ids.map(id => { const a = S.pactAct[id] || "keep";
     return `<div class="pact"><b>${nm(id)}</b><div class="optrow">${[["keep", "Keep"], ["break", "Break it"], ["betray", "Betray"]].map(([k, l]) => `<button class="btn small${a === k ? " on" : ""}" data-act="pact" data-v="${k}" data-k="${id}" ${dis()}>${l}</button>`).join("")}</div>${a === "betray" ? `<label class="inline">Betray when<select data-act="pwhen" data-k="${id}" ${dis()}>${opts(BETRAY_WHEN, S.pactWhen[id])}</select></label>` : ""}</div>`; }).join("")}
@@ -158,7 +158,7 @@ function inviteStatus(r) {
   return o.day === today ? `Invitation drafted (${o.gold}g dowry). Goes out tonight` : `Invitation pending (${o.gold}g dowry). Awaiting their answer`;
 }
 function rivalRow(r, open) {
-  const b = bucketOf(r.id), rank = S.lists.hostile.indexOf(r.id) + 1, inc = incomingOffer(r), allied = carriedPartners().includes(r.id) && !finalToday();
+  const b = bucketOf(r.id), rank = S.lists.hostile.indexOf(r.id) + 1, inc = incomingOffer(r), allied = carriedPartners().includes(r.id) && !pactsEndToday();
   const status = allied ? "Allied" : S.offers[r.id] ? inviteStatus(r) : (b === "hostile" ? (rank === 1 ? "Main target" : `Attack #${rank}`) : "Left alone unless in the way")
     + (inc ? ` · invited you${inc.reply ? ` (${inc.reply === "accept" ? "you accepted" : "you declined"})` : ", answer pending"}` : "");
   return `<div class="rv${open ? " open" : ""}">
@@ -295,7 +295,7 @@ function knownAlliancesHTML() {
     ${hist.length ? `<div class="sec"><h3>Alliance history</h3><div class="ahist">${hist.map(h => `<div class="ahday"><b>Day ${h.day}</b><ul>${h.ev.map(e => `<li>${line(e)}</li>`).join("")}</ul></div>`).join("")}</div></div>` : ""}`;
 }
 function alliancesTab() {
-  const fin = finalToday(), today = planDayKey(), inc = RIVALS.map(r => ({ r, o: incomingOffer(r) })).filter(x => x.o);
+  const fin = pactsEndToday(), today = planDayKey(), inc = RIVALS.map(r => ({ r, o: incomingOffer(r) })).filter(x => x.o);
   const sent = Object.keys(S.offers).map(id => RIVALS.find(r => r.id === id)).filter(Boolean), carried = carriedPartners();
   const free = RIVALS.filter(r => !S.offers[r.id] && !carried.includes(r.id));
   const sentRow = r => { const o = S.offers[r.id], draft = o.day === today;
@@ -306,7 +306,7 @@ function alliancesTab() {
   const nmI = id => esc((RIVALS.find(x => x.id === id) || {}).name || "your ally"), meId = allyLords().me;
   const groupNote = id => { if (!allyV2Now()) return ""; const theirs = allyGroup(id).filter(x => x !== id), mine = allyGroup(meId).filter(x => x !== meId);
     return (theirs.length ? ` They're allied with ${theirs.map(nmI).join(" and ")}: every member must accept you.` : "") + (mine.length ? ` Your ally ${mine.map(nmI).join(" and ")} must invite them too.` : ""); };
-  return `${fin ? `<p class="muted">Final day: every pact has ended. Only one banner can win.</p>` : knownAlliancesHTML()}
+  return `${fin ? `<p class="muted">Final day: every pact has ended. Only one banner can win.</p>` : (finalToday() ? `<p class="twistnote">Final day: pacts hold into tonight's battle, but the moment your alliance is the last one standing it breaks and you fight each other for the war. Betray before you are betrayed.</p>` : "") + knownAlliancesHTML()}
     ${inc.length ? `<div class="sec"><h3>Invitations to you</h3>${inc.map(({ r, o }) => `<div class="alrow fl"><span class="who"><i class="sw" style="background:${r.color}"></i><b>${esc(r.name)}</b><small class="inc">${o.gold ? o.gold + "g dowry" : "no dowry"}</small></span>
       ${o.reply ? `<span class="chip ${o.reply === "accept" ? "ok" : "weak"}">${o.reply === "accept" ? "Accepted" : "Declined"}</span><button class="btn small" data-act="ireply" data-k="${r.id}" data-v="${o.reply === "accept" ? "reject" : "accept"}" ${dis()}>Change</button>` : `<button class="btn small wax" data-act="ireply" data-k="${r.id}" data-v="accept" ${dis()}>Accept</button><button class="btn small" data-act="ireply" data-k="${r.id}" data-v="reject" ${dis()}>Decline</button>`}${allyAnswersHTML(r.id)}</div>`).join("")}</div>` : ""}
     ${carried.length && !fin ? pactHTML() : ""}
@@ -396,8 +396,8 @@ function sealChecks() {
   else if (day >= 4 && ct < 3) ck("warn", "Castle is a Fortress. A Citadel opens tier 3 soldiers and gear", "castle");
   const inc = RIVALS.map(r => incomingOffer(r)).filter(Boolean), open = inc.filter(o => !o.reply).length;
   if (inc.length) ck(open ? "warn" : "ok", open ? `<b>${open} alliance offer${open > 1 ? "s" : ""} to answer</b>` : "Alliance offers answered", "alliances");
-  if (!finalToday()) { const sent = Object.keys(S.offers || {}).length, carried = carriedPartners().length; ck(sent || carried ? "ok" : "info", carried ? `Allied with ${carriedPartners().map(id => esc((RIVALS.find(r => r.id === id) || {}).name || "")).join(", ")}` : sent ? `${sent} alliance offer${sent > 1 ? "s" : ""} sent` : "No alliance offered (optional)", "alliances"); }
-  carriedPartners().filter(id => !finalToday()).forEach(id => { const a = (S.pactAct || {})[id] || "keep", nm = esc((RIVALS.find(r => r.id === id) || {}).name || "an ally");
+  if (!pactsEndToday()) { const sent = Object.keys(S.offers || {}).length, carried = carriedPartners().length; ck(sent || carried ? "ok" : "info", carried ? `Allied with ${carriedPartners().map(id => esc((RIVALS.find(r => r.id === id) || {}).name || "")).join(", ")}` : sent ? `${sent} alliance offer${sent > 1 ? "s" : ""} sent` : "No alliance offered (optional)", "alliances"); }
+  carriedPartners().filter(id => !pactsEndToday()).forEach(id => { const a = (S.pactAct || {})[id] || "keep", nm = esc((RIVALS.find(r => r.id === id) || {}).name || "an ally");
     ck("ok", a === "betray" ? `Betraying ${nm} ${esc(String(S.pactWhen[id] || BETRAY_WHEN[0]).toLowerCase())}` : a === "break" ? `Breaking the pact with ${nm}` : `Keeping the pact with ${nm}`, "alliances"); });
   if (mercOpen()) { const free = mercV2Now() ? mercToday().open.length : MERC_V1_IDS.filter(id => !mercWait(id)).length, b = bidSummary(); if (free) ck(b ? "ok" : "warn", b ? `Mercenary bid: ${esc(b)}` : "<b>No mercenary bid</b>. Rivals may hire them", "camp"); }
   return L;

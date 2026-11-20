@@ -104,7 +104,7 @@ const A = {
     enterPractice(); home(); sheet = null; render(); setTimeout(() => startWizard(true), 300); toast("A new game begins on day 1."); },
   nextday: () => { if (isLive()) return; if (DAY >= 7) { toast("Day 7 is the last day. Start a new game to begin again."); return; }
     const inc = baseIncome(DAY) + CASTLE_INCOME[ctNow() - 1] + ((LASTP && LASTP.gold && LASTP.gold.you) || 0);
-    if (LASTP) { if ((LASTP.ults || []).includes("you")) S.ultLast = DAY; if (LASTP.blessed) S.blessDone = DAY; } S.ultArm = false; S.contract = null; S.gold += inc; S.gain = inc; if (LASTP && LASTP.mercs) { ensureDip(); S.mercHist[DAY] = LASTP.mercs; Object.values(LASTP.mercs).forEach(h => { if (h.pid === "you") S.gold -= h.gold; }); } S.bids = {}; { const g = LASTP && LASTP.gain && LASTP.gain.you != null ? LASTP.gain.you : MIN_GAIN; S.lvl = Math.min(MAX_HERO_LVL, (S.lvl || DAY) + Math.max(MIN_GAIN, g)); S.xp = (LASTP && LASTP.xp && LASTP.xp.you) || 0; } DAY++; pickReset(); S.locked = false; S.phase = "muster"; S.offers = Object.fromEntries(Object.entries(S.offers || {}).filter(([, o]) => o.day === DAY - 1)); S.replies = {}; S.owned.forEach(u => { u.hp = 1; });
+    if (LASTP) { if ((LASTP.ults || []).includes("you")) S.ultLast = DAY; if (LASTP.blessed) S.blessDone = DAY; } S.ultArm = false; S.contract = null; S.gold += inc; S.gain = inc; if (LASTP && LASTP.mercs) { ensureDip(); S.mercHist[DAY] = LASTP.mercs; Object.values(LASTP.mercs).forEach(h => { if (h.pid === "you") S.gold -= h.gold; }); } S.bids = {}; { const mg = lvlV2Now() ? MIN_GAIN_V2 : MIN_GAIN, g = LASTP && LASTP.gain && LASTP.gain.you != null ? LASTP.gain.you : mg; S.lvl = Math.min(Math.max(MAX_HERO_LVL, heroMaxLvl(heroV3Now(), lvlV2Now())), (S.lvl || DAY) + Math.max(mg, g)); S.xp = (LASTP && LASTP.xp && LASTP.xp.you) || 0; } DAY++; pickReset(); S.locked = false; S.phase = "muster"; S.offers = Object.fromEntries(Object.entries(S.offers || {}).filter(([, o]) => o.day === DAY - 1)); S.replies = {}; S.owned.forEach(u => { u.hp = 1; });
     S.owned.forEach(u => { if (UNITS[u.type].cool) { if (placedAt(u.id)) { u.cool = UNITS[u.type].cool; delete S.place[placedAt(u.id)]; } else u.cool = Math.max(0, (u.cool || 0) - 1); } });
     LASTP = null;
     try { localStorage.setItem("lastbanner.pday", String(DAY)); } catch (e) {}
@@ -149,7 +149,7 @@ const A = {
   rwatch: v => { reportBack = v; if (v === "practice") startBattle(); else watchLiveBattle(v, "play"); },
   rreelm: v => { reportBack = v; if (v === "practice") { startBattle(); startReel(false); } else watchLiveBattle(v, "reel"); },
   rsb: () => { sheet.sb = !sheet.sb; }, rday: v => { sheet.id = v; sheet.insp = null; }, rinsp: v => { sheet.insp = v; }, rinspx: () => { sheet.insp = null; },
-  rclose: () => { reportBack = null; sheet = null; },
+  rclose: () => { reportBack = null; sheet = null; if (typeof WAR_VIEW !== "undefined" && WAR_VIEW && !WAR_REEL) endPrevView(); }, // the finished war's day 7 report goes on to the war results
   stance: v => { S.stance = v; },
   formation: () => { S.formation = S.formation === false; },
   heading: v => { S.strategy.heading = v; },

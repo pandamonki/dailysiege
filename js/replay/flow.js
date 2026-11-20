@@ -15,18 +15,19 @@ function diplomacyReport(plans, persist, hl, me) {
 }
 const RAPIER_ICON = `<svg class="rap" viewBox="0 0 16 16" aria-label="Divine Rapier"><title>Divine Rapier</title><path d="M13.6 1.4 15 1l-.4 1.4-6.1 6.1-1.2-1.2z" fill="#ffd24a" stroke="#8a5a00" stroke-width=".7" stroke-linejoin="round"/><path d="M5.2 8.2l2.6 2.6-1 1-2.6-2.6z" fill="#e0a020" stroke="#8a5a00" stroke-width=".7"/><path d="M4.4 11.6 2 14l.2.2 2.4-2.4z" fill="#8a5a00" stroke="#8a5a00" stroke-width="1.2"/></svg>`;
 function introData(plans, persist, bets, names, final) {
+  const fin2 = !!final && plans.some(p => p.finV2); if (fin2) final = false; // finV2: day 7 pacts hold until one alliance is left
   const key = (a, b) => [a, b].sort().join("|"), byId = Object.fromEntries(plans.map(pl => [pl.pid, pl]));
   const cur = new Set(); plans.forEach(pl => (pl.pacts || []).forEach(o => cur.add(key(pl.pid, o))));
   const old = new Set((persist || []).map(s => (Array.isArray(s) ? key(s[0], s[1]) : s.split("|").sort().join("|"))).filter(k => k.split("|").every(id => byId[id])));
   const fresh = [...cur].filter(k => !old.has(k)), kept = [...cur].filter(k => old.has(k));
-  const broken = [...old].filter(k => !cur.has(k)).map(k => { const [a, b] = k.split("|"), by = (byId[a].breaks || []).includes(b) ? a : (byId[b].breaks || []).includes(a) ? b : null; return { k, by, final: !!final }; });
+  const broken = [...old].filter(k => !cur.has(k)).map(k => { const [a, b] = k.split("|"), by = (byId[a].breaks || []).includes(b) ? a : (byId[b].breaks || []).includes(a) ? b : null; return { k, by, final: !!final, fin2 }; });
   // alliances sit together: each alliance's lords side by side (the biggest alliance first, yours first among equals), then the lords standing alone
   const par = {}, fnd = x => (par[x] == null || par[x] === x ? (par[x] = x) : (par[x] = fnd(par[x]))); [...cur].forEach(k => { const [a, b] = k.split("|"); par[fnd(a)] = fnd(b); });
   const grp = {}; plans.forEach(pl => (grp[fnd(pl.pid)] = grp[fnd(pl.pid)] || []).push(pl));
   const blocs = Object.values(grp).sort((a, b) => (b.length > 1) - (a.length > 1) || b.length - a.length || b.some(q => q.me) - a.some(q => q.me) || plans.indexOf(a[0]) - plans.indexOf(b[0]));
   const ordered = blocs.flatMap(g => g.slice().sort((a, b) => b.me - a.me || plans.indexOf(a) - plans.indexOf(b)));
   return { cards: ordered.map(pl => ({ pid: pl.pid, bloc: grp[fnd(pl.pid)].length > 1 ? fnd(pl.pid) : null, name: names[pid(pl)] || pl.name, color: pl.color, cls: pl.cls, level: pl.level, banner: pl.banner, tier: pl.castleTier || 1, me: !!pl.me })), fresh, kept, broken,
-    mercs: plans.flatMap(pl => (pl.pieces || []).filter(pc => pc.merc && pc.bid > 0).map(pc => ({ pid: pl.pid, id: pc.merc, gold: pc.bid }))), auction: Object.entries(plans.mercs || {}).filter(([id]) => MERCS[id]).map(([id, h]) => ({ id, winner: h.pid, gold: h.gold, bids: (h.all && h.all.length ? h.all : [{ pid: h.pid, gold: h.gold }]).slice().sort((a, b) => a.gold - b.gold) })), bets: (bets || []).map(h => ({ pid: h.pid, other: h.other })), final: !!final, names, rapier: (plans.find(pl => (pl.items || []).includes("rapier")) || {}).pid || null };
+    mercs: plans.flatMap(pl => (pl.pieces || []).filter(pc => pc.merc && pc.bid > 0).map(pc => ({ pid: pl.pid, id: pc.merc, gold: pc.bid }))), auction: Object.entries(plans.mercs || {}).filter(([id]) => MERCS[id]).map(([id, h]) => ({ id, winner: h.pid, gold: h.gold, bids: (h.all && h.all.length ? h.all : [{ pid: h.pid, gold: h.gold }]).slice().sort((a, b) => a.gold - b.gold) })), bets: (bets || []).map(h => ({ pid: h.pid, other: h.other })), final: !!final, fin2, names, rapier: (plans.find(pl => (pl.items || []).includes("rapier")) || {}).pid || null };
   function pid(pl) { return pl.pid; }
 }
 
@@ -53,7 +54,7 @@ function showIntro(it, done) {
   it.broken.forEach(x => { const [a, b] = x.k.split("|"); feed.push(`<li class="broke" style="--d:${(d += .35).toFixed(2)}">✕ ${x.final ? `The alliance between <b>${nm(a)}</b> and <b>${nm(b)}</b> ended with the final day.` : x.by ? `<b>${nm(x.by)}</b> ended the pact with <b>${nm(x.by === a ? b : a)}</b>.` : `<b>${nm(a)}</b> and <b>${nm(b)}</b> are no longer allies.`}</li>`); });
   it.bets.forEach(b => feed.push(`<li class="bet" style="--d:${(d += .35).toFixed(2)}">🗡 Last battle, <b>${nm(b.pid)}</b> betrayed <b>${nm(b.other)}</b> and blew up their keep.</li>`));
   if (it.kept.length) feed.push(`<li style="--d:${(d += .35).toFixed(2)}">${it.kept.length === 1 ? "One pact" : it.kept.length + " pacts"} held from yesterday.</li>`);
-  el.innerHTML = `<div class="iwrap"><h2>The houses gather</h2><p class="isub">${it.final ? "The final day. Every alliance is void and only one banner will stand." : "Day " + DAY_FOR_INTRO + " of the war. Here is who stands where."}</p>
+  el.innerHTML = `<div class="iwrap"><h2>The houses gather</h2><p class="isub">${it.fin2 ? "The final day. Alliances hold until only one is left standing, then it breaks: only one banner will win the war." : it.final ? "The final day. Every alliance is void and only one banner will stand." : "Day " + DAY_FOR_INTRO + " of the war. Here is who stands where."}</p>
     <div class="igrid" id="igrid"><svg class="ilines" id="ilines"></svg>${it.cards.map((c, i, a) => `<div class="icard${c.me ? " me" : ""}" data-pid="${c.pid}" style="--c:${c.color};--i:${i}${i && (c.bloc || a[i - 1].bloc) && c.bloc !== a[i - 1].bloc ? ";grid-column-start:1" : ""}"><img class="bn" alt="" src="${bannerURL(c.banner, c.color, 34, 46)}"><div class="tx"><b>${esc(c.name)}${it.rapier === c.pid ? RAPIER_ICON : ""}</b><small>${esc(clsName(c.cls))}</small><small>Lv ${c.level} · ${esc(CASTLE_TIERS[Math.max(0, Math.min(2, c.tier - 1))].name)}</small></div><img class="hr" alt="" src="${spriteURL("c-" + c.cls, c.color)}">${traitors.has(c.pid) ? `<span class="tag">TRAITOR</span>` : ""}</div>`).join("")}</div>
     ${(it.auction || []).length ? `<div class="auc" id="auc"></div>` : ""}
     ${feed.length ? `<ul class="feed">${feed.join("")}</ul>` : `<p class="none">No alliances stand this round. It's every lord for themselves.</p>`}

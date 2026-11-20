@@ -108,7 +108,7 @@ The user's plan is the starting point. Changes made during review:
 - It **rests the day after it fires** (a 1-day cooldown). This is the existing `ultCooling()`
   rule. Keep it; don't build a 2-day cooldown.
 - When it unlocks. The hero's level at the start of day N's battle is 1 plus the levels gained on
-  earlier days (2 to 3 a day). The ultimate needs level 9 and must be learned before orders seal,
+  earlier days (2 to 3 a day; 3 to 4 a day, up to level 25, from the 23 Nov battle). The ultimate needs level 9 and must be learned before orders seal,
   so it can't be armed the same day it's learned mid-battle.
 
   | Day | Start level, 2 a day | Start level, 3 a day |

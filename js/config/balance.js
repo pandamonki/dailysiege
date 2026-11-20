@@ -27,7 +27,10 @@ const WALL_COST = 35, WALL_CAP = 6, WALL_CAP_V2 = 5, TRAP_CAP_V2 = 4, wallLimit 
 const trapLimit = () => (typeof mapV2Now === "function" && mapV2Now() ? TRAP_CAP_V2 : Infinity);
 function wallTiles(r, c, dir) { return [[r, c]]; } // one block; dir only sets which way the barrier runs
 
-const MIN_GAIN = 2; // every hero gains at least this many levels after each battle
+const MIN_GAIN = 2, MIN_GAIN_V2 = 3; // every hero gains at least this many levels after each battle (3 from lvlV2)
+const XP_CAP_V2 = 4; // most levels a day from lvlV2 (was XP_CAP)
+const XP_V2 = [130, 0], xpNeedV2 = L => XP_V2[0] + XP_V2[1] * (L - 1); // lvlV2: a flat 130 experience a level, so a busy hero reaches 4 levels in a battle (about a third of heroes on 8-lord bot wars)
+const xpCapFor = d => (lvlV2For(d) ? XP_CAP_V2 : XP_CAP), xpCapNow = () => (lvlV2Now() ? XP_CAP_V2 : XP_CAP);
 const XP_CAP = 3, xpNeed = L => 90 + 45 * (L - 1), hpLv = L => 1 + .08 * (L - 1), atkLv = L => 1 + .06 * (L - 1);
 const HOLD_END = 120; // orders to hold the battleground dissolve after 2 minutes, then armies march on castles
 const CTR_BONUS = 1.25; // any hero standing on the battleground earns 25% more gold and XP, held or contested

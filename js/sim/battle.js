@@ -73,7 +73,8 @@ const ASSIST_SECS = 10, SURVIVOR_PTS = 1, BLOC_MAX = 3, TREACHERY_PTS = 3, TREAC
 const ORPHAN_ARMIES = true;
 const dayWeight = (v2, dayNo) => (v2 && DAY_WEIGHT[dayNo]) || 1;
 function runBattle(plans, seed, opts = {}) {
-  const TV = !!opts.treesV1, SV = !!opts.suddenV1, BV = !!opts.balV2, V3 = !!opts.balV3, FV = !!opts.fairV1 || !!opts.pickV1, PV = !!opts.pickV1, V4 = !!opts.balV4, HV3 = !!opts.heroV3, maxLvl = HV3 ? MAX_HERO_LVL_V3 : MAX_HERO_LVL, hpLvX = HV3 ? hpLvV3 : hpLv, atkLvX = HV3 ? atkLvV3 : atkLv, OA = !!opts.balV2 && ORPHAN_ARMIES, UV = !!opts.ultV2, UD = UV ? .75 : 1, UR = rk => UV ? [.7, .85, 1][Math.min(3, Math.max(1, rk || 1)) - 1] : 1;
+  const TV = !!opts.treesV1, SV = !!opts.suddenV1, BV = !!opts.balV2, V3 = !!opts.balV3, FV = !!opts.fairV1 || !!opts.pickV1, PV = !!opts.pickV1, V4 = !!opts.balV4, HV3 = !!opts.heroV3, LV2 = HV3 && plans.some(p => p.lvlV2), maxLvl = heroMaxLvl(HV3, LV2), hpLvX = HV3 ? L => hpLvV3(L, LV2) : hpLv, atkLvX = HV3 ? L => atkLvV3(L, LV2) : atkLv, XPC = LV2 ? XP_CAP_V2 : XP_CAP, xpNeedX = LV2 ? xpNeedV2 : xpNeed, MING = LV2 ? MIN_GAIN_V2 : MIN_GAIN, // LV2: faster levelling (3 to 4 a day, up to 25)
+    OA = !!opts.balV2 && ORPHAN_ARMIES, UV = !!opts.ultV2, UD = UV ? .75 : 1, UR = rk => UV ? [.7, .85, 1][Math.min(3, Math.max(1, rk || 1)) - 1] : 1;
   const rng = mulberry(seed), DT = .1, fast = !!opts.fast, leaderPid = (plans.find(p => p.leader) || {}).pid;
   let curAb = null;
   const mePid = (plans.find(p => p.me) || plans[0]).pid, NN = opts.N || N;
@@ -96,17 +97,23 @@ function runBattle(plans, seed, opts = {}) {
   const SD2 = plans.some(p => p.sdV2); // sudden death v2: a half-size arena nobody can leave, and no respawn timers inside it
   let sd = null; // sudden death: null until SD_AT, then { t0, go, skip, winners }
   const sdOn = () => !!sd && !sd.skip, tmax = () => (sdOn() ? SD_AT + SD_COUNT + SD_LEN : TMAX);
-  let ctrHolder = null, teamWin = null; const finalDay = !!opts.finalDay;
+  let ctrHolder = null, teamWin = null, lastAlly = null; const finalDay = !!opts.finalDay, FIN2 = finalDay && plans.some(p => p.finV2); // FIN2: day 7 pacts hold until one alliance is all that is left, then break
   const P = {}, order = plans.map(p => p.pid), idx = Object.fromEntries(order.map((p, i) => [p, i]));
   const d = (a, b) => hyp(a.x - b.x, a.y - b.y);
   const fxv = (e, k) => (e.fx[k] && e.fx[k].until > t ? e.fx[k].val : 0);
   const setFx = (e, k, dur, val = 1) => { if ((e.cart || e.ram) && (k === "slow" || k === "frozen" || (V3 && (k === "stun" || (k === "root" && !HV3))))) return; /* siege engines can't be slowed, and from 12 Nov 2026 can't be stunned or rooted either */ if (P[e.pid] && P[e.pid].frenzy && e.kind !== "castle" && (k === "stun" || k === "root" || k === "slow" || k === "frozen" || k === "silence" || k === "fear")) return; if (e.fx.ccimm && e.fx.ccimm.until > t && e.kind !== "castle" && (k === "stun" || k === "root" || k === "slow" || k === "frozen" || k === "taunt" || k === "silence" || k === "fear")) return; if (e.ccShort && (k === "slow" || k === "root")) dur *= 1 - e.ccShort; if (e.will && (k === "stun" || k === "root" || (e.itemV6 && (k === "slow" || k === "silence")))) dur *= e.itemV6 ? ITEM_V6.will : .4; if (!e.fx[k] || e.fx[k].until < t + dur || e.fx[k].val < val) e.fx[k] = { until: t + dur, val }; };
   const allied = (a, b) => a === b || P[a].pacts.has(b);
+  function breakLastAlliance(pids) { // the war's last battle: once only one alliance stands, its pacts break and the allies fight it out
+    if (lastAlly) return; pids.forEach(a => P[a].pacts.clear()); lastAlly = { t: Math.round(t * 10) / 10, pids: pids.slice() };
+    log(`The last alliance breaks! ${pids.map(nm).join(", ")} turn on each other. Only one banner can win the war.`, "big");
+    const c = pids.map(q => P[q].castle).filter(Boolean), x = c.length ? c.reduce((s, k) => s + k.x, 0) / c.length : NN / 2, y = c.length ? c.reduce((s, k) => s + k.y, 0) / c.length : NN / 2;
+    hl.push({ kind: "split", pid: pids[0], others: pids.slice(1), t, x, y, score: 92 });
+  }
   const hostile = (a, b) => !allied(a, b);
   const ev = o => { if (fast) return; o.t = t; events.push(o); };
   const cdNote = (e, k, ready) => { if (!fast) cdlog.push({ id: e.id, k, t, r: ready }); }; // when a skill or item went on cooldown, for the replay panel (not part of the replay hash)
   const atkEv = (e, o, k) => ev({ ty: "atk", id: e.id, k, dx: o.x - e.x, dy: o.y - e.y });
-  const SHOT_STYLE = { bowman: "arrow", centaur: "arrow", archer: "arrow", sniper: "bullet", mage: "orb", shaman: "spirit", healer: "heal", necro: "bone" }; // each ranged unit gets its own projectile in the replay
+  const SHOT_STYLE = { bowman: "arrow", centaur: "arrow", archer: "arrow", sniper: "bullet", mage: "orb", shaman: "spirit", healer: "heal", necro: "bone", towerA: "tarrow", towerF: "tfire", towerB: "tbomb", towerM: "tarc", towerS: "tsnipe" }; // each ranged unit gets its own projectile in the replay (level 3 towers get big, showy ones; display only)
   const shot = (a, b, c, w = 1, st) => ev({ ty: "shot", x1: a.x, y1: a.y - .35, x2: b.x, y2: b.y - .35, c, w, ...(st ? { sk: st, sc: a.kind === "champ" ? 1.4 : 1 } : {}) });
   const slash = (b, c = "#fff") => ev({ ty: "slash", x: b.x, y: b.y - .35, c });
   const aoe = (x, y, r, c, dur = .6) => ev({ ty: "aoe", x, y, r, c, dur });
@@ -197,7 +204,7 @@ function runBattle(plans, seed, opts = {}) {
     const lvl = pl.level || 1, g = pl.gear || {};
     pl.pieces.forEach(pc => {
       if (pc.kind === "champ") {
-        const b = HV3 ? champBase(pl.cls, !!pl.balV5) : CHAMP[pl.cls], hpMul = HV3 ? hpLvV3(lvl) : (1 + .08 * (lvl - 1)) * vigMul(pl.ranks.a4), atkMul = HV3 ? atkLvV3(lvl) : (1 + .06 * (lvl - 1)) * vigMul(pl.ranks.a4);
+        const b = HV3 ? champBase(pl.cls, !!pl.balV5) : CHAMP[pl.cls], hpMul = HV3 ? hpLvX(lvl) : (1 + .08 * (lvl - 1)) * vigMul(pl.ranks.a4), atkMul = HV3 ? atkLvX(lvl) : (1 + .06 * (lvl - 1)) * vigMul(pl.ranks.a4);
         const e = add({ order: pl.ordV2 ? "army" : pc.order || "army", pid: pl.pid, kind: "champ", cls: pl.cls, key: "c-" + pl.cls, x: pc.c + .5, y: pc.r + .5, maxhp: b.hp * hpMul, atk: b.atk * atkMul, range: b.range, as: b.as,
           spd: b.spd * ((g.charm || 0) >= 1 ? 1.15 : 1), armor: b.armor,
           cdMul: (g.charm || 0) >= 2 ? .8 : 1, phoenix: (g.charm || 0) >= 3, respawns: opts.duel ? 0 : 2, shot: b.shot, ranks: { ...pl.ranks }, ranks0: { ...pl.ranks }, picks: pl.picks, triggers: pl.triggers, cds: {} });
@@ -274,7 +281,7 @@ function runBattle(plans, seed, opts = {}) {
     const ks = ["a1", "a2", "a3"]; return ks.filter(k => r[k] > 0 && can(k)).sort((a, b) => r[a] - r[b])[0] || ks.find(can) || (can("a4") ? "a4" : null);
   }
   function levelUp(h) {
-    if (h.gains >= XP_CAP) return; // a hero never gains more than 3 levels in one day, from any source
+    if (h.gains >= XPC) return; // a hero never gains more than 3 levels in one day (4 from lvlV2), from any source
     const L0 = h.heroLvl; h.heroLvl++; h.gains++;
     const oh = h.maxhp, fh = h.flatHp || 0, fa = h.flatAtk || 0; h.maxhp = (h.maxhp - fh) * (hpLvX(h.heroLvl) / hpLvX(L0)) + fh; h.hp += h.maxhp - oh; h.atk = (h.atk - fa) * (atkLvX(h.heroLvl) / atkLvX(L0)) + fa; // flat item bonuses stay flat
     const k = HV3 ? null : autoPick(h); /* skill-tree heroes never skill themselves: the player spends points on the hero screen */ let nm2 = "";
@@ -288,8 +295,8 @@ function runBattle(plans, seed, opts = {}) {
     if (!live(h) || h.kind !== "champ") return;
     if (inCentre(h.x, h.y)) amt *= CTR_BONUS;
     h.xp += amt;
-    while (h.xp >= xpNeed(h.heroLvl)) { if (h.heroLvl >= maxLvl) { h.xp = 0; break; } if (h.gains >= XP_CAP) { h.xp = xpNeed(h.heroLvl) - 1; break; } h.xp -= xpNeed(h.heroLvl); levelUp(h); }
-    if (!fast) xplog.push({ id: h.id, t, x: Math.round(h.xp * 10) / 10, n: xpNeed(h.heroLvl), a: Math.round(amt * 10) / 10, L: h.heroLvl }); // for the replay panel's experience bar (not part of the replay hash)
+    while (h.xp >= xpNeedX(h.heroLvl)) { if (h.heroLvl >= maxLvl) { h.xp = 0; break; } if (h.gains >= XPC) { h.xp = xpNeedX(h.heroLvl) - 1; break; } h.xp -= xpNeedX(h.heroLvl); levelUp(h); }
+    if (!fast) xplog.push({ id: h.id, t, x: Math.round(h.xp * 10) / 10, n: xpNeedX(h.heroLvl), a: Math.round(amt * 10) / 10, L: h.heroLvl }); // for the replay panel's experience bar (not part of the replay hash)
   }
   // champions nearby learn from every enemy that falls; the strong and the leaders learn more slowly
   const topLvl = () => ents.reduce((m, h) => h.kind === "champ" ? Math.max(m, h.heroLvl) : m, 1);
@@ -904,7 +911,8 @@ function runBattle(plans, seed, opts = {}) {
       });
     });
     if (alive.length > 1 && alive.every(a => alive.every(b => allied(a, b)))) {
-      if (finalDay) { alive.forEach(a => P[a].pacts.clear()); log("Final day: the pacts dissolve. One banner must stand alone.", "big"); }
+      if (FIN2) breakLastAlliance(alive);
+      else if (finalDay) { alive.forEach(a => P[a].pacts.clear()); log("Final day: the pacts dissolve. One banner must stand alone.", "big"); }
       else if (!teamWin) { teamWin = alive.slice(); log("Only allies remain. They share the day's victory.", "big"); over = true; }
     }
   }
@@ -1219,7 +1227,8 @@ function runBattle(plans, seed, opts = {}) {
     const alive = alivePlayers();
     if (sdOn() && t >= sd.go) { // last side standing wins; when time runs out, the side with the most health left
       const mb = ents.filter(e => !e.dead && (e.kind === "champ" || e.kind === "unit" || e.kind === "summon") && P[e.pid].alive), left = order.filter(q => mb.some(e => e.pid === q));
-      if (left.every(a => left.every(b => allied(a, b)))) { over = true; sd.winners = left; }
+      if (FIN2 && left.length > 1 && left.every(a => left.every(b => allied(a, b)))) breakLastAlliance(left); // the final day: the last allies turn on each other
+      else if (left.every(a => left.every(b => allied(a, b)))) { over = true; sd.winners = left; }
       else if (t >= tmax()) { over = true; const hp = q => mb.filter(e => e.pid === q).reduce((s, e) => s + e.hp, 0), best = left.slice().sort((a, b) => hp(b) - hp(a) || (a < b ? -1 : 1))[0]; sd.winners = [best]; }
     } else if (alive.length <= 1 || (!sdOn() && t >= TMAX)) over = true;
     if (opts.duel) { const sides = order.filter(pid => ents.some(e => !e.dead && e.pid === pid && e.kind !== "castle" && e.kind !== "totem")); if (sides.length <= 1 || t >= 90) { over = true; opts.duel.winner = sides.length === 1 ? sides[0] : null; opts.duel.t = t; opts.duel.hp = P[mePid].champ ? Math.max(0, P[mePid].champ.hp) / P[mePid].champ.maxhp : 0; } }
@@ -1256,7 +1265,7 @@ function runBattle(plans, seed, opts = {}) {
     hl.sort((a, b) => a.t - b.t);
   }
   for (let i = 0; i < 10; i++) { t = +(t + FRAME_DT).toFixed(2); record(); }
-  ents.filter(e => e.kind === "champ" && e.gains < MIN_GAIN && e.heroLvl < maxLvl).forEach(e => { while (e.gains < MIN_GAIN && e.heroLvl < maxLvl) levelUp(e); }); // every hero earns at least two levels a day
+  ents.filter(e => e.kind === "champ" && e.gains < MING && e.heroLvl < maxLvl).forEach(e => { while (e.gains < MING && e.heroLvl < maxLvl) levelUp(e); }); // every hero earns at least two levels a day
   const treach = {}; treachery.forEach(([by, vic]) => { treach[by] = (treach[by] || 0) + 1; const take = Math.round(P[vic].gold * TREACHERY_LOOT); P[by].gold += take; P[vic].gold -= take; }); // the betrayer keeps a share of the victim's spoils for the day
   const W8 = PV ? (DAY_WEIGHT_PICK[opts.dayNo] || 1) : dayWeight(BV, opts.dayNo);
   const PLV2 = plans.some(p => p.placeV2), placeOf = pid => placePts(PLV2, P[pid].place, order.length); // placement points (see placePts)
@@ -1277,10 +1286,10 @@ function runBattle(plans, seed, opts = {}) {
     const best = (fn) => order.slice().sort((a, c) => fn(c) - fn(a) || (P[a].place - P[c].place))[0], mv = best(pid => results.find(r => r.pid === pid).points + P[pid].kills * .01), mk = best(pid => per[pid].k), kd = best(pid => per[pid].k / Math.max(1, per[pid].d)), sp = best(pid => P[pid].gold);
     return { mvp: { pid: mv, pts: results.find(r => r.pid === mv).points }, kills: { pid: mk, n: per[mk].k }, kd: { pid: kd, v: +(per[kd].k / Math.max(1, per[kd].d)).toFixed(1) }, spoils: { pid: sp, g: Math.round(P[sp].gold) } }; })();
   // hero progress for the week: levels gained today (capped), and the experience carried into tomorrow
-  const lvlOut = {}; ents.filter(e => e.kind === "champ").forEach(e => { lvlOut[e.pid] = { from: e.lvl0, gain: e.gains, xp: Math.max(0, Math.min(Math.round(e.xp), xpNeed(e.heroLvl) - 1)) }; });
+  const lvlOut = {}; ents.filter(e => e.kind === "champ").forEach(e => { lvlOut[e.pid] = { from: e.lvl0, gain: e.gains, xp: Math.max(0, Math.min(Math.round(e.xp), xpNeedX(e.heroLvl) - 1)) }; });
   const pairsEnd = BV ? (finalDay ? [] : pact0.filter(k => !feudsNew.has(k))) // pacts last until a betrayal or a break ends them, even if a castle fell
     : []; if (!BV) order.forEach(a => order.forEach(b => { if (a < b && P[a].alive && P[b].alive && P[a].pacts.has(b)) pairsEnd.push(a + "|" + b); }));
   const trapsUsed = traps.filter(tr => tr.used && !tr.ranger).map(tr => tr.pid + "|" + Math.round(tr.y - .5) + "," + Math.round(tr.x - .5));
   order.forEach(pid => { const c = P[pid].castle; st(pid).castleEnd = c && c.maxhp ? Math.max(0, c.hp) / c.maxhp : 0; });
-  return { stats: ST, twist: TW, ...(sdOn() ? { sudden: { t0: sd.t0, go: sd.go, ...(SD2 ? { r: sd.r } : {}) } } : {}), ...(V3 && !opts.duel ? { waves: true, ...(plans.some(p => p.waveV2) ? { waveV2: true, ...(BV5 ? { waveGap: WAVE_GAP_V5 } : {}), ...(order.some(pid => (P[pid].waves || []).some(w => w.rush === false)) ? { waveRushOff: Object.fromEntries(order.map(pid => [pid, (P[pid].waves || []).map((w, i) => (w.rush === false ? i : -1)).filter(i => i >= 0)]).filter(([, a]) => a.length)) } : {}) } : {}) } : {}), me: mePid, feudsNew: [...feudsNew], trapsUsed, awards, ultCast: order.filter(pid => P[pid].ultCast), lvl: lvlOut, rapierEnd: rapierOwner ? rapierHolder : null, rapier: rapierOwner && rapierHolder && rapierHolder !== rapierOwner ? { from: rapierOwner, to: rapierHolder } : null, pairsEnd, pacts0: pact0, team: teamWin, wallMeta: walls.map(w => ({ pid: w.pid, x: w.x0, y: w.y0, dir: w.dir, maxhp: w.maxhp, tier: w.tier, ...(w.born != null ? { born: w.born } : {}) })), tel, frames, events, cdlog, xplog, logs, hl, ranks: RANKS, meta: meta(), results, order, colors: Object.fromEntries(order.map(p => [p, P[p].color])), traps, duration: t };
+  return { stats: ST, twist: TW, ...(lastAlly ? { lastAlly } : {}), ...(LV2 ? { lvlV2: true } : {}), ...(sdOn() ? { sudden: { t0: sd.t0, go: sd.go, ...(SD2 ? { r: sd.r } : {}) } } : {}), ...(V3 && !opts.duel ? { waves: true, ...(plans.some(p => p.waveV2) ? { waveV2: true, ...(BV5 ? { waveGap: WAVE_GAP_V5 } : {}), ...(order.some(pid => (P[pid].waves || []).some(w => w.rush === false)) ? { waveRushOff: Object.fromEntries(order.map(pid => [pid, (P[pid].waves || []).map((w, i) => (w.rush === false ? i : -1)).filter(i => i >= 0)]).filter(([, a]) => a.length)) } : {}) } : {}) } : {}), me: mePid, feudsNew: [...feudsNew], trapsUsed, awards, ultCast: order.filter(pid => P[pid].ultCast), lvl: lvlOut, rapierEnd: rapierOwner ? rapierHolder : null, rapier: rapierOwner && rapierHolder && rapierHolder !== rapierOwner ? { from: rapierOwner, to: rapierHolder } : null, pairsEnd, pacts0: pact0, team: teamWin, wallMeta: walls.map(w => ({ pid: w.pid, x: w.x0, y: w.y0, dir: w.dir, maxhp: w.maxhp, tier: w.tier, ...(w.born != null ? { born: w.born } : {}) })), tel, frames, events, cdlog, xplog, logs, hl, ranks: RANKS, meta: meta(), results, order, colors: Object.fromEntries(order.map(p => [p, P[p].color])), traps, duration: t };
 }

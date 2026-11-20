@@ -39,15 +39,15 @@ test("gates: T2 needs 2 points and T1, T3 needs 5 and T2, the ultimate needs 7, 
   assert.equal(lrn("warrior", tree(row(2, 3, 0, 1, 1, 1), row(2, 2, 0, 1, 1, 0)), "b2", 5, 15), false, "only one ultimate per hero");
 });
 
-test("points: one per level from level 1, 15 in all, and none to spend means nothing can be learned", () => {
+test("points: one per level from level 1, 25 in all (lvlV2; levels were capped at 15 before), and none to spend means nothing can be learned", () => {
   const free = (t, L) => sim.run(`treeFree(${JSON.stringify(t)}, ${L})`);
-  assert.equal(free(tree(row()), 1), 1); assert.equal(free(tree(row()), 2), 2); assert.equal(free(tree(row()), 15), 15); assert.equal(free(tree(row()), 21), 15);
+  assert.equal(free(tree(row()), 1), 1); assert.equal(free(tree(row()), 2), 2); assert.equal(free(tree(row()), 15), 15); assert.equal(free(tree(row()), 21), 21); assert.equal(free(tree(row()), 30), 25);
   assert.equal(lrn("mage", tree(row()), "b1", 0, 1), true, "a level 1 hero has a point to spend");
   assert.equal(lrn("mage", tree(row(1)), "b1", 0, 1), false, "level 1 has one point and it is spent");
 });
 
 test("bot builds are always legal, deterministic, and spend what the level allows", () => {
-  for (const cls of CLASSES) for (let lvl = 1; lvl <= 15; lvl++) for (let seed = 1; seed <= 12; seed++) {
+  for (const cls of CLASSES) for (let lvl = 1; lvl <= 25; lvl++) for (let seed = 1; seed <= 12; seed++) {
     const t = sim.run(`autoTree(${lvl}, ${seed * 977}, "${cls}")`), again = sim.run(`autoTree(${lvl}, ${seed * 977}, "${cls}")`);
     assert.deepEqual(J(t), J(again));
     const spent = [t.b1, t.b2, t.b3].flat().reduce((a, b) => a + b, 0);
