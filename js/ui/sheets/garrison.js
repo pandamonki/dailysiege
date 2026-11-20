@@ -1,13 +1,13 @@
 // The Garrison screen (Army sheet): every soldier you own in one pool, and the three reinforcement waves below it.
 // Drag a soldier into a wave slot (or tap it, then tap a slot); drag it back to the pool, or tap the cross, to send it to reserve.
-const whenLabel = w => w.when === "timer" ? `At ${Math.floor(w.at / 60)}:${String(w.at % 60).padStart(2, "0")}` : { castle_hit: "Castle attacked", castle_low: "Castle below half", hero_dies: "Hero dies", army_dead: "All soldiers die", enemy_hero: "Enemy hero dies", ult: "Any ultimate" }[w.when];
+const whenLabel = w => w.when === "timer" ? `At ${Math.floor(w.at / 60)}:${String(w.at % 60).padStart(2, "0")}` : { castle_hit: waveV4Now() ? "Enemies at my castle" : "Castle attacked", castle_low: "Castle below half", hero_dies: "Hero dies", army_dead: "All soldiers die", enemy_hero: "Enemy hero dies", ult: "Any ultimate" }[w.when];
 const waveDeadline = i => (waveV3Now() ? WAVE_FORCE_AT[i] : null); // the latest a wave can go (waves v3), else null
 const whenLabelAt = (w, i) => { const dl = waveDeadline(i); return dl != null && w.when === "timer" && w.at >= dl ? timeLabel(dl) : whenLabel(w); };
 const timeLabel = x => `At ${Math.floor(x / 60)}:${String(x % 60).padStart(2, "0")}`;
 const waveStatus = id => { const wi = (S.garrison || []).findIndex(w => w.slots.includes(id)); return wi > -1 ? ["wv", `Wave ${wi + 1}`] : placedAt(id) ? ["dep", "On the map"] : ["res", "Reserve"]; };
 function garrisonPopHTML(i) {
   const p = sheet.wpop; if (!p || p.w !== i) return "";
-  const w = S.garrison[i], opts = p.kind === "when" ? WAVE_WHEN.map(([k, n]) => [`when:${k}`, n + (k === "timer" ? " …" : ""), w.when === k])
+  const w = S.garrison[i], opts = p.kind === "when" ? WAVE_WHEN.map(([k, n]) => [`when:${k}`, (k === "castle_hit" && waveV4Now() ? "When enemies reach my castle" : n) + (k === "timer" ? " …" : ""), w.when === k, k === "castle_hit" && waveV4Now() ? `Any enemy within ${WAVE_NEAR_R} tiles, or the castle is hit` : ""])
     : p.kind === "time" ? WAVE_TIMES.filter(x => waveDeadline(i) == null || x < waveDeadline(i)).map(x => [`time:${x}`, timeLabel(x), w.when === "timer" && w.at === x]) : WAVE_ORDERS.map(([k, n, d]) => [`order:${k}`, n, w.order === k, d]);
   const dl = waveDeadline(i), lead = dl != null ? `<p class="gr-poplead">Wave ${i + 1} goes ${p.kind === "time" ? "at the time you pick" : "when this happens"}, or at <b>${timeLabel(dl).slice(3)}</b> if that hasn't happened yet.</p>` : "";
   return `<div class="gr-pop" role="listbox">${lead}${opts.map(([v, n, on, d]) => `<div class="${on ? "on" : ""}" data-act="wopt" data-k="${i}" data-v="${v}" role="option"><span>${n}${d ? `<small>${d}</small>` : ""}</span>${on ? "<em>✓</em>" : ""}</div>`).join("")}</div>`;
@@ -19,6 +19,7 @@ function garrisonWaveHTML(w, i) {
   return `<div class="gr-wrow" data-drop="w:${i}"><div class="gr-wh"><span class="gr-wn" aria-hidden="true"><i></i></span><b>Wave ${i + 1}</b>
       <button class="gr-chip" data-act="wpop" data-k="${i}" data-v="${w.when === "timer" && sheet.wpop && sheet.wpop.w === i && sheet.wpop.kind === "time" ? "time" : "when"}" ${dis()}>${whenLabelAt(w, i)}</button>${waveDeadline(i) != null && !(w.when === "timer" && w.at >= waveDeadline(i)) ? `<span class="gr-dl" title="If its trigger hasn't happened by then, Wave ${i + 1} goes at ${timeLabel(waveDeadline(i)).slice(3)}"><em>or</em><i class="sw" aria-hidden="true"></i>${timeLabel(waveDeadline(i)).slice(3)}</span>` : ""}
       ${waveV2Now() ? "" : `<button class="gr-chip w" data-act="wpop" data-k="${i}" data-v="order" ${dis()}>${WAVE_ORDERS.find(o => o[0] === w.order)[1]}</button>`}</div>
+    ${waveV2Now() ? `<button class="gr-rush${w.rush !== false ? " on" : ""}" data-act="wrush" data-k="${i}" role="checkbox" aria-checked="${w.rush !== false}" ${dis()}><i aria-hidden="true"></i><span>Rush out if my castle drops <small>below 75%, 50% or 25% health</small></span></button>` : ""}
     ${garrisonPopHTML(i)}
     <div class="gr-r4"><div class="gr-s free${waveOpen(i) ? "" : " lk"}" title="Every wave brings a free Footman"><img alt="" src="${spriteURL("footman")}"><b>Footman</b><small>${waveOpen(i) ? "free" : "free once open"}</small></div>${waveOpen(i) ? w.slots.map(slot).join("")
       : `<div class="gr-lock">${i === wavesOpen() ? `<button class="btn small wax" data-act="wunlock" ${dis(avail() < waveUnlockCost())}>🔒 Unlock ${WAVE_SLOTS} slots · ${waveUnlockCost()}g</button>` : `<span>🔒 Unlock Wave ${i} first</span>`}</div>`}</div></div>`;
@@ -49,7 +50,7 @@ function deploymentTab() {
       ${row("Reserve", `${reserve.length} waiting`, "res", reserve.map(tile).join("") + ph("wres", reserve.length ? "bench" : "empty"))}
       ${S.garrison.map(garrisonWaveHTML).join("")}</div>
     <p class="muted gr-tip">The guard stays home and defends your castle all battle. It is one of your ${FIELD_MAX} soldiers on the field. Drag it back among the attackers to send it out again.</p>
-    <p class="muted gr-tip">${waveV2Now() ? `${waveV3Now() ? `Each wave goes when its trigger happens, or at the time on its stopwatch, whichever comes first. Tap the trigger to change it.` : `Tap a wave's chip to change when it goes. One wave is forced out at each minute mark.`} Each wave first clears enemies near your castle, then follows your army plan. Waves are at least ${WAVE_GAP}s apart; if your castle drops below 75%, 50% or 25% health, the next wave rushes out early, at least ${WAVE_EMERGENCY_GAP}s after the last.` : `Tap a chip to change when a wave goes or what it does. Waves are at least ${WAVE_GAP}s apart and one is forced out at each minute mark.`} Training and selling are on the Train tab.</p>`;
+    <p class="muted gr-tip">${waveV2Now() ? `${waveV3Now() ? `Each wave goes when its trigger happens, or at the time on its stopwatch, whichever comes first. Tap the trigger to change it.` : `Tap a wave's chip to change when it goes. One wave is forced out at each minute mark.`} Each wave first clears enemies near your castle, then follows your army plan. Waves are at least ${WAVE_GAP}s apart; if your castle drops below 75%, 50% or 25% health, the next wave with its Rush box ticked goes out early, at least ${WAVE_EMERGENCY_GAP}s after the last. Untick a wave to keep it for its own trigger.` : `Tap a chip to change when a wave goes or what it does. Waves are at least ${WAVE_GAP}s apart and one is forced out at each minute mark.`} Training and selling are on the Train tab.</p>`;
 }
 // actions
 Object.assign(A, {
@@ -58,6 +59,7 @@ Object.assign(A, {
   wdep: () => { if (S.locked) { toast("Draft new orders to change your army."); return; } if (!sheet.tsel) { toast("Tap a soldier first."); return; } const err = deployUnit(sheet.tsel); if (err) toast(err); else unguard(sheet.tsel); },
   wguard: () => { if (S.locked) { toast("Draft new orders to change your army."); return; } if (!sheet.tsel) { toast("Tap a soldier first, then the guard slot."); return; } const err = guardUnit(sheet.tsel); if (err) toast(err); else toast("This soldier will guard your castle."); },
   wres: () => { if (S.locked) { toast("Draft new orders to change your army."); return; } if (!sheet.tsel) { toast("Tap a soldier first."); return; } const err = reserveUnit(sheet.tsel); if (err) toast(err); },
+  wrush: (v, k) => { if (S.locked) { toast("Draft new orders to change your army."); return; } const w = S.garrison[+k]; if (!w) return; w.rush = w.rush === false; },
   wpop: (v, k) => { if (S.locked) return; const w = +k; sheet.wpop = sheet.wpop && sheet.wpop.w === w && sheet.wpop.kind === v ? null : { w, kind: v }; },
   wopt: (v, k) => { if (S.locked) return; const w = S.garrison[+k], [kind, val] = v.split(":");
     if (kind === "when") { w.when = val; sheet.wpop = val === "timer" ? { w: +k, kind: "time" } : null; }

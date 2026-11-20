@@ -62,7 +62,7 @@ function personalReport(R) {
   }
   // takeaways: what to change tomorrow, tied to a decision on the planning screen
   const tips = [];
-  if (res.fellAt != null && res.fellAt < 150) tips.push(`Your castle fell early. Walls, a tower, fences on the attackers' path, or a wave set to "When my castle is attacked" would buy time.`);
+  if (res.fellAt != null && res.fellAt < 150) tips.push(`Your castle fell early. Walls, a tower, fences on the attackers' path, or a wave set to "${waveV4Now() ? "When enemies reach my castle" : "When my castle is attacked"}" would buy time.`);
   if (hero && (hero.deaths || 0) >= 2) tips.push(`Your hero fell ${hero.deaths} times. More armour, a retreat rule in Orders, or a wave that hunts heroes would keep it fighting.`);
   if (units.length >= 3 && total > 0 && pct(units.reduce((a, u) => a + (u.dealt || 0), 0), total) < 30) tips.push(`Your soldiers dealt under a third of your damage. Train them, or change who they hit first in Orders.`);
   if (toCastle < 250 && res.castles === 0) tips.push(`You barely touched enemy castles, and each castle taken is worth ${castlePts(true)} points. Try a weaker target, or bring siege.`);

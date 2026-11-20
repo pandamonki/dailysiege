@@ -151,6 +151,10 @@ function runBattle(plans, seed, opts = {}) {
     e.hp = e.maxhp * (pc.hp ?? 1); [e.atype, e.armour] = UNIT_TYPES[pc.type]; if (pl.siegeV1 && e.ram) e.breaker = true; // rams, catapults and the Ogre Breaker smash walls in their way
     return e;
   }
+  // waves v4: an enemy that can move has come within WAVE_NEAR_R tiles of this castle, nearer to it than to its own castle (towers, castles and totems never count)
+  function enemyAtGate(pid) { const c = P[pid].castle; if (!c || c.dead) return false;
+    return ents.some(o => !o.dead && (o.kind === "unit" || o.kind === "champ" || o.kind === "summon") && !(UNITS[o.key] && UNITS[o.key].tower) && hostile(pid, o.pid) && vis(o, c)
+      && d(o, c) <= WAVE_NEAR_R && (() => { const h = P[o.pid] && P[o.pid].castle; return !h || h.dead || d(o, c) < d(o, h); })()); }
   // a wave marches out of the castle gate
   function deployWave(p, i, rush) {
     const w = p.waves[i], c = p.castle, dx = NN / 2 - c.x, dy = NN / 2 - c.y, L = hyp(dx, dy) || 1, px = -dy / L, py = dx / L, n = w.units.length;
@@ -1111,10 +1115,10 @@ function runBattle(plans, seed, opts = {}) {
     if (V3 && !opts.duel && !sdOn() && tick % 5 === 0) order.forEach(pid => {
       const p = P[pid]; if (!p.alive || !p.waves) return;
       const c = p.castle, sent = p.waves.filter(w => w.done).length;
-      if (p.waveV2 && sent < WAVE_COUNT && t - p.lastWave >= WAVE_EMERGENCY_GAP && sent < WAVE_EMERGENCY.filter(f => c.hp / c.maxhp < f).length) { deployWave(p, p.waves.findIndex(w => !w.done), true); return; } // emergency: the castle is losing ground
+      if (p.waveV2 && sent < WAVE_COUNT && t - p.lastWave >= WAVE_EMERGENCY_GAP && sent < WAVE_EMERGENCY.filter(f => c.hp / c.maxhp < f).length) { const k = p.waves.findIndex(w => !w.done && w.rush !== false); if (k >= 0) { deployWave(p, k, true); return; } } // emergency: the castle is losing ground; only waves whose rush box is ticked
       if (t - p.lastWave < WAVE_GAP) return;
       const soldiers = ents.some(x => !x.dead && x.pid === pid && x.kind === "unit" && !x.free && !x.militia && !x.merc);
-      const met = w => w.when === "timer" ? t >= w.at : w.when === "castle_hit" ? p.castleHitT > 0 : w.when === "castle_low" ? c.hp / c.maxhp < .5 : w.when === "hero_dies" ? p.heroDied : w.when === "army_dead" ? t > 5 && !soldiers : w.when === "enemy_hero" ? p.enemyHeroDied : anyUlt;
+      const met = w => w.when === "timer" ? t >= w.at : w.when === "castle_hit" ? p.castleHitT > 0 || (p.waveV4 && enemyAtGate(pid)) : w.when === "castle_low" ? c.hp / c.maxhp < .5 : w.when === "hero_dies" ? p.heroDied : w.when === "army_dead" ? t > 5 && !soldiers : w.when === "enemy_hero" ? p.enemyHeroDied : anyUlt;
       let i = p.waves.findIndex(w => !w.done && met(w));
       if (i < 0 && p.waveV3) i = p.waves.findIndex((w, k) => !w.done && t >= WAVE_FORCE_AT[k]); // waves v3: each wave's own deadline
       else if (i < 0 && p.waves.filter(w => w.done).length < Math.floor(t / WAVE_FORCE_EVERY)) i = p.waves.findIndex(w => !w.done);
@@ -1268,5 +1272,5 @@ function runBattle(plans, seed, opts = {}) {
     : []; if (!BV) order.forEach(a => order.forEach(b => { if (a < b && P[a].alive && P[b].alive && P[a].pacts.has(b)) pairsEnd.push(a + "|" + b); }));
   const trapsUsed = traps.filter(tr => tr.used && !tr.ranger).map(tr => tr.pid + "|" + Math.round(tr.y - .5) + "," + Math.round(tr.x - .5));
   order.forEach(pid => { const c = P[pid].castle; st(pid).castleEnd = c && c.maxhp ? Math.max(0, c.hp) / c.maxhp : 0; });
-  return { stats: ST, twist: TW, ...(sdOn() ? { sudden: { t0: sd.t0, go: sd.go, ...(SD2 ? { r: sd.r } : {}) } } : {}), ...(V3 && !opts.duel ? { waves: true, ...(plans.some(p => p.waveV2) ? { waveV2: true } : {}) } : {}), me: mePid, feudsNew: [...feudsNew], trapsUsed, awards, ultCast: order.filter(pid => P[pid].ultCast), lvl: lvlOut, rapierEnd: rapierOwner ? rapierHolder : null, rapier: rapierOwner && rapierHolder && rapierHolder !== rapierOwner ? { from: rapierOwner, to: rapierHolder } : null, pairsEnd, team: teamWin, wallMeta: walls.map(w => ({ pid: w.pid, x: w.x0, y: w.y0, dir: w.dir, maxhp: w.maxhp, tier: w.tier, ...(w.born != null ? { born: w.born } : {}) })), tel, frames, events, cdlog, xplog, logs, hl, ranks: RANKS, meta: meta(), results, order, colors: Object.fromEntries(order.map(p => [p, P[p].color])), traps, duration: t };
+  return { stats: ST, twist: TW, ...(sdOn() ? { sudden: { t0: sd.t0, go: sd.go, ...(SD2 ? { r: sd.r } : {}) } } : {}), ...(V3 && !opts.duel ? { waves: true, ...(plans.some(p => p.waveV2) ? { waveV2: true, ...(order.some(pid => (P[pid].waves || []).some(w => w.rush === false)) ? { waveRushOff: Object.fromEntries(order.map(pid => [pid, (P[pid].waves || []).map((w, i) => (w.rush === false ? i : -1)).filter(i => i >= 0)]).filter(([, a]) => a.length)) } : {}) } : {}) } : {}), me: mePid, feudsNew: [...feudsNew], trapsUsed, awards, ultCast: order.filter(pid => P[pid].ultCast), lvl: lvlOut, rapierEnd: rapierOwner ? rapierHolder : null, rapier: rapierOwner && rapierHolder && rapierHolder !== rapierOwner ? { from: rapierOwner, to: rapierHolder } : null, pairsEnd, team: teamWin, wallMeta: walls.map(w => ({ pid: w.pid, x: w.x0, y: w.y0, dir: w.dir, maxhp: w.maxhp, tier: w.tier, ...(w.born != null ? { born: w.born } : {}) })), tel, frames, events, cdlog, xplog, logs, hl, ranks: RANKS, meta: meta(), results, order, colors: Object.fromEntries(order.map(p => [p, P[p].color])), traps, duration: t };
 }

@@ -3,6 +3,16 @@
 // Each item is [icon, headline, one short sentence]. Players who have not seen the newest id get the pop-up the next time they plan;
 // the id is remembered on their device, so changing the id is all it takes to show it again. Keep about 8 to 14 items.
 const RELEASES = [
+  { id: "1.16", title: "What's new in v1.16", sub: "Choose which waves rush out, and a smarter castle trigger", items: [
+    ["☑️", "Rush boxes", "Each wave has a box: ticked, it rushes out when your castle drops below 75%, 50% or 25% health."],
+    ["🔒", "Keep a wave back", "Untick a wave to save it for its own trigger or deadline."],
+    ["➡️", "Earliest ticked first", "In an emergency, the earliest ticked wave still at home goes first."],
+    ["🚩", "Enemies at my castle", "The castle trigger now fires when enemies come within 3 tiles of your castle."],
+    ["⚡", "A head start", "Your wave usually gets out a few seconds before the first blow lands."],
+    ["🎯", "Long range covered", "If a catapult or archer hits from further away, the first hit still sends the wave."],
+    ["🔁", "Nothing to redo", "Waves set to \"Castle attacked\" switch to the new trigger by themselves."],
+    ["🕰", "Honest stopwatch", "In the replay, the stopwatch only turns red when a ticked wave is waiting."],
+  ] },
   { id: "1.15", title: "What's new in v1.15", sub: "Every wave now has its own deadline", items: [
     ["⏱", "Wave deadlines", "Wave 1 goes by 0:45, Wave 2 by 1:30 and Wave 3 by 2:15."],
     ["🎯", "Or sooner", "A wave goes earlier if its trigger happens first."],

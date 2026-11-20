@@ -24,6 +24,7 @@ practice games always stamp all of them (`js/sim/plans.js`).
 | 20 Nov | `allyV2` | Alliances v2: groups need every member's yes, winning allies share the top places by castle health, the lone wolf, bots in friends wars join the diplomacy |
 | 20 Nov | `waveV2` | Emergency waves: as the castle drops below 75%, 50% and 25% health, the next unsent wave rushes out, at least 10 seconds apart; waves lose their own orders, defend the castle area first, then follow the army plan |
 | 20 Nov | `waveV3` | Wave deadlines: each wave goes by its own time (0:45, 1:30, 2:15) instead of one forced out each minute |
+| 20 Nov | `waveV4` | "Castle attacked" wave trigger becomes "enemies reach my castle" (within 3 tiles, or the first hit) |
 | 21 Nov | `placeV2` | Placement: one point per place, last scores 1, plus 2 for winning |
 
 ## The war
@@ -124,6 +125,9 @@ practice games always stamp all of them (`js/sim/plans.js`).
 - Waves: each wave goes when its own trigger is met, at least 30 seconds after the last, and one is forced out at each
   minute mark. From 20 Nov (`waveV2`) a castle in trouble also sends waves early: each time it drops below 75%, 50%
   and 25% health, the next unsent wave rushes out, at least 10 seconds after the last wave, so they never all leave at once.
+  Each wave has a Rush box on the Deploy tab, ticked unless the lord unticks it. Only ticked waves rush out, the earliest
+  first; unticked waves still go by their trigger or deadline. Below its k-th mark a castle counts every wave already out
+  (however it went), so unticking never makes the other waves rush sooner. Older plans count as ticked.
   Also from 20 Nov waves have no orders of their own: every wave first fights enemies within 8 tiles of its castle,
   and once that area has been clear for 4 seconds (or the castle has fallen) it follows the lord's army plan.
   From 20 Nov (`waveV3`) there is no forced wave each minute. Instead each wave has its own deadline: Wave 1 0:45,
@@ -131,6 +135,10 @@ practice games always stamp all of them (`js/sim/plans.js`).
   least 30 seconds after the last wave). The Deploy tab shows each deadline as a stopwatch badge beside the trigger chip,
   and only offers set times earlier than it. The triggers: a set time (20s to 2:30), castle attacked, castle below half,
   hero dies, all soldiers dead, an enemy hero dies, any ultimate cast.
+  From 20 Nov (`waveV4`) "castle attacked" becomes **"When enemies reach my castle"**: an enemy soldier, hero, summon or
+  siege engine within 3 tiles of the castle and nearer to it than to its own castle, or the castle's first hit, whichever
+  comes first. Towers never count. Plans that chose "castle attacked" get the new trigger with no change needed. (Castles
+  can be under 7 tiles apart, so a wider area fired in the first seconds as armies marched past.)
 - In the replay each castle shows one bar per wave: bright yellow when ready, dim amber while waiting out the gap since
   the last wave, dark grey once gone. A small stopwatch beside them drains over the wait; it turns red when an emergency
   wave is due and will rush out as soon as the wait ends.

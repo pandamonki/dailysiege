@@ -11,7 +11,7 @@ const tough = loadSim(); tough.run("BAL.castleHp *= 1000"); // castles that cann
 const WAR = (game, day) => `(() => { const L = seatLayout(8, true), CL = ["warrior", "mage", "rogue", "archer", "shaman"], ids = [...Array(8)].map((_, k) => "g${game}b" + k);
   const plans = ids.map((uid, i) => { const zone = zoneFor(L.castles[i], L.N, L.castles, L.v2), lvl = Math.min(15, 1 + 2 * (${day} - 1));
     const p = lordBotPlan({ uid, cls: CL[(${game} + i) % 5], i, ids, L, zone, dayNo: ${day}, lvl, v2: true, v3: true, fair: true, pick: true, ranks: {}, sup: true, defV2: true });
-    return Object.assign(p, { pid: uid, name: uid, color: "#2f5fa8", castle: L.castles[i], level: lvl, trapV2: true, sdV2: true, wallV2: true, engV2: true, ordV2: true, skV2: true, waveV2: true, waveV3: true, itemV5: true, itemV6: true, shellV2: true, survV1: true, siegeV1: true }); });
+    return Object.assign(p, { pid: uid, name: uid, color: "#2f5fa8", castle: L.castles[i], level: lvl, trapV2: true, sdV2: true, wallV2: true, engV2: true, ordV2: true, skV2: true, waveV2: true, waveV3: true, waveV4: true, itemV5: true, itemV6: true, shellV2: true, survV1: true, siegeV1: true }); });
   const opts = { N: L.N, ultV2: true, balV2: true, balV3: true, fairV1: true, pickV1: true, balV4: true, suddenV1: true, treesV1: true, heroV3: true, dayNo: ${day} };
   const full = runBattle(JSON.parse(JSON.stringify(plans)), 4000 + ${game} * 31 + ${day}, { ...opts, fast: false }), fast = runBattle(JSON.parse(JSON.stringify(plans)), 4000 + ${game} * 31 + ${day}, { ...opts, fast: true });
   return { full, fast, plans, L }; })()`;
@@ -136,7 +136,7 @@ test("Alliances v2: allies who win together share the top places, and only the l
     const r = JSON.parse(sim.run(`(() => { const L = seatLayout(5, true), CL = ["warrior", "mage", "rogue", "archer", "shaman"], ids = [...Array(5)].map((_, k) => "w${g}b" + k);
       const plans = ids.map((uid, i) => { const zone = zoneFor(L.castles[i], L.N, L.castles, L.v2), lvl = 7;
         const p = lordBotPlan({ uid, cls: CL[(${g} + i) % 5], i, ids, L, zone, dayNo: 4, lvl, v2: true, v3: true, fair: true, pick: true, ranks: {}, sup: true, defV2: true });
-        return Object.assign(p, { pid: uid, name: uid, color: "#2f5fa8", castle: L.castles[i], level: lvl, trapV2: true, sdV2: true, wallV2: true, engV2: true, ordV2: true, skV2: true, waveV2: true, waveV3: true, itemV5: true, itemV6: true, shellV2: true, survV1: true, siegeV1: true, allyV2: true, pacts: [] }); });
+        return Object.assign(p, { pid: uid, name: uid, color: "#2f5fa8", castle: L.castles[i], level: lvl, trapV2: true, sdV2: true, wallV2: true, engV2: true, ordV2: true, skV2: true, waveV2: true, waveV3: true, waveV4: true, itemV5: true, itemV6: true, shellV2: true, survV1: true, siegeV1: true, allyV2: true, pacts: [] }); });
       const link = (a, b) => { plans[a].pacts.push(ids[b]); plans[b].pacts.push(ids[a]); };
       const go = () => runBattle(JSON.parse(JSON.stringify(plans)), 900 + ${g}, { N: L.N, balV2: true, balV3: true, ultV2: true, fairV1: true, pickV1: true, balV4: true, suddenV1: true, treesV1: true, heroV3: true, dayNo: 4, fast: true });
       link(0, 1); link(3, 4); const a = go(); // two pairs: lord 2 is the only lord outside a pact, against 4 allied lords
@@ -209,4 +209,34 @@ test("wave deadlines: each wave goes by its own deadline (plus the gap after the
     r.lords.forEach((x, n) => r.at.forEach((dl, k) => { const due = dl + r.gap + 1, end = Math.min(x.fell ?? 1e9, r.sd ?? 1e9, r.dur);
       if (end > due) assert.ok(x.w.some(([i, t]) => i === k && t <= due), `game ${g} lord ${n}: wave ${k + 1} not out by ${due}s (waves ${JSON.stringify(x.w)})`); }));
   }
+});
+
+test("the rush box: only ticked waves rush out in an emergency; unticked waves still go by trigger or deadline", () => {
+  const RUN = (g, d, off) => JSON.parse(sim.run(`(() => { const { plans, L } = ${WAR(g, d)}; plans.forEach(p => (p.waves = p.waves || [{}, {}, {}]).forEach((w, i) => { if (${JSON.stringify(off)}.includes(i)) w.rush = false; }));
+    const res = runBattle(JSON.parse(JSON.stringify(plans)), 4242, { N: L.N, ultV2: true, balV2: true, balV3: true, fairV1: true, pickV1: true, balV4: true, suddenV1: true, treesV1: true, heroV3: true, dayNo: ${d}, fast: false });
+    return JSON.stringify({ at: WAVE_FORCE_AT, gap: WAVE_GAP, sd: res.sudden ? res.sudden.t0 : null, dur: res.duration, off: res.waveRushOff || {}, w: res.events.filter(e => e.ty === "wave").map(e => [e.pid, e.i, e.t, !!e.rush]),
+      lords: res.results.map(x => ({ pid: x.pid, fell: x.fellAt })) }); })()`));
+  let rushes = 0;
+  for (const [g, d] of GAMES) {
+    const none = RUN(g, d, [0, 1, 2]); // every box unticked: nobody rushes, and every wave still goes by its deadline
+    assert.equal(none.w.filter(x => x[3]).length, 0, `game ${g}: a wave rushed with every box unticked`);
+    assert.equal(Object.keys(none.off).length, none.lords.length, `game ${g}: the replay is not told which waves may not rush`);
+    none.lords.forEach(L => none.at.forEach((dl, k) => { const due = dl + none.gap + 1, end = Math.min(L.fell ?? 1e9, none.sd ?? 1e9, none.dur);
+      if (end > due) assert.ok(none.w.some(([p, i, t]) => p === L.pid && i === k && t <= due), `game ${g}: unticked wave ${k + 1} missed its deadline`); }));
+    const first = RUN(g, d, [0]); // Wave 1 unticked: emergencies use Waves 2 and 3 only
+    first.w.filter(x => x[3]).forEach(([, i]) => { rushes++; assert.notEqual(i, 0, `game ${g}: unticked Wave 1 rushed`); });
+  }
+  assert.ok(rushes > 0, "no emergency happened, so the check proved nothing");
+});
+
+test("the 'enemies reach my castle' trigger never fires later than the old 'castle attacked' one, and never in the opening second", () => {
+  let earlier = 0;
+  for (const [g, d] of GAMES) {
+    const r = JSON.parse(sim.run(`(() => { const { plans, L } = ${WAR(g, d)}; const RUN = v4 => { const ps = JSON.parse(JSON.stringify(plans)); ps.forEach(p => { p.waveV4 = v4; p.waves = [{ when: "castle_hit", units: (p.waves && p.waves[0] && p.waves[0].units) || [] }, { when: "timer", at: 150 }, { when: "timer", at: 150 }]; });
+        const res = runBattle(ps, 9090, { N: L.N, ultV2: true, balV2: true, balV3: true, fairV1: true, pickV1: true, balV4: true, suddenV1: true, treesV1: true, heroV3: true, dayNo: ${d}, fast: false });
+        return Object.fromEntries(res.events.filter(e => e.ty === "wave" && e.i === 0 && !e.rush).map(e => [e.pid, e.t])); };
+      return JSON.stringify({ now: RUN(true), old: RUN(false) }); })()`));
+    Object.entries(r.now).forEach(([pid, t]) => { assert.ok(t >= 1, `game ${g}: fired at ${t}s`); if (r.old[pid] != null && r.old[pid] < 40) { assert.ok(t <= r.old[pid] + .01, `game ${g}: new trigger ${t}s, old ${r.old[pid]}s`); if (t < r.old[pid]) earlier++; } });
+  }
+  assert.ok(earlier > 0, "the new trigger never fired before the castle was hit");
 });
