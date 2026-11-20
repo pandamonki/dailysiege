@@ -196,9 +196,9 @@ function targetSlotsHTML() {
 }
 // the board as it stands: rank, points and a target button for every lord (used on the Strategy tab and the seal screen)
 function targetBoardHTML(compact) {
-  const rows = boardRows().sort((a, b) => b.pts - a.pts || b.lvl - a.lvl), hostile = S.lists.hostile, full = hostile.length >= PICK_MAX;
+  const rows = boardRows().sort((a, b) => b.pts - a.pts || b.lvl - a.lvl), hostile = S.lists.hostile, full = hostile.length >= PICK_MAX, bty = bountyMap();
   return `<div class="tboard${compact ? " compact" : ""}">${rows.map((r, i) => { const n = hostile.indexOf(r.id) + 1;
-    return `<div class="tbr${r.me ? " me" : ""}${n ? " on" : ""}"><span class="rk">${i + 1}</span><i class="sw" style="background:${r.color}"></i><span class="nm"><b>${esc(r.me ? "You" : r.name)}</b>${r.cls && !compact ? `<small>${esc(CLASSES[r.cls].name)}</small>` : ""}</span><span class="pt">${r.pts} pts</span>
+    return `<div class="tbr${r.me ? " me" : ""}${n ? " on" : ""}"><span class="rk">${i + 1}</span><i class="sw" style="background:${r.color}"></i><span class="nm"><b>${esc(r.me ? "You" : r.name)}</b>${bty[r.id] ? ` <i class="tag bty" title="Bounty: gold for killing their hero or taking their castle">♛${bty[r.id]}g</i>` : ""}${r.cls && !compact ? `<small>${esc(CLASSES[r.cls].name)}</small>` : ""}</span><span class="pt">${r.pts} pts</span>
       ${r.me ? `<span class="tbt self">—</span>` : n ? `<button class="tbt on" data-act="lmove" data-v="neutral" data-k="${r.id}" ${dis()} aria-label="Stop attacking ${esc(r.name)}">Target ${n} ✕</button>` : `<button class="tbt" data-act="lmove" data-v="hostile" data-k="${r.id}" ${full ? "disabled" : dis()}>Target</button>`}</div>`; }).join("")}</div>`;
 }
 function pickTab() {
@@ -208,7 +208,7 @@ function pickTab() {
       <p class="muted">Pick ${PICK_MAX} targets each day, in order, before you seal: lords, roles, or a mix. Your army marches on them one by one and fights anything it meets on the way. After that it goes for ${fallbackLabel()}.</p>
       ${targetSlotsHTML()}
       ${roles.length ? `<h4 class="minih">Or target a role, worked out in battle</h4><div class="chips">${roles.map(chip).join("")}</div>` : ""}
-      <h4 class="minih">Lords, by today's leaderboard</h4>${targetBoardHTML()}</div>
+      <h4 class="minih">Lords, by today's leaderboard</h4>${Object.keys(bountyMap()).length ? `<p class="muted">♛ marks a bounty: extra gold for killing that lord's hero or taking their castle.</p>` : ""}${targetBoardHTML()}</div>
     ${strategyTabRest(S.strategy)}`;
 }
 function fallbackLabel() {

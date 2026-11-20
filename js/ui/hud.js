@@ -50,10 +50,12 @@ function renderCamp() {
   const bd = b.querySelector(".cbadge"); bd.hidden = !n; bd.textContent = n;
   const tb = document.getElementById("twistbtn"), tp = document.getElementById("twistpop"); let tw = null;
   try { tw = S && mode === "plan" && contractsOn() ? myTwist() : null; } catch (e) {}
-  if (tb) { tb.hidden = !tw; tb.classList.toggle("fresh", !!tw && (S.twSeen !== planDayKey() || cxOpen())); }
+  if (tb) { tb.hidden = !tw; tb.classList.toggle("fresh", !!tw && (S.twSeen !== planDayKey() || cxOpen() || (!S.locked && !targetsReady()))); }
   if (tp) { tp.hidden = !(tw && TWIST_POP); if (!tp.hidden) { const c = contractParse(S.contract), lk = S.locked || (isLive() && LIVE.readOnly);
-    const cx = myOffers().length ? `<button class="btn small ${c || lk ? "wood" : "wax"} twcx" data-act="opentoday">${c ? `Contract: ${esc(c.c.name)}` : lk ? "Today's contracts" : "Pick today's contract"}</button>` : "";
-    tp.innerHTML = `${twistStripHTML()}${cx}<small class="muted">Tap anywhere to close</small>`; } }
+    const cx = myOffers().length ? `<button class="btn small ${c || lk ? "wood" : "wax"}" data-act="opentoday">${c ? `Contract: ${esc(c.c.name)}` : lk ? "Contracts" : "Pick a contract"}</button>` : "";
+    const tg = S.lists.hostile.length, tgOk = targetsReady();
+    const tgb = `<button class="btn small ${tgOk || lk ? "wood" : "wax"}" data-act="sealgo" data-v="strategy">${tgOk ? `Targets ✓` : `Pick targets (${tg}/${TARGETS_NEED()})`}</button>`;
+    tp.innerHTML = `${twistStripHTML(false, true)}<div class="twcx">${cx}${tgb}</div><small class="muted">Tap anywhere to close</small>`; } }
 }
 // a day of this war that passed without a battle (the server counted fewer than two lords): said plainly instead of leaving lords waiting
 function skippedNote() { if (!isLive() || !LIVE.config) return ""; const ck = liveClock(), sk = (LIVE.config.skipDays || []).filter(d => d === addDays(ck.planDay, -1) && !LIVE.battles[d]); // only the last day, so it never crowds out the usual hints for long

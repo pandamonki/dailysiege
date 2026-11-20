@@ -177,7 +177,8 @@ html, body { overflow: hidden; overscroll-behavior: none; }
 #twistpop { position: absolute; top: 50px; left: 50%; transform: translateX(-50%); width: min(300px, calc(100% - 24px)); z-index: 7; padding: 8px; border-radius: 12px; border: 2px solid var(--wood-dark); background: var(--parchment); color: var(--ink); box-shadow: 0 6px 18px rgba(0,0,0,.45); }
 #twistpop[hidden] { display: none; }
 #twistpop .twstrip { margin: 0; background: none; padding: 0; }
-#twistpop .twcx { display: block; width: 100%; margin-top: 8px; }
+#twistpop .twcx { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
+#twistpop .twcx > :only-child { grid-column: 1 / -1; }
 #twistpop > small { display: block; text-align: center; margin-top: 4px; font-size: 11px; }
 /* replay: every lord's castle down the left edge, crossed out when it falls */
 #ctrack { position: absolute; left: 6px; top: 50%; transform: translateY(-50%); z-index: 5; display: flex; flex-direction: column; gap: 4px; padding: 5px 4px; border-radius: 10px; background: rgba(20,12,6,.55); pointer-events: none; }

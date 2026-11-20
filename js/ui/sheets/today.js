@@ -21,9 +21,9 @@ const cxOpen = () => { try { return !!(S && !S.locked && !(isLive() && LIVE.read
 
 // Orders > Contracts: the offers for the next battle and the twist, sized to fit one screen (rehearsal is on the seal screen)
 const twistArt = id => ART.twist[id && TWISTS[id] ? id : "calm"];
-function twistStripHTML(compact) {
+function twistStripHTML(compact, next) { // next: worded for the coming battle (the ! above the map)
   const tw = myTwist(), ti = twistInfo(tw), nx = tomorrowTwist();
-  return `<div class="twstrip">${artImg(twistArt(tw), "twart")}<div><small>Today's twist</small><b>${esc(ti.name)}</b><span>${esc(ti.note)}</span>${!compact && nx !== undefined ? `<em>Tomorrow: ${esc(twistInfo(nx).name)}. ${esc(twistInfo(nx).note)}</em>` : !compact ? `<em>The last day of the war.</em>` : ""}</div></div>`;
+  return `<div class="twstrip">${artImg(twistArt(tw), "twart")}<div><small>${next ? "Next battle's twist" : "Today's twist"}</small><b>${esc(ti.name)}</b><span>${esc(ti.note)}</span>${!compact && nx !== undefined ? `<em>Tomorrow: ${esc(twistInfo(nx).name)}. ${esc(twistInfo(nx).note)}</em>` : !compact ? `<em>The last day of the war.</em>` : ""}</div></div>`;
 }
 function contractsTab() {
   const tw = myTwist(), offers = myOffers(), lk = S.locked || (isLive() && LIVE.readOnly), on = contractsOn();

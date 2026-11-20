@@ -101,6 +101,7 @@ practice games always stamp all of them (`js/sim/plans.js`).
 ## Orders (from 20 Nov)
 
 - **Targets:** up to 3 lords a day, in order. The army goes after the first one still standing.
+  The target list marks the top three on the board with their bounty (♛ and the gold for killing their hero or taking their castle).
 - **Army plan:** what the army does once the fight in front of it is over.
   - Conquest (default): their hero, then their army, then their castle, then the next lord.
   - Hero hunt: hero to hero; soldiers only when they are in the way.
@@ -162,8 +163,8 @@ practice games always stamp all of them (`js/sim/plans.js`).
 - Plus 1 per enemy hero killed and 3 per castle destroyed. Placing, kills and castles count 1.5 times on days 5, 6 and 7
   (`DAY_WEIGHT_PICK`). Then 1 for surviving with your hero alive, 3 for a betrayal whose bomb goes off, and contracts
   (2 easy, 3 hard, 5 against a rival; doubled on a Glory day).
-- Contracts add points and gold. Take one from Orders > Contracts, or from the ! above the map: it shows today's twist and
-  a button to the contracts, and it pulses until a contract is taken. The contract board no longer pops up by itself.
+- Contracts add points and gold. Take one from Orders > Contracts, or from the ! above the map: it shows the next battle's
+  twist with buttons to the contracts and to the day's targets, and it pulses until a contract and the targets are picked. The contract board no longer pops up by itself.
 
 ## Battle report
 

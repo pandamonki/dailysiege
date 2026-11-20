@@ -41,7 +41,7 @@ const GUIDE = [
       keys: ["The camera follows your hero. Tap any soldier or hero to see it", "Play, pause and change speed, or open the report and stats"] },
   ] },
   { id: "rivals", name: "Allies", pages: [
-    { t: "Contracts and twists", p: "Each day you can take one contract for bonus points and gold. Each day also has a twist. Tap the ! above the map to see it, with a button to pick your contract.", shot: "contracts",
+    { t: "Contracts and twists", p: "Each day you can take one contract for bonus points and gold. Each day also has a twist. Tap the ! above the map to see it, with buttons to pick your contract and targets.", shot: "contracts",
       keys: ["Today's three contracts: easy, hard and one aimed at a rival", "Today's twist"] },
     { sel: '#cmdbar [data-act="openorders"][data-v="alli"]', act: ["openorders", "alli"], ring: "#sheet .sec", t: "Allies", p: "Nobody is allied at the start. You invite a lord, they answer the next day, and the alliance starts at the next battle. Up to 3 lords can ally, and everyone must agree. Allies left standing share the top places." },
     { t: "Sending an invitation", p: "Open Allies and tap Invite next to a lord.", shot: "invite",

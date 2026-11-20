@@ -179,7 +179,8 @@ function abilLines(k, r) {
 const PATCHES = [
   { v: "Report first after a battle", date: "20 Nov", fixes: [], balance: [], changes: [
     "After a battle, its report (with Watch and Highlights for the replay) now opens before any other pop-up. The mercenary camp and other pop-ups follow once it is closed.",
-    "The contract board no longer pops up by itself. The ! above the map now shows today's twist with a button to pick your contract, and it pulses until you take one.",
+    "The contract board no longer pops up by itself. The ! above the map now shows the next battle's twist with buttons to pick your contract and your targets, and it pulses until both are done.",
+    "The targets list shows the bounty (♛) on each of the top three lords, so you can see who is worth extra gold.",
   ] },
   { v: "Ending, deleting and leaving wars", date: "20 Nov", fixes: [], balance: [], changes: [
     "Hosts can end the war under way early (Host tools): the hall of fame is taken from the battles fought so far, then registration for the next war opens. Nothing is deleted.",
