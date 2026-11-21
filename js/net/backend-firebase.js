@@ -355,6 +355,7 @@
     warswitch: v => { DS.switchWar(v); },
     warjoin: () => { DS.joinWar((document.getElementById("warlink") || {}).value); },
     warnew: () => { DS.newWar(); },
+    warclean: () => { DS.cleanWars(); },
     testskip: () => { const day = liveClock().planDay; if (LIVE.testArm !== day) { LIVE.testArm = day; return; } LIVE.testArm = null; DS.testSkip(); },
     dsbots: v => { DS.setBots(v); },
     dsendwar: () => { if (LIVE.endArm) { LIVE.endArm = false; DS.endWarNow(); } else LIVE.endArm = true; redraw(); if (typeof renderLobby === "function") renderLobby(); },
@@ -485,6 +486,12 @@
     if (!DS.isHost() || DS.busy) return; DS.busy = "delwar"; const g = G; g.deleting = true; redraw(); // stop all saving into this war while it goes
     try { await callServer("deleteGame", { gameId: g.id, confirm: "DELETE" }); DS.busy = null; say("The war was deleted."); DS.leaveGame(); return; } catch (e) { say("Couldn't delete the war: " + errMsg(e)); }
     g.deleting = false; DS.busy = null; redraw();
+  };
+  DS.cleanWars = async () => { // a host removes broken leftover wars (and dead entries on their list)
+    if (!DS.user || DS.busy) return; DS.busy = "clean"; redraw();
+    try { const r = await callServer("cleanBrokenWars", {}); say(r.removed ? `Cleared ${r.removed} broken war${r.removed === 1 ? "" : "s"}.` : "No broken wars found."); await listWars(); }
+    catch (e) { say("Couldn't clean up: " + errMsg(e)); }
+    DS.busy = null; redraw();
   };
   DS.leaveWar = async gid => { // a lord leaves a war: this one, or another in their list
     gid = gid || DS.gameId; if (!DS.user || !gid || DS.busy) return; DS.busy = "leave"; redraw();

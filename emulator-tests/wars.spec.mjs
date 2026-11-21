@@ -75,3 +75,18 @@ test("deleting: the game and everything in it is gone, the invite is dead, and i
   assert.equal((await db.collection("games").doc("leave-game-1").get()).exists, true, "other games are untouched");
   await assert.rejects(wars.deleteGame(db, "del-game-1"), /not found/);
 });
+
+test("cleaning up: a broken war (no host membership, no battles) goes, real wars and other hosts' wars stay", async () => {
+  await makeGame("clean-real-1");
+  await db.collection("games").doc("clean-broken-1").set({ host: "hostX", war: 1, planDay: "2026-11-22", startDate: "2026-11-18" }); // half-empty: no members, no battles
+  await db.collection("games").doc("clean-broken-1").collection("players").doc("hostX").set({ nick: "x" });
+  await db.collection("games").doc("clean-other-1").set({ host: "someoneElse", war: 1 });
+  await db.collection("users").doc("hostX").set({ games: ["clean-broken-1", "clean-real-1"], gameId: "clean-broken-1" });
+  assert.deepEqual(await wars.cleanBrokenWars(db, "hostX"), { removed: 1 });
+  assert.equal((await db.collection("games").doc("clean-broken-1").get()).exists, false);
+  assert.equal((await db.collection("games").doc("clean-broken-1").collection("players").get()).size, 0);
+  assert.equal((await db.collection("games").doc("clean-other-1").get()).exists, true, "another host's war is untouched");
+  assert.equal((await db.collection("games").doc("clean-real-1").get()).exists, true);
+  assert.deepEqual(await wars.cleanBrokenWars(db, "host1"), { removed: 0 }, "a real war is never removed");
+  const u = (await db.collection("users").doc("hostX").get()).data(); assert.deepEqual(u.games, ["clean-real-1"]); assert.equal(u.gameId, undefined);
+});

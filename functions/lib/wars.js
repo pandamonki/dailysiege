@@ -4,6 +4,7 @@
 //                                and registration for the next war opens, exactly as after a 7th battle (resolve.js endWar)
 //   deleteGame(db, gameId)       the host deletes the game: every war, battle, order and lord in it, its invite links, and the
 //                                game from every account's list. Cannot be undone.
+//   cleanBrokenWars(db, uid)     removes leftover broken wars this host owns (no host membership, no battles)
 //   leaveGame(db, gameId, uid)   a lord leaves: their castle is out from the next battle (as when the host removes a lord, but
 //                                not barred), every account tied to that castle loses access, and the game is off their lists. The host cannot leave their own game.
 const { FieldValue } = require("firebase-admin/firestore");
@@ -64,4 +65,23 @@ async function leaveGame(db, gameId, uid) {
   return { left: true };
 }
 
-module.exports = { endWarNow, deleteGame, leaveGame };
+// Clean up broken wars the host has left behind (for instance a war that came back half-empty after a delete): a game this account hosts
+// whose host has no membership in it and that has no battles. Real wars always have the host as a member, so they are never touched.
+async function cleanBrokenWars(db, uid) {
+  const mine = await db.collection("games").where("host", "==", uid).get(), removed = [];
+  for (const d of mine.docs) {
+    const [mem, bt] = await Promise.all([d.ref.collection("members").doc(uid).get(), d.ref.collection("battles").limit(1).get()]);
+    if (mem.exists || !bt.empty) continue;
+    await deleteGame(db, d.id); removed.push(d.id);
+  }
+  const u = await db.collection("users").doc(uid).get(); // and any entries on this account's list that point to a game that is gone
+  if (u.exists) {
+    const alive = async gid => (await db.collection("games").doc(gid).get()).exists, gone = [];
+    for (const gid of u.get("games") || []) if (!(await alive(gid))) gone.push(gid);
+    const cur = u.get("gameId"), curGone = cur && !(await alive(cur));
+    if (gone.length || curGone) await u.ref.update({ ...(gone.length ? { games: FieldValue.arrayRemove(...gone) } : {}), ...(curGone ? { gameId: FieldValue.delete() } : {}) });
+  }
+  return { removed: removed.length };
+}
+
+module.exports = { endWarNow, deleteGame, leaveGame, cleanBrokenWars };

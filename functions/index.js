@@ -6,6 +6,7 @@
 //   setBots             the host fills or empties seats with bot lords while registration is open
 //   reassignSeat        the host gives a lord's castle to that lord's new account (lost phone)
 //   endWarNow           the host ends the war under way early (hall of fame from the battles so far; registration reopens)
+//   cleanBrokenWars     removes leftover broken wars the caller hosts
 //   deleteGame          the host deletes the whole game, for everyone (cannot be undone)
 //   leaveGame           a lord leaves a game: out from the next battle, and off their list
 const { onDocumentWritten } = require("firebase-functions/v2/firestore");
@@ -18,7 +19,7 @@ const { clockFor } = require("./lib/clock");
 const { getMessaging } = require("firebase-admin/messaging");
 const { resolveDue, resolveAllDue, explainNotDue, fightMissing, reassignSeat, remindAll, testMode, diagnose, lockRoster } = require("./lib/resolve");
 const { setBots } = require("./lib/bots");
-const { endWarNow, deleteGame, leaveGame } = require("./lib/wars");
+const { endWarNow, deleteGame, leaveGame, cleanBrokenWars } = require("./lib/wars");
 const { REGION, TRIGGER_REGION } = require("./region");
 
 initializeApp();
@@ -110,6 +111,11 @@ exports.deleteGame = onCall(async request => {
   const gameId = await hostOnly(request);
   if (!request.data || request.data.confirm !== "DELETE") throw new HttpsError("invalid-argument", "Deleting needs confirming.");
   return deleteGame(getFirestore(), gameId).catch(warErr("deleteGame", gameId));
+});
+
+exports.cleanBrokenWars = onCall(async request => {
+  if (!request.auth) throw new HttpsError("unauthenticated", "Sign in first.");
+  return cleanBrokenWars(getFirestore(), request.auth.uid).catch(warErr("cleanBrokenWars", request.auth.uid));
 });
 
 exports.leaveGame = onCall(async request => {
