@@ -44,6 +44,7 @@ async function deleteGame(db, gameId) {
   for (const uid of accounts) await unlist(db, uid, gameId).catch(e => console.error("Daily Siege: unlisting a deleted game failed", gameId, uid, e));
   const b = db.batch(); invites.forEach(d => b.delete(d.ref)); await b.commit(); // the links stop working first
   await db.recursiveDelete(ref); // the game and everything under it: members, players and their private state and orders, battles, reports
+  await new Promise(r => setTimeout(r, 1500)); await db.recursiveDelete(ref); // sweep again: a device still open on the war may have saved something in the meantime
   return { deleted: true, accounts: accounts.length };
 }
 

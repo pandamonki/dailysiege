@@ -251,6 +251,7 @@
     return copy(pub);
   }
   async function writeMine(doc) { // split the game's single player record into public profile, private state and today's orders
+    if (!G || G.deleting) return; // the war is being deleted: never write into it (that would bring it back half-empty)
     const g = G, cur = g.pubs[meId()] || null, pub = publicFrom(doc, cur), state = doc.state ? copy(doc.state) : null;
     const from = (g.game && g.game.planDay) || null, orders = Object.entries(doc.plans || {}).filter(([k, p]) => p && (!from || k >= from)).map(([k, p]) => [k, Object.assign(copy(p), { war: curWar() })]).filter(([k, p]) => !same(p, g.orders[k]));
     const commit = withOrders => { const b = fs.batch(); let n = 0;
@@ -268,6 +269,7 @@
   }
   const mineNow = () => playersView(G)[meId()] || {};
   async function writeConfig(next) {
+    if (!G || G.deleting) return;
     const g = G, cur = g.game;
     if (!cur) return createGame(next);
     const patch = {}, del = fb.firestore.FieldValue.delete();
@@ -480,9 +482,9 @@
     DS.busy = null; redraw();
   };
   DS.deleteWar = async () => { // the host deletes the whole game for everyone
-    if (!DS.isHost() || DS.busy) return; DS.busy = "delwar"; redraw();
-    try { await callServer("deleteGame", { gameId: G.id, confirm: "DELETE" }); DS.busy = null; say("The war was deleted."); DS.leaveGame(); return; } catch (e) { say("Couldn't delete the war: " + errMsg(e)); }
-    DS.busy = null; redraw();
+    if (!DS.isHost() || DS.busy) return; DS.busy = "delwar"; const g = G; g.deleting = true; redraw(); // stop all saving into this war while it goes
+    try { await callServer("deleteGame", { gameId: g.id, confirm: "DELETE" }); DS.busy = null; say("The war was deleted."); DS.leaveGame(); return; } catch (e) { say("Couldn't delete the war: " + errMsg(e)); }
+    g.deleting = false; DS.busy = null; redraw();
   };
   DS.leaveWar = async gid => { // a lord leaves a war: this one, or another in their list
     gid = gid || DS.gameId; if (!DS.user || !gid || DS.busy) return; DS.busy = "leave"; redraw();
