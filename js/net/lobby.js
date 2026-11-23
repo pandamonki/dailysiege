@@ -308,6 +308,7 @@ function bcheckSheet() {
 
 // the screen shown once registration closes: every lord in the war and the hero they brought
 function lineupSheet() {
+  if (!isLive() || !LIVE.config) return head(null, "The war begins", "") + `<div class="body"><div class="row" style="justify-content:center"><button class="btn wax" data-act="close">Close</button></div></div>`;
   const ck = liveClock(), roster = rosterFor(ck.week);
   const rows = roster.map(p => { const cls = p.state && p.state.cls && CLASSES[p.state.cls], me = p.uid === LIVE.uid, col = teamColour(p.uid);
     return `<div class="lcard${me ? " me" : ""}" style="--c:${col}"><img class="lban" alt="" src="${bannerURL((p.state && p.state.banner) || defaultBanner(), col, 40, 54)}"><span><b>${esc(me ? (MY_NAME === "You" ? "You" : MY_NAME + " \u00b7 you") : nameOf(p.uid))}</b><small>${cls ? esc(cls.name) + " hero" : "Hero unknown"}</small></span>${cls ? `<img alt="" width="44" height="44" src="${spriteURL("c-" + p.state.cls)}">` : ""}</div>`; }).join("");
