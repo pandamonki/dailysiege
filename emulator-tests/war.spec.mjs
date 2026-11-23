@@ -151,7 +151,7 @@ test("the game's rules held across the war", () => {
   // alliances and mercenaries happened, and the last day ends them all
   assert.ok(days.some(d => battles[d].pairs.length > 0), "some alliance formed");
   assert.ok(days.slice(3).some(d => Object.keys(battles[d].mercs).length > 0), "some mercenaries were hired from day 4");
-  assert.equal(battles[days[6]].pairs.length, 0);
+  if (days[6] < "2026-11-23") assert.equal(battles[days[6]].pairs.length, 0); // from 23 Nov (finV2) day 7 pacts hold until one alliance is left
   // from day 2 the standings going in are recorded, so the bounty on the top three is the same in the official fight and in replays
   assert.deepEqual(battles[days[0]].inputs.ranks, {}); assert.equal(Object.keys(battles[days[3]].inputs.ranks).length, SEATS);
   assert.ok(days.slice(0, 3).every(d => Object.keys(battles[d].mercs).length === 0));

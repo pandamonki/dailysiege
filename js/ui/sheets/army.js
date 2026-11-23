@@ -3,7 +3,7 @@
 function unitSheet(id) {
   const u = findUnit(id), b = UNITS[u.type], s = unitStats(u);
   return head(spriteURL(u.type), `${b.name}`, `Level ${u.lvl} · ${esc(b.note)}`) + `<div class="body">
-    ${typeInfo(UNIT_TYPES[u.type], "unit")}<div class="stats"><span>${IC.hp(Math.round(s.hp * (u.hp ?? 1)) + "/" + s.hp)}</span><span>${IC.atk(s.atk)}</span><span>Level <b>${u.lvl}</b>/3</span></div>
+    ${typeInfo(UNIT_TYPES[u.type], "unit")}<div class="stats"><span>${IC.hp(Math.round(s.hp * (u.hp ?? 1)) + "/" + s.hp)}</span><span>${unitPower(u.type, s.atk)}</span><span>Level <b>${u.lvl}</b>/3</span></div>
     <div class="row">
       <button class="btn" data-act="move" data-v="${u.id}" ${dis()}>Move</button>
       <button class="btn" data-act="bench" data-v="${u.id}" ${dis()}>Back to barracks</button>

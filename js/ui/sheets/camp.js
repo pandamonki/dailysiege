@@ -8,7 +8,7 @@ const mercV2Now = () => (typeof isLive === "function" && isLive() ? mercV2For(li
 const mercDayNo = () => (isLive() ? liveClock().dayNo : DAY);
 const mercToday = () => mercRoster(mercDayNo(), mercWait);
 const mercSeenKey = () => (mercV2Now() ? "d" + planDayKey() : isLive() ? liveClock().week : "p"); // the headliner camp announces itself every day, the old camp once a week
-const mercDue = () => !!S && !S.lobbyPrep && mercOpen() && S.mercSeen !== mercSeenKey();
+const mercDue = () => !!S && !S.lobbyPrep && mercOpen() && !S.mercIntro && S.mercSeen !== mercSeenKey(); // the camp pops up once, the day it is introduced; after that the Noticeboard and the Camp button announce each new headliner
 // the amount shown on the bid stepper: what you are about to bid (your bid, else the group's minimum, until you change it)
 const mercDraft = k => { const d = sheet && sheet.bidDraft && sheet.bidDraft[k]; if (d != null) return d; const b = (S.bids || {})[k]; return b && b.day === planDayKey() ? b.gold : mercMin(k, mercV2Now()); };
 function bidSummary() { const b = myBids(); return b.length ? b.map(([id, x]) => `${MERCS[id].name} ${x.gold}g`).join(", ") : ""; }

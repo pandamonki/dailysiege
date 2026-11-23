@@ -47,7 +47,7 @@ function syncLobby() {
   if (inLobby()) { if (!S || !S.lobbyPrep) enterLive(); LIVE.wasLobby = true; renderLobby(); return; }
   if (el) el.remove();
   if (LIVE.wasLobby) { LIVE.wasLobby = false;
-    if (isLive() && S && S.lobbyPrep) { rollover(); refreshLiveWorld(); sanitizePlace(); home(); queueSave(true); sheet = null; render(); toast("Registration is closed. The war begins: Day 1 planning is open!"); } }
+    if (isLive() && S && S.lobbyPrep) { rollover(); refreshLiveWorld(); sanitizePlace(); home(); queueSave(true); sheet = { type: "lineup" }; render(); toast("Registration is closed. The war begins: Day 1 planning is open!"); } }
 }
 function hostUid() { const c = LIVE.config || {}; if (c.host) return c.host; const l = lobbyLords()[0]; return l ? l[0] : null; }
 function hostLabel() { const h = hostUid(); return !h ? "your host" : h === LIVE.uid ? "you" : nameOf(h); }
@@ -259,7 +259,7 @@ function warsSheet() {
       ${W.some(w => w.host !== "you") ? `<p class="muted">Leaving takes the war off your list, and your castle is out from the next battle. You can't rejoin it. Wars you host are ended or deleted from Host tools.</p>` : ""}` : `<p class="muted">You're not in a war yet.</p>`}
     <div class="sec"><h3>Join another war</h3><p class="muted">Paste the invite link your host sent you. Your other wars carry on; switch between them here.</p>
       <div class="lrow"><input id="warlink" autocomplete="off" placeholder="https://…/join/…" value="${draft}"><button class="btn wax small" data-act="warjoin">Join</button></div></div>
-    ${window.DS && DS.canHost ? `<div class="sec"><h3>Host another war</h3><p class="muted">Set up a new war with its own invite link. Your current wars keep running.</p><button class="btn wood" data-act="warnew">Set up a new war</button></div><div class="sec"><h3>Tidy up</h3><p class="muted">Removes broken leftover wars you host, such as one that came back empty after a delete. Real wars are never touched.</p><button class="btn small" data-act="warclean" ${DS.busy ? "disabled" : ""}>${DS.busy === "clean" ? "Cleaning…" : "Clean up broken wars"}</button></div>` : ""}
+    <div class="sec"><h3>Diagnostics</h3><p class="muted">If something goes wrong, copy this report and send it to the developer. It holds no passwords.</p><button class="btn small" data-act="diagcopy">Copy diagnostics</button></div>${window.DS && DS.canHost ? `<div class="sec"><h3>Host another war</h3><p class="muted">Set up a new war with its own invite link. Your current wars keep running.</p><button class="btn wood" data-act="warnew">Set up a new war</button></div><div class="sec"><h3>Tidy up</h3><p class="muted">Removes broken leftover wars you host, such as one that came back empty after a delete. Real wars are never touched.</p><button class="btn small" data-act="warclean" ${DS.busy ? "disabled" : ""}>${DS.busy === "clean" ? "Cleaning…" : "Clean up broken wars"}</button></div>` : ""}
     <div class="row"><button class="btn" data-act="open" data-v="title">← Back</button></div></div>`;
 }
 function accountLine() { return window.DS && DS.user ? `<p class="muted">Signed in as ${esc(DS.accountLabel())} · <button class="btn small" data-act="dssignout">Sign out</button></p>` : ""; }
@@ -304,4 +304,13 @@ function bcheckSheet() {
     <div class="sec"><h3>The server</h3>${rows(srv)}${(d.players || []).length ? `<details><summary>Lords (${d.players.length})</summary><ul class="bclist">${d.players.map(x => `<li>${esc(x)}</li>`).join("")}</ul></details>` : ""}</div>
     <p class="muted">Send a screenshot of this screen, or tap Copy and paste it, so the problem can be found.</p>
     <div class="row"><button class="btn wax" data-act="bcopy">Copy</button><button class="btn" data-act="close">Close</button></div></div>`;
+}
+
+// the screen shown once registration closes: every lord in the war and the hero they brought
+function lineupSheet() {
+  if (!isLive() || !LIVE.config) return head(null, "The war begins", "") + `<div class="body"><div class="row" style="justify-content:center"><button class="btn wax" data-act="close">Close</button></div></div>`;
+  const ck = liveClock(), roster = rosterFor(ck.week);
+  const rows = roster.map(p => { const cls = p.state && p.state.cls && CLASSES[p.state.cls], me = p.uid === LIVE.uid, col = teamColour(p.uid);
+    return `<div class="lcard${me ? " me" : ""}" style="--c:${col}"><img class="lban" alt="" src="${bannerURL((p.state && p.state.banner) || defaultBanner(), col, 40, 54)}"><span><b>${esc(me ? (MY_NAME === "You" ? "You" : MY_NAME + " \u00b7 you") : nameOf(p.uid))}</b><small>${cls ? esc(cls.name) + " hero" : "Hero unknown"}</small></span>${cls ? `<img alt="" width="44" height="44" src="${spriteURL("c-" + p.state.cls)}">` : ""}</div>`; }).join("");
+  return head(null, "The war begins", "Every lord and the hero they bring") + `<div class="body"><p class="muted">Registration is closed. These are the heroes marching into the war. Day 1 planning is open: set up your castle and seal your orders.</p><div class="lcards">${rows}</div><div class="row" style="justify-content:center"><button class="btn wax" data-act="close">To battle plans</button></div></div>`;
 }

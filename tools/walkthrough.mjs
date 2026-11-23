@@ -23,6 +23,7 @@ for (const name of engines) {
   const dev = process.env.WT_DEVICE ? pw.devices[process.env.WT_DEVICE] : null; if (process.env.WT_DEVICE && !dev) throw new Error(`no device called ${process.env.WT_DEVICE}`);
   const { defaultBrowserType: _bt, ...devOpts } = dev || {}; // eslint-disable-line no-unused-vars -- the engine is chosen on the command line
   const page = await browser.newPage(dev ? devOpts : { viewport: { width: 390, height: 844 } });
+  await page.addInitScript(() => { try { if (!localStorage.getItem("lastbanner.pday")) localStorage.setItem("lastbanner.pday", "5"); } catch { /* storage unavailable */ } }); // the practice day follows the real weekday: pin it so the walkthrough plays the same game every day
   const errors = [], results = [];
   page.on("pageerror", e => errors.push(String(e && e.stack || e).split("\n").slice(0, 3).join(" | ")));
   page.on("response", res => { if (res.status() >= 400 && res.url().startsWith(base)) errors.push(res.status() + " " + res.url()); });
@@ -115,9 +116,9 @@ for (const name of engines) {
   await step("watch the battle to the end", async () => { await tap('#sheet [data-act="battle"]'); await page.waitForTimeout(500); const go = page.locator('text=To battle'); if (await go.count()) await go.first().click();
     await page.waitForFunction(() => mode === "replay" && replay && replay.res, null, { timeout: 20000 });
     await js(() => { replay.playing = false; replay.time = 20; updateReplayUI(); });
-    if ((await page.locator("#ctrack .ctl").count()) !== (await js(() => replay.res.order.length))) throw new Error("the top bar does not show every lord");
-    const other = page.locator("#ctrack .ctl:not(.me) .cth").first(); await other.click(); await page.waitForTimeout(150);
-    if (!(await js(() => replay.follow != null && replay.auto && replay.res.meta[replay.follow].kind === "champ"))) throw new Error("tapping a hero did not follow it");
+    if ((await page.locator("#ctrack .ct").count()) !== (await js(() => replay.res.order.length))) throw new Error("the side strip does not show every lord");
+    await js(() => { const k = replay.res.meta.findIndex(m => m.kind === "champ" && m.pid !== replay.res.me); A.rfollow(String(k)); }); await page.waitForTimeout(150);
+    if (!(await js(() => replay.follow != null && replay.auto && replay.res.meta[replay.follow].kind === "champ"))) throw new Error("following a hero did not work");
     if (!(await page.locator("#ud .ud-fol").count())) throw new Error("the unit panel has no Follow");
     await js(() => { replay.time = Math.max(0, replay.res.duration - 2); replay.playing = true; }); // skip to the last seconds
     await page.waitForFunction(() => !replay || replay.done, null, { timeout: 30000 }); });

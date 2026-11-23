@@ -62,7 +62,7 @@ practice games always stamp all of them (`js/sim/plans.js`).
 - **Every soldier starts every battle at full health.** (Older text that says fallen soldiers come back at half health
   is out of date.)
 - One soldier on the Deploy tab's first field square is the castle guard and stays home.
-- Types: Footman, Bowman, Cleric, Raider, Knight, Battle Mage, Dwarven Sniper, and the siege engines Battering Ram,
+- A Cleric has no attack: its stat shows how much it heals each pulse. Types: Footman, Bowman, Cleric, Raider, Knight, Battle Mage, Dwarven Sniper, and the siege engines Battering Ram,
   Powder Cart and Catapult (`js/config/units.js`). Mercenary groups can be hired by sealed bid from day 4.
 
 ## Heroes
@@ -127,7 +127,8 @@ practice games always stamp all of them (`js/sim/plans.js`).
   carried from the last battle) can only be picked when the pact is set to Betray or Break; setting it back to Keep takes them
   off the list.
   The target list shows the bounty on the top three of the board beside their Target button (♛ +gold for killing their hero or
-  taking their castle), and their castles wear a crown on the map: gold for 1st, silver for 2nd, bronze for 3rd.
+  taking their castle), and their castles wear a crown on the map: gold for 1st, silver for 2nd, bronze for 3rd. There are no
+  crowns or bounties until the board has points, so none on day 1: they appear after day 1's battle.
 - **Army plan:** what the army does once the fight in front of it is over.
   - Conquest (default): their hero, then their army, then their castle, then the next lord.
   - Hero hunt: hero to hero; soldiers only when they are in the way.
@@ -193,20 +194,29 @@ practice games always stamp all of them (`js/sim/plans.js`).
   (`DAY_WEIGHT_PICK`). Then 1 for surviving with your hero alive, 3 for a betrayal whose bomb goes off, and contracts
   (2 easy, 3 hard, 5 against a rival; doubled on a Glory day).
 - Contracts add points and gold. Take one from Orders > Contracts, or from the Daily Noticeboard (the ! above the map): it
-  shows the next battle's twist, the alliance changes at the last battle, and buttons to the contracts and the day's targets.
+  shows the day's effect (the twist; day 1 shows a welcome to the war instead), the alliance changes at the last battle, any
+  new mercenary headliner, and the Daily Contract and Daily Target buttons.
   It pulses each new day, and until a contract and a target are picked. The contract board no longer pops up by itself.
 
 ## Screens
 
-- Replay: every lord's castle and hero sit along the top of the map with health bars. Tap a hero to have the camera follow it, a
-  castle to look at it; the unit panel has a Follow button for any hero, and the home button goes back to your own hero.
+- Wars page > Diagnostics: Copy diagnostics gathers the war's clock, my saved orders per day, my army and the orders each battle used,
+  plus recent errors, for sending to the developer (`js/net/diag.js`).
+
+- Once registration closes, a screen shows every lord in the war and the hero they brought, before day 1 planning.
+- The shop bubble beside the map is black so the shop art blends into it. The hero's quick buttons no longer include Orders
+  (use the Orders button on the bottom bar).
+
+- Replay: a small castle for every lord sits down the left edge of the map, crossed out when it falls. The unit panel has a
+  Follow button for any hero, and the home button goes back to your own hero.
 - Pre-battle screen: each alliance's lords sit side by side under one ALLIANCE box, biggest alliance first, then lords alone.
 - Victory screen: allies who win together all appear; the winner's allies whose castles fell float beside them as ghosts (a wispy tail
   instead of legs), cheering them on; a winner
   who betrayed an ally that battle has the betrayed hero face down at their feet with a dagger in its back.
 - Gift (day 2 and 5): Roll spins three reels, Stop slows them onto the three items (fixed in advance), the first is picked; one
   description and one Pick button below.
-- Mercenary camp: + and − set the amount (from the minimum) and Place bid submits it; tiles show your bid.
+- Mercenary camp: it pops up once, on day 4 when it is introduced. After that each new headliner is announced on the Daily
+  Noticeboard, and the Camp button pulses until the camp is opened (the headliner is tagged New today). + and − set the amount (from the minimum) and Place bid submits it; tiles show your bid.
 - Level 3 towers fire big, bright shots in the replay: a flash on the tower and a projectile and burst for each type.
 - Map strip: the hero has Abilities, Items, Stats (a drawn bar-chart icon), Move and Orders; the castle has Upgrade (its hint names the next tier and cost, like the other upgrade buttons), Base and Army; a
   wall has only Sell. Tapping the castle again does nothing more.

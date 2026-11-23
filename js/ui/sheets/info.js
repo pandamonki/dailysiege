@@ -36,7 +36,7 @@ function boardRows() { // [{id,name,color,banner,cls,lvl,pts,last}]
 let BOUNTY_CACHE = { k: null, m: {} };
 function bountyMap() { // gold on the heads of the top three: base + board position + hero level x 5
   const k = gameMode + "|" + (isLive() ? Object.keys(LIVE.battles).length : DAY) + "|" + RIVALS.length;
-  if (BOUNTY_CACHE.k !== k) { const rows = boardRows().sort((a, b) => b.pts - a.pts || b.lvl - a.lvl), n = rows.length, m = {}, rk = {}; rows.forEach((r, i) => { if (i < 3 && n > 3) { m[r.id] = bountyGold(i + 1, r.lvl); rk[r.id] = i + 1; } }); BOUNTY_CACHE = { k, m, rk }; }
+  if (BOUNTY_CACHE.k !== k) { const rows = boardRows().sort((a, b) => b.pts - a.pts || b.lvl - a.lvl), n = rows.length, m = {}, rk = {}; const anyPts = rows.some(r => r.pts > 0); rows.forEach((r, i) => { if (i < 3 && n > 3 && anyPts) { m[r.id] = bountyGold(i + 1, r.lvl); rk[r.id] = i + 1; } }); BOUNTY_CACHE = { k, m, rk }; }
   return BOUNTY_CACHE.m;
 }
 const bountyRank = id => { bountyMap(); return BOUNTY_CACHE.rk[id] || 0; }; // 1, 2 or 3 for the lords with a bounty (gold, silver, bronze crown), else 0
@@ -209,6 +209,16 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "v1.20: noticeboard, camp and tidy-ups", date: "23 Nov", fixes: [
+    "The replay's castle tracker is back to a small castle for every lord down the left edge, instead of a wide bar of heroes and castles across the top.",
+    "No crowns or bounties on day 1, while the leaderboard is empty. They are set after day 1's battle.",
+    "A Cleric shows its heal amount instead of an attack it doesn't have.",
+  ], balance: [], changes: [
+    "The Daily Noticeboard buttons are now Daily Contract and Daily Target. It shows the day's effect, and day 1 shows a welcome to the war instead.",
+    "The Mercenary Camp pops up only once, on day 4. After that each new headliner is announced on the Daily Noticeboard and in the camp.",
+    "When registration closes a screen shows every lord and their hero.",
+    "The hero's quick buttons no longer include Orders. The shop bubble is black.",
+  ] },
   { v: "v1.19: the crowning, the last alliance and faster heroes", date: "20 Nov", fixes: [
     "After the war's last battle the day 7 report opens first (Watch and Highlights work from it); closing it goes on to the war results.",
   ], balance: [
