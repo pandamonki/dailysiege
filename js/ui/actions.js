@@ -5,6 +5,7 @@ let idc = Date.now(), PLACE_Q = [], TWIST_POP = false; // PLACE_Q: more pieces t
 const A = {
   open: (v, k) => open(v, k),
   close: () => close(),
+  diagcopy: () => { diagCopy(); },
   battle: () => { if (isLive() && (LIVE.readOnly || !S)) return; sheet = null; startBattle(); }, // in the friends game this is a rehearsal: my orders against what I know of my rivals
   testmenu: () => { sheet = { type: "title", tab: "test" }; },
   testgo: () => { if (gameMode !== "practice") setMode("practice"); sheet = null; render(); },

@@ -200,6 +200,9 @@ practice games always stamp all of them (`js/sim/plans.js`).
 
 ## Screens
 
+- Wars page > Diagnostics: Copy diagnostics gathers the war's clock, my saved orders per day, my army and the orders each battle used,
+  plus recent errors, for sending to the developer (`js/net/diag.js`).
+
 - Once registration closes, a screen shows every lord in the war and the hero they brought, before day 1 planning.
 - The shop bubble beside the map is black so the shop art blends into it. The hero's quick buttons no longer include Orders
   (use the Orders button on the bottom bar).

@@ -132,6 +132,7 @@ async function writeMine(full) {
   } catch (e) {
     if (e && e.code === "invalid_argument") { LIVE.readOnly = true; toast("You can watch this game but not play. Ask the host to add you as an Editor."); }
     else toast("Couldn't save your orders. They'll retry on your next change.");
+    diagLog("save-failed", (e && (e.code || e.message)) || e);
   }
   saving = false;
   if (saveAgain) { saveAgain = false; writeMine(false); }
