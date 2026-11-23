@@ -3,6 +3,17 @@
 // Each item is [icon, headline, one short sentence]. Players who have not seen the newest id get the pop-up the next time they plan;
 // the id is remembered on their device, so changing the id is all it takes to show it again. Keep about 8 to 14 items.
 const RELEASES = [
+  { id: "1.20", title: "What's new in v1.20", sub: "A tidier noticeboard, a calmer camp and a clearer start", items: [
+    ["📜", "Daily Contract and Daily Target", "The Daily Noticeboard buttons now say exactly what they pick."],
+    ["🌤", "The day's effect", "The noticeboard shows each day's effect. Day 1 just welcomes you to the war."],
+    ["⚔", "Camp pops up once", "The Mercenary Camp opens by itself only on day 4. After that, new headliners are announced on the noticeboard."],
+    ["👑", "No crowns on day 1", "Crowns and bounties start after day 1's battle, once there is a leaderboard."],
+    ["🦸", "Heroes on show", "When registration closes, a screen shows every lord and the hero they brought."],
+    ["🏰", "Castle tracker back", "The replay's castle tracker is a slim strip down the side again, so it blocks less of the map."],
+    ["✚", "Clerics heal", "A Cleric now shows its heal amount instead of an attack stat."],
+    ["🛒", "Black shop bubble", "The shop icon blends into its bubble."],
+    ["🧹", "Tidier hero buttons", "The Orders button is gone from the hero's quick buttons. Use the bottom bar."],
+  ] },
   { id: "1.19", title: "What's new in v1.19", sub: "A grand war finale, a last-day twist and faster heroes", items: [
     ["👑", "The crowning", "When a war ends: trumpets, a podium, the court bowing, and bronze, silver and gold crowns for the top three."],
     ["🎉", "A winner's party", "Confetti and a victory taunt for the champion, who dances while second and third shake their heads."],

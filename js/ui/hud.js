@@ -59,9 +59,10 @@ function noticeboardHTML(tw) {
   const lk = S.locked || (isLive() && LIVE.readOnly), c = contractParse(S.contract);
   let ally = ""; try { const ev = lastAllyChanges(); if (ev) { const { byId, me } = knownAlliances(), line = allyLineFn(byId, me);
     ally = `<div class="nbsec"><small>Alliances since the last battle</small>${ev.length ? `<ul>${ev.map(e => `<li>${line(e)}</li>`).join("")}</ul>` : `<p class="muted">No changes.</p>`}</div>`; } } catch (e) {}
-  const cx = myOffers().length ? `<button class="btn small ${c || lk ? "wood" : "wax"}" data-act="opentoday">${c ? `Contract: ${esc(c.c.name)}` : lk ? "Contracts" : "Pick a contract"}</button>` : "";
-  const tgOk = targetsReady(), tgb = `<button class="btn small ${tgOk || lk ? "wood" : "wax"}" data-act="sealgo" data-v="strategy">${tgOk ? `Targets ✓ (${S.lists.hostile.length})` : "Pick targets"}</button>`;
-  return `<h3 class="nbh">Daily Noticeboard</h3>${tw ? twistStripHTML(false, true) : ""}${ally}<div class="twcx">${cx}${tgb}</div><small class="muted">Tap anywhere to close</small>`;
+  const cx = myOffers().length ? `<button class="btn small ${c || lk ? "wood" : "wax"}" data-act="opentoday">${c ? `Daily Contract: ${esc(c.c.name)}` : "Daily Contract"}</button>` : "";
+  const tgOk = targetsReady(), tgb = `<button class="btn small ${tgOk || lk ? "wood" : "wax"}" data-act="sealgo" data-v="strategy">${tgOk ? `Daily Target ✓ (${S.lists.hostile.length})` : "Daily Target"}</button>`;
+  const day1 = (isLive() ? liveClock().dayNo : DAY) <= 1, eff = day1 ? `<p class="nbwel"><b>Welcome to the first day of the war!</b> Set your castle, raise your army and seal your orders. The daily effects begin tomorrow.</p>` : tw ? twistStripHTML(false, true) : "";
+  return `<h3 class="nbh">Daily Noticeboard</h3>${eff}${ally}<div class="twcx">${cx}${tgb}</div><small class="muted">Tap anywhere to close</small>`;
 }
 // a day of this war that passed without a battle (the server counted fewer than two lords): said plainly instead of leaving lords waiting
 function skippedNote() { if (!isLive() || !LIVE.config) return ""; const ck = liveClock(), sk = (LIVE.config.skipDays || []).filter(d => d === addDays(ck.planDay, -1) && !LIVE.battles[d]); // only the last day, so it never crowds out the usual hints for long

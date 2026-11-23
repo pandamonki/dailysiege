@@ -149,7 +149,7 @@ function unseenBattle() {
 // screens the battle report may replace when the result lands while one is open (an earlier pop-up, or orders left open
 // overnight); the replaced pop-ups are marked unseen again so they follow the report
 const AUTO_POPS = ["spin", "invites", "camp", "seal", "orders"];
-function yieldToReport() { if (!sheet) return; if (sheet.type === "camp" && S) S.mercSeen = null; if (sheet.type === "invites" && S) S.invSeen = null; }
+function yieldToReport() { if (!sheet) return; if (sheet.type === "camp" && S) { S.mercSeen = null; S.mercIntro = false; } if (sheet.type === "invites" && S) S.invSeen = null; }
 function liveChanged() {
   if (typeof WAR_VIEW !== "undefined" && WAR_VIEW) return; // a finished war's battle is on screen: catch up when it closes
   syncLobby();

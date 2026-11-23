@@ -3,7 +3,10 @@
 const IC = {
   hp: n => `<span class="ic" title="Health"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 11 1.1 6A3.1 3.1 0 0 1 6 2.1 3.1 3.1 0 0 1 10.9 6z" fill="#d6403a" stroke="#6e1410" stroke-width=".7" stroke-linejoin="round"/><path d="M3 4.4c.3-.8 1-1.1 1.6-.9" stroke="#ffb0a8" stroke-width=".8" fill="none" stroke-linecap="round"/></svg><b>${n}</b></span>`,
   atk: n => `<span class="ic" title="Attack"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M9.8 1.4 10.6 1.4 10.6 2.2 5 8 3.8 6.8z" fill="#dfe6ec" stroke="#3b4650" stroke-width=".7" stroke-linejoin="round"/><path d="M2.4 6.6l3 3M2.6 9.4 1.2 10.8" stroke="#8a5a2b" stroke-width="1.3" stroke-linecap="round"/></svg><b>${n}</b></span>`,
+  heal: n => `<span class="ic" title="Heal per pulse"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 1.5h3v3h3v3h-3v3h-3v-3h-3v-3h3z" fill="#4fbf5a" stroke="#1d5a24" stroke-width=".7" stroke-linejoin="round"/></svg><b>${n}</b></span>`,
 };
+// a soldier's attack stat; a cleric has no attack, so it shows how much it heals instead
+const unitPower = (type, atk) => type === "healer" ? IC.heal(((typeof UNIT_SIM !== "undefined" && UNIT_SIM.healer) || {}).heal || 30) : IC.atk(atk);
 
 // Painted icons reused across screens (shop, skills and UI art), so every tile has a picture rather than a glyph
 const SK = n => `icons/skills/${n}.webp`;
