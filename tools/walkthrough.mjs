@@ -23,7 +23,7 @@ for (const name of engines) {
   const dev = process.env.WT_DEVICE ? pw.devices[process.env.WT_DEVICE] : null; if (process.env.WT_DEVICE && !dev) throw new Error(`no device called ${process.env.WT_DEVICE}`);
   const { defaultBrowserType: _bt, ...devOpts } = dev || {}; // eslint-disable-line no-unused-vars -- the engine is chosen on the command line
   const page = await browser.newPage(dev ? devOpts : { viewport: { width: 390, height: 844 } });
-  await page.addInitScript(() => { try { if (!localStorage.getItem("lastbanner.pday")) localStorage.setItem("lastbanner.pday", "5"); } catch (e) {} }); // the practice day follows the real weekday: pin it so the walkthrough plays the same game every day
+  await page.addInitScript(() => { try { if (!localStorage.getItem("lastbanner.pday")) localStorage.setItem("lastbanner.pday", "5"); } catch { /* storage unavailable */ } }); // the practice day follows the real weekday: pin it so the walkthrough plays the same game every day
   const errors = [], results = [];
   page.on("pageerror", e => errors.push(String(e && e.stack || e).split("\n").slice(0, 3).join(" | ")));
   page.on("response", res => { if (res.status() >= 400 && res.url().startsWith(base)) errors.push(res.status() + " " + res.url()); });
