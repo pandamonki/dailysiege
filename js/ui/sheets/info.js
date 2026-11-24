@@ -212,7 +212,7 @@ const PATCHES = [
   { v: "v1.21: highlights, betrayals and disbanding", date: "24 Nov", fixes: [
     "Highlights: only ultimates that killed a hero or 4 or more soldiers are shown, the best three, each framed to hold the hero and the impact zone, and every clip is at least 4 seconds. The reel ends on the Final placings.",
     "The betrayal banner now pauses the replay, names the betrayer and the betrayed in their colours, and cuts to the hero planting the bomb and the castle blowing up before returning to your camera.",
-    "The muster screen shows each alliance as a coloured side with the lone lords below; in the replay allied castles are linked by a dashed team-colour line and grouped in the side strip.",
+    "The muster screen shows each alliance as a coloured side with the lone lords below; in the replay allied castles are grouped in the side strip, outlined in their team colour.",
   ], balance: [
     "From the 25 Nov battle (breakV2): disbanding an alliance takes effect from the next battle. You still fight together tonight, a disbanded ally cannot be targeted, and only a betrayal turns on an ally mid-fight.",
   ], changes: [
