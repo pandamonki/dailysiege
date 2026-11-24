@@ -36,10 +36,10 @@ const TREES = {
     { id: "berserker", name: "Berserker", role: "Burst", nodes: [
       TN("Cleave", "passive", "warrior_a1", "Basic attacks also hit up to 2 enemies within 1.2 tiles of the target for {0}% damage.", [[20, 28, 35]]),
       TN("Executioner's Whirlwind", "trigger", "warrior_a1", "Spin for 2s, hitting everything within 1.6 tiles for {0} + attack x.4 every .5s. A hero kill refunds half the cooldown. Casts itself when an enemy within 1.5 tiles is under 30% health.", [[22, 30, 38]], ["#d9d9e0", "slash", "arc", 1.8], 10),
-      TN("Battle Hunger", "passive", "warrior_a1", "Each kill heals you for {0}% of your max health.", [[3, 5]]),
+      TN("Bloodthirst", "passive", "warrior_a1", "Each kill heals you for {0}% of your max health.", [[3, 5]]),
       TN("Blood Rage", "synergy", "warrior_a3", "Kills by you or your melee soldiers within 3 tiles give +{0}% attack speed, up to 6 stacks. Stacks fade 6s after the last kill.", [[4, 5]]),
       TN("Unstoppable", "passive", "warrior_a3", "Slows and roots on you last 40% shorter. Below 30% health you deal +15% damage."),
-      TN("Wrath Unbound", "ultimate", "warrior_ult", "For 7s you cannot drop below 1 health, ignore crowd control, attack 50% faster, and your attacks splash and stun soldiers. Heals 25% on cast. Casts itself below 40% health with 3+ enemies within 2.5 tiles.", [], ["#ffe082", "sunburst", "pillar", 1.4]),
+      TN("Avatar of War", "ultimate", "warrior_ult", "For 7s you cannot drop below 1 health, ignore crowd control, attack 50% faster, and your attacks splash and stun soldiers. Heals 25% on cast. Casts itself below 40% health with 3+ enemies within 2.5 tiles.", [], ["#ffe082", "sunburst", "pillar", 1.4]),
     ] },
     { id: "tactician", name: "Tactician", role: "Army", nodes: [
       TN("Marching Cadence", "passive", "warrior_a3", "Your soldiers move +{0}% faster until their first attack or first hit taken.", [[8, 14, 20]]),
@@ -60,17 +60,17 @@ const TREES = {
       TN("Chrono-Storm", "ultimate", "shaman_ult", "A storm of radius 3 for 6s that pulls enemies in, burns them and cuts their attack speed by 40%. Casts itself when 5+ enemies are packed near a point within 5 tiles.", [], ["#9fd0ff", "bolt", "nova", 3, "t"]),
     ] },
     { id: "totemic", name: "Totemic", role: "Field control", nodes: [
-      TN("Hearth Totem", "passive", "shaman_a1", "Every 14s in combat, plants a totem for 7s. Allies within 2.5 tiles take {0}% less physical damage and heal {1} a second.", [[6, 9, 12], [5, 8, 11]], ["#7fe08a", "totem", "heal", 2.5]),
-      TN("Root Totem", "trigger", "shaman_a1", "Roots up to {0} nearby enemies for {1}s (half on heroes and siege). Casts itself when an enemy hero or siege engine comes within 3 tiles.", [[2, 3, 3], [2, 2.5, 3]], ["#8a5a2b", "totem", "ring", 3], 16),
-      TN("Ward Totem", "passive", "shaman_a1", "Each Hearth Totem blocks the first {0} enemy hero attacks aimed at allies inside it.", [[1, 2]]),
-      TN("War Drum Pulse", "synergy", "shaman_a3", "While a Hearth Totem stands, every 4s your soldiers within 4 tiles gain +{0}% attack speed for 4s, and melee soldiers +{1}% damage to castles and walls.", [[12, 20], [10, 15]]),
-      TN("Healing Spring", "passive", "shaman_a1", "Hearth Totem heals 50% more."),
+      TN("Grounding Totem", "passive", "shaman_a1", "Every 14s in combat, plants a totem for 7s. Allies within 2.5 tiles take {0}% less physical damage and heal {1} a second.", [[6, 9, 12], [5, 8, 11]], ["#7fe08a", "totem", "heal", 2.5]),
+      TN("Earthgrab Totem", "trigger", "shaman_a1", "Roots up to {0} nearby enemies for {1}s (half on heroes and siege). Casts itself when an enemy hero or siege engine comes within 3 tiles.", [[2, 3, 3], [2, 2.5, 3]], ["#8a5a2b", "totem", "ring", 3], 16),
+      TN("Ward Totem", "passive", "shaman_a1", "Each Grounding Totem blocks the first {0} enemy hero attacks aimed at allies inside it.", [[1, 2]]),
+      TN("War Drum Pulse", "synergy", "shaman_a3", "While a Grounding Totem stands, every 4s your soldiers within 4 tiles gain +{0}% attack speed for 4s, and melee soldiers +{1}% damage to castles and walls.", [[12, 20], [10, 15]]),
+      TN("Healing Spring", "passive", "shaman_a1", "Grounding Totem heals 50% more."),
       TN("Totem of the Titan", "ultimate", "shaman_a1", "A relic for 8s that soaks 40% of damage aimed at nearby allies and pulses stuns. Casts itself when 4+ allies and 3+ enemies are within 3 tiles.", [], ["#7fe08a", "totem", "heal", 3]),
     ] },
     { id: "ancestral", name: "Ancestral", role: "Drain", nodes: [
       TN("Spirit Leech", "passive", "shaman_a3", "Heal for {0}% of spell and ability damage dealt.", [[6, 10, 15]]),
       TN("Ancestral Grasp", "trigger", "shaman_a3", "Drains the 3 nearest enemies within 3 tiles for {0} + attack x.5 and shields you for the total for 6s. Casts itself below 50% health.", [[50, 65, 80]], ["#c9a0ff", "blood", "swirl", 3], 18),
-      TN("Frog Curse", "trigger", "shaman_a3", "An enemy hero deals 20% less damage for {0}s. Casts itself when an enemy hero within 3 tiles drops below 50% health.", [[2, 3]], ["#c9a0ff", "skull", "swirl", 1.2, "t"], 18),
+      TN("Hex", "trigger", "shaman_a3", "An enemy hero deals 20% less damage for {0}s. Casts itself when an enemy hero within 3 tiles drops below 50% health.", [[2, 3]], ["#c9a0ff", "skull", "swirl", 1.2, "t"], 18),
       TN("Last Stand Offering", "synergy", "shaman_a3", "While your castle or you are below 35% health, Spirit Leech is x{0} and you attack {1}% faster.", [[1.5, 2], [15, 25]]),
       TN("Blood Pact", "passive", "shaman_a3", "Your soldiers within 4 tiles heal for 10% of the damage they deal."),
       TN("Spirit Wolves", "ultimate", "shaman_ult", "Stuns enemies within 2 tiles and summons 3 wolves for 30s that heal you as they bite. Casts itself when an enemy hero is within 4 tiles, or 4+ enemies are packed together.", [], ["#c9d6e3", "wolf", "swirl", 2.2]),
@@ -82,13 +82,13 @@ const TREES = {
       TN("Ambush", "trigger", "rogue_a1", "Your first strike from stealth hits for ({0} + attack) x1.8 and stuns for {1}s (half on heroes).", [[40, 60, 80], [1, 1.25, 1.5]], ["#d34a4a", "dagger", "arc", 1, "t"]),
       TN("Smoke Bomb", "trigger", "rogue_a2", "Blinds nearby enemies (40% miss) for {0}s and makes them drop you as a target. Casts itself when 3+ enemies are within 2 tiles.", [[2, 3]], ["#9a9aa8", "smoke", "smoke", 2], 16),
       TN("Vanish", "synergy", "rogue_a2", "A kill hides you for 3s and re-arms Ambush. Cooldown {0}s (hero kills ignore it).", [[12, 9]]),
-      TN("Dirty Blow", "passive", "rogue_a1", "Ambush also silences its target for 1.5s."),
-      TN("Knife Waltz", "ultimate", "rogue_ult", "Untargetable for 4s while striking up to 5 backline enemies for 60% of Ambush damage each. Casts itself when 3+ backline enemies are within 6 tiles.", [], ["#b02a5a", "skull", "streak", 1, "t"]),
+      TN("Cheap Shot", "passive", "rogue_a1", "Ambush also silences its target for 1.5s."),
+      TN("Shadow Dance", "ultimate", "rogue_ult", "Untargetable for 4s while striking up to 5 backline enemies for 60% of Ambush damage each. Casts itself when 3+ backline enemies are within 6 tiles.", [], ["#b02a5a", "skull", "streak", 1, "t"]),
     ] },
     { id: "venom", name: "Venom", role: "Poison", nodes: [
       TN("Poisoned Blades", "passive", "rogue_a3", "Each hit adds a poison stack: {0} damage a second per stack for 6s, up to 5 stacks. Poisoned enemies are healed {1}% less.", [[3, 4, 5], [15, 22, 30]]),
       TN("Caltrop Bomb", "trigger", "rogue_a3", "Throws a zone of radius 1.2 for 5s dealing {0} a second and slowing {1}%. Adds poison. Casts itself when 3+ enemy melee units are within 2.5 tiles.", [[6, 9, 12], [40, 50, 60]], ["#7ad84a", "drop", "swirl", 1.2], 14),
-      TN("Hamstring Venom", "passive", "rogue_a3", "Poisoned enemies move {0}% slower.", [[10, 15]]),
+      TN("Crippling Poison", "passive", "rogue_a3", "Poisoned enemies move {0}% slower.", [[10, 15]]),
       TN("Corrosive Agent", "synergy", "rogue_a3", "Poisoned enemies take +{0}% physical damage from all sources.", [[8, 12]]),
       TN("Weakening Toxin", "passive", "rogue_a3", "Enemies at 5 poison stacks deal 15% less damage."),
       TN("Deadly Cloud", "ultimate", "rogue_ult", "A poison cloud of radius 2 for 7s that blinds enemies and adds 2 stacks a second. Casts itself when 5+ enemies are packed near a point within 4 tiles.", [], ["#7ad84a", "drop", "smoke", 2, "t"]),
@@ -99,33 +99,33 @@ const TREES = {
       TN("Backstab", "passive", "rogue_a1", "Deal +{0}% damage to a target that is attacking someone else.", [[15, 25]]),
       TN("Flurry", "synergy", "rogue_a1", "Each dodge gives +{0}% attack speed for 5s, up to 5 stacks.", [[5, 8]]),
       TN("Evasive Roll", "passive", "rogue_a2", "Once per life, below 30% health, vanish for 1.5s and step 2 tiles away."),
-      TN("Whirl of Knives", "ultimate", "rogue_ult", "For 5s dodge every direct attack and deliver 8 armour-ignoring strikes to an enemy hero. Casts itself when an enemy hero is within 1.5 tiles and you are below 70% health.", [], ["#b02a5a", "dagger", "streak", 1, "t"]),
+      TN("Blade Fury", "ultimate", "rogue_ult", "For 5s dodge every direct attack and deliver 8 armour-ignoring strikes to an enemy hero. Casts itself when an enemy hero is within 1.5 tiles and you are below 70% health.", [], ["#b02a5a", "dagger", "streak", 1, "t"]),
     ] },
   ],
   mage: [
     { id: "pyromancy", name: "Pyromancy", role: "Burst and burn", nodes: [
-      TN("Smoulder", "passive", "mage_a1", "Spells and abilities add a burn worth {0}% of their damage over 4s.", [[8, 12, 15]]),
+      TN("Ignite", "passive", "mage_a1", "Spells and abilities add a burn worth {0}% of their damage over 4s.", [[8, 12, 15]]),
       TN("Fireball", "trigger", "mage_a1", "Blasts enemies for {0} + attack in radius 1.3. Soldiers are stunned .5s. Casts itself when 3+ enemies cluster within 4.5 tiles.", [[90, 125, 165]], ["#ff7a2a", "fire", "burst", 1.3, "t"], 7),
-      TN("Flashfire", "passive", "mage_a1", "When a burning enemy dies it explodes for {0} magic damage within 1 tile.", [[30, 45]]),
+      TN("Combustion", "passive", "mage_a1", "When a burning enemy dies it explodes for {0} magic damage within 1 tile.", [[30, 45]]),
       TN("Melt Armour", "synergy", "mage_a1", "Burning enemies take +{0}% physical damage.", [[10, 15]]),
-      TN("Great Firebolt", "passive", "mage_a1", "Fireball deals 50% more to its centre target if that is a hero."),
+      TN("Pyroblast", "passive", "mage_a1", "Fireball deals 50% more to its centre target if that is a hero."),
       TN("Meteor Strike", "ultimate", "mage_ult", "A meteor (1.6s warning) that stuns, wrecks castles and walls, and leaves burning ground. Casts itself when 5+ enemies or an enemy castle are within a blast within 6 tiles.", [], ["#ff5a2a", "meteor", "meteor", 3, "t"]),
     ] },
     { id: "frost", name: "Frost", role: "Control", nodes: [
       TN("Chilling Touch", "passive", "mage_a2", "Basic attacks slow movement and attack speed by {0}% for 3s.", [[8, 12, 15]]),
       TN("Frost Nova", "trigger", "mage_a2", "Blasts radius 2 for {0} + attack x.5 and roots for {1}s (half on heroes). Casts itself when an enemy melee unit comes within 2 tiles.", [[45, 60, 75], [1.5, 2, 2.5]], ["#8fd8ff", "snow", "nova", 2], 11),
-      TN("Splinter Ice", "passive", "mage_a2", "Rooted or frozen enemies take +{0}% damage from all sources.", [[12, 20]]),
-      TN("Rime Ward", "synergy", "mage_a2", "Each Frost Nova shields you for {0}% max health and nearby allies for {1}% of theirs for 5s.", [[12, 20], [6, 10]]),
-      TN("Last Frost", "passive", "mage_a2", "Once per life, below 35% health, Frost Nova is ready again."),
+      TN("Shatter", "passive", "mage_a2", "Rooted or frozen enemies take +{0}% damage from all sources.", [[12, 20]]),
+      TN("Ice Barrier", "synergy", "mage_a2", "Each Frost Nova shields you for {0}% max health and nearby allies for {1}% of theirs for 5s.", [[12, 20], [6, 10]]),
+      TN("Cold Snap", "passive", "mage_a2", "Once per life, below 35% health, Frost Nova is ready again."),
       TN("Blizzard", "ultimate", "mage_ult", "An 8s blizzard of radius 4 that slows 50%, cuts attack speed 30% and freezes enemies with damage. Casts itself when 6+ enemies are packed near a point within 6 tiles.", [], ["#8fd8ff", "snow", "nova", 4, "t"]),
     ] },
     { id: "arcane", name: "Arcane", role: "Utility", nodes: [
       TN("Arcane Mastery", "passive", "mage_a3", "+{0} tiles of attack and spell reach. Your units within 3 tiles gain +{1}% magic resist.", [[.3, .4, .5], [5, 8, 10]]),
       TN("Blink & Disrupt", "trigger", "mage_a3", "Blinks 3 tiles toward your castle and silences enemies near the start for {0}s. Casts itself when hurt below 70% health by an enemy hero ability or a melee attacker.", [[1, 1.5, 2]], ["#c9a0ff", "blink", "swirl", 1.5], 16),
-      TN("Aether Ward", "trigger", "mage_a3", "Gains a shield of {0}% max health for 6s. Casts itself below 50% health.", [[15, 25]], ["#c9a0ff", "shield", "shield", 1], 30),
+      TN("Mana Shield", "trigger", "mage_a3", "Gains a shield of {0}% max health for 6s. Casts itself below 50% health.", [[15, 25]], ["#c9a0ff", "shield", "shield", 1], 30),
       TN("Empowered Synergies", "synergy", "mage_a3", "Your spells ignore {0}% of the target's magic resist and damage reduction. Your other abilities recharge {1}% faster.", [[20, 30], [10, 15]]),
-      TN("Spell Darts", "passive", "mage_a3", "Every 4th basic attack also fires 2 bolts at other enemies within 3 tiles for 50% damage."),
-      TN("Quickened Hour", "ultimate", "mage_ult", "For 6s allies in radius 5 gain +50% speed and enemy heroes' cooldowns freeze. Casts itself when 4+ allies and 2+ enemy heroes, or 6+ enemies, are within 5 tiles.", [], ["#c9a0ff", "blink", "nova", 5]),
+      TN("Arcane Missiles", "passive", "mage_a3", "Every 4th basic attack also fires 2 bolts at other enemies within 3 tiles for 50% damage."),
+      TN("Time Warp", "ultimate", "mage_ult", "For 6s allies in radius 5 gain +50% speed and enemy heroes' cooldowns freeze. Casts itself when 4+ allies and 2+ enemy heroes, or 6+ enemies, are within 5 tiles.", [], ["#c9a0ff", "blink", "nova", 5]),
     ] },
   ],
   archer: [
@@ -148,9 +148,9 @@ const TREES = {
     { id: "sniper", name: "Sniper", role: "Hero hunting", nodes: [
       TN("Focused Aim", "passive", "archer_a1", "Each consecutive basic attack on one target adds +{0}% crit chance, up to 5 stacks. Crits deal x1.75.", [[4, 7, 10]]),
       TN("Headshot", "trigger", "archer_a1", "Aims for 1.2s then fires ({0} + attack x2) x1.5. Always crits and silences for 1s. Cancelled if the target escapes. Casts itself when an enemy hero is in range.", [[70, 100, 130]], ["#e6e6c8", "arrow", "streak", 1, "t"], 16),
-      TN("Marked Prey", "passive", "archer_a1", "The Headshot target takes +{0}% damage from all sources for 6s.", [[8, 12]]),
+      TN("Hunter's Mark", "passive", "archer_a1", "The Headshot target takes +{0}% damage from all sources for 6s.", [[8, 12]]),
       TN("Armour Piercer", "synergy", "archer_a1", "Headshot ignores {0}% of armour and adds a bleed of 2% of the target's max health a second for 5s.", [[30, 50]]),
-      TN("Prize Taker", "passive", "archer_a1", "Your lord earns 50% more gold from your kills of enemy heroes."),
+      TN("Bounty Hunter", "passive", "archer_a1", "Your lord earns 50% more gold from your kills of enemy heroes."),
       TN("Dragon-Slayer Shot", "ultimate", "archer_ult", "A telegraphed bolt for 500 + attack x6, hurting the line behind it. Capped at half the target hero's health. Casts itself when an enemy hero within 9 tiles is under 50% health or carries the bounty.", [], ["#e6e6c8", "arrow", "streak", 1.4, "t"]),
     ] },
   ],
@@ -162,29 +162,29 @@ const TREES = {
 let SKILLS_V2_FROM = "2026-11-20"; const skillsV2For = d => String(d) >= SKILLS_V2_FROM;
 const TREE_V2 = {
   warrior: { "Iron Clad": [[5, 10, 15, 20], [3, 6, 9, 12]], "Taunting Shout": [[6, 10, 14, 18]], "Shield Bash": [[30, 55]], "Unyielding Stance": [[7, 14], [10, 20]],
-    "Cleave": [[15, 25, 35, 45]], "Executioner's Whirlwind": [[20, 30, 40, 50]], "Battle Hunger": [[3, 5]], "Blood Rage": [[4, 7]],
+    "Cleave": [[15, 25, 35, 45]], "Executioner's Whirlwind": [[20, 30, 40, 50]], "Bloodthirst": [[3, 5]], "Blood Rage": [[4, 7]],
     "Marching Cadence": [[8, 14, 20, 26]], "Command Banner": [[10, 17, 24, 31]], "Fortify": [[20, 40]], "Sapper Coordination": [[15, 25]] },
   shaman: { "Static Surge": [[4, 7, 10, 13], [24, 40, 56, 72]], "Chain Lightning": [[3, 4, 4, 5], [60, 100, 140, 180]], "Thunderclap": [[30, 55]], "Conductive Discharge": [[12, 20]],
-    "Hearth Totem": [[5, 9, 13, 17], [4, 8, 12, 16]], "Root Totem": [[2, 3, 4, 5], [2, 2.5, 3, 3.5]], "Ward Totem": [[1, 2]], "War Drum Pulse": [[12, 20], [10, 17]],
-    "Spirit Leech": [[5, 10, 15, 20]], "Ancestral Grasp": [[40, 70, 100, 130]], "Frog Curse": [[2, 3.5]], "Last Stand Offering": [[1.5, 2], [15, 25]] },
+    "Grounding Totem": [[5, 9, 13, 17], [4, 8, 12, 16]], "Earthgrab Totem": [[2, 3, 4, 5], [2, 2.5, 3, 3.5]], "Ward Totem": [[1, 2]], "War Drum Pulse": [[12, 20], [10, 17]],
+    "Spirit Leech": [[5, 10, 15, 20]], "Ancestral Grasp": [[40, 70, 100, 130]], "Hex": [[2, 3.5]], "Last Stand Offering": [[1.5, 2], [15, 25]] },
   rogue: { "Shadowstep": [[10, 17, 24, 31]], "Ambush": [[30, 55, 80, 105], [1, 1.25, 1.5, 1.75]], "Smoke Bomb": [[2, 3.5]], "Vanish": [[12, 9]],
-    "Poisoned Blades": [[3, 5, 7, 9], [15, 25, 35, 45]], "Caltrop Bomb": [[5, 9, 13, 17], [40, 50, 60, 70]], "Hamstring Venom": [[10, 18]], "Corrosive Agent": [[8, 14]],
+    "Poisoned Blades": [[3, 5, 7, 9], [15, 25, 35, 45]], "Caltrop Bomb": [[5, 9, 13, 17], [40, 50, 60, 70]], "Crippling Poison": [[10, 18]], "Corrosive Agent": [[8, 14]],
     "Reflexes": [[8, 14, 20, 26]], "Riposte": [[.75, 1.25, 1.75, 2.25]], "Backstab": [[15, 25]], "Flurry": [[5, 9]] },
-  mage: { "Smoulder": [[6, 10, 14, 18]], "Fireball": [[70, 120, 170, 220]], "Flashfire": [[30, 55]], "Melt Armour": [[10, 17]],
-    "Chilling Touch": [[6, 10, 14, 18]], "Frost Nova": [[35, 60, 85, 110], [1.5, 2, 2.5, 3]], "Splinter Ice": [[12, 20]], "Rime Ward": [[12, 20], [6, 10]],
-    "Arcane Mastery": [[.2, .35, .5, .65], [4, 7, 10, 13]], "Blink & Disrupt": [[.8, 1.4, 2, 2.6]], "Aether Ward": [[15, 25]], "Empowered Synergies": [[20, 35], [10, 17]] },
+  mage: { "Ignite": [[6, 10, 14, 18]], "Fireball": [[70, 120, 170, 220]], "Combustion": [[30, 55]], "Melt Armour": [[10, 17]],
+    "Chilling Touch": [[6, 10, 14, 18]], "Frost Nova": [[35, 60, 85, 110], [1.5, 2, 2.5, 3]], "Shatter": [[12, 20]], "Ice Barrier": [[12, 20], [6, 10]],
+    "Arcane Mastery": [[.2, .35, .5, .65], [4, 7, 10, 13]], "Blink & Disrupt": [[.8, 1.4, 2, 2.6]], "Mana Shield": [[15, 25]], "Empowered Synergies": [[20, 35], [10, 17]] },
   archer: { "Eagle Eye": [[.2, .35, .5, .65], [4, 8, 12, 16]], "Arrow Volley": [[25, 45, 65, 85]], "Ricochet": [[15, 25]], "Pinning Shot": [[10, 17]],
     "Fleet Footed": [[5, 10, 15, 20], [6, 10, 14, 18]], "Spike Trap": [[30, 55, 80, 105], [1.5, 2, 2.5, 3]], "Net Shot": [[1, 1.7]], "Entangling Wire": [[1, 1.5], [30, 50]],
-    "Focused Aim": [[4, 7, 10, 13]], "Headshot": [[60, 105, 150, 195]], "Marked Prey": [[8, 14]], "Armour Piercer": [[30, 50]] },
+    "Focused Aim": [[4, 7, 10, 13]], "Headshot": [[60, 105, 150, 195]], "Hunter's Mark": [[8, 14]], "Armour Piercer": [[30, 50]] },
 };
 Object.keys(TREE_V2).forEach(cls => TREES[cls].forEach(tr => tr.nodes.forEach(n => { if (TREE_V2[cls][n.name]) n.w = TREE_V2[cls][n.name]; })));
 // Skill rebalance with balance v5 (plans stamped balV5, battles from BAL_V5_FROM): measured with 600 bot wars a round (win rate by main tree).
 // Berserker and the Sniper were ahead, Pyromancy, Arcane, Storm, Shadow, Venom and Tactician behind. Nodes not listed keep their TREE_V2 values.
 const TREE_V5 = {
-  warrior: { "Cleave": [[8, 14, 20, 26]], "Executioner's Whirlwind": [[5, 9, 13, 17]], "Battle Hunger": [[2, 3]], "Blood Rage": [[3, 5]], "Marching Cadence": [[10, 17, 24, 31]], "Command Banner": [[12, 20, 28, 36]] },
+  warrior: { "Cleave": [[8, 14, 20, 26]], "Executioner's Whirlwind": [[5, 9, 13, 17]], "Bloodthirst": [[2, 3]], "Blood Rage": [[3, 5]], "Marching Cadence": [[10, 17, 24, 31]], "Command Banner": [[12, 20, 28, 36]] },
   archer: { "Eagle Eye": [[.2, .35, .5, .65], [3, 6, 9, 12]], "Headshot": [[50, 90, 130, 170]] },
   rogue: { "Ambush": [[40, 70, 100, 130], [1, 1.25, 1.5, 1.75]], "Poisoned Blades": [[4, 6, 8, 10], [15, 25, 35, 45]] },
-  mage: { "Fireball": [[85, 140, 195, 250]], "Arcane Mastery": [[.3, .45, .6, .75], [6, 9, 12, 15]], "Aether Ward": [[25, 40]], "Empowered Synergies": [[25, 40], [12, 20]] },
+  mage: { "Fireball": [[85, 140, 195, 250]], "Arcane Mastery": [[.3, .45, .6, .75], [6, 9, 12, 15]], "Mana Shield": [[25, 40]], "Empowered Synergies": [[25, 40], [12, 20]] },
   shaman: { "Static Surge": [[5, 9, 13, 17], [30, 45, 60, 75]], "Chain Lightning": [[3, 4, 4, 5], [75, 120, 165, 210]] },
 };
 TREES.warrior[1].nodes[5].desc5 = "For 5s you cannot drop below 1 health, ignore crowd control, attack 50% faster, and your attacks splash and stun soldiers. Heals 15% on cast. Casts itself below 40% health with 3+ enemies within 2.5 tiles.";
@@ -208,7 +208,7 @@ const CHAMP_V3 = {
 // balance v5 (plans stamped balV5): base stats changed from CHAMP_V3. The warrior was ahead of every other class, the mage and rogue behind.
 const CHAMP_V5 = { warrior: { hp: 700, armor: .25 }, archer: { atk: 24 }, mage: { atk: 30 }, rogue: { hp: 510 } };
 const champBase = (cls, v5) => (v5 && CHAMP_V5[cls] ? { ...CHAMP_V3[cls], ...CHAMP_V5[cls] } : CHAMP_V3[cls]);
-// Wrath Unbound (Berserker ultimate) from balance v5: shorter, a smaller heal and a lighter splash. It won far more than any other build.
+// Avatar of War (Berserker ultimate) from balance v5: shorter, a smaller heal and a lighter splash. It won far more than any other build.
 const AVATAR_V5 = { dur: 5, heal: .15, splash: .35 };
 
 // ----- learning rules -----

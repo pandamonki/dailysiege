@@ -209,7 +209,7 @@ function makeTreeKit(X) {
     if (src && fxv(tgt, "vulnrng") && (src.key === "bowman" || src.key === "sniper" || src.key === "centaur" || src.key === "mage" || src.cls === "mage" || src.cls === "archer")) m *= 1 + fxv(tgt, "vulnrng");
     return m;
   }
-  // frost mages' Splinter Ice works on the enemy, so it is kept on a lookup of who is rooted by whom
+  // frost mages' Shatter works on the enemy, so it is kept on a lookup of who is rooted by whom
   function dodgeChance(tgt, src, o) {
     if (!src || !tgt.tr) return 0; if (fxv(tgt, "bladefury")) return 1;
     let c = 0; if (phys(src, o)) c += tgt.dodge.all; if ((src.range || 1.1) < 1.5) c += tgt.dodge.melee; return Math.min(.3, c);
@@ -234,7 +234,7 @@ function makeTreeKit(X) {
     if (tgt.cls === "warrior" && rk(tgt, 0, 4) && shieldAmt(tgt) > 0 && src && (src.range || 1.1) < 1.5 && !o.reflected && live(src) && src.kind !== "castle") deal(tgt, src, dmg * .15, { aoe: 1, reflected: 1, ab: "Spiked Bulwark" });
     if (tgt.cls === "rogue" && rk(tgt, 2, 4) && !tgt.rolled && tgt.hp > 0 && tgt.hp / tgt.maxhp < .3 && src) {
       tgt.rolled = true; hide(tgt, 1.5, false); const dd = d(tgt, src) || 1; tgt.x += (tgt.x - src.x) / dd * 2; tgt.y += (tgt.y - src.y) / dd * 2; txt(tgt, "Evasive Roll", "#d6c2ff"); X.abRec(tgt, "Evasive Roll").casts++; }
-    if (tgt.cls === "mage" && rk(tgt, 1, 4) && !tgt.snapUsed && tgt.hp > 0 && tgt.hp / tgt.maxhp < .35) { tgt.snapUsed = true; tgt.cds["1.1"] = 0; txt(tgt, "Last Frost", "#9fd8ff"); }
+    if (tgt.cls === "mage" && rk(tgt, 1, 4) && !tgt.snapUsed && tgt.hp > 0 && tgt.hp / tgt.maxhp < .35) { tgt.snapUsed = true; tgt.cds["1.1"] = 0; txt(tgt, "Cold Snap", "#9fd8ff"); }
   }
   function onDealt(src, tgt, dmg, o) {
     if (src.cad) src.cad = 0;
@@ -247,26 +247,26 @@ function makeTreeKit(X) {
     if (src.cls === "shaman" && rk(src, 2, 0) && isAb && o.ab !== "Spirit Leech") { let f = V(src, 2, 0, 0) / 100; if (src.offering) f *= V(src, 2, 3, 0); heal(src, dmg * f, true, src, "Spirit Leech"); }
     if (src.cls === "mage" && rk(src, 0, 0) && isAb && live(tgt) && tgt.kind !== "castle") {
       const dps = dmg * V(src, 0, 0, 0) / 100 / 4, old = tgt.dots.find(x => x.key === "burn" && x.src === src);
-      if (old) { old.until = T() + 4; old.dps = Math.max(old.dps, dps); } else tgt.dots.push({ dps, until: T() + 4, src, key: "burn", ab: "Smoulder" }); }
+      if (old) { old.until = T() + 4; old.dps = Math.max(old.dps, dps); } else tgt.dots.push({ dps, until: T() + 4, src, key: "burn", ab: "Ignite" }); }
   }
   function onKill(v, src) {
     const now = T(), k = src && (src.owner || src);
     // a burning enemy bursts
     const bd = v.dots.find(x => x.key === "burn" && x.until > now && x.src && x.src.tr && !x.src.dead && rk(x.src, 0, 2));
     if (bd) { const m = bd.src; if (!(m.icd.comb && m.icd.comb.t === Math.floor(now) && m.icd.comb.n >= 3)) { m.icd.comb = { t: Math.floor(now), n: (m.icd.comb && m.icd.comb.t === Math.floor(now) ? m.icd.comb.n : 0) + 1 };
-      withAb("Flashfire", () => { aoe(v.x, v.y, 1, "#ff8a2a", .4); foes(m, v.x, v.y, 1).forEach(o => deal(m, o, V(m, 0, 2, 0), { aoe: 1, big: 1 })); }); } }
+      withAb("Combustion", () => { aoe(v.x, v.y, 1, "#ff8a2a", .4); foes(m, v.x, v.y, 1).forEach(o => deal(m, o, V(m, 0, 2, 0), { aoe: 1, big: 1 })); }); } }
     if (!k || !k.tr || k.kind !== "champ") { // soldiers killing near a Blood Rage warrior
       if (src && src.kind === "unit") { const w = heroOf(src.pid, "warrior", 1, 3); if (w && src.range < 1.5 && d(w, src) <= 3) rage(w); }
       return; }
     if (k.cls === "warrior") {
-      if (rk(k, 1, 2) && !(k.icd.thirst > now)) { k.icd.thirst = now + .5; heal(k, k.maxhp * V(k, 1, 2, 0) / 100, false, k, "Battle Hunger"); }
+      if (rk(k, 1, 2) && !(k.icd.thirst > now)) { k.icd.thirst = now + .5; heal(k, k.maxhp * V(k, 1, 2, 0) / 100, false, k, "Bloodthirst"); }
       if (rk(k, 1, 3)) rage(k);
       if (k.whirl && k.whirl.until > now && v.kind === "champ" && !(k.icd.whirlr > now)) { k.icd.whirlr = now + 10; const rem = k.cds["1.1"] - now; if (rem > 0) k.cds["1.1"] -= rem / 2; }
     }
     if (k.cls === "rogue" && rk(k, 0, 3) && (v.kind === "champ" || !(k.icd.vanish > now))) { k.icd.vanish = now + ext([12, 9], rk(k, 0, 3)); hide(k, 3, true); txt(k, "Vanish", "#d6c2ff"); }
   }
   function rage(w) { const now = T(); w.br = { n: Math.min(6, (w.br && w.br.until > now ? w.br.n : 0) + 1), until: now + 6 }; }
-  // gold: Prize Taker
+  // gold: Bounty Hunter
   const goldMul = (kc, v) => (v.kind === "champ" && kc.kind === "champ" && kc.tr && kc.cls === "archer" && rk(kc, 2, 4) ? 1.5 : 1);
   const wallMul = e => { let m = 1; const sb = fxv(e, "siegebuf"); if (sb) m *= 1 + sb; for (const b of banners) if (b.sap && allied(e.pid, b.pid) && hyp(e.x - b.x, e.y - b.y) <= b.r) m *= 1 + b.sap; return m; };
   // ----- basic attacks -----
@@ -353,7 +353,7 @@ function makeTreeKit(X) {
   };
   FN["warrior.1.5"] = e => {
     if (e.hp / e.maxhp >= .4 || foes(e, e.x, e.y, 2.5).length < 3) return false;
-    const now = T(), v5 = !!(P[e.pid] && P[e.pid].balV5), dur = v5 ? AVATAR_V5.dur : 7; e.avatar = now + dur; setFx(e, "undying", dur); setFx(e, "ccimm", dur); setFx(e, "asbuf", dur, .5); heal(e, e.maxhp * (v5 ? AVATAR_V5.heal : .25), false, e, "Wrath Unbound"); return true;
+    const now = T(), v5 = !!(P[e.pid] && P[e.pid].balV5), dur = v5 ? AVATAR_V5.dur : 7; e.avatar = now + dur; setFx(e, "undying", dur); setFx(e, "ccimm", dur); setFx(e, "asbuf", dur, .5); heal(e, e.maxhp * (v5 ? AVATAR_V5.heal : .25), false, e, "Avatar of War"); return true;
   };
   FN["warrior.2.1"] = (e, r) => {
     const o = e.tgt; if (!live(o) || !(o.kind === "champ" || siege(o)) || d(e, o) > 2) return false;
@@ -424,7 +424,7 @@ function makeTreeKit(X) {
     const bl = foes(e, e.x, e.y, 6).filter(backline); if (bl.length < 3) return false;
     const order2 = bl.sort((a, b) => d(a, e) - d(b, e) || a.id - b.id).slice(0, 5), rankA = Math.max(1, rk(e, 0, 1)), dm = (nodeVal("rogue", 0, 1, 0, rankA, V2(e)) + e.atk) * 1.8 * .6;
     hide(e, 4, false);
-    order2.forEach((v, k) => pending.push({ ab: "Knife Waltz", at: +(T() + .8 * (k + 1)).toFixed(2), fn: () => {
+    order2.forEach((v, k) => pending.push({ ab: "Shadow Dance", at: +(T() + .8 * (k + 1)).toFixed(2), fn: () => {
       if (e.dead || v.dead) return; const ox = e.x, oy = e.y; e.x = v.x + .4; e.y = v.y + .1;
       ev({ ty: "ultfx", k: "assassin", x0: ox, y0: oy, x: v.x, y: v.y, r: 1, dur: .6 }); slash(v, "#ff4a4a"); deal(e, v, dm, { aoe: 1, big: 1, noFinish: 1, keepStealth: 1 }); } }));
     return true;
@@ -444,7 +444,7 @@ function makeTreeKit(X) {
   FN["rogue.2.5"] = e => {
     if (e.hp / e.maxhp >= .7) return false; const h = foes(e, e.x, e.y, 1.5).find(o => o.kind === "champ"); if (!h) return false;
     setFx(e, "bladefury", 5);
-    for (let k = 0; k < 8; k++) pending.push({ ab: "Whirl of Knives", at: +(T() + .6 * (k + 1)).toFixed(2), fn: () => { if (e.dead || h.dead || d(e, h) > 2.4) return; slash(h, "#ff4a4a"); deal(e, h, e.atk * 1.4, { aoe: 1, big: 1, pierce: 1, noFinish: 1 }); } });
+    for (let k = 0; k < 8; k++) pending.push({ ab: "Blade Fury", at: +(T() + .6 * (k + 1)).toFixed(2), fn: () => { if (e.dead || h.dead || d(e, h) > 2.4) return; slash(h, "#ff4a4a"); deal(e, h, e.atk * 1.4, { aoe: 1, big: 1, pierce: 1, noFinish: 1 }); } });
     return { x: h.x, y: h.y };
   };
   // ---- Mage ----

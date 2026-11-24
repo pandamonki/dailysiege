@@ -318,7 +318,7 @@ function drawUnderFx(time) {
   const E = replay.res.events;
   for (let i = lowerBound(E, time - 2.2); i < E.length && E[i].t <= time; i++) { const e = E[i]; if (e.ty === "spell" && PIXFX[e.sp] && PIXFX[e.sp].under) drawSpellFx(e, time - e.t); }
 }
-// While Wrath Unbound burns the warrior hero is drawn larger so he stands out of the flames. Works out which hero cast it from where he stood.
+// While Avatar of War burns the warrior hero is drawn larger so he stands out of the flames. Works out which hero cast it from where he stood.
 function avatarScale(k, time) {
   const R = replay.res, W = replay.avatarWin || (replay.avatarWin = (R.events || []).filter(e => e.ty === "spell" && e.sp === "v3_warrior_b2_t4").map(e => {
     const fr = replayFrameAt(e.t); let best = -1, bd = 1e9;
@@ -396,7 +396,7 @@ function drawOrbFx(e, age, time) {
       for (let s = 0; s < 5; s++) { const a = s * 1.257 + i, rr = ts * (.1 + q * .4); ctx.fillStyle = hexA(col, 1 - q); ctx.fillRect(ex + Math.cos(a) * rr - 2, ey + Math.sin(a) * rr - 2, 4, 4); } ctx.restore(); }
   });
 }
-// the Spellbreaker Ward: a shimmering bubble round the hero for its five seconds
+// the Anti-Magic Shell: a shimmering bubble round the hero for its five seconds
 function drawShellFx(e, time) {
   const age = time - e.t; if (age < 0 || age > e.dur) return; const fr = replayFrameAt(time), ok = fr && fr.d && fr.d.length > e.id * 4 + 3; if (!ok || (fr.d[e.id * 4 + 3] & 1)) return;
   const x = fr.d[e.id * 4] * ts, y = (fr.d[e.id * 4 + 1] - .2) * ts, fade = Math.min(1, age / .25, (e.dur - age) / .6), R = ts * .85, pu = .5 + .5 * Math.sin(time * 7);

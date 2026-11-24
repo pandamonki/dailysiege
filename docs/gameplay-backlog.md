@@ -56,7 +56,7 @@ One lord changes one thing; the other nine play a balanced build with a random t
 | Target rule: weakest castle | 56.7 | 3 |
 | Siege (raiders, ram, cart) | 54.9 | 4 |
 | March on castles instead of nearest foe | 53.6 | 3 |
-| Save 1000 gold for the Sunsteel Rapier | 49.3 | 3 |
+| Save 1000 gold for the Divine Rapier | 49.3 | 3 |
 | Castle upgrades first | 47.4 | 2 |
 | Stance aggressive / cautious | 47.8 / 46.9 | 1 / 2 |
 | Hold the battleground | 45.3 | 1 |

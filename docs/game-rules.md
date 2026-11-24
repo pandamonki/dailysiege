@@ -19,8 +19,8 @@ practice games always stamp all of them (`js/sim/plans.js`).
 | 19 Nov | `sdV2`, `wallV2`, `engV2` | Sudden death v2, walls block everyone, siege engine alert; bots buy defences by build |
 | 20 Nov | `ordV2` | Army plans and one fall-back condition; no if-then commands or soldier orders |
 | 20 Nov | `skV2` | Skill scaling v2: every rank adds an even step (`TREE_V2`); report records deaths, assists, damage |
-| 20 Nov | `shellV2` | Spellbreaker Ward fires the moment the hero engages an enemy hero (when off cooldown); no chosen delay |
-| 20 Nov | `itemV6` | Item rebalance: weaker Healing Broth and Bloodstone Ring; stronger Spellbreaker Ward (7.5s magic immunity), Rune of Homecoming (reusable), Talisman of Will, Orb of Fire, Cutthroat's Crystal, Hermit's Pipe and Boots |
+| 20 Nov | `shellV2` | Anti-Magic Shell fires the moment the hero engages an enemy hero (when off cooldown); no chosen delay |
+| 20 Nov | `itemV6` | Item rebalance: weaker Healing Salve and Ring of Health; stronger Anti-Magic Shell (7.5s magic immunity), Rune of Homecoming (reusable), Talisman of Will, Orb of Fire, Crystalys, Pipe of Insight and Boots |
 | 20 Nov | `allyV2` | Alliances v2: groups need every member's yes, winning allies share the top places by castle health, the lone wolf, bots in friends wars join the diplomacy |
 | 20 Nov | `waveV2` | Emergency waves: as the castle drops below 75%, 50% and 25% health, the next unsent wave rushes out, at least 10 seconds apart; waves lose their own orders, defend the castle area first, then follow the army plan |
 | 20 Nov | `waveV3` | Wave deadlines: each wave goes by its own time (0:45, 1:30, 2:15) instead of one forced out each minute |
@@ -89,24 +89,24 @@ practice games always stamp all of them (`js/sim/plans.js`).
   type (pure poison, siege blasts) keep it. Before then each class had its own types (`CLASS_TYPES`).
 - Hero rebalance (from 22 Nov, `balV5`): base stats `CHAMP_V5` over `CHAMP_V3` (warrior 700 health and 25% armour, archer attack 24,
   mage attack 30, rogue 510 health), skill values `TREE_V5` over `TREE_V2` in `js/config/trees.js` (Berserker, Tactician, Sniper,
-  Marksman, Rogue, Mage and Shaman nodes), and a shorter Wrath Unbound (`AVATAR_V5`: 5s, 15% heal, 35% splash). Tuned on 1,800
+  Marksman, Rogue, Mage and Shaman nodes), and a shorter Avatar of War (`AVATAR_V5`: 5s, 15% heal, 35% splash). Tuned on 1,800
   bot battles of 8 lords: every class wins 11 to 14.5%.
 - Resting at home (from 22 Nov, `HOME_HEAL` in `js/sim/battle.js`): a hero within 2.5 tiles of its own castle that has neither hit nor
   been hit for 2 seconds heals 8% of its health a second, until full or until a hit stops it. Not in sudden death or once its castle
   has fallen. A hero that falls back to heal (its stance) still heals 10% a second at home as before, whatever the fighting.
-- The hero's attack is shown as its own damage with the items' extra in green beside it (Whetstone 6, Gauntlets 12, Widowmaker 12,
-  Sunsteel Rapier 100).
-- From 20 Nov (`shellV2`) the Spellbreaker Ward has no timing setting: it fires as soon as the hero engages an enemy hero
+- The hero's attack is shown as its own damage with the items' extra in green beside it (Whetstone 6, Gauntlets 12, Daedalus 12,
+  Divine Rapier 100).
+- From 20 Nov (`shellV2`) the Anti-Magic Shell has no timing setting: it fires as soon as the hero engages an enemy hero
   (attacking one within reach, or being attacked by one), whenever it is off cooldown.
-- Items from 20 Nov (`itemV6`, `ITEM_V6` in `js/sim/battle.js`): Healing Broth heals 220 (was 300) and costs 60; Ring of
-  Health gives +120 health and 8 a second (was 140 and 10) and costs 100. Spellbreaker Ward lasts 7.5s and makes the hero
+- Items from 20 Nov (`itemV6`, `ITEM_V6` in `js/sim/battle.js`): Healing Salve heals 220 (was 300) and costs 60; Ring of
+  Health gives +120 health and 8 a second (was 140 and 10) and costs 100. Anti-Magic Shell lasts 7.5s and makes the hero
   immune to magic: hero abilities, ultimates and magic attacks. Rune of Homecoming is no longer once a battle: when the
   castle is attacked or the hero drops below 30% health (more than 4 tiles from home), the hero channels for 1.5s, then
   it and every ally within 4 tiles go home; 45s cooldown. Talisman of Will: stuns, roots, slows and silences 75% shorter.
-  Orb of Fire splashes 50% within 1.5 tiles. Cutthroat's Crystal: 25% chance of 1.8x. Hermit's Pipe: 60% within 4 tiles.
-  Boots of Speed +0.42 move speed (was +0.35). Sunsteel Rapier: +100 damage on each weapon hit, abilities unaffected
+  Orb of Fire splashes 50% within 1.5 tiles. Crystalys: 25% chance of 1.8x. Pipe of Insight: 60% within 4 tiles.
+  Boots of Speed +0.42 move speed (was +0.35). Divine Rapier: +100 damage on each weapon hit, abilities unaffected
   (was double all hero damage).
-- Regeneration items from 22 Nov (`balV5`, `ITEM_V7`): Mending Herbs 3 a second and costs 50 (was 5, 40 gold); Bloodstone Ring
+- Regeneration items from 22 Nov (`balV5`, `ITEM_V7`): Mending Herbs 3 a second and costs 50 (was 5, 40 gold); Ring of Health
   +120 health and 5 a second and costs 125 (was 8, 100 gold); Mender's Charm heals allies 5 a second (was 8).
 
 ## Defences (from 17 Nov)

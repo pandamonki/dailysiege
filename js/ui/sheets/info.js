@@ -209,11 +209,6 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
-  { v: "v1.23: new names", date: "24 Nov", fixes: [], balance: [], changes: [
-    "Items renamed, working exactly as before: Crystalys is Cutthroat's Crystal, Daedalus is Widowmaker, Divine Rapier is Sunsteel Rapier, Pipe of Insight is Hermit's Pipe, Shiva's Guard is Frostward Shield, Vanguard is Bulwark Shield, Anti-Magic Shell is Spellbreaker Ward, Healing Salve is Healing Broth, Ring of Health is Bloodstone Ring, Orb of Corruption is Orb of Ruin, Talisman of Evasion is Jade Talisman.",
-    "Skills renamed, working exactly as before: Ignite is Smoulder, Combustion is Flashfire, Pyroblast is Great Firebolt, Shatter is Splinter Ice, Ice Barrier is Rime Ward, Cold Snap is Last Frost, Arcane Missiles is Spell Darts, Time Warp is Quickened Hour, Mana Shield is Aether Ward, Grounding Totem is Hearth Totem, Earthgrab Totem is Root Totem, Hex is Frog Curse, Cheap Shot is Dirty Blow, Shadow Dance is Knife Waltz, Crippling Poison is Hamstring Venom, Blade Fury is Whirl of Knives, Bloodthirst is Battle Hunger, Avatar of War is Wrath Unbound, Hunter's Mark is Marked Prey, Bounty Hunter is Prize Taker.",
-    "The Orders screen is shorter: the details moved to its i button.",
-  ] },
   { v: "v1.22: betray the whole alliance", date: "24 Nov", fixes: [], balance: [], changes: [
     "From the 26 Nov battle, with two or more allies you can betray them all at once: bombs go off in every allied keep together.",
     "The betrayal time is picked from time slots (0:00 to 2:30 into the battle) or conditions, like their army being gone.",

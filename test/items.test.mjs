@@ -10,7 +10,7 @@ sim.run(`globalThis.__hero = (items, v5) => { const c = goldenCase(1), pl = JSON
   const at = (plans) => { const r = runBattle(plans, c.seed, Object.assign({}, c.opts, { fast: true, heroV3: true })); return r.meta.find(m => m.pid === plans[0].pid && m.kind === "champ"); };
   const a = at(pl), b = at(bare); return { atk: a.atk - b.atk, hp: a.maxhp - b.maxhp, ratio: a.atk / b.atk }; };`);
 
-test("flat items: Gauntlets add 12 attack and a Bloodstone Ring 140 health, whatever the hero's level", () => {
+test("flat items: Gauntlets add 12 attack and a Ring of Health 140 health, whatever the hero's level", () => {
   const g = sim.run(`__hero(["gauntlets"], true)`), h = sim.run(`__hero(["hpring"], true)`);
   assert.ok(Math.abs(g.atk - 12) < 1e-6, `gauntlets +${g.atk}`);
   assert.ok(Math.abs(h.hp - 140) < 1e-6, `ring +${h.hp}`);

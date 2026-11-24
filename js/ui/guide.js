@@ -13,7 +13,7 @@
 // keys: one line per numbered box in the shot. mode: "tour" or "book" to show the page in only one of them.
 const GUIDE = [
   { id: "basics", name: "Basics", pages: [
-    { t: "Welcome, m'lord", p: "I am Wystan, your steward. Your friends have declared war. Every evening all the armies march out and fight at once, by themselves. You don't steer the battle: you prepare for it. The war lasts seven days." },
+    { t: "Welcome, m'lord", p: "I am Aldric, your steward. Your friends have declared war. Every evening all the armies march out and fight at once, by themselves. You don't steer the battle: you prepare for it. The war lasts seven days." },
     { t: "Each day", p: "Plan: spend gold, place your army, level your hero and pick your targets. Then seal your orders. The battle is fought at the set time, and you watch it next time you open the game." },
     { mode: "book", t: "Your screen", p: "Everything you plan with is on one screen.", shot: "plan",
       keys: ["The top row: day, gold, your army, the leaderboard and options", "The map: your castle, your army and your rivals", "The unit strip: details of whatever you tap", "The menus: Base, Army, Hero, Orders and Allies", "Seal your orders when you're ready"] },
