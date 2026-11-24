@@ -201,7 +201,11 @@ practice games always stamp all of them (`js/sim/plans.js`).
 
 ## Screens
 
-- The pre-battle ("The houses gather") screen's redesign is under discussion: three options were drawn up for the host to pick.
+- Pre-battle screen ("The houses gather"): a line says whether you have allies; then each alliance is a coloured side with a header
+  ("Your alliance" or "Alliance of X", lord count, new today / held from yesterday / grew today), separated by VS, then the lone lords
+  ("Lone wolf" when exactly one stands alone). Team colours come from `allianceGroups` in `js/replay/flow.js`.
+- In the replay, allies are shown by a dashed link in the team's colour between allied castles that still stand, and by the side strip:
+  allied castles sit together, outlined in the team colour. A betrayal ends that pair's link; the last alliance splitting ends them all.
 
 - Wars page > Diagnostics: Copy diagnostics gathers the war's clock, my saved orders per day, my army and the orders each battle used,
   plus recent errors, for sending to the developer (`js/net/diag.js`).

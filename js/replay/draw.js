@@ -45,6 +45,12 @@ function drawReplay(t) {
      ctx.strokeStyle = `rgba(214,60,40,${.55 + .25 * pu})`; ctx.fillStyle = "rgba(120,20,10,.14)"; ctx.lineWidth = ts * .1; ctx.setLineDash([ts * .35, ts * .22]); ctx.lineDashOffset = -t * ts * .6; ctx.beginPath(); ctx.arc(MID, MID, rr, 0, 7); ctx.fill(); ctx.stroke(); ctx.restore(); } // the sudden-death arena
   // your traps until sprung
   R.traps.forEach(tr => { if (tr.pid === R.me && !(tr.t0 != null && time < tr.t0) && !(tr.usedT && time >= tr.usedT)) drawTrap(ctx, tr.type, tr.x * ts, (tr.y + .05) * ts, ts * .9); });
+  { const teams = replayTeams(R); if (teams.length) { // alliance links: a dashed line in the team's colour between allied castles that still stand
+    const cast = pid => { const k = R.meta.findIndex(m => m.pid === pid && m.kind === "castle"); return k >= 0 && k * 4 + 2 < f0.d.length && f0.d[k * 4 + 2] > 0 ? R.meta[k].tile : null; };
+    ctx.save(); ctx.lineCap = "round"; ctx.lineWidth = Math.max(3, ts * .15); ctx.setLineDash([ts * .34, ts * .2]); ctx.lineDashOffset = -t * ts * .5;
+    replayPairs(R, time).forEach(k => { const [a, b] = k.split("|"), ta = cast(a), tb = cast(b), g = teams.find(q => q.ids.includes(a)); if (!ta || !tb || !g) return;
+      ctx.strokeStyle = hexA(g.col, .85); ctx.beginPath(); ctx.moveTo((ta[1] + .5) * ts, (ta[0] + .5) * ts); ctx.lineTo((tb[1] + .5) * ts, (tb[0] + .5) * ts); ctx.stroke(); });
+    ctx.restore(); } }
   const items = [];
   (R.wallMeta || []).forEach((w, wi) => { const hp = f0.w ? f0.w[wi] : w.maxhp; if (hp == null || (w.born != null && time < w.born)) return; items.push([w.y + .2, () => drawWallTile(ctx, w.y, w.x, w.tier, Math.max(0, hp) / w.maxhp, R.colors[w.pid], t, w.dir, hp > 0 ? wallLinks(R.wallMeta.filter((o, oi) => o.pid === w.pid && (f0.w ? f0.w[oi] > 0 : true) && !(o.born != null && time < o.born)).map(o => [o.y, o.x]), w.y, w.x) : 0)]); });
   // a castle's waves for the replay: how many are still home, and while they can't go yet, how long until they can (the clock beside the bars).

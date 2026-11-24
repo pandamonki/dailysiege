@@ -43,6 +43,24 @@ function showHeroPick(done) {
     el.querySelector("#hgo").addEventListener("click", () => { if (pick !== S.cls) { if (isLive()) toast("Your hero is fixed for this war."); else A.cls(pick); } el.remove(); if (done) done(); render(); }); };
   paint(); document.body.appendChild(el);
 }
+// Alliances as groups, biggest first (yours first among equals), each with its own colour: the same colours name a team on the muster screen
+// and in the replay. pairs: "a|b" keys; order: every lord's id in roster order.
+const TEAM_COLS = ["#3f9d58", "#3d8fb5", "#a463d4", "#dd8b34", "#d9577a"];
+function allianceGroups(pairs, order, me) {
+  const par = {}, f = x => (par[x] == null || par[x] === x ? (par[x] = x) : (par[x] = f(par[x])));
+  pairs.forEach(k => { const [a, b] = Array.isArray(k) ? k : String(k).split("|"); par[f(a)] = f(b); });
+  const g = {}; Object.keys(par).forEach(x => (g[f(x)] = g[f(x)] || []).push(x));
+  return Object.values(g).filter(m => m.length > 1).map(m => m.sort((a, b) => order.indexOf(a) - order.indexOf(b)))
+    .sort((a, b) => b.length - a.length || (b.includes(me) - a.includes(me)) || order.indexOf(a[0]) - order.indexOf(b[0])).map((ids, i) => ({ ids, col: TEAM_COLS[i % TEAM_COLS.length], i }));
+}
+// The alliances in force at a moment of a replay: the pacts the battle began with, minus any betrayed or broken since (a betrayal ends that pair,
+// the last alliance splitting ends them all). Teams keep their colour for the whole battle; a pair that has ended simply loses its link.
+function replayPairs(R, time) {
+  const all = (R.pacts0 || []).map(k => (Array.isArray(k) ? k : String(k).split("|")).slice().sort().join("|")), gone = new Set();
+  (R.hl || []).forEach(h => { if (h.t > time) return; if (h.kind === "betray") gone.add([h.pid, h.other].sort().join("|")); else if (h.kind === "split") { const ids = [h.pid, ...(h.others || [])]; all.forEach(k => { if (k.split("|").every(x => ids.includes(x))) gone.add(k); }); } });
+  return all.filter(k => !gone.has(k));
+}
+function replayTeams(R) { return R.teamGroups || (R.teamGroups = allianceGroups(R.pacts0 || [], R.order, R.me)); }
 function showIntro(it, done) {
   const old = document.getElementById("intro"); if (old) old.remove();
   const el = document.createElement("div"); el.id = "intro";
@@ -54,24 +72,27 @@ function showIntro(it, done) {
   it.broken.forEach(x => { const [a, b] = x.k.split("|"); feed.push(`<li class="broke" style="--d:${(d += .35).toFixed(2)}">✕ ${x.final ? `The alliance between <b>${nm(a)}</b> and <b>${nm(b)}</b> ended with the final day.` : x.by ? `<b>${nm(x.by)}</b> ended the pact with <b>${nm(x.by === a ? b : a)}</b>.` : `<b>${nm(a)}</b> and <b>${nm(b)}</b> are no longer allies.`}</li>`); });
   it.bets.forEach(b => feed.push(`<li class="bet" style="--d:${(d += .35).toFixed(2)}">🗡 Last battle, <b>${nm(b.pid)}</b> betrayed <b>${nm(b.other)}</b> and blew up their keep.</li>`));
   if (it.kept.length) feed.push(`<li style="--d:${(d += .35).toFixed(2)}">${it.kept.length === 1 ? "One pact" : it.kept.length + " pacts"} held from yesterday.</li>`);
+  // design C: each alliance is a side with its own colour and header, then the lone lords
+  const pids = it.cards.map(c => c.pid), meId = (it.cards.find(c => c.me) || {}).pid, pairsNow = [...it.kept, ...it.fresh], groups = allianceGroups(pairsNow, pids, meId), inGroup = new Set(groups.flatMap(g => g.ids));
+  let ci = 0; const cardHTML = c => `<div class="icard${c.me ? " me" : ""}" data-pid="${c.pid}" style="--c:${c.color};--i:${ci++}"><img class="bn" alt="" src="${bannerURL(c.banner, c.color, 34, 46)}"><div class="tx"><b>${esc(c.name)}${it.rapier === c.pid ? RAPIER_ICON : ""}</b><small>${esc(clsName(c.cls))}</small><small>Lv ${c.level} · ${esc(CASTLE_TIERS[Math.max(0, Math.min(2, c.tier - 1))].name)}</small></div><img class="hr" alt="" src="${spriteURL("c-" + c.cls, c.color)}">${traitors.has(c.pid) ? `<span class="tag">TRAITOR</span>` : ""}</div>`;
+  const side = (title, note, col, list) => `<div class="iside" style="--sc:${col}"><div class="ihd"><b>${title}</b><small>${note}</small></div><div class="ibody">${list.map(cardHTML).join("")}</div></div>`;
+  const sideHTML = groups.map(g => { const own = pairsNow.filter(k => k.split("|").every(x => g.ids.includes(x))), nf = own.filter(k => it.fresh.includes(k)).length, age = nf === own.length ? "new today" : nf ? "grew today" : "held from yesterday", first = card(g.ids[0]);
+    return side(g.ids.includes(meId) ? "Your alliance" : `Alliance of ${esc(first ? first.name : "a lord")}`, `${g.ids.length} lords · ${age}`, g.col, g.ids.map(card).filter(Boolean)); });
+  const lone = it.cards.filter(c => !inGroup.has(c.pid)), wolf = groups.length && lone.length === 1;
+  if (lone.length) sideHTML.push(side(wolf ? "Lone wolf" : "Lone lords", wolf ? `alone against ${inGroup.size} allied lords` : `${lone.length} lord${lone.length === 1 ? "" : "s"} · every one for themselves`, "#7a6338", lone));
+  const sides = sideHTML.join(`<div class="ivs">VS</div>`), mine = groups.find(g => g.ids.includes(meId));
+  const sumLine = mine ? `You are allied with ${mine.ids.filter(x => x !== meId).map(nm).join(" and ")}.` : groups.length ? "You have no allies today." : "No alliances stand today.";
   el.innerHTML = `<div class="iwrap"><h2>The houses gather</h2><p class="isub">${it.fin2 ? "The final day. Alliances hold until only one is left standing, then it breaks: only one banner will win the war." : it.final ? "The final day. Every alliance is void and only one banner will stand." : "Day " + DAY_FOR_INTRO + " of the war. Here is who stands where."}</p>
-    <div class="igrid" id="igrid"><svg class="ilines" id="ilines"></svg>${it.cards.map((c, i, a) => `<div class="icard${c.me ? " me" : ""}" data-pid="${c.pid}" style="--c:${c.color};--i:${i}${i && (c.bloc || a[i - 1].bloc) && c.bloc !== a[i - 1].bloc ? ";grid-column-start:1" : ""}"><img class="bn" alt="" src="${bannerURL(c.banner, c.color, 34, 46)}"><div class="tx"><b>${esc(c.name)}${it.rapier === c.pid ? RAPIER_ICON : ""}</b><small>${esc(clsName(c.cls))}</small><small>Lv ${c.level} · ${esc(CASTLE_TIERS[Math.max(0, Math.min(2, c.tier - 1))].name)}</small></div><img class="hr" alt="" src="${spriteURL("c-" + c.cls, c.color)}">${traitors.has(c.pid) ? `<span class="tag">TRAITOR</span>` : ""}</div>`).join("")}</div>
+    <p class="isum">${sumLine}</p>
+    <div class="igrid" id="igrid"><svg class="ilines" id="ilines"></svg>${sides}</div>
     ${(it.auction || []).length ? `<div class="auc" id="auc"></div>` : ""}
     ${feed.length ? `<ul class="feed">${feed.join("")}</ul>` : `<p class="none">No alliances stand this round. It's every lord for themselves.</p>`}
     <button class="btn wax go" id="igo">To battle →</button></div>`;
   document.body.appendChild(el);
   const finish = () => { el.remove(); done(); }; el.querySelector("#igo").addEventListener("click", finish);
   requestAnimationFrame(() => {
-    const grid = el.querySelector("#igrid"), svg = el.querySelector("#ilines"), g = grid.getBoundingClientRect(), pos = {};
-    el.querySelectorAll(".icard").forEach(c => { const r = c.getBoundingClientRect(); pos[c.dataset.pid] = [r.left - g.left + r.width / 2, r.top - g.top + r.height / 2]; });
+    const grid = el.querySelector("#igrid"), g = grid.getBoundingClientRect();
     const rect = id => { const c = el.querySelector(`.icard[data-pid="${id}"]`); if (!c) return null; const r = c.getBoundingClientRect(); return { l: r.left - g.left, t: r.top - g.top, r: r.right - g.left, b: r.bottom - g.top }; };
-    const par = {}, fnd = x => (par[x] === x || par[x] == null ? (par[x] = x) : (par[x] = fnd(par[x])));
-    [...it.kept, ...it.fresh].forEach(k => { const [a, b] = k.split("|"); par[fnd(a)] = fnd(b); });
-    const groups = {}; Object.keys(par).forEach(id => { (groups[fnd(id)] = groups[fnd(id)] || []).push(id); });
-    Object.values(groups).filter(m => m.length > 1).forEach(m => { const rs = m.map(rect).filter(Boolean); if (rs.length < 2) return; // the group's cards sit together; a group that wraps onto the next row gets a box on each row
-      const rows = {}; rs.forEach(r => (rows[Math.round(r.t)] = rows[Math.round(r.t)] || []).push(r));
-      Object.values(rows).forEach((row, ri) => { const l = Math.min(...row.map(r => r.l)) - 6, tp = Math.min(...row.map(r => r.t)) - 6, rr = Math.max(...row.map(r => r.r)) + 6, bt = Math.max(...row.map(r => r.b)) + 6;
-        grid.insertAdjacentHTML("beforeend", `<div class="abox" style="left:${l}px;top:${tp}px;width:${rr - l}px;height:${bt - tp}px">${ri ? "" : "<span>ALLIANCE</span>"}</div>`); }); });
     const fly = (m, dl) => { const r = rect(m.pid), mm = MERCS[m.id]; if (!r || !mm) return;
       const sprites = [...new Set(mm.units)].map(t => `<img alt="" src="${spriteURL(t)}">`).join(""), x = (r.l + r.r) / 2, y = r.t;
       grid.insertAdjacentHTML("beforeend", `<div class="mfly" style="left:${x}px;top:${y}px;--sx:${Math.round(g.width / 2 - x)}px;--sy:${Math.round(-g.top - y - 40)}px;--dl:${dl}s">${sprites}<span>${esc(mm.name)}</span></div><span class="mbadge" style="left:${r.r - 8}px;top:${r.b - 10}px;--dl:${(dl + .9).toFixed(2)}s">⚔ ${esc(mm.name)}</span>`); };
