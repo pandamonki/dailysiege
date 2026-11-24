@@ -153,6 +153,7 @@ const A = {
   rep: () => { reportBack = isLive() ? latestBattleKey() : (LASTP ? "practice" : null); open("report", reportBack || undefined); },
   rwatch: v => { reportBack = v; if (v === "practice") withPrepNote(startBattle); else watchLiveBattle(v, "play"); },
   rreelm: v => { reportBack = v; if (v === "practice") withPrepNote(() => { startBattle(); startReel(false); }); else watchLiveBattle(v, "reel"); },
+  rshare: v => { shareDay(v); return false; },
   rsb: () => { sheet.sb = !sheet.sb; }, rday: v => { sheet.id = v; sheet.insp = null; }, rinsp: v => { sheet.insp = v; }, rinspx: () => { sheet.insp = null; },
   rclose: () => { reportBack = null; sheet = null; if (typeof WAR_VIEW !== "undefined" && WAR_VIEW && !WAR_REEL) endPrevView(); }, // the finished war's day 7 report goes on to the war results
   stance: v => { S.stance = v; },

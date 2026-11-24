@@ -88,11 +88,11 @@ function cleanWaves(w) { // exactly WAVE_COUNT waves; unknown conditions fall ba
 // battle commands and each soldier's own orders (the castle guard stays). Only the hero falls back to heal, when its stance says; soldiers fight on.
 let ORDERS_V2_FROM = "2026-11-20"; const ordersV2For = d => String(d) >= ORDERS_V2_FROM;
 const ARMY_PLANS = ["conquest", "hunt", "siege", "slayer"], FALL_BACKS = ["none", "castle", "siege", "herodies", "heroback"];
-const ARMY_PLAN_INFO = { conquest: ["Conquest", "Kill their hero, clear their army, raze their castle, then move on to the next lord"], hunt: ["Hero hunt", "Go from one enemy hero to the next. Castles wait until no hero is left to chase"],
-  siege: ["Siege", "March from castle to castle, fighting only what gets in the way"], slayer: ["Army slayer", "Wipe out their soldiers first, then their hero, then their castle"] };
-const FALL_BACK_INFO = { none: ["Never", "The army never turns back"], castle: ["Castle under attack", "3 or more enemies at your castle"], siege: ["Siege engine nears", "A ram, catapult or powder cart enters your land"],
-  herodies: ["Hero falls", "Until your hero is back on its feet"], heroback: ["Hero falls back", "The army goes home with your hero"] };
-const CASTLE_ALERT_N = 3, TERRITORY_R = 5, FALLBACK_LINGER = 4, SIEGE_REACH = 1.5;
+const ARMY_PLAN_INFO = { conquest: ["Conquest", "Hero, then army, then castle. Then the next lord"], hunt: ["Hero hunt", "Chase heroes. Castles come last"],
+  siege: ["Siege", "Castle to castle, fighting only what blocks the way"], slayer: ["Army slayer", "Soldiers, then hero, then castle"] };
+const FALL_BACK_INFO = { none: ["Never", "Never turn back"], castle: ["Castle under attack", "3+ enemies at your castle"], siege: ["Siege engine nears", "A ram, catapult or powder cart nears"],
+  herodies: ["Hero falls", "Until your hero is back up"], heroback: ["Hero falls back", "Go home with your hero"] };
+const CASTLE_ALERT_N = 3, TERRITORY_R = 5, FALLBACK_LINGER = 4, SIEGE_REACH = 1.5; // enemies at the castle (within 3 tiles) that count as an attack; how near an engine is "in your land"; seconds the army stays home after the danger passes; how close an enemy must be for a siege army to stop for it
 // Zones v1 (plans stamped zoneV1, battles from ZONE_V1_FROM; practice always): where a soldier (or the hero) is placed sets its job for the battle.
 // The deploy field splits into four zones, seen from the castle looking at the hill: Guard (the tiles round the castle), the Front (straight ahead),
 // and the Left and Right flanks. The Front marches on the #1 target by its plan; each flank screens its side or raids the neighbour on that side;
@@ -131,4 +131,4 @@ function flankNeighbour(castles, i, side, n) {
     if ((side === "right") !== (a > 0)) return; const dd = Math.round(hyp(r - cr, c - cc) * 1e6); if (dd < bd) { bd = dd; best = k; } });
   return best;
 }
-const cleanFlanks = f => ({ left: FLANK_PLANS.includes(f && f.left) ? f.left : "screen", right: FLANK_PLANS.includes(f && f.right) ? f.right : "screen" }); // enemies at the castle (within 3 tiles) that count as an attack; how near an engine is "in your land"; seconds the army stays home after the danger passes; how close an enemy must be for a siege army to stop for it
+const cleanFlanks = f => ({ left: FLANK_PLANS.includes(f && f.left) ? f.left : "screen", right: FLANK_PLANS.includes(f && f.right) ? f.right : "screen" });

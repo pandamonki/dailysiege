@@ -202,9 +202,10 @@ function previewOrder() {
 const TARGETS_NEED = () => 1; // at least one target before sealing; up to pickMax()
 const pickMax = () => (zoneV1Now() ? 1 : PICK_MAX); // zones v1: one #1 target, which the Front marches on
 const targetsReady = () => !pickV1Now() || S.lists.hostile.length >= TARGETS_NEED();
-const ROLE_ICON = { "@weakcastle": "🏚", "@leader": "👑", "@above": "⬆", "@nearcastle": "🏰", "@neararmy": "⚔" };
+const ROLE_ICON = { "@weakcastle": "castle1", "@leader": "board", "@above": "roster", "@nearcastle": "base", "@neararmy": "army" }; // pictures in icons/ui
+const roleIco = k => (ROLE_ICON[k] ? `<img alt="" src="icons/ui/${ROLE_ICON[k]}.webp">` : "◎");
 const tgtName = id => { const r = RIVALS.find(x => x.id === id); return r ? r.name : PICK_ROLES[id] || ""; };
-const tgtMark = id => { const r = RIVALS.find(x => x.id === id); return r ? `<i class="sw" style="background:${r.color}"></i>` : `<i class="rico">${ROLE_ICON[id] || "◎"}</i>`; };
+const tgtMark = id => { const r = RIVALS.find(x => x.id === id); return r ? `<i class="sw" style="background:${r.color}"></i>` : `<i class="rico">${roleIco(id)}</i>`; };
 // the three target slots: filled ones can be dragged into order or cleared; empty ones say what to do
 function targetSlotsHTML() {
   const hostile = S.lists.hostile;
@@ -221,19 +222,19 @@ function targetBoardHTML(compact) {
 }
 function pickTab() {
   const hostile = S.lists.hostile, roles = Object.keys(PICK_ROLES).filter(k => !hostile.includes(k)), full = hostile.length >= pickMax();
-  const chip = k => `<button class="chip" data-act="lmove" data-v="hostile" data-k="${k}" ${full ? "disabled" : dis()}><i class="rico">${ROLE_ICON[k] || "◎"}</i>${esc(PICK_ROLES[k])}</button>`;
+  const chip = k => `<button class="chip" data-act="lmove" data-v="hostile" data-k="${k}" ${full ? "disabled" : dis()}><i class="rico">${roleIco(k)}</i>${esc(PICK_ROLES[k])}</button>`;
   return `<div class="sec tight"><h3>1 · ${zoneV1Now() ? "#1 target" : "Today's targets"} <span class="cnt${hostile.length >= TARGETS_NEED() ? " ok" : ""}">${hostile.length}/${pickMax()}</span></h3>
-      <p class="muted">${zoneV1Now() ? `Pick one lord or role. Your <b style="color:${ZONE_COL.front}">Front</b> marches on them and fights whatever it meets on the way. When they fall it goes for ${fallbackLabel()}.` : `Pick at least one target before you seal, and up to ${PICK_MAX}, in order: lords, roles, or a mix. Your army marches on them one by one and fights anything it meets on the way. After that it goes for ${fallbackLabel()}.`}</p>
+      <p class="muted">${zoneV1Now() ? `Pick one lord or role. Your <b style="color:${ZONE_COL.front}">Front</b> marches on them. After them: ${fallbackLabel()}.` : `Pick 1 to ${PICK_MAX}, in order. After them: ${fallbackLabel()}.`}</p>
       ${targetSlotsHTML()}
-      ${roles.length ? `<h4 class="minih">Or target a role, worked out in battle</h4><div class="chips">${roles.map(chip).join("")}</div>` : ""}
-      <h4 class="minih">Lords, by today's leaderboard</h4>${Object.keys(bountyMap()).length ? `<p class="muted">♛ is a bounty: the extra gold for killing that lord's hero or taking their castle.</p>` : ""}${targetBoardHTML()}</div>
+      ${roles.length ? `<h4 class="minih">Or a role</h4><div class="chips">${roles.map(chip).join("")}</div>` : ""}
+      <h4 class="minih">Lords${Object.keys(bountyMap()).length ? " · ♛ bounty gold" : ""}</h4>${targetBoardHTML()}</div>
     ${strategyTabRest(S.strategy)}`;
 }
 function fallbackLabel() {
   let rk = {}; try { rk = isLive() ? rankMap(standings(liveClock().week, addDays(liveClock().planDay, -1)), RIVALS.map(r => r.id).concat([LIVE.uid])) : rankMap(PRACTICE_BOARD, RIVALS.map(r => r.id).concat(["you"])); } catch (e) { rk = {}; }
-  const me = isLive() ? LIVE.uid : "you", my = rk[me]; if (!my) return "the nearest castle (there is no board yet)";
+  const me = isLive() ? LIVE.uid : "you", my = rk[me]; if (!my) return "the nearest castle";
   const want = my === 1 ? 2 : my - 1, id = Object.keys(rk).find(k => rk[k] === want), r = RIVALS.find(x => x.id === id);
-  return my === 1 ? `the lord in second place${r ? ` (${esc(r.name)})` : ""}` : `the lord just above you on the board${r ? ` (${esc(r.name)})` : ""}`;
+  return my === 1 ? (r ? esc(r.name) + ", in second place" : "the lord in second place") : (r ? esc(r.name) + ", just above you" : "the lord just above you");
 }
 function strategyTab() {
   if (pickV1Now()) return pickTab();
@@ -246,7 +247,7 @@ function strategyTab() {
     ${strategyTabRest(st)}`;
 }
 const ordersV2Now = () => (isLive() ? ordersV2For(liveClock().planDay) : true); // orders v2: army plan and fall-back replace the heading, battle commands and soldiers' own orders
-const STANCE_V2 = { aggressive: "Your hero fights on until 12% health before going home to heal", skirmish: "Your hero goes home to heal below 30% health, then returns", cautious: "Your hero goes home to heal below 45% health, then returns" };
+const STANCE_V2 = { aggressive: "Heals at home below 12% health", skirmish: "Heals at home below 30% health", cautious: "Heals at home below 45% health" };
 // zones v1: the Front's plan, each flank's plan, the army temper, and what each zone holds today
 function zoneJobsHTML() {
   const j = myJobs(), nb = { left: myNeighbour("left"), right: myNeighbour("right") }, waves = (S.garrison || []).map((w, i) => waveOpen(i) ? (ZONES.includes(w.zone) ? w.zone : "front") : null);
@@ -268,9 +269,9 @@ function zoneOrdersHTML(st) {
 function strategyTabRest(st) {
   if (zoneV1Now()) return zoneOrdersHTML(st);
   if (ordersV2Now()) { const pl = st.plan || "conquest", fb = st.fallback || "none", opt = (act, k, cur, [n, d]) => `<button class="opt${cur === k ? " on" : ""}" data-act="${act}" data-v="${k}" ${dis()}><b>${esc(n)}</b><span>${esc(d)}</span></button>`;
-    return `<div class="sec tight"><h3>2 · Army plan <small class="hnote">what comes next once a fight is over</small></h3><div class="olist">${ARMY_PLANS.map(k => opt("aplan", k, pl, ARMY_PLAN_INFO[k])).join("")}</div>
-      <label class="inline"><input type="checkbox" data-act="hillfirst" ${st.heading === "centre" ? "checked" : ""} ${dis()}> Hold the central hill for the first 2 minutes</label></div>
-    <div class="sec tight"><h3>3 · Army falls back when</h3><div class="olist">${FALL_BACKS.map(k => opt("fback", k, fb, FALL_BACK_INFO[k])).join("")}</div><p class="muted">The whole army goes home to defend, then returns to its plan a few seconds after the danger has passed. Soldiers never leave a fight on their own.</p></div>
+    return `<div class="sec tight"><h3>2 · Army plan</h3><div class="olist">${ARMY_PLANS.map(k => opt("aplan", k, pl, ARMY_PLAN_INFO[k])).join("")}</div>
+      <label class="inline"><input type="checkbox" data-act="hillfirst" ${st.heading === "centre" ? "checked" : ""} ${dis()}> Hold the hill for 2 minutes first</label></div>
+    <div class="sec tight"><h3>3 · Army falls back when</h3><div class="olist">${FALL_BACKS.map(k => opt("fback", k, fb, FALL_BACK_INFO[k])).join("")}</div></div>
     <div class="sec tight"><h3>4 · Hero stance</h3><div class="seg3">${STANCES.map(([k, n]) => `<button class="btn small${S.stance === k ? " on" : ""}" data-act="stance" data-v="${k}" ${dis()}>${n}</button>`).join("")}</div><p class="muted">${esc(STANCE_V2[S.stance] || "")}.</p></div>`; }
   const hn = { hero: "Straight at their hero", castle: "Straight at their castle (the default)", near: "Whatever of theirs is closest", centre: "Hold the central hill for 2 minutes first" }[st.heading] || "";
   return `<div class="sec tight"><h3>2 · On reaching a target, go for</h3><div class="seg3 two">${HEADINGS.map(([k, n]) => `<button class="btn small${st.heading === k ? " on" : ""}" data-act="heading" data-v="${k}" ${dis()}>${n}</button>`).join("")}</div><p class="muted">${esc(hn)}.${st.heading === "centre" ? " Your army skips its targets and holds the hill, fighting anything that comes near. After 2 minutes it marches on its targets. Heroes on the hill earn 25% more gold and XP." : ""}</p></div>
