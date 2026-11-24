@@ -142,7 +142,8 @@ const A = {
       const who = takenColours()[k]; if (who) { toast(`${TEAM_COLOR_NAMES[k] || "That colour"} is taken by ${who}.`); return; }
       S.banner = { ...(S.banner || defaultBanner()), c1: k }; MY_COLOR = k; save(); renderLobby(); return; }
     S.banner = { ...(S.banner || defaultBanner()), [v]: k === "seat" ? null : k }; },
-  pact: (v, k) => { ensureDip(); if (v === "break" && breakV2Now() && S.pactAct[k] !== "break") { S.pactAsk = k; return; } S.pactAsk = null; // disbanding asks "are you sure?" first
+  pall: v => { ensureDip(); if (v === "on") { S.pactAll = BETRAY_ALL_WHEN[0]; S.pactAsk = null; carriedPartners().forEach(id => { S.pactAct[id] = "betray"; S.pactWhen[id] = S.pactAll; }); } else { S.pactAll = null; carriedPartners().forEach(id => { S.pactAct[id] = "keep"; }); } }, // betray the whole alliance
+  pact: (v, k) => { ensureDip(); S.pactAll = null; if (v === "break" && breakV2Now() && S.pactAct[k] !== "break") { S.pactAsk = k; return; } S.pactAsk = null; // disbanding asks "are you sure?" first
     S.pactAct[k] = v; if (v === "keep" || (v === "break" && breakV2Now())) S.lists.hostile = S.lists.hostile.filter(x => x !== k); if (v === "betray") S.pactWhen[k] = S.pactWhen[k] || BETRAY_WHEN[0]; },
   pactyes: (v, k) => { ensureDip(); S.pactAct[k] = "break"; S.pactAsk = null; S.lists.hostile = S.lists.hostile.filter(x => x !== k); },
   pactno: () => { S.pactAsk = null; },
@@ -150,8 +151,8 @@ const A = {
   gpage: v => { sheet.pg = (sheet.pg || 0) + (+v); },
   gch: v => { const first = S && S.ob === 1, list = guidePages("book").filter(p => !first || p.ch === "basics"); sheet.pg = Math.max(0, list.findIndex(p => p.ch === v)); },
   rep: () => { reportBack = isLive() ? latestBattleKey() : (LASTP ? "practice" : null); open("report", reportBack || undefined); },
-  rwatch: v => { reportBack = v; if (v === "practice") startBattle(); else watchLiveBattle(v, "play"); },
-  rreelm: v => { reportBack = v; if (v === "practice") { startBattle(); startReel(false); } else watchLiveBattle(v, "reel"); },
+  rwatch: v => { reportBack = v; if (v === "practice") withPrepNote(startBattle); else watchLiveBattle(v, "play"); },
+  rreelm: v => { reportBack = v; if (v === "practice") withPrepNote(() => { startBattle(); startReel(false); }); else watchLiveBattle(v, "reel"); },
   rsb: () => { sheet.sb = !sheet.sb; }, rday: v => { sheet.id = v; sheet.insp = null; }, rinsp: v => { sheet.insp = v; }, rinspx: () => { sheet.insp = null; },
   rclose: () => { reportBack = null; sheet = null; if (typeof WAR_VIEW !== "undefined" && WAR_VIEW && !WAR_REEL) endPrevView(); }, // the finished war's day 7 report goes on to the war results
   stance: v => { S.stance = v; },
@@ -248,6 +249,7 @@ document.addEventListener("change", e => {
   if (act === "tmodeset") S.strategy.mode = s.value;
   if (act === "prioset") S.prio[+v] = s.value;
   if (act === "gprioset" && !S.locked) { const l = S.gprio[k].slice(); l[+v] = s.value; S.gprio[k] = cleanGprio({ ...S.gprio, [k]: l.filter(Boolean) })[k]; }
+  if (act === "pallwhen") { S.pactAll = s.value; carriedPartners().forEach(id => { S.pactWhen[id] = s.value; }); }
   if (act === "pactset") { ensureDip(); S.pactAct[k] = s.value; if (s.value === "keep") S.lists.hostile = S.lists.hostile.filter(x => x !== k); if (s.value === "betray") S.pactWhen[k] = S.pactWhen[k] || BETRAY_WHEN[0]; }
   if (act === "tmin") S.terms[k].min = +s.value;
   render();

@@ -3,6 +3,11 @@
 // Each item is [icon, headline, one short sentence]. Players who have not seen the newest id get the pop-up the next time they plan;
 // the id is remembered on their device, so changing the id is all it takes to show it again. Keep about 8 to 14 items.
 const RELEASES = [
+  { id: "1.22", title: "What's new in v1.22", sub: "Betray the whole alliance, and replays that start at once", items: [
+    ["💣", "Betray the whole alliance", "From 26 Nov, with two or more allies you can betray them all at once: one trigger, and bombs in every allied keep go off together."],
+    ["📣", "Every victim named", "The betrayal banner lists everyone who was betrayed."],
+    ["⚡", "Replays start at once", "Watch replay and Highlights no longer pause: the battle is prepared while you read the report, and a Preparing note shows if it needs a moment."],
+  ] },
   { id: "1.21", title: "What's new in v1.21", sub: "Sharper highlights, a betrayal cut-away and disbanding alliances", items: [
     ["🎬", "Ultimates that matter", "Highlights show only ultimates that killed a hero or a crowd of soldiers: the best three of the fight."],
     ["🔍", "Better framing", "An ultimate's clip keeps the hero and the whole impact zone in view, and every clip runs at least 4 seconds."],

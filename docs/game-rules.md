@@ -27,6 +27,7 @@ practice games always stamp all of them (`js/sim/plans.js`).
 | 20 Nov | `waveV4` | "Castle attacked" wave trigger becomes "enemies reach my castle" (within 3 tiles, or the first hit) |
 | 21 Nov | `placeV2` | Placement: one point per place, last scores 1, plus 2 for winning |
 | 22 Nov | `balV5` | Balance v5: hero rebalance (stats and skills), Hero damage and armour class for every hero, resting at home heals, regen items toned down, waves a flat 20s apart, triple castle points for a betrayal kill |
+| 26 Nov | `betrayV2` | Betray the whole alliance: every allied keep bombed at the same moment |
 | 25 Nov | `breakV2` | Disbanding an alliance takes effect from the next battle (see Alliances) |
 | 23 Nov | `finV2` | Final-day alliances: day 7 pacts hold until one alliance is all that is left, then break and the allies fight on |
 | 23 Nov | `lvlV2` | Faster levelling: 3 to 4 levels a battle, up to level 25, smaller steps per level |
@@ -201,6 +202,9 @@ practice games always stamp all of them (`js/sim/plans.js`).
 
 ## Screens
 
+- Watch replay and Highlights: the battle is fought again on the phone, which takes about a second, so it is done in the background while the
+  report is on screen and kept for the button. If it is not ready, a "Preparing the battle…" note appears at once while it runs.
+
 - Pre-battle screen ("The houses gather"): a line says whether you have allies; then each alliance is a coloured side with a header
   ("Your alliance" or "Alliance of X", lord count, new today / held from yesterday / grew today), separated by VS, then the lone lords
   ("Lone wolf" when exactly one stands alone). Team colours come from `allianceGroups` in `js/replay/flow.js`.
@@ -286,7 +290,10 @@ practice games always stamp all of them (`js/sim/plans.js`).
   lord who was disbanded on gets a pop-up when they next plan ("Alliance disbanded"). Before that date Break it ended the pact at the start
   of the battle.
 - A pact can be disbanded cleanly or betrayed mid-battle with a bomb in the ally's keep (half its health). A lord can set Betray
-  on more than one ally: each armed betrayal sends the hero to that keep, so the bombs go off one after another, never at once. The betrayer scores
+  on more than one ally: each armed betrayal sends the hero to that keep, so the bombs go off one after another. From 26 Nov (`betrayV2`) a lord with two or more carried allies can instead choose
+  **Betray the whole alliance** (Alliances > Betray all; trigger: halfway, 3 players left or the 2-minute mark): the hero heads for the nearest
+  allied keep and, on arriving, a bomb is planted in every allied keep at the same instant so they all go off together (`betrayAllStep` in
+  `js/sim/battle.js`, plan field `betrayAll`). It makes every ally a bitter enemy at once. The betrayer scores
   3 points and takes a quarter of the victim's battle spoils; the two deal 20% more damage to each other for the rest of the
   war and can never share an alliance again.
 - Bots in friends wars (from 20 Nov, `wBotDiplomacy` in `js/net/world.js`): each day a bot has a 30% chance to invite a

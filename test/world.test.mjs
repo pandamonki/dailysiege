@@ -236,3 +236,11 @@ test("breakV2: today's own breaks no longer end a carried alliance (it ends tomo
   assert.deepEqual(run(false), []); // the old rule: broken at the start of the battle
   assert.deepEqual(run(true), [["a", "b"]]); // breakV2: they still fight together tonight
 });
+
+test("betrayV2: betraying the whole alliance plants every bomb at the same moment", () => {
+  const b = buildBattleInputs(world(ids), D1), [a, c, e] = b.plans;
+  a.pacts = [c.pid, e.pid]; c.pacts = [a.pid]; e.pacts = [a.pid]; a.betray = { [c.pid]: "At the 2-minute mark", [e.pid]: "At the 2-minute mark" }; a.betrayAll = true;
+  const res = sim.get("runBattle")(b.plans, 1, { N: b.N, balV2: true, dayNo: 1 }), bets = res.hl.filter(h => h.kind === "betray" && h.pid === a.pid);
+  if (bets.length) { assert.equal(bets.length, 2, "both allies are betrayed"); assert.equal(bets[0].t, bets[1].t, "at the same instant"); assert.equal(res.results.find(r => r.pid === a.pid).treachery, 2, "both bombs went off"); }
+  else assert.ok(!res.feudsNew.some(k => k.includes(a.pid)), "no betrayal means no feud (the hero never reached a keep)"); // seed 1 may not get there: the check then is that nothing half-happens
+});

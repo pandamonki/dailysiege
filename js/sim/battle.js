@@ -550,6 +550,17 @@ function runBattle(plans, seed, opts = {}) {
   }
   const feudsNew = new Set(), betrayedBy = {}; // betrayedBy: victim -> the lords who bombed their keep in this battle
   const treachery = []; // bombs that went off: [betrayer, victim]
+  // betrayV2: the lord betrays their whole alliance. When the trigger comes the hero heads for the nearest allied keep; on arrival every bomb is planted at
+  // the same instant, so they all go off together.
+  function betrayAllStep(pid, p) {
+    const tg = Object.keys(p.betray || {}).filter(q => P[q] && P[q].alive && p.pacts.has(q) && P[q].castle && P[q].castle.hp > 0); if (!tg.length) return;
+    const alive = alivePlayers(), trig = p.betray[tg[0]], ok = trig === "When 3 players remain" ? alive.length <= 3 : trig === "At the 2-minute mark" ? t >= 120 : (t >= 90 || alive.length <= Math.ceil(order.length / 2));
+    if (ok && !p.armedAll) { p.armedAll = true; if (pid === mePid) log("Your hero heads for the nearest keep. The whole alliance falls at once.", "you"); }
+    if (!p.armedAll) return;
+    const hero = champOf(pid); if (!hero || !live(hero)) return;
+    const near = tg.slice().sort((a, b) => d(hero, P[a].castle) - d(hero, P[b].castle) || (a < b ? -1 : 1))[0]; p.armed = { [near]: true }; // the hero walks to the nearest keep (see the armed betrayal movement)
+    if (d(hero, P[near].castle) <= 2.2) tg.forEach(q => betray(pid, q));
+  }
   function betray(pid, target, quiet) {
     if (!P[pid].pacts.has(target)) return;
     { const kc = P[target].castle; if (!P[target].alive || !kc || kc.hp <= 0) return; } // keep already destroyed: nothing to betray
@@ -891,6 +902,7 @@ function runBattle(plans, seed, opts = {}) {
         }
         if (pid === mePid) log(`Your order: ${r.if.toLowerCase()} → ${r.then.toLowerCase()}.`, "you");
       });
+      if (p.betrayAll) { betrayAllStep(pid, p); return; } // betray the whole alliance at once
       Object.entries(p.betray || {}).forEach(([target, trig]) => {
         if (!P[target] || !P[target].alive || !p.pacts.has(target)) return;
         let ok = false;

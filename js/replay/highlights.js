@@ -203,7 +203,7 @@ function sting(kind) {
 // The betrayal cut-away (main replay and highlights): the replay pauses, a banner names who betrayed whom, the camera cuts to the hero
 // planting the bomb, then plays the fuse in slow motion on the castle until it blows. Afterwards the caller returns to its own camera.
 const BETRAY_HOLD = 2, BETRAY_FUSE = 2.6, BETRAY_SLOW = .45;
-function makeBetrayCine(h, R) { sting("betray"); return { h, R, pt: 0, t0: h.t, ci: R.meta.findIndex(m => m.pid === h.pid && m.kind === "champ") }; }
+function makeBetrayCine(h, R) { sting("betray"); return { h, R, pt: 0, t0: h.t, victims: (R.hl || []).filter(x => x.kind === "betray" && x.pid === h.pid && Math.abs(x.t - h.t) < .05).map(x => x.other), ci: R.meta.findIndex(m => m.pid === h.pid && m.kind === "champ") }; }
 function tickBetrayCine(c, dt) { // returns true when the cut-away is over
   c.pt += dt; const h = c.h;
   if (c.pt < BETRAY_HOLD) { replay.time = h.t; let x = h.x, y = h.y; const f = replayFrameAt(h.t), k = c.ci * 4; if (c.ci >= 0 && f && f.d[k] != null && !(f.d[k + 3] & 1)) { x = f.d[k]; y = f.d[k + 1]; }
@@ -217,12 +217,12 @@ function drawBetrayBanner(c) {
   ctx.save(); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.globalAlpha = a; ctx.fillStyle = "rgba(60,6,6,.88)"; ctx.fillRect(0, y - bh / 2, vw, bh); ctx.fillStyle = "#e0503f"; ctx.fillRect(0, y - bh / 2, vw, 4); ctx.fillRect(0, y + bh / 2 - 4, vw, 4);
   ctx.translate(vw / 2, y); ctx.scale(pop, pop); ctx.textBaseline = "middle"; ctx.textAlign = "center";
   ctx.font = `800 ${Math.round(34 * s)}px ${serif}`; ctx.lineWidth = 5; ctx.strokeStyle = "rgba(20,4,4,.9)"; ctx.strokeText("BETRAYAL!", 0, -22 * s); ctx.fillStyle = "#fff"; ctx.fillText("BETRAYAL!", 0, -22 * s);
-  // [colour] Betrayer  betrayed  [colour] Victim
-  const fs = Math.round(19 * s); ctx.font = `700 ${fs}px ${serif}`; const n1 = N(c.h.pid), n2 = N(c.h.other), mid = " betrayed ", sw = 16 * s, gap = 6 * s;
-  const w1 = ctx.measureText(n1).width + sw + gap, w2 = ctx.measureText(n2).width + sw + gap, wm = ctx.measureText(mid).width, k = Math.min(1, (vw - 24) / (w1 + wm + w2)), tot = (w1 + wm + w2) * k;
-  ctx.scale(k, k); let x = -tot / k / 2, yy = 24 * s; ctx.textAlign = "left";
-  const chip = (nm, cl, w) => { ctx.fillStyle = cl; ctx.fillRect(x, yy - sw / 2, sw, sw); ctx.strokeStyle = "rgba(0,0,0,.7)"; ctx.lineWidth = 1.5; ctx.strokeRect(x, yy - sw / 2, sw, sw); ctx.fillStyle = lighten(cl); ctx.fillText(nm, x + sw + gap, yy); x += w; };
-  chip(n1, col(c.h.pid), w1); ctx.fillStyle = "#ffd9d0"; ctx.fillText(mid, x, yy); x += wm; chip(n2, col(c.h.other), w2);
+  // [colour] Betrayer  betrayed  [colour] Victim (and [colour] Victim ...): the whole alliance at once lists every victim
+  const fs = Math.round(19 * s); ctx.font = `700 ${fs}px ${serif}`; const vs = c.victims && c.victims.length ? c.victims : [c.h.other], sw = 16 * s, gap = 6 * s, mid = " betrayed ", and = " and ";
+  const parts = [[N(c.h.pid), col(c.h.pid)], [mid], ...vs.flatMap((v, i) => (i ? [[and], [N(v), col(v)]] : [[N(v), col(v)]]))].map(([txt, cl]) => ({ txt, cl, w: ctx.measureText(txt).width + (cl ? sw + gap : 0) }));
+  const total = parts.reduce((a, p) => a + p.w, 0), k = Math.min(1, (vw - 24) / total);
+  ctx.scale(k, k); let x = -total / 2, yy = 24 * s; ctx.textAlign = "left";
+  parts.forEach(p => { if (p.cl) { ctx.fillStyle = p.cl; ctx.fillRect(x, yy - sw / 2, sw, sw); ctx.strokeStyle = "rgba(0,0,0,.7)"; ctx.lineWidth = 1.5; ctx.strokeRect(x, yy - sw / 2, sw, sw); ctx.fillStyle = lighten(p.cl); ctx.fillText(p.txt, x + sw + gap, yy); } else { ctx.fillStyle = "#ffd9d0"; ctx.fillText(p.txt, x, yy); } x += p.w; });
   ctx.restore();
 }
 // The heroes on the victory screen: the winner (and every ally who won with them) dancing; the winner's allies whose castles fell float
