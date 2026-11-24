@@ -121,7 +121,8 @@
 .tslot .req { flex: 0 0 auto; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
 .tslot .tx { flex: 0 0 32px; width: 32px; height: 32px; border-radius: 6px; border: 2px solid var(--wood-dark); background: rgba(255,250,230,.8); color: var(--ink); font-size: 14px; cursor: pointer; }
 .tslot .sw, .tbr .sw { flex: 0 0 auto; }
-.rico { font-style: normal; display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: rgba(62,39,20,.15); font-size: 13px; }
+.rico { font-style: normal; display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: rgba(62,39,20,.15); font-size: 13px; overflow: hidden; }
+.rico img { width: 18px; height: 18px; display: block; }
 .tslot.drag { opacity: .7; }
 .tboard { display: grid; gap: 4px; }
 .tbr { display: grid; grid-template-columns: 22px 14px minmax(0, 1fr) auto auto 84px; gap: 6px; align-items: center; padding: 3px 4px; border-radius: 6px; }
