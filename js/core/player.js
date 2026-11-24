@@ -156,6 +156,6 @@ const allyShielded = id => !pactsEndToday() && carriedPartners().includes(id) &&
 const betrayAllOn = () => !!(S && S.pactAll && betrayV2Now() && carriedPartners().length >= 2 && !pactsEndToday());
 function pactPlan() { // what I've decided about each carried alliance: keep, break at the start, or betray when the set condition is met
   const breaks = [], pbetray = {}, all = betrayAllOn();
-  carriedPartners().forEach(id => { const a = (S.pactAct || {})[id]; if (a === "break") breaks.push(id); else if (all) pbetray[id] = S.pactAll; else if (a === "betray") pbetray[id] = (S.pactWhen || {})[id] || BETRAY_WHEN[0]; });
+  carriedPartners().forEach(id => { const a = (S.pactAct || {})[id]; if (a === "break") breaks.push(id); else if (all) pbetray[id] = S.pactAll; else if (a === "betray") pbetray[id] = (S.pactWhen || {})[id] || betrayDefault(); });
   return { breaks, pbetray, ...(all ? { betrayAll: true } : {}) };
 }

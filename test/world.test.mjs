@@ -245,12 +245,12 @@ test("betrayV2: betraying the whole alliance plants every bomb at the same momen
   else assert.ok(!res.feudsNew.some(k => k.includes(a.pid)), "no betrayal means no feud (the hero never reached a keep)"); // seed 1 may not get there: the check then is that nothing half-happens
 });
 
-test("betrayV2: 'when the last outsider falls' turns on the last allies at once instead of ending in a shared victory; the other new triggers fire", () => {
+test("betrayV2: a betrayal time slot fires once its time is reached, and the new conditions run", () => {
   const fight = (trig, seed, all) => { const b = buildBattleInputs(world(ids), D1), [a, c, e] = b.plans; a.pacts = [c.pid, e.pid]; c.pacts = [a.pid]; e.pacts = [a.pid]; a.betray = { [c.pid]: trig, [e.pid]: trig }; if (all) a.betrayAll = true;
     return sim.get("runBattle")(b.plans, seed, { N: b.N, balV2: true, dayNo: 1 }); };
-  let fired = 0, shared = 0;
-  for (let seed = 1; seed <= 8; seed++) { const r = fight(sim.get("LAST_OUTSIDER"), seed, false); if (r.hl.some(h => h.kind === "betray" && h.pid === "a")) fired++; if (r.team && r.team.includes("a") && r.team.length > 1) shared++; }
-  assert.ok(fired >= 1, "the last-outsider betrayal went off in at least one battle"); assert.equal(shared, 0, "a lord who set it never shares the victory with the allies they were left with");
-  for (const trig of ["At the very start of the battle", "In the last minute", "When another lord is knocked out", "When their army is gone", "When their hero is away from home"]) { const r = fight(trig, 1, false); assert.ok(Array.isArray(r.hl), trig + " runs"); }
-  assert.ok(fight("At the very start of the battle", 1, true).hl.some(h => h.kind === "betray" && h.pid === "a"), "the whole alliance can be betrayed at the very start");
+  const first = r => Math.min(...r.hl.filter(h => h.kind === "betray" && h.pid === "a").map(h => h.t));
+  const early = fight("At 0:00", 1, true), late = fight("At 2:00", 1, true);
+  assert.ok(early.hl.some(h => h.kind === "betray" && h.pid === "a"), "a betrayal at the start of the battle happens"); assert.ok(first(early) < 60, `at 0:00 it happens early (${first(early)}s)`);
+  if (late.hl.some(h => h.kind === "betray" && h.pid === "a")) assert.ok(first(late) >= 120, `at 2:00 nothing happens before 2:00 (${first(late)}s)`);
+  for (const trig of ["At 1:00", "When another lord is knocked out", "When their army is gone", "When their hero is away from home"]) { const r = fight(trig, 1, false); assert.ok(Array.isArray(r.hl), trig + " runs"); }
 });

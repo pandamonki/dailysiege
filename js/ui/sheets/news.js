@@ -5,8 +5,7 @@
 const RELEASES = [
   { id: "1.22", title: "What's new in v1.22", sub: "Betray the whole alliance, and replays that start at once", items: [
     ["💣", "Betray the whole alliance", "From 26 Nov, with two or more allies you can betray them all at once: one trigger, and bombs in every allied keep go off together."],
-    ["🎯", "New betrayal triggers", "At the very start, in the last minute, when another lord falls, when their army is gone, when their hero is away from home."],
-    ["🕵️", "The last outsider", "Choose \"when the last outsider falls\" and the bombs go off by themselves the moment everyone outside the alliance is beaten. You then fight it out."],
+    ["⏱", "Pick the betrayal time", "Choose a time slot like the wave deadlines (0:00 to 3:00), or a condition such as their army being gone or their hero away from home."],
     ["📣", "Every victim named", "The betrayal banner lists everyone who was betrayed."],
     ["⚡", "Replays start at once", "Watch replay and Highlights no longer pause: the battle is prepared while you read the report, and a Preparing note shows if it needs a moment."],
   ] },

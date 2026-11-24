@@ -27,7 +27,7 @@ practice games always stamp all of them (`js/sim/plans.js`).
 | 20 Nov | `waveV4` | "Castle attacked" wave trigger becomes "enemies reach my castle" (within 3 tiles, or the first hit) |
 | 21 Nov | `placeV2` | Placement: one point per place, last scores 1, plus 2 for winning |
 | 22 Nov | `balV5` | Balance v5: hero rebalance (stats and skills), Hero damage and armour class for every hero, resting at home heals, regen items toned down, waves a flat 20s apart, triple castle points for a betrayal kill |
-| 26 Nov | `betrayV2` | Betray the whole alliance: every allied keep bombed at the same moment |
+| 26 Nov | `betrayV2` | Betray the whole alliance (every allied keep bombed at the same moment) and betrayal times picked from slots |
 | 25 Nov | `breakV2` | Disbanding an alliance takes effect from the next battle (see Alliances) |
 | 23 Nov | `finV2` | Final-day alliances: day 7 pacts hold until one alliance is all that is left, then break and the allies fight on |
 | 23 Nov | `lvlV2` | Faster levelling: 3 to 4 levels a battle, up to level 25, smaller steps per level |
@@ -293,11 +293,10 @@ practice games always stamp all of them (`js/sim/plans.js`).
   on more than one ally: each armed betrayal sends the hero to that keep, so the bombs go off one after another. From 26 Nov (`betrayV2`) a lord with two or more carried allies can instead choose
   **Betray the whole alliance** (Alliances > Betray all; trigger: halfway, 3 players left or the 2-minute mark): the hero heads for the nearest
   allied keep and, on arriving, a bomb is planted in every allied keep at the same instant so they all go off together (`betrayAllStep` in
-  `js/sim/battle.js`, plan field `betrayAll`). It makes every ally a bitter enemy at once. From 26 Nov the Betray when list also has: at the very start of the battle, in the last minute
-  (replaces the 2-minute mark), when another lord is knocked out, when their army is gone, when their hero is away from home (more than 8 tiles from
-  their keep) and **when the last outsider falls**: no walk to the keep, the bombs go off by themselves the moment the last lord outside the
-  alliance is beaten, and the battle goes on between the betrayer and the allies they turned on instead of ending in a shared victory
-  (`lastOutsiderBetray` in `js/sim/battle.js`; not used on the final day, where the last alliance breaks anyway). The betrayer scores
+  `js/sim/battle.js`, plan field `betrayAll`). It makes every ally a bitter enemy at once. From 26 Nov the Betray when list is picked like the wave deadlines: a time slot (At 0:00, 0:30, 1:00, 1:30, 2:00, 2:30 or 3:00)
+  or a condition (3 players remain, another lord is knocked out, their castle drops below 30% or is under attack, their army is gone, their hero
+  is away from home, they attack my target, their hero drops below 30% or has fallen). The old Halfway and 2-minute mark still work in saved orders.
+  The betrayer scores
   3 points and takes a quarter of the victim's battle spoils; the two deal 20% more damage to each other for the rest of the
   war and can never share an alliance again.
 - Bots in friends wars (from 20 Nov, `wBotDiplomacy` in `js/net/world.js`): each day a bot has a 30% chance to invite a
