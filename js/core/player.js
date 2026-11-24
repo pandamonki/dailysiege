@@ -147,11 +147,11 @@ const finalToday = () => (typeof isLive === "function" && isLive() ? liveClock()
 const finV2Now = () => (typeof isLive === "function" && isLive() ? finV2For(liveClock().planDay) : true);
 const pactsEndToday = () => finalToday() && !finV2Now(); // before finV2 every pact ended at dawn on day 7; now they hold until only one alliance is left
 function carriedPartners() { // players I was still allied with at the end of the last battle
-  const live = isLive(), me = live ? LIVE.uid : "you", src = live ? carriedPairs(liveClock().planDay) : (S.pairs || []);
+  const live = isLive(), me = live ? LIVE.uid : "you", src = live ? activePairs(liveClock().planDay) : (S.pairs || []);
   return src.map(s => s.split("|")).filter(p => p.includes(me)).map(p => (p[0] === me ? p[1] : p[0])).filter(id => RIVALS.some(r => r.id === id));
 }
 // an ally can't be put on the target list unless the pact is set to Betray (or Break) for this battle
-const allyShielded = id => !pactsEndToday() && carriedPartners().includes(id) && !["betray", "break"].includes((S.pactAct || {})[id]);
+const allyShielded = id => !pactsEndToday() && carriedPartners().includes(id) && !(breakV2Now() ? ["betray"] : ["betray", "break"]).includes((S.pactAct || {})[id]); // breakV2: a disbanded ally still fights beside you tonight, so only a betrayal makes them a target
 function pactPlan() { // what I've decided about each carried alliance: keep, break at the start, or betray when the set condition is met
   const breaks = [], pbetray = {};
   carriedPartners().forEach(id => { const a = (S.pactAct || {})[id]; if (a === "break") breaks.push(id); else if (a === "betray") pbetray[id] = (S.pactWhen || {})[id] || BETRAY_WHEN[0]; });

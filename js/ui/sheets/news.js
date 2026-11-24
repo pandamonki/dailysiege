@@ -3,6 +3,19 @@
 // Each item is [icon, headline, one short sentence]. Players who have not seen the newest id get the pop-up the next time they plan;
 // the id is remembered on their device, so changing the id is all it takes to show it again. Keep about 8 to 14 items.
 const RELEASES = [
+  { id: "1.21", title: "What's new in v1.21", sub: "Sharper highlights, a betrayal cut-away and disbanding alliances", items: [
+    ["🎬", "Ultimates that matter", "Highlights show only ultimates that killed a hero or a crowd of soldiers: the best three of the fight."],
+    ["🔍", "Better framing", "An ultimate's clip keeps the hero and the whole impact zone in view, and every clip runs at least 4 seconds."],
+    ["🏅", "Final placings", "The highlights end on the same placings list as the results screen."],
+    ["💣", "Betrayal cut-away", "The replay pauses, a banner names who betrayed whom in their colours, and the camera cuts to the bomb and the blast."],
+    ["✋", "Disbanding takes a day", "From 25 Nov, a disbanded alliance still fights together tonight and ends from the next battle. Only a betrayal turns on an ally mid-fight."],
+    ["❓", "Are you sure?", "Disbanding asks first, and tells you exactly when it takes effect."],
+    ["🧭", "Clearer muster screen", "Each alliance is its own coloured side, then the lone lords, with a line saying whether you have allies."],
+    ["🛡", "Team crests", "Each alliance has a shield crest: a slice per lord in their colour and a white animal. It sits above allied castles and heroes."],
+    ["💔", "Crests break", "When a betrayal or the last alliance ends a pact, the crest cracks and its pieces fall away."],
+    ["🔗", "Teams in the fight", "In the replay, allied castles sit together in the side strip, outlined in their team colour."],
+    ["📣", "Told the next day", "The lord you disbanded on gets an Alliance disbanded pop-up the next time they plan."],
+  ] },
   { id: "1.20", title: "What's new in v1.20", sub: "A tidier noticeboard, a calmer camp and a clearer start", items: [
     ["📜", "Daily Contract and Daily Target", "The Daily Noticeboard buttons now say exactly what they pick."],
     ["🌤", "The day's effect", "The noticeboard shows each day's effect. Day 1 just welcomes you to the war."],

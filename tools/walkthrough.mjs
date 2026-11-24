@@ -119,6 +119,11 @@ for (const name of engines) {
     if ((await page.locator("#ctrack .ct").count()) !== (await js(() => replay.res.order.length))) throw new Error("the side strip does not show every lord");
     await js(() => { const k = replay.res.meta.findIndex(m => m.kind === "champ" && m.pid !== replay.res.me); A.rfollow(String(k)); }); await page.waitForTimeout(150);
     if (!(await js(() => replay.follow != null && replay.auto && replay.res.meta[replay.follow].kind === "champ"))) throw new Error("following a hero did not work");
+    { const cr = await js(() => { const g = replayTeams(replay.res); return { n: g.length, ok: g.every(x => CREST_ANIMALS.includes(x.animal)) && g.length === new Set(g.map(x => x.animal)).size, svg: crestSVG(["#c00", "#0c0"], "wolf", 20, null, true).startsWith("<svg") }; }); // team crests: every alliance has its own animal
+      if (!cr.ok || !cr.svg) throw new Error("the team crests are wrong"); }
+    { const hl = await js(() => { const c = buildReel(replay.res).filter(x => x.h.kind === "ult"); return { n: c.length, short: c.filter(x => x.b - x.a < 3.9 && x.b < replay.res.duration - .1).length, boxed: c.every(x => !!x.box) }; }); // highlights: the best three ultimates, framed, at least 4 seconds
+      if (hl.n > 3) throw new Error("the highlights show more than 3 ultimates"); if (hl.short) throw new Error("a highlight ultimate clip is under 4 seconds"); if (!hl.boxed) throw new Error("an ultimate clip has no framing box");
+      await js(() => { const R = replay.res, h = { kind: "betray", pid: R.order[0], other: R.order[1], t: 30, x: 10, y: 10 }, c = makeBetrayCine(h, R); let n = 0; while (!tickBetrayCine(c, .1) && n++ < 300); drawBetrayBanner(c); if (n >= 300) throw new Error("the betrayal cut-away never ended"); }); }
     if (!(await page.locator("#ud .ud-fol").count())) throw new Error("the unit panel has no Follow");
     await js(() => { replay.time = Math.max(0, replay.res.duration - 2); replay.playing = true; }); // skip to the last seconds
     await page.waitForFunction(() => !replay || replay.done, null, { timeout: 30000 }); });

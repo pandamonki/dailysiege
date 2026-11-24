@@ -33,6 +33,19 @@ function drawTotem(cx, by, color) {
   ctx.fillStyle = "#9cf09c"; ctx.beginPath(); ctx.arc(cx, by - ts * .78, ts * .1, 0, 7); ctx.fill();
   return by - ts * .9;
 }
+// Team crests above allied castles and heroes. A lord's crest breaks the moment their last pact ends (a betrayal, or the last alliance splitting).
+function crestBreakTimes(R) {
+  const norm = k => (Array.isArray(k) ? k : String(k).split("|")).slice().sort().join("|"), live = new Set((R.pacts0 || []).map(norm)), has = pid => [...live].some(k => k.split("|").includes(pid)), out = {}, base = new Set([...live].flatMap(k => k.split("|")));
+  (R.hl || []).filter(h => h.kind === "betray" || h.kind === "split").sort((a, b) => a.t - b.t).forEach(h => {
+    if (h.kind === "betray") live.delete([h.pid, h.other].sort().join("|")); else { const ids = [h.pid, ...(h.others || [])]; [...live].forEach(k => { if (k.split("|").every(x => ids.includes(x))) live.delete(k); }); }
+    base.forEach(pid => { if (out[pid] == null && !has(pid)) out[pid] = h.t; }); });
+  return out;
+}
+function drawTeamCrest(R, pid, cx, cy, w, time) {
+  const g = replayTeams(R).find(q => q.ids.includes(pid)); if (!g) return;
+  const tb = (replay.crestBreak || (replay.crestBreak = crestBreakTimes(R)))[pid], cols = g.ids.map(x => R.colors[x] || "#888");
+  if (tb == null || time < tb) drawCrest(ctx, cols, g.animal, cx, cy, w); else drawCrestBreak(ctx, cols, g.animal, cx, cy, w, time - tb);
+}
 function drawReplay(t) {
   const R = replay.res, fr = R.frames, time = replay.time;
   let i = Math.min(fr.length - 2, Math.max(0, Math.floor(time / FRAME_DT)));
@@ -62,7 +75,8 @@ function drawReplay(t) {
     if (f1.d.length > b && !(f1.d[b + 3] & 1)) { const x1 = f1.d[b], y1 = f1.d[b + 1]; if (Math.hypot(x1 - x, y1 - y) < 1.5) { x += (x1 - x) * a; y += (y1 - y) * a; } }
     const color = R.colors[m.pid], frac = hp / m.maxhp, fr = friendly(m.pid);
     if (m.kind === "castle") { if (replay.sel === k) items.push([m.tile[0] - .01, () => { ctx.strokeStyle = "#ffe082"; ctx.lineWidth = ts * .08; ctx.strokeRect(m.tile[1] * ts + 2, m.tile[0] * ts - ts * .3, ts - 4, ts * 1.25); }]);
-      items.push([m.tile[0], () => drawCastle(m.tile[0], m.tile[1], color, t, R.names[m.pid], null, { frac, dead: fl & 1, friendly: fr, waves: wv ? waveStatus(wv, m.pid, frac, time) : null }, m.banner, m.ctier)]); return; }
+      items.push([m.tile[0], () => { drawCastle(m.tile[0], m.tile[1], color, t, R.names[m.pid], null, { frac, dead: fl & 1, friendly: fr, waves: wv ? waveStatus(wv, m.pid, frac, time) : null }, m.banner, m.ctier);
+        if (!(fl & 1)) drawTeamCrest(R, m.pid, (m.tile[1] + .5) * ts, (m.tile[0] + .88) * ts - ts * 2.1, ts * .8, time); }]); return; }
     { atkIndex(); const dv = lastDie(k, time); const dead = (fl & 1) || (dv && f1.d.length > b + 3 && (f1.d[b + 3] & 1));
       if (dead) { if (dv && time - dv.t < deathLen(m)) items.push([dv.y - .4 + .3, () => drawDeath(m, k, color, dv, time - dv.t, t)]); return; } }
     const pose = poseOf(k, time, x, y, f0, f1);
@@ -89,6 +103,7 @@ function drawReplay(t) {
       if (fl & 64) { ctx.strokeStyle = "rgba(190,225,255,.95)"; ctx.fillStyle = "rgba(150,200,255,.22)"; ctx.lineWidth = ts * .05; ctx.beginPath(); ctx.ellipse(cx, by - ts * .42, ts * .4, ts * .52, 0, 0, 7); ctx.fill(); ctx.stroke(); } // a shield from a skill
       if (fl & 32) { ctx.strokeStyle = "rgba(127,178,255,.9)"; ctx.lineWidth = ts * .05; ctx.beginPath(); ctx.arc(cx, by - ts * .45, ts * .42, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke(); }
       const yb = hpBar(cx, top, Math.max(0, Math.min(1, frac)), fr);
+      if (m.champ) drawTeamCrest(R, m.pid, cx, yb - ts * .33 - ts * .26, ts * .44, time);
       if (m.champ) nameTag(cx, yb - ts * .02, R.names[m.pid], color, (m.lvl || 1) + ((atkIndex(), replay.lvlEv.get(k)) || []).filter(e => e.t <= time).length);
       if (replay.sel === k) { ctx.strokeStyle = "#ffe082"; ctx.lineWidth = ts * .07; ctx.beginPath(); ctx.ellipse(cx, by - ts * .05, ts * .44, ts * .17, 0, 0, 7); ctx.stroke(); }
       if (fl & 2) { ctx.fillStyle = "#ffe082"; for (let s = 0; s < 3; s++) { const an = t * 5 + s * 2.1; ctx.beginPath(); ctx.arc(cx + Math.cos(an) * ts * .22, yb - ts * .1 + Math.sin(an) * ts * .06, ts * .045, 0, 7); ctx.fill(); } }

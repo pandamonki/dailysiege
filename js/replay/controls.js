@@ -49,10 +49,12 @@ function updateCastleTrack() {
   if (!replay || mode !== "replay" || replay.reel) { el.hidden = true; replay && (replay.ctKey = null); return; }
   const R = replay.res, f = replayFrameAt(replay.time); if (!f) return;
   if (!replay.ctIdx) replay.ctIdx = R.order.map(pid => [pid, R.meta.findIndex(m => m.pid === pid && m.kind === "castle")]).filter(x => x[1] >= 0);
-  const st = replay.ctIdx.map(([pid, i]) => [pid, i * 4 + 2 < f.d.length && f.d[i * 4 + 2] > 0]), key = st.map(x => +x[1]).join("");
+  const teams = replayTeams(R), act = new Set(replayPairs(R, replay.time).flatMap(k => k.split("|"))), tcol = pid => { const g = teams.find(q => q.ids.includes(pid)); return g && act.has(pid) ? g.col : null; };
+  if (!replay.ctSorted) { const rank = pid => { const g = teams.find(q => q.ids.includes(pid)); return g ? g.i : 99; }; replay.ctIdx.sort((a, b) => rank(a[0]) - rank(b[0]) || R.order.indexOf(a[0]) - R.order.indexOf(b[0])); replay.ctSorted = true; } // allies sit side by side down the strip
+  const st = replay.ctIdx.map(([pid, i]) => [pid, i * 4 + 2 < f.d.length && f.d[i * 4 + 2] > 0]), key = st.map(x => +x[1]).join("") + "|" + st.map(([pid]) => tcol(pid) || "-").join("");
   el.hidden = false; if (replay.ctKey === key) return; replay.ctKey = key;
   const nm = pid => (R.names && R.names[pid]) || (R.results.find(r => r.pid === pid) || {}).name || "";
-  el.innerHTML = st.map(([pid, up]) => `<span class="ct${up ? "" : " down"}${pid === R.me ? " me" : ""}" title="${esc(nm(pid))}${up ? "" : " · castle fallen"}">${CASTLE_SVG((R.colors || {})[pid] || "#888")}</span>`).join("");
+  el.innerHTML = st.map(([pid, up]) => `<span class="ct${up ? "" : " down"}${pid === R.me ? " me" : ""}${tcol(pid) ? " team" : ""}"${tcol(pid) ? ` style="--tc:${tcol(pid)}"` : ""} title="${esc(nm(pid))}${up ? "" : " · castle fallen"}${tcol(pid) ? " · allied" : ""}">${CASTLE_SVG((R.colors || {})[pid] || "#888")}</span>`).join("");
 }
 // the hero the camera follows: the one the viewer picked, else their own
 function followIdx() { const R = replay.res; if (replay.follow != null && R.meta[replay.follow] && R.meta[replay.follow].kind === "champ") return replay.follow; return R.meta.findIndex(m => m.pid === R.me && m.kind === "champ"); }

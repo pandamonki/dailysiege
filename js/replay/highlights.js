@@ -4,7 +4,9 @@
 // Key moments are flagged by the battle sim (res.hl). The reel picks the best few, then plays each as a short
 // directed clip: a title card, the camera on the action, a slow-motion beat at the key instant, and a closing podium.
 const PRACTICE_BOARD = { p1: 34, p3: 27, p5: 22, you: 18, p2: 15, p6: 11, p4: 8, p7: 5 };
-const HL_WIN = { split: [1.5, 4], betray: [1.5, 3.5], bomb: [2, 3], burst: [2.5, 1.5], fall: [4, 2], upset: [4, 2.2], revenge: [4, 2.2], giantslayer: [3, 1.6], firstblood: [3, 1.5], rapierdrop: [2.5, 2], frenzy: [2, 2.5], rapierget: [2, 2.5], winner: [4.5, 2.5] };
+const HL_WIN = { split: [1.5, 4], betray: [2, 3.8], bomb: [2, 3], burst: [2.5, 1.5], fall: [4, 2], upset: [4, 2.2], revenge: [4, 2.2], giantslayer: [3, 1.6], firstblood: [3, 1.5], rapierdrop: [2.5, 2], frenzy: [2, 2.5], rapierget: [2, 2.5], winner: [4.5, 2.5] };
+// what an ultimate achieved, for its caption: " · 1 hero and 6 soldiers fell"
+const ultTally = h => { const im = h.impact; if (!im || !(im.heroes || im.units)) return ""; const parts = [im.heroes ? `${im.heroes} hero${im.heroes > 1 ? "es" : ""}` : "", im.units ? `${im.units} soldier${im.units > 1 ? "s" : ""}` : ""].filter(Boolean); return ` · ${parts.join(" and ")} fell`; };
 function hlText(h, R) {
   const N = p => (R.names && R.names[p]) || "Someone", you = p => p === R.me, V = (p, a, b) => `${N(p)} ${you(p) ? a : b}`;
   const poss = p => (you(p) ? "Your" : N(p) + "'s"), rk = p => (R.ranks && R.ranks[p] ? `#${R.ranks[p]} ` : "");
@@ -23,7 +25,7 @@ function hlText(h, R) {
     case "rapierdrop": return ["Rapier dropped!", `${poss(h.pid)} hero falls and the Divine Rapier lies in the dust`];
     case "rapierget": return ["Rapier seized!", `${V(h.pid, "snatch", "snatches")} up the Divine Rapier`];
     case "frenzy": return ["Desperation Frenzy", `${poss(h.pid)} keep is nearly lost and its defenders fight like demons`];
-    case "ult": if (h.gen) return [h.ab + "!", `${poss(h.pid)} ultimate: ${h.ab}`]; return h.ab === "Meteor" ? ["Meteor!", `${poss(h.pid)} Meteor crashes into ${h.n} foes`] : ["Assassinated", `${poss(h.pid)} Rogue executes ${you(h.other) ? "your" : N(h.other) + "'s"} hero`];
+    case "ult": if (h.gen) return [h.ab + "!", `${poss(h.pid)} ultimate: ${h.ab}${ultTally(h)}`]; return h.ab === "Meteor" ? ["Meteor!", `${poss(h.pid)} Meteor crashes into ${h.n} foes`] : ["Assassinated", `${poss(h.pid)} Rogue executes ${you(h.other) ? "your" : N(h.other) + "'s"} hero`];
     case "winner": if (h.last) return [`${V(h.pid, "win", "wins")} the Daily Siege`, `${h.last.other ? (you(h.last.other) ? "You bring" : N(h.last.other) + " brings") + " down " : ""}${you(h.last.pid) ? "your" : N(h.last.pid) + "'s"} castle${h.last.other ? "" : " falls"}: the last rival is gone`];
       return [`${V(h.pid, "win", "wins")} the Daily Siege`, h.timeout ? "Night falls with the strongest castle standing" : h.clutch ? `Clutch! The castle held on at ${Math.max(1, Math.round(h.hpFrac * 100))}%` : "Last castle standing"];
   }
@@ -31,13 +33,33 @@ function hlText(h, R) {
 }
 function hlWindow(h) {
   if (h.kind === "spree") return [Math.max(h.t0 - 1, h.t2 - 5), h.t2 + 2, h.t2];
-  if (h.kind === "ult") return h.ab === "Meteor" ? [h.t - 2.6, h.t + 1.6, h.t] : [h.t - 1.5, h.t + 2, h.t];
+  if (h.kind === "ult") { const a = h.ab === "Meteor" ? h.t - 2.6 : h.t - 1.2, im = h.impact || {}; return [a, Math.min(a + 8, Math.max(a + 4.5, h.t + 2.5, (im.lastT || 0) + 1.2)), h.t]; } // at least 4 seconds, long enough to see the kills land
   const w = HL_WIN[h.kind] || [3, 2]; return [h.t - w[0], h.t + w[1], h.t];
 }
+// What an ultimate did: the heroes and soldiers of other lords (not its allies) that fell near it in the five seconds after the cast.
+const REEL_ULT_MAX = 3, REEL_ULT_MIN_UNITS = 4;
+function ultImpact(h, R) {
+  const E = R.events || [], pacts = R.pacts0 || [], allied = q => q === h.pid || pacts.includes([h.pid, q].sort().join("|")) || pacts.includes([q, h.pid].join("|")), im = { heroes: 0, units: 0, pts: [], lastT: 0, score: 0 };
+  for (let i = lowerBound(E, h.t - .01); i < E.length && E[i].t <= h.t + 5; i++) { const e = E[i]; if (e.ty !== "die" || e.ex) continue;
+    const m = R.meta[e.id]; if (!m || (m.kind !== "champ" && m.kind !== "unit") || allied(m.pid)) continue;
+    if (Math.hypot(e.x - h.x, e.y - h.y) > 11) continue;
+    if (m.kind === "champ") im.heroes++; else im.units++; im.pts.push([e.x, e.y]); im.lastT = e.t; }
+  im.score = im.heroes * 45 + im.units * 7; return im;
+}
+// the area a clip should keep in frame: the hero of interest, the spot the ultimate lands and everything that fell to it
+function clipBox(h, a, b, R, extra) {
+  const pts = [[h.x, h.y], ...((h.impact && h.impact.pts) || []), ...(extra || [])], ci = R.meta.findIndex(m => m.pid === h.pid && m.kind === "champ");
+  if (ci >= 0) for (let t = a; t <= b; t += .5) { try { const f = replayFrameAt(t), k = ci * 4; if (f && f.d[k] != null) pts.push([f.d[k], f.d[k + 1]]); } catch { /* no frame */ } }
+  const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]), pad = 2.2;
+  return { x0: Math.min(...xs) - pad, x1: Math.max(...xs) + pad, y0: Math.min(...ys) - pad, y1: Math.max(...ys) + pad };
+}
 function buildReel(R) {
-  const hl = (R.hl || []).filter(h => h.kind !== "winner" && !(h.kind === "fall" && !(h.rank && h.rank <= 3)));
-  const picked = hl.filter(h => h.kind === "ult"); // every ultimate cast gets its clip
-  hl.filter(h => h.kind !== "ult").sort((a, b) => b.score - a.score).forEach(h => {
+  const hl = (R.hl || []).filter(h => h.kind !== "winner" && h.kind !== "ult" && !(h.kind === "fall" && !(h.rank && h.rank <= 3)));
+  // Only ultimates that mattered (a hero killed, or a crowd of soldiers), the best three of the fight; one clip per cast
+  const ults = (R.hl || []).filter(h => h.kind === "ult").map(h => ({ ...h, impact: ultImpact(h, R) })).filter(h => h.impact.heroes > 0 || h.impact.units >= REEL_ULT_MIN_UNITS)
+    .sort((a, b) => b.impact.score - a.impact.score).filter((h, i, all) => !all.slice(0, i).some(o => o.pid === h.pid && Math.abs(o.t - h.t) < 5)).slice(0, REEL_ULT_MAX);
+  const picked = ults.slice();
+  hl.sort((a, b) => b.score - a.score).forEach(h => {
     if (picked.filter(p => p.kind !== "ult").length >= 6 || picked.filter(p => p.kind === h.kind).length >= 2) return; const [a, b] = hlWindow(h);
     if (picked.some(p => { const [c, d] = hlWindow(p); return a < d + .5 && c < b + .5; })) return; picked.push(h);
   });
@@ -49,9 +71,10 @@ function buildReel(R) {
   picked.sort((a, b) => a.t - b.t);
   if (finale) { const [a] = hlWindow(finale); for (let i = picked.length - 1; i >= 0; i--) if (hlWindow(picked[i])[1] > a - .5) picked.splice(i, 1); picked.push(finale); }
   const champIdx = pid => R.meta.findIndex(m => m.pid === pid && m.kind === "champ");
-  return picked.map(h => { const [a, b, key] = hlWindow(h), [title, sub] = hlText(h, R);
+  return picked.map(h => { const [a, b0, key] = hlWindow(h), b = Math.max(b0, a + 4), [title, sub] = hlText(h, R); // every clip runs at least 4 seconds
     const follow = ["spree", "burst", "betray", "firstblood", "giantslayer", "rapierdrop", "rapierget"].includes(h.kind) || (h.kind === "ult" && h.ab !== "Meteor") ? champIdx(h.kind === "giantslayer" || h.kind === "firstblood" ? h.other : h.pid) : -1;
-    return { h, a: Math.max(0, a), b: Math.min(R.duration, b), key, title, sub, follow, color: R.colors[h.kind === "fall" || h.kind === "upset" ? (h.other || h.pid) : h.kind === "revenge" ? h.other : h.pid] || "#ffe082" }; });
+    const box = h.kind === "ult" ? clipBox(h, Math.max(0, a), Math.min(R.duration, b), R) : null; // ultimates frame the hero and the whole impact zone
+    return { h, a: Math.max(0, a), b: Math.min(R.duration, b), key, title, sub, follow, box, color: R.colors[h.kind === "fall" || h.kind === "upset" ? (h.other || h.pid) : h.kind === "revenge" ? h.other : h.pid] || "#ffe082" }; });
 }
 const REEL_CARD = 1.3, REEL_INTRO = 2.2, REEL_OUTRO = 4;
 const REEL_ZOOM_OUT = 1.35 ** 3; // the reel's camera sits three zoom steps (the zoom buttons' x1.35) further out than it first did, so more of the action is in view
@@ -63,10 +86,12 @@ function startReel(record) {
   if (record) startRecording();
 }
 function stopReel(toRecap) {
-  if (!replay || !replay.reel) return; const rec = replay.reel.rec; replay.reel = null;
+  if (!replay || !replay.reel) return; const rec = replay.reel.rec; replay.reel = null; replay.cine = null;
   if (rec && rec.mr.state !== "inactive") rec.mr.stop();
   buildReplayUI(); if (WAR_REEL && warReelNext()) return; if (reportBack) leaveBattle(); else if (toRecap) open("results"); else render();
 }
+// the camera position that keeps a box of tiles in view: [world x px, world y px, zoom]
+function boxView(b) { const bw = (b.x1 - b.x0) * ts, bh = (b.y1 - b.y0) * ts, z = Math.max(minZoom(), Math.min(2.2, vw / bw, vh / bh)); return [(b.x0 + b.x1) / 2 * ts, (b.y0 + b.y1) / 2 * ts, z]; }
 function reelSpeed(c, time) { const d = time - c.key; return d > -.7 && d < .9 ? .4 : 1; }
 function reelFocus(c, time) {
   if (c.follow >= 0) { const f = replayFrameAt(time), b = c.follow * 4; if (f && f.d[b] != null && !(f.d[b + 3] & 1)) return [f.d[b], f.d[b + 1]]; }
@@ -77,7 +102,13 @@ function tickReel(dt) {
   if (r.phase === "intro" && r.pt >= REEL_INTRO) nextClip(r);
   else if (r.phase === "card" && r.pt >= REEL_CARD) { r.phase = "clip"; r.pt = 0; }
   else if (r.phase === "clip") {
-    const c = r.clips[r.i]; replay.time = Math.min(c.b, replay.time + dt * reelSpeed(c, replay.time));
+    const c = r.clips[r.i];
+    if (c.h.kind === "betray" && !c.cineDone) { // the betrayal: play up to the moment, then pause and cut to the bomb (see tickBetrayCine)
+      if (!replay.cine && replay.time >= c.h.t - .05) replay.cine = makeBetrayCine(c.h, replay.res);
+      if (replay.cine) { if (tickBetrayCine(replay.cine, dt)) { replay.cine = null; c.cineDone = true; } return; }
+    }
+    replay.time = Math.min(c.b, replay.time + dt * (c.h.kind === "betray" ? 1 : reelSpeed(c, replay.time)));
+    if (c.box) { const [bx, by, bz] = boxView(c.box); flyTo(bx, by, bz); if (replay.time >= c.b) nextClip(r); return; }
     const [x, y] = reelFocus(c, replay.time); flyTo(x * ts, (y - .3) * ts, (c.h.kind === "winner" || c.h.kind === "fall" || c.h.kind === "upset" || c.h.kind === "revenge" || c.h.kind === "bomb" ? 1.45 : 1.75) / REEL_ZOOM_OUT);
     if (replay.time >= c.b) nextClip(r);
   } else if (r.phase === "outro" && r.pt >= REEL_OUTRO) { const rec = r.rec; stopReel(!rec); }
@@ -86,7 +117,8 @@ function nextClip(r) {
   r.i++; r.pt = 0;
   if (r.i >= r.clips.length) { r.phase = "outro"; flyTo(W / 2, W / 2, 0); return; }
   const c = r.clips[r.i]; r.phase = "card"; replay.time = c.a;
-  const [x, y] = reelFocus(c, c.a), z = Math.max(minZoom(), Math.min(2.4, 1.6 / REEL_ZOOM_OUT)); camTarget = null; Object.assign(cam, { x: x * ts - vw / 2 / z, y: (y - .3) * ts - vh / 2 / z, z }); clampCam();
+  replay.cine = null; c.cineDone = false;
+  const [x, y] = c.box ? boxView(c.box) : reelFocus(c, c.a), z = c.box ? boxView(c.box)[2] : Math.max(minZoom(), Math.min(2.4, 1.6 / REEL_ZOOM_OUT)); camTarget = null; Object.assign(cam, c.box ? { x: x - vw / 2 / z, y: y - vh / 2 / z, z } : { x: x * ts - vw / 2 / z, y: (y - .3) * ts - vh / 2 / z, z }); clampCam();
   const el = document.getElementById("reelstep"); if (el) el.textContent = `${r.i + 1} / ${r.clips.length}`;
 }
 function buildReelUI() {
@@ -110,7 +142,6 @@ function slamBanner(text, sub, color, age, y, s, hold = 2.2) {
 }
 function bigBanners(c, s) {
   const h = c.h, R = replay.res, N = p => (R.names && R.names[p]) || "Someone", you = p => p === R.me;
-  if (h.kind === "betray") slamBanner("BETRAYAL!", `${you(h.pid) ? "You" : N(h.pid)} turned on ${you(h.other) ? "you" : N(h.other)} and blew up the keep`, "#e0503f", replay.time - h.t, .3, s, 3.2);
   if (h.kind === "spree") (h.marks || []).forEach((m, i, arr) => { const end = i + 1 < arr.length ? Math.min(2.4, arr[i + 1].t - m.t) : 2.6; slamBanner(m.name.toUpperCase(), `${you(h.pid) ? "You" : N(h.pid)} · ${m.n} kills in a row`, c.color, replay.time - m.t, .3, s, end); });
 }
 function drawReel() {
@@ -137,14 +168,18 @@ function drawReel() {
       if (reelSpeed(c, replay.time) < 1) { ctx.textAlign = "right"; ctx.fillStyle = "#ffe082"; ctx.font = `700 ${Math.round(12 * s)}px ${serif}`; ctx.fillText("SLOW MOTION", W2 - 12, 22); }
     }
   } else if (r.phase === "outro") {
-    shade(Math.min(.8, r.pt / .4 * .8)); const top = R.results.slice(0, 3);
-    center("The Day's Podium", H2 * .2, 28 * s, "#ffe9b0");
-    const pos = [[.5, .42, 1], [.22, .52, 2], [.78, .58, 3]];
-    top.forEach((res, i) => { const [px, py] = pos[i], x = W2 * px, y = H2 * py, rad = (i ? 22 : 30) * s;
-      ctx.fillStyle = res.color; ctx.beginPath(); ctx.arc(x, y, rad, 0, 7); ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = "#ffe082"; ctx.stroke();
-      ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = "#1e140c"; ctx.font = `800 ${Math.round(rad)}px ${serif}`; ctx.fillText(String(i + 1), x, y + 1);
-      ctx.fillStyle = "#fff4d6"; ctx.font = `700 ${Math.round(16 * s)}px ${serif}`; ctx.fillText((R.names && R.names[res.pid]) || res.name, x, y + rad + 16 * s, W2 / 3 - 8);
-      ctx.fillStyle = "#d9c79e"; ctx.font = `500 ${Math.round(13 * s)}px ${serif}`; ctx.fillText(`${res.points} pts`, x, y + rad + 33 * s); });
+    shade(Math.min(.82, r.pt / .4 * .82)); const top = R.results.slice().sort((a, b) => a.place - b.place).slice(0, 3), ord = n => n + (n === 1 ? "st" : n === 2 ? "nd" : n === 3 ? "rd" : "th");
+    center("Final placings", H2 * .2, 28 * s, "#ffe9b0"); center("Places go by who holds out longest, so points can differ", H2 * .255, 13 * s, "#d9c79e", 500);
+    const rh = 62 * s, x0 = 12, rw = W2 - 12 - 62; // leave room for the zoom buttons down the right edge
+    top.forEach((res, i) => { const y = H2 * .31 + i * (rh + 8 * s), nm = (R.names && R.names[res.pid]) || res.name, me = res.pid === R.me, col = (R.colors && R.colors[res.pid]) || res.color || "#888";
+      const a = Math.min(1, Math.max(0, (r.pt - .25 - i * .25) / .3)); ctx.globalAlpha = a;
+      ctx.fillStyle = me ? "rgba(90,60,18,.85)" : "rgba(30,20,10,.82)"; ctx.fillRect(x0, y, rw, rh); ctx.fillStyle = col; ctx.fillRect(x0, y, 6, rh);
+      ctx.textBaseline = "middle"; ctx.textAlign = "left"; ctx.fillStyle = i === 0 ? "#ffe082" : "#e8dcc0"; ctx.font = `800 ${Math.round(22 * s)}px ${serif}`; ctx.fillText(ord(res.place), x0 + 16, y + rh / 2);
+      ctx.fillStyle = col; ctx.fillRect(x0 + 70 * s, y + rh / 2 - 8 * s, 16 * s, 16 * s); ctx.strokeStyle = "rgba(0,0,0,.6)"; ctx.lineWidth = 1; ctx.strokeRect(x0 + 70 * s, y + rh / 2 - 8 * s, 16 * s, 16 * s);
+      ctx.fillStyle = "#fff4d6"; ctx.font = `700 ${Math.round(17 * s)}px ${serif}`; ctx.fillText(nm + (me ? " (you)" : ""), x0 + 94 * s, y + rh / 2 - 9 * s, rw - 200 * s);
+      ctx.fillStyle = "#c9b48a"; ctx.font = `500 ${Math.round(13 * s)}px ${serif}`; ctx.fillText(`${CLASSES[res.cls] ? CLASSES[res.cls].name : ""} · ${res.fellAt != null ? "castle fell at " + fmt(res.fellAt) : "still standing"}`, x0 + 94 * s, y + rh / 2 + 12 * s, rw - 200 * s);
+      ctx.textAlign = "right"; ctx.fillStyle = "#ffe9b0"; ctx.font = `800 ${Math.round(22 * s)}px ${serif}`; ctx.fillText(String(res.points), x0 + rw - 12, y + rh / 2 - 8 * s);
+      ctx.fillStyle = "#c9b48a"; ctx.font = `500 ${Math.round(12 * s)}px ${serif}`; ctx.fillText(`${res.kills} kills · ${res.castles} castles`, x0 + rw - 12, y + rh / 2 + 12 * s); ctx.globalAlpha = 1; });
   }
   ctx.textAlign = "start";
 }
@@ -165,12 +200,30 @@ function sting(kind) {
     else { [523, 659, 784, 1047].forEach((f, i) => note(f, i * .14, .5, "triangle", .35)); note(1319, .6, .9, "triangle", .35); for (let i = 0; i < 10; i++) note(300 + Math.random() * 600, .2 + Math.random() * .8, .12, "square", .05); }
   } catch (e) {}
 }
-function betrayCinematic(h, R, resume) {
-  const nm = p => (R.names && R.names[p]) || "A traitor";
-  const el = document.createElement("div"); el.className = "betrayfx";
-  el.innerHTML = `<div class="bf-banner">BETRAYAL!</div><div class="bf-sub">${esc(nm(h.pid))} turns on ${esc(nm(h.other))}</div><svg class="bf-knives" viewBox="0 0 200 200" aria-hidden="true"><g class="k1"><path d="M20 180 L150 50 L160 60 L40 190 Z" fill="#dfe6ec" stroke="#222" stroke-width="3"/><rect x="146" y="30" width="30" height="12" transform="rotate(45 160 40)" fill="#6b3a1a"/></g><g class="k2"><path d="M180 180 L50 50 L40 60 L160 190 Z" fill="#dfe6ec" stroke="#222" stroke-width="3"/><rect x="24" y="30" width="30" height="12" transform="rotate(-45 40 40)" fill="#6b3a1a"/></g></svg>`;
-  document.body.appendChild(el); sting("betray");
-  setTimeout(() => { el.remove(); resume(); }, 2600);
+// The betrayal cut-away (main replay and highlights): the replay pauses, a banner names who betrayed whom, the camera cuts to the hero
+// planting the bomb, then plays the fuse in slow motion on the castle until it blows. Afterwards the caller returns to its own camera.
+const BETRAY_HOLD = 2, BETRAY_FUSE = 2.6, BETRAY_SLOW = .45;
+function makeBetrayCine(h, R) { sting("betray"); return { h, R, pt: 0, t0: h.t, ci: R.meta.findIndex(m => m.pid === h.pid && m.kind === "champ") }; }
+function tickBetrayCine(c, dt) { // returns true when the cut-away is over
+  c.pt += dt; const h = c.h;
+  if (c.pt < BETRAY_HOLD) { replay.time = h.t; let x = h.x, y = h.y; const f = replayFrameAt(h.t), k = c.ci * 4; if (c.ci >= 0 && f && f.d[k] != null && !(f.d[k + 3] & 1)) { x = f.d[k]; y = f.d[k + 1]; }
+    flyTo(x * ts, (y - .3) * ts, 2.4); return false; } // the hero at the keep, bomb in hand
+  replay.time = Math.min(h.t + BETRAY_FUSE, replay.time + dt * BETRAY_SLOW); flyTo(h.x * ts, (h.y - .3) * ts, 1.8); // the castle, through the fuse to the blast
+  return replay.time >= h.t + BETRAY_FUSE - .01;
+}
+function drawBetrayBanner(c) {
+  const R = c.R, N = p => (R.names && R.names[p]) || "A lord", col = p => (R.colors && R.colors[p]) || "#e0503f", s = Math.min(1, vw / 420), serif = "Alegreya, Georgia, serif";
+  const a = Math.min(1, c.pt / .15, (BETRAY_HOLD + .8 - c.pt) / .4); if (a <= 0) return; const pop = c.pt < .3 ? 1 + .5 * (1 - c.pt / .3) ** 2 : 1, y = vh * .16, bh = 96 * s;
+  ctx.save(); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.globalAlpha = a; ctx.fillStyle = "rgba(60,6,6,.88)"; ctx.fillRect(0, y - bh / 2, vw, bh); ctx.fillStyle = "#e0503f"; ctx.fillRect(0, y - bh / 2, vw, 4); ctx.fillRect(0, y + bh / 2 - 4, vw, 4);
+  ctx.translate(vw / 2, y); ctx.scale(pop, pop); ctx.textBaseline = "middle"; ctx.textAlign = "center";
+  ctx.font = `800 ${Math.round(34 * s)}px ${serif}`; ctx.lineWidth = 5; ctx.strokeStyle = "rgba(20,4,4,.9)"; ctx.strokeText("BETRAYAL!", 0, -22 * s); ctx.fillStyle = "#fff"; ctx.fillText("BETRAYAL!", 0, -22 * s);
+  // [colour] Betrayer  betrayed  [colour] Victim
+  const fs = Math.round(19 * s); ctx.font = `700 ${fs}px ${serif}`; const n1 = N(c.h.pid), n2 = N(c.h.other), mid = " betrayed ", sw = 16 * s, gap = 6 * s;
+  const w1 = ctx.measureText(n1).width + sw + gap, w2 = ctx.measureText(n2).width + sw + gap, wm = ctx.measureText(mid).width, k = Math.min(1, (vw - 24) / (w1 + wm + w2)), tot = (w1 + wm + w2) * k;
+  ctx.scale(k, k); let x = -tot / k / 2, yy = 24 * s; ctx.textAlign = "left";
+  const chip = (nm, cl, w) => { ctx.fillStyle = cl; ctx.fillRect(x, yy - sw / 2, sw, sw); ctx.strokeStyle = "rgba(0,0,0,.7)"; ctx.lineWidth = 1.5; ctx.strokeRect(x, yy - sw / 2, sw, sw); ctx.fillStyle = lighten(cl); ctx.fillText(nm, x + sw + gap, yy); x += w; };
+  chip(n1, col(c.h.pid), w1); ctx.fillStyle = "#ffd9d0"; ctx.fillText(mid, x, yy); x += wm; chip(n2, col(c.h.other), w2);
+  ctx.restore();
 }
 // The heroes on the victory screen: the winner (and every ally who won with them) dancing; the winner's allies whose castles fell float
 // beside them as ghosts (a wispy tail for legs), still cheering the alliance on; and a winner who betrayed an ally this battle has that hero lying face down at their feet with a dagger in its back.

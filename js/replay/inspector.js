@@ -145,11 +145,14 @@ function tickReplay(ms) {
   const dt = Math.min(.1, (ms - lastMs) / 1000 || 0); lastMs = ms;
   if (!replay) return;
   if (replay.reel) { tickReel(dt); return; }
+  if (replay.cine) { // the betrayal cut-away: paused on the hero with the bomb, then the fuse and blast in slow motion
+    if (tickBetrayCine(replay.cine, dt)) { const w = replay.cineWas; replay.cine = null; replay.playing = true; if (!replay.auto && w) flyTo(w.x, w.y, w.z); } // back to the viewer's own camera (or the follow camera)
+    updateReplayUI(); return; }
   if (replay.playing) {
     const t0 = replay.time;
     replay.time += dt * replay.speed;
     if (!replay.reel) { replay.bdone = replay.bdone || {}; const bt = (replay.res.hl || []).find(h => h.kind === "betray" && h.t > t0 && h.t <= replay.time && !replay.bdone[h.t]); // freeze on the betrayal
-      if (bt) { replay.bdone[bt.t] = 1; replay.time = bt.t; replay.playing = false; betrayCinematic(bt, replay.res, () => { if (replay) replay.playing = true; }); return; } }
+      if (bt) { replay.bdone[bt.t] = 1; replay.time = bt.t; replay.playing = false; replay.cineWas = { x: cam.x + vw / 2 / cam.z, y: cam.y + vh / 2 / cam.z, z: cam.z }; replay.cine = makeBetrayCine(bt, replay.res); return; } }
     try { const E = replay.res.events || [], me = replay.res.me; if (replay.time - t0 < .6) for (let i = lowerBound(E, t0); i < E.length && E[i].t <= replay.time; i++) if (E[i].t > t0) { const ev = E[i]; // the sounds of the fight: one per kind of event, rate-limited inside MUSIC.sfx
       if (ev.ty === "lvl") { const m = replay.res.meta[ev.id]; MUSIC.sfx("levelup", m && m.pid === me ? 1 : .3); }
       else if (ev.ty === "atk") MUSIC.sfx(ev.k === "r" ? "twang" : ev.k === "c" ? "magic" : "clash", .5);

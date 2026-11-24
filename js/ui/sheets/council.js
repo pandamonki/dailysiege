@@ -47,6 +47,19 @@ function allyAnswersHTML(inviter) {
 const pendingInvites = () => RIVALS.map(r => ({ r, o: incomingOffer(r) })).filter(x => x.o && !x.o.reply);
 const inviteDue = () => !!S && !S.lobbyPrep && S.invSeen !== planDayKey() && pendingInvites().length > 0;
 const MAX_INVITES = 2;
+// breakV2: the lords who disbanded an alliance with me in the last battle (told the day after)
+function disbandedOnMe() {
+  if (!isLive() || !LIVE.uid) return []; const key = latestBattleKey(), b = key && LIVE.battles[key]; if (!b || !b.inputs) return [];
+  const start = carriedPairs(key).map(x => (Array.isArray(x) ? x : String(x).split("|")).slice().sort().join("|")), me = LIVE.uid;
+  return (b.inputs.plans || []).filter(q => q.pid !== me && (q.breaks || []).includes(me) && start.includes([q.pid, me].sort().join("|"))).map(q => q.pid);
+}
+const partDue = () => { try { return !!S && !S.lobbyPrep && !S.ob && isLive() && S.partSeen !== latestBattleKey() && disbandedOnMe().length > 0; } catch (e) { return false; } };
+function partedSheet() {
+  const ids = disbandedOnMe(), row = id => { const r = RIVALS.find(x => x.id === id); return `<div class="invcard"><span><i class="sw" style="background:${r ? r.color : "#888"}"></i><b>${esc(r ? r.name : nameOf(id))}</b> disbanded your alliance</span></div>`; };
+  return head(null, ids.length > 1 ? "Alliances disbanded" : "Alliance disbanded", "News from the last battle") + `<div class="body">${ids.map(row).join("")}
+    <p class="muted">You fought beside ${ids.length > 1 ? "them" : "them"} in the last battle. From tonight's battle you are no longer allies. You can invite them again, or make new friends, from Alliances.</p>
+    <div class="row"><button class="btn wax" data-act="close">Understood</button></div></div>`;
+}
 function inviteSheet() {
   const list = pendingInvites();
   return head(null, "Alliance invitations", "Answer before tonight's battle") + `<div class="body">
@@ -133,8 +146,8 @@ function pactHTML() {
   if (pactsEndToday()) return `<div class="sec"><h3>Final day</h3><p>${ids.map(nm).join(", ")}: your pact${ids.length > 1 ? "s dissolve" : " dissolves"} at dawn. Only one lord can win the Daily Siege.</p></div>`;
   ensureDip();
   return `<div class="sec"><h3>Alliances carried over</h3>${ids.map(id => { const a = S.pactAct[id] || "keep";
-    return `<div class="pact"><b>${nm(id)}</b><div class="optrow">${[["keep", "Keep"], ["break", "Break it"], ["betray", "Betray"]].map(([k, l]) => `<button class="btn small${a === k ? " on" : ""}" data-act="pact" data-v="${k}" data-k="${id}" ${dis()}>${l}</button>`).join("")}</div>${a === "betray" ? `<label class="inline">Betray when<select data-act="pwhen" data-k="${id}" ${dis()}>${opts(BETRAY_WHEN, S.pactWhen[id])}</select></label>` : ""}</div>`; }).join("")}
-    <p class="muted">Breaking a pact is clean. A betrayal is a surprise mid-battle. Your hero plants a bomb in their keep: it flashes red for about two seconds, then blows up for half its health. The victim will remember, and you become bitter rivals. Allies win the day together if only allies are left standing.</p></div>`;
+    return `<div class="pact"><b>${nm(id)}</b><div class="optrow">${[["keep", "Keep"], ["break", breakV2Now() ? "Disband" : "Break it"], ["betray", "Betray"]].map(([k, l]) => `<button class="btn small${a === k ? " on" : ""}" data-act="pact" data-v="${k}" data-k="${id}" ${dis()}>${l}</button>`).join("")}</div>${S.pactAsk === id ? `<div class="warnbox"><b class="wt">Disband the alliance with ${nm(id)}?</b><p class="muted">You still fight beside them in tonight's battle. From tomorrow's battle you are no longer allies, and they are told tomorrow. The only way to turn on them during a battle is a betrayal.</p><div class="row"><button class="btn wax" data-act="pactyes" data-k="${id}" ${dis()}>Yes, disband</button><button class="btn" data-act="pactno">Cancel</button></div></div>` : a === "break" && breakV2Now() ? `<p class="muted">Disbanding takes effect from tomorrow's battle. You still fight together tonight.</p>` : ""}${a === "betray" ? `<label class="inline">Betray when<select data-act="pwhen" data-k="${id}" ${dis()}>${opts(BETRAY_WHEN, S.pactWhen[id])}</select></label>` : ""}</div>`; }).join("")}
+    <p class="muted">${breakV2Now() ? "Disbanding is clean and starts from the next battle." : "Breaking a pact is clean."} A betrayal is a surprise mid-battle. Your hero plants a bomb in their keep: it flashes red for about two seconds, then blows up for half its health. The victim will remember, and you become bitter rivals. Allies win the day together if only allies are left standing.</p></div>`;
 }
 function diplomacySection(R) {
   const D = R.dip; if (!D) return ""; const N = q => esc((R.names && R.names[q]) || "Someone"), li = [];
@@ -242,7 +255,7 @@ function strategyTabRest(st) {
 const allyV2Now = () => (isLive() ? allyV2For(liveClock().planDay) : true); // alliances v2: groups that all agree, shared top places, lone wolves
 // everyone in the war this device knows of, by id
 function allyLords() { const live = isLive(), me = live ? LIVE.uid : "you"; return { me, all: [{ id: me, name: live ? MY_NAME : "You", color: MY_COLOR, banner: S && S.banner }, ...RIVALS] }; }
-const allyPairsNow = () => (isLive() ? carriedPairs(liveClock().planDay) : (S.pairs || []));
+const allyPairsNow = () => (isLive() ? activePairs(liveClock().planDay) : (S.pairs || []));
 // the lords in id's alliance (id included), from the pacts that stand right now
 function allyGroup(id, src = allyPairsNow()) { const seen = new Set([id]), q = [id]; while (q.length) { const x = q.shift(); src.forEach(k => { const [a, b] = k.split("|"); const o = a === x ? b : b === x ? a : null; if (o && !seen.has(o)) { seen.add(o); q.push(o); } }); } return [...seen]; }
 function knownAlliances() {
@@ -398,7 +411,7 @@ function sealChecks() {
   if (inc.length) ck(open ? "warn" : "ok", open ? `<b>${open} alliance offer${open > 1 ? "s" : ""} to answer</b>` : "Alliance offers answered", "alliances");
   if (!pactsEndToday()) { const sent = Object.keys(S.offers || {}).length, carried = carriedPartners().length; ck(sent || carried ? "ok" : "info", carried ? `Allied with ${carriedPartners().map(id => esc((RIVALS.find(r => r.id === id) || {}).name || "")).join(", ")}` : sent ? `${sent} alliance offer${sent > 1 ? "s" : ""} sent` : "No alliance offered (optional)", "alliances"); }
   carriedPartners().filter(id => !pactsEndToday()).forEach(id => { const a = (S.pactAct || {})[id] || "keep", nm = esc((RIVALS.find(r => r.id === id) || {}).name || "an ally");
-    ck("ok", a === "betray" ? `Betraying ${nm} ${esc(String(S.pactWhen[id] || BETRAY_WHEN[0]).toLowerCase())}` : a === "break" ? `Breaking the pact with ${nm}` : `Keeping the pact with ${nm}`, "alliances"); });
+    ck("ok", a === "betray" ? `Betraying ${nm} ${esc(String(S.pactWhen[id] || BETRAY_WHEN[0]).toLowerCase())}` : a === "break" ? (breakV2Now() ? `Disbanding the alliance with ${nm} after tonight` : `Breaking the pact with ${nm}`) : `Keeping the pact with ${nm}`, "alliances"); });
   if (mercOpen()) { const free = mercV2Now() ? mercToday().open.length : MERC_V1_IDS.filter(id => !mercWait(id)).length, b = bidSummary(); if (free) ck(b ? "ok" : "warn", b ? `Mercenary bid: ${esc(b)}` : "<b>No mercenary bid</b>. Rivals may hire them", "camp"); }
   return L;
 }

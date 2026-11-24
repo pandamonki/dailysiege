@@ -218,3 +218,21 @@ test("seats are shuffled for wars from SEAT_SHUFFLE_FROM: same lords, a fair dra
   assert.deepEqual(after, again, "the draw is the same every time");
   assert.notDeepEqual(other, after, "a new war draws again");
 });
+
+test("breakV2: an alliance disbanded in yesterday's orders ends today, and is still in force for the battle it was disbanded in", () => {
+  const wActivePairs = sim.get("wActivePairs"), wCarriedPairs = sim.get("wCarriedPairs"), D0 = "2026-11-25", D1 = addDays(D0, 1), D2 = addDays(D0, 2);
+  const W = { config: { tz: "UTC", lockHour: 20, startDate: D0, maxPlayers: 8 }, players: {}, battles: {
+    [D0]: { week: D0, pairsEnd: ["a|b", "c|d"], inputs: { plans: [{ pid: "a", breaks: ["b"] }, { pid: "b", breaks: [] }, { pid: "c", breaks: [] }, { pid: "d", breaks: [] }] } },
+    [D1]: { week: D0, pairsEnd: ["c|d"], inputs: { plans: [{ pid: "a", breaks: [] }, { pid: "c", breaks: [] }] } } } };
+  assert.deepEqual(J(wCarriedPairs(W, D1)), ["a|b", "c|d"]); // as they stood at the end of day 1
+  assert.deepEqual(J(wActivePairs(W, D1)), ["c|d"]); // a disbanded them in day 1's orders: ended for day 2
+  assert.deepEqual(J(wActivePairs(W, D2)), ["c|d"]);
+  sim.run('BREAK_V2_FROM = "2099-01-01"'); assert.deepEqual(J(wActivePairs(W, D1)), ["a|b", "c|d"]); sim.run('BREAK_V2_FROM = "2026-11-25"'); // before the rule, a break was immediate and never carried
+});
+
+test("breakV2: today's own breaks no longer end a carried alliance (it ends tomorrow)", () => {
+  const resolve = sim.get("resolveAlliances"), mk = (pid, breaks) => ({ pid, name: pid, breaks, offers: {}, replies: {}, terms: {}, pbetray: {}, auto: false });
+  const run = delayBreak => { const plans = [mk("a", ["b"]), mk("b", []), mk("c", []), mk("d", [])]; const r = resolve(plans, { persist: ["a|b"], final: false, prevDay: 1, feuds: [], blocMax: 4, v2: true, delayBreak }); return J(r.pairs); };
+  assert.deepEqual(run(false), []); // the old rule: broken at the start of the battle
+  assert.deepEqual(run(true), [["a", "b"]]); // breakV2: they still fight together tonight
+});
