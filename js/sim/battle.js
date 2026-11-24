@@ -554,12 +554,22 @@ function runBattle(plans, seed, opts = {}) {
   // the same instant, so they all go off together.
   function betrayAllStep(pid, p) {
     const tg = Object.keys(p.betray || {}).filter(q => P[q] && P[q].alive && p.pacts.has(q) && P[q].castle && P[q].castle.hp > 0); if (!tg.length) return;
-    const alive = alivePlayers(), trig = p.betray[tg[0]], ok = trig === "When 3 players remain" ? alive.length <= 3 : trig === "At the 2-minute mark" ? t >= 120 : (t >= 90 || alive.length <= Math.ceil(order.length / 2));
+    const alive = alivePlayers(), trig = p.betray[tg[0]]; if (trig === LAST_OUTSIDER) return; // that one goes off by itself (lastOutsiderBetray)
+    const ok = trig === "When 3 players remain" ? alive.length <= 3 : trig === "At the 2-minute mark" ? t >= 120 : trig === "In the last minute" ? t >= tmax() - 60 : trig === "At the very start of the battle" ? true : trig === "When another lord is knocked out" ? order.some(q => q !== pid && !P[q].alive) : (t >= 90 || alive.length <= Math.ceil(order.length / 2));
     if (ok && !p.armedAll) { p.armedAll = true; if (pid === mePid) log("Your hero heads for the nearest keep. The whole alliance falls at once.", "you"); }
     if (!p.armedAll) return;
     const hero = champOf(pid); if (!hero || !live(hero)) return;
     const near = tg.slice().sort((a, b) => d(hero, P[a].castle) - d(hero, P[b].castle) || (a < b ? -1 : 1))[0]; p.armed = { [near]: true }; // the hero walks to the nearest keep (see the armed betrayal movement)
     if (d(hero, P[near].castle) <= 2.2) tg.forEach(q => betray(pid, q));
+  }
+  // betrayV2: a lord who chose "When the last outsider falls" turns on the allies they are left with the moment nobody else remains: the bombs are planted
+  // there and then (no walk to the keep) and the battle goes on between them instead of ending in a shared victory.
+  function lastOutsiderBetray(alive) {
+    let went = false;
+    alive.forEach(pid => { const p = P[pid]; if (p.lastBetrayed) return;
+      const tg = Object.entries(p.betray || {}).filter(([q, trig]) => trig === LAST_OUTSIDER && alive.includes(q) && p.pacts.has(q)).map(([q]) => q); if (!tg.length) return;
+      p.lastBetrayed = true; log(`The last outsider has fallen. ${nm(pid)} turns on their allies!`, "big"); tg.forEach(q => betray(pid, q)); if (tg.some(q => !p.pacts.has(q))) went = true; });
+    return went;
   }
   function betray(pid, target, quiet) {
     if (!P[pid].pacts.has(target)) return;
@@ -910,6 +920,11 @@ function runBattle(plans, seed, opts = {}) {
         else if (trig === "When their castle drops below 30%") ok = P[target].castle.hp / P[target].castle.maxhp < .3;
         else if (trig === "At the 2-minute mark") ok = t >= 120;
         else if (trig === "Halfway through the battle") ok = t >= 90 || alive.length <= Math.ceil(order.length / 2);
+        else if (trig === "At the very start of the battle") ok = true;
+        else if (trig === "In the last minute") ok = t >= tmax() - 60;
+        else if (trig === "When another lord is knocked out") ok = order.some(q => q !== pid && q !== target && !P[q].alive);
+        else if (trig === "When their army is gone") ok = t >= 10 && !ents.some(e => !e.dead && e.pid === target && e.kind === "unit" && !e.free && !e.militia && !e.merc);
+        else if (trig === "When their hero is away from home") { const th = champOf(target); ok = !!th && !th.dead && d(th, P[target].castle) > 8; }
         else if (trig === "When they attack my target") ok = t - (p.stolenT || -9) < 1.2;
         else if (trig === "When their hero drops below 30%") { const th = champOf(target); ok = !!th && !th.dead && th.hp / th.maxhp < .3; }
         else if (trig === "When their castle is under attack") ok = t - (P[target].castleHitT ?? -99) < 1;
@@ -923,7 +938,8 @@ function runBattle(plans, seed, opts = {}) {
       });
     });
     if (alive.length > 1 && alive.every(a => alive.every(b => allied(a, b)))) {
-      if (FIN2) breakLastAlliance(alive);
+      if (!FIN2 && !finalDay && lastOutsiderBetray(alive)) { /* the bombs went off: the fight goes on */ }
+      else if (FIN2) breakLastAlliance(alive);
       else if (finalDay) { alive.forEach(a => P[a].pacts.clear()); log("Final day: the pacts dissolve. One banner must stand alone.", "big"); }
       else if (!teamWin) { teamWin = alive.slice(); log("Only allies remain. They share the day's victory.", "big"); over = true; }
     }

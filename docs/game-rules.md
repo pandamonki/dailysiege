@@ -293,7 +293,11 @@ practice games always stamp all of them (`js/sim/plans.js`).
   on more than one ally: each armed betrayal sends the hero to that keep, so the bombs go off one after another. From 26 Nov (`betrayV2`) a lord with two or more carried allies can instead choose
   **Betray the whole alliance** (Alliances > Betray all; trigger: halfway, 3 players left or the 2-minute mark): the hero heads for the nearest
   allied keep and, on arriving, a bomb is planted in every allied keep at the same instant so they all go off together (`betrayAllStep` in
-  `js/sim/battle.js`, plan field `betrayAll`). It makes every ally a bitter enemy at once. The betrayer scores
+  `js/sim/battle.js`, plan field `betrayAll`). It makes every ally a bitter enemy at once. From 26 Nov the Betray when list also has: at the very start of the battle, in the last minute
+  (replaces the 2-minute mark), when another lord is knocked out, when their army is gone, when their hero is away from home (more than 8 tiles from
+  their keep) and **when the last outsider falls**: no walk to the keep, the bombs go off by themselves the moment the last lord outside the
+  alliance is beaten, and the battle goes on between the betrayer and the allies they turned on instead of ending in a shared victory
+  (`lastOutsiderBetray` in `js/sim/battle.js`; not used on the final day, where the last alliance breaks anyway). The betrayer scores
   3 points and takes a quarter of the victim's battle spoils; the two deal 20% more damage to each other for the rest of the
   war and can never share an alliance again.
 - Bots in friends wars (from 20 Nov, `wBotDiplomacy` in `js/net/world.js`): each day a bot has a 30% chance to invite a

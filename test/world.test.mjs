@@ -244,3 +244,13 @@ test("betrayV2: betraying the whole alliance plants every bomb at the same momen
   if (bets.length) { assert.equal(bets.length, 2, "both allies are betrayed"); assert.equal(bets[0].t, bets[1].t, "at the same instant"); assert.equal(res.results.find(r => r.pid === a.pid).treachery, 2, "both bombs went off"); }
   else assert.ok(!res.feudsNew.some(k => k.includes(a.pid)), "no betrayal means no feud (the hero never reached a keep)"); // seed 1 may not get there: the check then is that nothing half-happens
 });
+
+test("betrayV2: 'when the last outsider falls' turns on the last allies at once instead of ending in a shared victory; the other new triggers fire", () => {
+  const fight = (trig, seed, all) => { const b = buildBattleInputs(world(ids), D1), [a, c, e] = b.plans; a.pacts = [c.pid, e.pid]; c.pacts = [a.pid]; e.pacts = [a.pid]; a.betray = { [c.pid]: trig, [e.pid]: trig }; if (all) a.betrayAll = true;
+    return sim.get("runBattle")(b.plans, seed, { N: b.N, balV2: true, dayNo: 1 }); };
+  let fired = 0, shared = 0;
+  for (let seed = 1; seed <= 8; seed++) { const r = fight(sim.get("LAST_OUTSIDER"), seed, false); if (r.hl.some(h => h.kind === "betray" && h.pid === "a")) fired++; if (r.team && r.team.includes("a") && r.team.length > 1) shared++; }
+  assert.ok(fired >= 1, "the last-outsider betrayal went off in at least one battle"); assert.equal(shared, 0, "a lord who set it never shares the victory with the allies they were left with");
+  for (const trig of ["At the very start of the battle", "In the last minute", "When another lord is knocked out", "When their army is gone", "When their hero is away from home"]) { const r = fight(trig, 1, false); assert.ok(Array.isArray(r.hl), trig + " runs"); }
+  assert.ok(fight("At the very start of the battle", 1, true).hl.some(h => h.kind === "betray" && h.pid === "a"), "the whole alliance can be betrayed at the very start");
+});

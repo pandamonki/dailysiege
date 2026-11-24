@@ -142,7 +142,7 @@ const A = {
       const who = takenColours()[k]; if (who) { toast(`${TEAM_COLOR_NAMES[k] || "That colour"} is taken by ${who}.`); return; }
       S.banner = { ...(S.banner || defaultBanner()), c1: k }; MY_COLOR = k; save(); renderLobby(); return; }
     S.banner = { ...(S.banner || defaultBanner()), [v]: k === "seat" ? null : k }; },
-  pall: v => { ensureDip(); if (v === "on") { S.pactAll = BETRAY_ALL_WHEN[0]; S.pactAsk = null; carriedPartners().forEach(id => { S.pactAct[id] = "betray"; S.pactWhen[id] = S.pactAll; }); } else { S.pactAll = null; carriedPartners().forEach(id => { S.pactAct[id] = "keep"; }); } }, // betray the whole alliance
+  pall: v => { ensureDip(); if (v === "on") { S.pactAll = BETRAY_ALL_WHEN[1]; S.pactAsk = null; carriedPartners().forEach(id => { S.pactAct[id] = "betray"; S.pactWhen[id] = S.pactAll; }); } else { S.pactAll = null; carriedPartners().forEach(id => { S.pactAct[id] = "keep"; }); } }, // betray the whole alliance
   pact: (v, k) => { ensureDip(); S.pactAll = null; if (v === "break" && breakV2Now() && S.pactAct[k] !== "break") { S.pactAsk = k; return; } S.pactAsk = null; // disbanding asks "are you sure?" first
     S.pactAct[k] = v; if (v === "keep" || (v === "break" && breakV2Now())) S.lists.hostile = S.lists.hostile.filter(x => x !== k); if (v === "betray") S.pactWhen[k] = S.pactWhen[k] || BETRAY_WHEN[0]; },
   pactyes: (v, k) => { ensureDip(); S.pactAct[k] = "break"; S.pactAsk = null; S.lists.hostile = S.lists.hostile.filter(x => x !== k); },

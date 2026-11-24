@@ -64,7 +64,11 @@ const breakV2Now = () => { try { return typeof isLive === "function" && isLive()
 // every bomb is planted at the same moment, so they all go off together.
 let BETRAY_V2_FROM = "2026-11-26"; const betrayV2For = d => String(d) >= BETRAY_V2_FROM;
 const betrayV2Now = () => { try { return typeof isLive === "function" && isLive() && typeof liveClock === "function" ? betrayV2For(liveClock().planDay) : false; } catch (e) { return false; } };
-const BETRAY_ALL_WHEN = ["Halfway through the battle", "When 3 players remain", "At the 2-minute mark"]; // triggers that do not depend on one victim
+// betrayV2 triggers: the new ones, and the old "At the 2-minute mark" is replaced by "In the last minute" (the old name still works in saved orders)
+const LAST_OUTSIDER = "When the last outsider falls"; // the bombs go off by themselves the moment the last lord outside the alliance is beaten; the fight goes on
+const BETRAY_WHEN_V2 = ["At the very start of the battle", "Halfway through the battle", "In the last minute", "When 3 players remain", "When another lord is knocked out", LAST_OUTSIDER, "When their castle drops below 30%", "When their castle is under attack", "When their army is gone", "When their hero is away from home", "When they attack my target", "When their hero drops below 30%", "When their hero has fallen"];
+const betrayWhenList = () => (betrayV2Now() ? BETRAY_WHEN_V2 : BETRAY_WHEN);
+const BETRAY_ALL_WHEN = ["At the very start of the battle", "Halfway through the battle", "In the last minute", "When 3 players remain", "When another lord is knocked out", LAST_OUTSIDER]; // triggers that do not depend on one victim
 const lvlV2Now = () => { try { return typeof isLive === "function" && isLive() && typeof liveClock === "function" ? lvlV2For(liveClock().planDay) : true; } catch (e) { return true; } };
 const WAVE_WHEN = [["timer", "At a set time"], ["castle_hit", "When my castle is attacked"], ["castle_low", "When my castle drops below half"], ["hero_dies", "When my hero dies"], ["army_dead", "When all my soldiers die"], ["enemy_hero", "When an enemy hero dies"], ["ult", "When any ultimate is cast"]];
 const WAVE_TIMES = [20, 30, 45, 60, 75, 90, 120, 150];
