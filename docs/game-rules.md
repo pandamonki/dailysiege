@@ -31,6 +31,7 @@ practice games always stamp all of them (`js/sim/plans.js`).
 | 25 Nov | `breakV2` | Disbanding an alliance takes effect from the next battle (see Alliances) |
 | 23 Nov | `finV2` | Final-day alliances: day 7 pacts hold until one alliance is all that is left, then break and the allies fight on |
 | 23 Nov | `lvlV2` | Faster levelling: 3 to 4 levels a battle, up to level 25, smaller steps per level |
+| Prototype (practice only) | `zoneV1` | Zones: placement sets each soldier's job, one #1 target, Front plans, flank plans, army temper, hill points, sudden-death damage tiebreak (see Zones) |
 
 ## The war
 
@@ -146,6 +147,36 @@ practice games always stamp all of them (`js/sim/plans.js`).
 - From 19 Nov an enemy siege engine within 3 tiles of a castle becomes the first target of that castle's defenders.
 - Before 20 Nov: a "heading", up to 5 if-then battle commands, and per-soldier orders (escort, attack a lord). These
   only apply to replays of older battles.
+
+## Zones (prototype, `zoneV1`)
+
+Practice always uses these rules. Real wars use them from `ZONE_V1_FROM` in `js/config/orders.js`, set far in the future
+until a start date is chosen. They replace the army plan, the fall-back list, the hero stance and the three target slots.
+
+- **Placement sets the job.** The deploy field splits into four zones, seen from the castle looking at the hill
+  (`zoneOfTile`): **Guard** (tiles within 1.5 of the castle) stays home and defends; the **Front** (straight ahead, within about
+  30° either side) marches on the #1 target; the **left** and **right flanks** face the nearest lord on that side
+  (`flankNeighbour`). A flank with no lord on its side fights with the Front. The hero takes the job of the zone it stands in.
+  The map tints each zone and labels it, and the Strategy tab counts what each zone holds and warns about an empty Front or an open side.
+- **One #1 target.** The Front marches on it; when it falls, the lord just above you on the board.
+- **The Front's plan:** Assault (fights what it meets), Siege (slips past armies to the castle), Hero hunt (heroes first) or Hold
+  the hill (takes the hill and holds it until 2:00, then marches on the target). They form a loop: Hold the hill beats Assault,
+  Assault beats Hero hunt, Hero hunt beats Siege, Siege beats Hold the hill. A Front hitting a Front whose plan it beats does 25%
+  more damage (`FRONT_BEATS`, `FRONT_BEAT_X`).
+- **Each flank:** Screen (holds a spot 4.5 tiles out toward that neighbour and fights what comes within 4 tiles of it; once nothing
+  has come for 20 seconds, and not before 1:00, it pushes on to that neighbour) or Raid (goes straight for that neighbour's castle).
+  Siege engines on a flank always go for that neighbour.
+- **Army temper** (whole army, hero included): Reckless (+15% damage, 15% more damage taken, never falls back, aggressive hero),
+  Steady (falls back when 3 enemies reach the castle) or Wary (10% less damage, 20% less taken, falls back when 2 enemies reach the
+  castle, cautious hero).
+- **Waves pick a zone** on the Deploy tab (Guard, Left, Front or Right) and take that zone's job once they have cleared the castle area.
+- **On the march** ranged soldiers and clerics stay behind their zone's melee line until they are near the fight. Only the Front
+  marches in formation.
+- **Hill points:** the lord who held the hill longest (at least 10 seconds) scores 2 points, times the day's weight; a tie shares them.
+- **Sudden death time-out:** the winner is the side with the best health left plus damage dealt all battle (each as a share of
+  the sides still standing), not health alone.
+- Bots: each build has a Front plan, flank plans and zones it places soldiers in (`BOT_ZONES` in `js/sim/bots.js`); their temper
+  follows their old stance.
 
 ## The battle
 

@@ -38,6 +38,7 @@ function draw(t) {
       ctx.fillStyle = `rgba(255,224,130,${pulse})`; ctx.fillRect(q * ts + 2, r * ts + 2, ts - 4, ts - 4); });
   }
   if (S.phase === "orders" && S.lists) drawOrderArrows(t);
+  if (zoneV1Now() && !lift && !WALL_BUILD) drawZoneLabels();
   // everything that stands on the map, drawn back to front
   const items = [];
   RIVALS.forEach(rv => items.push([rv.pos[0], () => drawCastle(rv.pos[0], rv.pos[1], rv.color, t, rivalLabel(rv), S.lists ? (bucketOf(rv.id) === "neutral" ? null : bucketOf(rv.id)) : null, null, rv.banner, rv.ctier || 1, bountyRank(rv.id))]));
@@ -62,3 +63,15 @@ function draw(t) {
 }
 const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
 function loop(ms) { tickReplay(ms); draw(still ? 0 : ms / 1000); requestAnimationFrame(loop); }
+
+// zones v1: a small label on each zone of my deployment field (Guard, Front and the flanks, with the neighbour each flank faces)
+function drawZoneLabels() {
+  const g = {}; zoneSet.forEach(k => { const [r, q] = k.split(",").map(Number); let z = myZone(r, q); if ((z === "left" || z === "right") && !myNeighbour(z)) z = "front"; (g[z] = g[z] || []).push([r, q]); });
+  const fs = Math.max(9, ts * .2); ctx.save(); ctx.font = `700 ${fs}px Alegreya, Georgia, serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  Object.entries(g).forEach(([z, tl]) => {
+    const far = tl.reduce((a, b) => (hyp(b[0] - CASTLE[0], b[1] - CASTLE[1]) > hyp(a[0] - CASTLE[0], a[1] - CASTLE[1]) ? b : a)), nb = z === "left" || z === "right" ? myNeighbour(z) : null; // the zone's outermost tile
+    const text = z === "guard" ? "GUARD" : z === "front" ? "FRONT" : `${z === "left" ? "LEFT" : "RIGHT"}${nb ? " → " + nb.name : ""}`, x = (far[1] + .5) * ts, y = (far[0] + .5) * ts, w = ctx.measureText(text).width + fs;
+    ctx.fillStyle = "rgba(35,24,16,.82)"; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x - w / 2, y - fs * .75, w, fs * 1.5, fs * .75) : ctx.rect(x - w / 2, y - fs * .75, w, fs * 1.5); ctx.fill();
+    ctx.strokeStyle = ZONE_COL[z]; ctx.lineWidth = Math.max(1, fs * .12); ctx.stroke(); ctx.fillStyle = "#ecdcb4"; ctx.fillText(text, x, y + fs * .05); });
+  ctx.restore();
+}

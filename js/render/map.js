@@ -97,8 +97,9 @@ function paintBackground() {
     c.fillStyle = "#8f8b82"; c.fillRect(sx - u * 2 + u * .5, sy - u * 7 + u * .5, u * 3, u * 7); c.fillStyle = "#b8b4a8"; c.fillRect(sx - u * 2 + u * .5, sy - u * 7 + u * .5, u, u * 7); c.fillStyle = "#c9c5b9"; c.fillRect(sx - u * 2 + u * .5, sy - u * 7 + u * .5, u * 3, u);
   }
   // your deployment field: tinted tiles with a dashed fence along its outer edge
+  const ZT = zoneV1Now() ? { guard: "rgba(47,95,168,.26)", left: "rgba(178,52,40,.24)", front: "rgba(79,122,46,.28)", right: "rgba(201,150,47,.28)" } : null; // zones v1: each zone tinted in its colour
   zoneSet.forEach(k => { const [r, q] = k.split(",").map(Number);
-    c.fillStyle = "rgba(255,236,170,.10)"; c.fillRect(q * ts, r * ts, ts, ts);
+    c.fillStyle = ZT ? ZT[(z => (z === "left" || z === "right") && !myNeighbour(z) ? "front" : z)(myZone(r, q))] : "rgba(255,236,170,.10)"; c.fillRect(q * ts, r * ts, ts, ts);
     c.strokeStyle = "rgba(255,236,170,.18)"; c.lineWidth = 1; c.strokeRect(q * ts + .5, r * ts + .5, ts - 1, ts - 1);
     c.strokeStyle = "#6b4527"; c.lineWidth = ts * .06; c.setLineDash([ts * .18, ts * .1]);
     [[-1, 0, 0, 0, 1, 0], [1, 0, 0, 1, 1, 1], [0, -1, 0, 0, 0, 1], [0, 1, 1, 0, 1, 1]].forEach(([dr, dc, x0, y0, x1, y1]) => {

@@ -158,6 +158,8 @@ const A = {
   stance: v => { S.stance = v; },
   formation: () => { S.formation = S.formation === false; },
   heading: v => { S.strategy.heading = v; },
+  zfront: v => { if (FRONT_PLANS.includes(v)) S.strategy.front = v; }, zflank: (v, k) => { if (FLANK_PLANS.includes(v) && (k === "left" || k === "right")) S.strategy.flanks = { ...cleanFlanks(S.strategy.flanks), [k]: v }; },
+  ztemper: v => { if (TEMPERS.includes(v)) S.strategy.temper = v; }, wzone: (v, k) => { ensureGarrison(); const w = S.garrison[+k]; if (w && ZONES.includes(v)) w.zone = v; },
   aplan: v => { if (ARMY_PLANS.includes(v)) S.strategy.plan = v; }, fback: v => { if (FALL_BACKS.includes(v)) S.strategy.fallback = v; },
   hillfirst: () => { S.strategy.heading = S.strategy.heading === "centre" ? "castle" : "centre"; },
   gtoggle: (_, k) => { sheet.gopen = sheet.gopen === k ? null : k; },
@@ -211,7 +213,7 @@ const A = {
   rvopen: v => { sheet.rv = sheet.rv === v ? null : v; },
   rvset: (v, k) => { ensureDip(); if (v === "hostile" && S.lists.hostile.includes(k)) { S.lists.hostile = [k, ...S.lists.hostile.filter(x => x !== k)]; toast("Main target set."); return; } A.lmove(v, k); },
   phase: v => { S.phase = v; sel = null; sheet = null; if (v === "orders") { ensureDip(); open("orders"); } },
-  lmove: (v, k) => { ensureDip(); if (v === "hostile" && allyShielded(k)) { toast(`${tgtName(k)} is your ally. Set the pact to Betray in Alliances to target them.`); return; } if (v === "hostile" && pickV1Now() && !S.lists.hostile.includes(k) && S.lists.hostile.length >= PICK_MAX) { toast(`You can pick up to ${PICK_MAX} targets a day.`); return; } ["hostile", "neutral"].forEach(l => { S.lists[l] = S.lists[l].filter(x => x !== k); }); if (PICK_ROLES[k] && v !== "hostile") return; S.lists[v === "hostile" ? "hostile" : "neutral"].push(k); }, // a general role is only ever on the attack list
+  lmove: (v, k) => { ensureDip(); if (v === "hostile" && allyShielded(k)) { toast(`${tgtName(k)} is your ally. Set the pact to Betray in Alliances to target them.`); return; } if (v === "hostile" && pickV1Now() && !S.lists.hostile.includes(k) && S.lists.hostile.length >= pickMax()) { toast(pickMax() === 1 ? "You have a #1 target already. Clear it to pick another." : `You can pick up to ${PICK_MAX} targets a day.`); return; } ["hostile", "neutral"].forEach(l => { S.lists[l] = S.lists[l].filter(x => x !== k); }); if (PICK_ROLES[k] && v !== "hostile") return; S.lists[v === "hostile" ? "hostile" : "neutral"].push(k); }, // a general role is only ever on the attack list
   lup: (_, k) => { const L = S.lists.hostile, i = L.indexOf(k); if (i > 0) [L[i - 1], L[i]] = [L[i], L[i - 1]]; },
   ldown: (_, k) => { const L = S.lists.hostile, i = L.indexOf(k); if (i > -1 && i < L.length - 1) [L[i + 1], L[i]] = [L[i], L[i + 1]]; },
   preset: v => { ensureDip(); const pick = RIVALS.filter(r => sideOf(r) === v).sort((a, b) => Math.hypot(a.pos[0] - CASTLE[0], a.pos[1] - CASTLE[1]) - Math.hypot(b.pos[0] - CASTLE[0], b.pos[1] - CASTLE[1]))[0];

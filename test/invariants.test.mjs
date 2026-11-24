@@ -294,3 +294,36 @@ test("final-day alliances (finV2): pacts hold until one alliance is left, then b
   }
   assert.ok(broke > 0, "the last alliance never broke in any test battle");
 });
+
+// zones v1 (prototype): placement sets each soldier's job
+const ZWAR = (game, day, tweak = "") => `(() => { const L = seatLayout(8, true), CL = ["warrior", "mage", "rogue", "archer", "shaman"], ids = [...Array(8)].map((_, k) => "z${game}b" + k);
+  const plans = ids.map((uid, i) => { const zone = zoneFor(L.castles[i], L.N, L.castles, L.v2), lvl = Math.min(25, 1 + 3 * (${day} - 1));
+    const p = lordBotPlan({ uid, cls: CL[(${game} + i) % 5], i, ids, L, zone, dayNo: ${day}, lvl, v2: true, v3: true, fair: true, pick: true, ranks: {}, sup: true, defV2: true, zv: true });
+    return Object.assign(p, { pid: uid, name: uid, color: "#2f5fa8", castle: L.castles[i], level: lvl, zoneSet: zone, trapV2: true, sdV2: true, wallV2: true, engV2: true, ordV2: true, skV2: true, waveV2: true, waveV3: true, waveV4: true, balV5: true, itemV5: true, itemV6: true, shellV2: true, survV1: true, siegeV1: true, lvlV2: true, zoneV1: true }); });
+  ${tweak}
+  plans.forEach(p => { delete p.zoneSet; });
+  const opts = { N: L.N, ultV2: true, balV2: true, balV3: true, fairV1: true, pickV1: true, balV4: true, suddenV1: true, treesV1: true, heroV3: true, dayNo: ${day} };
+  const full = runBattle(JSON.parse(JSON.stringify(plans)), 7000 + ${game} * 31 + ${day}, { ...opts, fast: false }), fast = runBattle(JSON.parse(JSON.stringify(plans)), 7000 + ${game} * 31 + ${day}, { ...opts, fast: true });
+  return { full, fast, plans, L }; })()`;
+
+test("zones v1: every battle ends, ranks every lord once, plays the same fast and full, and the hill points go to at most a tie", () => {
+  for (const [g, d] of [[0, 2], [1, 4], [2, 6]]) {
+    const r = JSON.parse(sim.run(`(() => { const { full, fast, plans } = ${ZWAR(g, d)}; return JSON.stringify({ dur: full.duration, max: SD_AT + SD_COUNT + SD_LEN + 1, places: full.results.map(x => x.place).sort((a, b) => a - b), n: plans.length, same: battleHash(full) === battleHash(fast), jobs: plans.every(p => p.front && p.flanks && p.temper) }); })()`));
+    assert.ok(r.dur > 0 && r.dur <= r.max, `game ${g}: battle length ${r.dur}`);
+    assert.deepEqual(r.places, [...Array(r.n)].map((_, i) => i + 1), `game ${g}: places`);
+    assert.ok(r.same, `game ${g}: fast and full runs disagree`);
+    assert.ok(r.jobs, `game ${g}: a bot has no Front plan, flank plans or temper`);
+  }
+});
+
+test("zones v1: soldiers placed in the Guard zone, and waves sent there, stay at home until sudden death", () => {
+  // lord 0 puts every soldier on the Guard tiles round its castle
+  const tweak = `{ const p = plans[0], [cr, cc] = p.castle, used = new Set(); const tiles = [...p.zoneSet].map(k => k.split(",").map(Number)).filter(([r, c]) => zoneOfTile(cr, cc, r, c, L.N) === "guard" && !(r === cr && c === cc));
+    p.pieces = p.pieces.filter(pc => pc.kind === "champ" || pc.kind === "unit").filter(pc => { if (pc.kind === "champ") return true; const t = tiles.find(([r, c]) => !used.has(r + "," + c)); if (!t) return false; used.add(t.join(",")); pc.r = t[0]; pc.c = t[1]; return true; }); p.waves = [0, 1, 2].map(() => ({ zone: "guard" })); }`; // its waves (each brings a free Footman) go to the Guard too
+  const r = JSON.parse(sim.run(`(() => { const { full, plans } = ${ZWAR(3, 4, tweak)}; const p = plans[0], cx = p.castle[1] + .5, cy = p.castle[0] + .5, sd = full.sudden ? full.sudden.t0 : 1e9; let far = 0, seen = 0;
+    full.frames.forEach(f => { if (f.t >= sd) return; full.meta.forEach((m, j) => { if (m.pid !== p.pid || m.kind !== "unit" || m.militia || m.free) return; const i = j * 4; if (f.d.length <= i + 3 || (f.d[i + 3] & 1)) return; seen++; far = Math.max(far, Math.hypot(f.d[i] - cx, f.d[i + 1] - cy)); }); });
+    return JSON.stringify({ far, seen, n: p.pieces.filter(pc => pc.kind === "unit").length }); })()`));
+  assert.ok(r.n >= 1, "no guard soldiers placed");
+  assert.ok(r.seen > 0, "no guard soldier was seen on the field");
+  assert.ok(r.far <= 9.5, `a guard soldier wandered ${r.far.toFixed(1)} tiles from its castle`);
+});
