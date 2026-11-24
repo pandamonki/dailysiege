@@ -11,6 +11,8 @@ const RELEASES = [
     ["✋", "Disbanding takes a day", "From 25 Nov, a disbanded alliance still fights together tonight and ends from the next battle. Only a betrayal turns on an ally mid-fight."],
     ["❓", "Are you sure?", "Disbanding asks first, and tells you exactly when it takes effect."],
     ["🧭", "Clearer muster screen", "Each alliance is its own coloured side, then the lone lords, with a line saying whether you have allies."],
+    ["🛡", "Team crests", "Each alliance has a shield crest: a slice per lord in their colour and a white animal. It sits above allied castles and heroes."],
+    ["💔", "Crests break", "When a betrayal or the last alliance ends a pact, the crest cracks and its pieces fall away."],
     ["🔗", "Teams in the fight", "In the replay, allied castles sit together in the side strip, outlined in their team colour."],
     ["📣", "Told the next day", "The lord you disbanded on gets an Alliance disbanded pop-up the next time they plan."],
   ] },

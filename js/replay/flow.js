@@ -50,8 +50,8 @@ function allianceGroups(pairs, order, me) {
   const par = {}, f = x => (par[x] == null || par[x] === x ? (par[x] = x) : (par[x] = f(par[x])));
   pairs.forEach(k => { const [a, b] = Array.isArray(k) ? k : String(k).split("|"); par[f(a)] = f(b); });
   const g = {}; Object.keys(par).forEach(x => (g[f(x)] = g[f(x)] || []).push(x));
-  return Object.values(g).filter(m => m.length > 1).map(m => m.sort((a, b) => order.indexOf(a) - order.indexOf(b)))
-    .sort((a, b) => b.length - a.length || (b.includes(me) - a.includes(me)) || order.indexOf(a[0]) - order.indexOf(b[0])).map((ids, i) => ({ ids, col: TEAM_COLS[i % TEAM_COLS.length], i }));
+  return crestAnimals(Object.values(g).filter(m => m.length > 1).map(m => m.sort((a, b) => order.indexOf(a) - order.indexOf(b)))
+    .sort((a, b) => b.length - a.length || (b.includes(me) - a.includes(me)) || order.indexOf(a[0]) - order.indexOf(b[0])).map((ids, i) => ({ ids, col: TEAM_COLS[i % TEAM_COLS.length], i })));
 }
 // The alliances in force at a moment of a replay: the pacts the battle began with, minus any betrayed or broken since (a betrayal ends that pair,
 // the last alliance splitting ends them all). Teams keep their colour for the whole battle; a pair that has ended simply loses its link.
@@ -75,9 +75,9 @@ function showIntro(it, done) {
   // design C: each alliance is a side with its own colour and header, then the lone lords
   const pids = it.cards.map(c => c.pid), meId = (it.cards.find(c => c.me) || {}).pid, pairsNow = [...it.kept, ...it.fresh], groups = allianceGroups(pairsNow, pids, meId), inGroup = new Set(groups.flatMap(g => g.ids));
   let ci = 0; const cardHTML = c => `<div class="icard${c.me ? " me" : ""}" data-pid="${c.pid}" style="--c:${c.color};--i:${ci++}"><img class="bn" alt="" src="${bannerURL(c.banner, c.color, 34, 46)}"><div class="tx"><b>${esc(c.name)}${it.rapier === c.pid ? RAPIER_ICON : ""}</b><small>${esc(clsName(c.cls))}</small><small>Lv ${c.level} · ${esc(CASTLE_TIERS[Math.max(0, Math.min(2, c.tier - 1))].name)}</small></div><img class="hr" alt="" src="${spriteURL("c-" + c.cls, c.color)}">${traitors.has(c.pid) ? `<span class="tag">TRAITOR</span>` : ""}</div>`;
-  const side = (title, note, col, list) => `<div class="iside" style="--sc:${col}"><div class="ihd"><b>${title}</b><small>${note}</small></div><div class="ibody">${list.map(cardHTML).join("")}</div></div>`;
+  const side = (title, note, col, list, crest) => `<div class="iside" style="--sc:${col}"><div class="ihd">${crest || ""}<b>${title}</b><small>${note}</small></div><div class="ibody">${list.map(cardHTML).join("")}</div></div>`;
   const sideHTML = groups.map(g => { const own = pairsNow.filter(k => k.split("|").every(x => g.ids.includes(x))), nf = own.filter(k => it.fresh.includes(k)).length, age = nf === own.length ? "new today" : nf ? "grew today" : "held from yesterday", first = card(g.ids[0]);
-    return side(g.ids.includes(meId) ? "Your alliance" : `Alliance of ${esc(first ? first.name : "a lord")}`, `${g.ids.length} lords · ${age}`, g.col, g.ids.map(card).filter(Boolean)); });
+    return side(g.ids.includes(meId) ? "Your alliance" : `Alliance of ${esc(first ? first.name : "a lord")}`, `${g.ids.length} lords · ${age}`, g.col, g.ids.map(card).filter(Boolean), crestSVG(g.ids.map(x => (card(x) || {}).color || "#888"), g.animal, 34, null, true)); });
   const lone = it.cards.filter(c => !inGroup.has(c.pid)), wolf = groups.length && lone.length === 1;
   if (lone.length) sideHTML.push(side(wolf ? "Lone wolf" : "Lone lords", wolf ? `alone against ${inGroup.size} allied lords` : `${lone.length} lord${lone.length === 1 ? "" : "s"} · every one for themselves`, "#7a6338", lone));
   const sides = sideHTML.join(`<div class="ivs">VS</div>`), mine = groups.find(g => g.ids.includes(meId));

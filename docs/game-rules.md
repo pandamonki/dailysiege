@@ -205,6 +205,11 @@ practice games always stamp all of them (`js/sim/plans.js`).
   ("Your alliance" or "Alliance of X", lord count, new today / held from yesterday / grew today), separated by VS, then the lone lords
   ("Lone wolf" when exactly one stands alone). Team colours come from `allianceGroups` in `js/replay/flow.js`.
 - In the replay, allied castles sit together in the side strip, outlined in the team colour (no lines across the map).
+- Team crests (`js/render/crests.js`): each alliance has a shield cut into one slice per lord in that lord's colour, with a white animal head
+  (wolf, eagle, lion, bear, stag or boar, picked from the members so it is the same on every phone and different between alliances), an
+  aged-gold rim and a hanging ring. It sits above each allied castle (above the health and wave bars) and a smaller one above each allied
+  hero's name tag, and heads each alliance on the muster screen. When a lord's last pact ends (a betrayal, or the last alliance splitting)
+  their crest cracks along the lines between lords and the pieces fall away over 1.7 seconds.
 
 - Wars page > Diagnostics: Copy diagnostics gathers the war's clock, my saved orders per day, my army and the orders each battle used,
   plus recent errors, for sending to the developer (`js/net/diag.js`).
