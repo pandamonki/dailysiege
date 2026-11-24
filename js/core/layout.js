@@ -68,6 +68,14 @@ function armySpots([r, c], size) {
   const at = (f, sd) => [Math.round(r + uy * f + py * sd), Math.round(c + ux * f + px * sd)];
   return { champ: at(2.2, 0), units: [at(2.2, -1.1), at(2.2, 1.1), at(1.2, 0)] };
 }
+// zones v1: the default spots for soldiers, one per job in the order asked (e.g. ["left", "right", "front", "guard"]): in each, the free tile of
+// that zone nearest the hero's spot. zone: the castle's deploy tiles (a Set of "r,c"). Falls back to armySpots when a zone has no tile.
+function zoneSpots([r, c], size, zone, jobs) {
+  const sp = armySpots([r, c], size), used = new Set([sp.champ.join(","), `${r},${c}`]), tiles = [...zone].map(k => k.split(",").map(Number));
+  const pick = z => { const best = tiles.filter(([a, b]) => !used.has(`${a},${b}`) && zoneOfTile(r, c, a, b, size) === z).sort((p, q) => (hyp(p[0] - sp.champ[0], p[1] - sp.champ[1]) - hyp(q[0] - sp.champ[0], q[1] - sp.champ[1])) || (p[0] - q[0]) || (p[1] - q[1]))[0];
+    if (best) used.add(best.join(",")); return best || null; };
+  return { champ: sp.champ, units: jobs.map(pick).map((t, i) => t || sp.units[i % sp.units.length]) };
+}
 
 // ================= seat layout =================
 let W = N * T, MID = (CENTRE + .5) * T, castleTiles = [], roadTiles = new Set(), occupied = new Set(), RARMY = [];

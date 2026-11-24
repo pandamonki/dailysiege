@@ -173,6 +173,11 @@ until a start date is chosen. They replace the army plan, the fall-back list, th
 - **Waves pick a zone** on the Deploy tab (Guard, Left, Front or Right) and take that zone's job once they have cleared the castle area.
 - **On the march** ranged soldiers and clerics stay behind their zone's melee line until they are near the fight. Only the Front
   marches in formation.
+- **Round the hill:** a Front that is not holding the hill, whose straight way to its target passes over the hill, walks round
+  it (at least 5 tiles out) instead of through it, so armies don't all meet in the middle by default (`RING_*` in `js/config/orders.js`).
+- **Default placement:** a new player's first soldiers stand on the left flank, then the right flank, then the Front, then the
+  Guard, with the hero leading the Front (`zoneSpots`); newly bought soldiers fill the same order. Practice rivals and real-war bots
+  place theirs by their build's jobs, flanks first.
 - **Hill points:** the lord who held the hill longest (at least 10 seconds) scores 2 points, times the day's weight; a tie shares them.
 - **Sudden death time-out:** the winner is the side with the best health left plus damage dealt all battle (each as a share of
   the sides still standing), not health alone.

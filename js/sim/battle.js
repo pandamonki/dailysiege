@@ -197,6 +197,14 @@ function runBattle(plans, seed, opts = {}) {
   const setJob = (e, z) => { const p = P[e.pid]; if ((z === "left" || z === "right") && !p.nb[z]) z = "front"; e.job = z; if (z === "guard") e.order = "guard"; };
   // the army plan this fighter goes by: the Front's plan, a raiding flank marches like a siege, a screen that has pushed on fights like a conquest
   const planOf = e => { const p = P[e.pid]; if (!p.zv || !e.job || e.job === "front" || e.job === "guard") return p.armyPlan; return p.flanks[e.job] === "raid" ? "siege" : "conquest"; };
+  // zones v1: a Front that is not holding the hill goes round it to a far target, so armies do not all meet in the middle by default
+  const ringRoute = (e, x, y) => { const p = P[e.pid]; if (!p.zv || e.job !== "front" || p.front === "hill" || sdOn()) return null;
+    const ex = e.x - ctrX, ey = e.y - ctrY, tx = x - ctrX, ty = y - ctrY, re = hyp(ex, ey), rt = hyp(tx, ty), dx = x - e.x, dy = y - e.y, L2 = dx * dx + dy * dy;
+    if (re < RING_FAR || rt < RING_FAR || L2 < 16) return null;
+    const u = Math.max(0, Math.min(1, -(ex * dx + ey * dy) / L2)); if (hyp(ex + dx * u, ey + dy * u) >= RING_CLEAR) return null;
+    let da = datan2(ty, tx) - datan2(ey, ex); while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI;
+    const a = datan2(ey, ex) + (da < 0 ? -1 : 1) * Math.min(Math.abs(da), RING_STEP), r = Math.max(RING_R, Math.min(re, rt)); return [ctrX + dcos(a) * r, ctrY + dsin(a) * r]; };
+  const goTo = (e, x, y, stop) => { const w = ZV ? ringRoute(e, x, y) : null; if (w) moveToward(e, w[0], w[1], .2); else moveToward(e, x, y, stop); };
   const holdsHill = e => { const p = P[e.pid]; return p.zv ? e.job === "front" && p.front === "hill" : p.heading === "centre"; };
   const screening = e => { const p = P[e.pid]; return !!p.zv && !sdOn() && (e.job === "left" || e.job === "right") && p.flanks[e.job] === "screen" && !p.pushed[e.job] && !!p.screenAt[e.job] && !e.cart && !e.ram && !e.cat; };
   plans.forEach(pl => pl.pacts.forEach(o => { if (P[o]) { P[pl.pid].pacts.add(o); P[o].pacts.add(pl.pid); } }));
@@ -1092,8 +1100,8 @@ function runBattle(plans, seed, opts = {}) {
         moveToward(e, o.x + dcos(a) * reach * .8, o.y + dsin(a) * reach * .8, .05);
       } else if (ZV && e.kind === "unit" && e.range > 1.5 && e.job && e.job !== "guard" && P[e.pid].zv && d(e, o) > e.range + 2) { // zones v1: on the march, ranged soldiers and clerics keep behind their zone's melee line
         const lead = ents.filter(x => !x.dead && x.pid === e.pid && x.kind === "unit" && x.job === e.job && x.range < 1.5 && !x.cart && !x.ram && !x.cat && x.order !== "guard");
-        if (!lead.length || d(e, o) >= Math.min(...lead.map(x => d(x, o))) + .9) moveToward(e, o.x, o.y, reach * .9);
-      } else moveToward(e, o.x, o.y, reach * .9);
+        if (!lead.length || d(e, o) >= Math.min(...lead.map(x => d(x, o))) + .9) goTo(e, o.x, o.y, reach * .9);
+      } else goTo(e, o.x, o.y, reach * .9);
       return;
     }
     if (fxv(e, "aim")) return; // a Sniper lining up a Headshot holds fire

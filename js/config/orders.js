@@ -114,6 +114,7 @@ const FLANK_PLANS = ["screen", "raid"], FLANK_INFO = { screen: ["Screen", "Stops
 const SCREEN_OUT = 4.5, SCREEN_R = 4, SCREEN_QUIET = 20, SCREEN_MIN = 60; // a screen holds this far out toward its neighbour, fights what comes within SCREEN_R of that spot, and pushes on once nothing has come for SCREEN_QUIET seconds (not before SCREEN_MIN)
 const TEMPERS = ["reckless", "steady", "wary"], TEMPER_INFO = { reckless: ["Reckless", "+15% damage, 15% more damage taken, never falls back"], steady: ["Steady", "No change; the army falls back if the castle is attacked"], wary: ["Wary", "10% less damage, 20% less damage taken, falls back early"] };
 const TEMPER_DMG = { reckless: 1.15, steady: 1, wary: .9 }, TEMPER_TAKEN = { reckless: 1.15, steady: 1, wary: .8 }, TEMPER_STANCE = { reckless: "aggressive", steady: "skirmish", wary: "cautious" }, TEMPER_FALLBACK = { reckless: "none", steady: "castle", wary: "castle" }, TEMPER_ALERT = { reckless: 99, steady: 3, wary: 2 };
+const RING_FAR = 3, RING_CLEAR = 3.2, RING_R = 5, RING_STEP = .6; // a Front not holding the hill, whose straight way to a far target passes within RING_CLEAR of the hill, walks round it at RING_R or more, aiming RING_STEP radians at a time
 const GUARD_LEASH = 7; // a Guard soldier that has chased this far from its castle drops the chase and walks home
 const HILL_PTS = 2, HILL_MIN = 10; // the lord who held the hill longest (at least HILL_MIN seconds) scores this, times the day's weight
 // (hyp and datan2 come from core/util.js and core/detmath.js, so every device classifies the same way)

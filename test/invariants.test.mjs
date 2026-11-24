@@ -339,3 +339,13 @@ test("fixed timing (timeV1): with no percentage chances in play, the dice no lon
   assert.equal(new Set(on).size, 1, "with fixed timing the same orders gave different battles on different days");
   assert.ok(new Set(off).size > 1, "before fixed timing the opening was random (the check would prove nothing)");
 });
+
+test("zones v1: a Front that is not holding the hill goes round it to a far target, and a Front holding it goes there", () => {
+  // every lord aims its Front at the castle across the map; the Fronts either all hold the hill or all assault (the first 30 seconds, within 3 tiles of the middle)
+  const run = front => JSON.parse(sim.run(`(() => { const { full, plans, L } = ${ZWAR(4, 3, `plans.forEach((p, i) => { p.targets = [plans[(i + 4) % 8].pid]; p.front = "${front}"; p.timeV1 = true; });`)};
+    const c = L.N / 2; let on = 0, all = 0; full.frames.forEach(f => { if (f.t > 30) return; full.meta.forEach((m, j) => { if (m.kind !== "unit" || m.militia || m.free) return; const i = j * 4; if (f.d.length <= i + 3 || (f.d[i + 3] & 1)) return; all++; if (Math.hypot(f.d[i] - c, f.d[i + 1] - c) <= 3) on++; }); });
+    return JSON.stringify({ share: on / all }); })()`));
+  const round = run("assault"), hill = run("hill");
+  assert.ok(hill.share > 0.01, `holding the hill, only ${(hill.share * 100).toFixed(1)}% of soldier time was on it`);
+  assert.ok(round.share < hill.share / 3, `assaulting Fronts spent ${(round.share * 100).toFixed(1)}% of their time on the hill (holding it: ${(hill.share * 100).toFixed(1)}%)`);
+});
