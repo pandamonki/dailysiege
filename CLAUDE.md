@@ -63,7 +63,10 @@ merge a pull request into `main`, don't stop at "merged":
 
 ## Release notes pop-up
 
-The "What's new" pop-up comes from the `RELEASES` list at the top of `js/ui/sheets/news.js`. For every major release or
-deployment, add a new entry at the top (newest first) with a new id, a title, a one-line sub and 8 to 14 short dot points
-(headline, one sentence; no emoji), like the v1.0 entry. Players see it once, the next time they plan, and then it is remembered
-on their device. Also add the detail to `PATCHES` in `js/ui/sheets/info.js` (the Full patch notes page).
+Keep release notes minimal: major changes players will notice only. Leave out bug fixes, tidy-ups, small balance tweaks
+and anything internal (flag names, file names, dev tools).
+
+The "What's new" pop-up comes from the `RELEASES` list at the top of `js/ui/sheets/news.js`. Add one only for a release with
+a major player-facing change: a new entry at the top (newest first) with a new id, a title, a one-line sub and two to five
+short dot points (headline, one sentence; no emoji). Players see it once, the next time they plan, and then it is remembered
+on their device. Also add one to three short lines to `PATCHES` in `js/ui/sheets/info.js` (the Full patch notes page).
