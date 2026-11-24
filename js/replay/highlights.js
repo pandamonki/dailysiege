@@ -22,8 +22,8 @@ function hlText(h, R) {
     case "giantslayer": return ["Giant slayer", `${you(h.pid) ? "You slay" : rk(h.pid) + N(h.pid) + " slays"} ${you(h.other) ? "your" : rk(h.other) + N(h.other) + "'s"} hero`];
     case "firstblood": return ["First blood", `${V(h.pid, "draw", "draws")} first blood against ${you(h.other) ? "you" : N(h.other)}`];
     case "cart": return ["Powder cart!", `${poss(h.pid)} powder cart goes off${h.castle ? " at a castle" : ""}${h.n ? `, catching ${h.n} soldier${h.n > 1 ? "s" : ""} in the blast` : ""}`];
-    case "rapierdrop": return ["Rapier dropped!", `${poss(h.pid)} hero falls and the Divine Rapier lies in the dust`];
-    case "rapierget": return ["Rapier seized!", `${V(h.pid, "snatch", "snatches")} up the Divine Rapier`];
+    case "rapierdrop": return ["Rapier dropped!", `${poss(h.pid)} hero falls and the Sunsteel Rapier lies in the dust`];
+    case "rapierget": return ["Rapier seized!", `${V(h.pid, "snatch", "snatches")} up the Sunsteel Rapier`];
     case "frenzy": return ["Desperation Frenzy", `${poss(h.pid)} keep is nearly lost and its defenders fight like demons`];
     case "ult": if (h.gen) return [h.ab + "!", `${poss(h.pid)} ultimate: ${h.ab}${ultTally(h)}`]; return h.ab === "Meteor" ? ["Meteor!", `${poss(h.pid)} Meteor crashes into ${h.n} foes`] : ["Assassinated", `${poss(h.pid)} Rogue executes ${you(h.other) ? "your" : N(h.other) + "'s"} hero`];
     case "winner": if (h.last) return [`${V(h.pid, "win", "wins")} the Daily Siege`, `${h.last.other ? (you(h.last.other) ? "You bring" : N(h.last.other) + " brings") + " down " : ""}${you(h.last.pid) ? "your" : N(h.last.pid) + "'s"} castle${h.last.other ? "" : " falls"}: the last rival is gone`];

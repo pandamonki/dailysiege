@@ -201,9 +201,10 @@ function previewOrder() {
 // how many targets a lord must pick before sealing: three, or every option there is if fewer
 const TARGETS_NEED = () => 1; // at least one target before sealing; up to PICK_MAX
 const targetsReady = () => !pickV1Now() || S.lists.hostile.length >= TARGETS_NEED();
-const ROLE_ICON = { "@weakcastle": "🏚", "@leader": "👑", "@above": "⬆", "@nearcastle": "🏰", "@neararmy": "⚔" };
+const ROLE_ICON = { "@weakcastle": "castle1", "@leader": "board", "@above": "roster", "@nearcastle": "base", "@neararmy": "army" }; // pictures in icons/ui
+const roleIco = k => (ROLE_ICON[k] ? `<img alt="" src="icons/ui/${ROLE_ICON[k]}.webp">` : "◎");
 const tgtName = id => { const r = RIVALS.find(x => x.id === id); return r ? r.name : PICK_ROLES[id] || ""; };
-const tgtMark = id => { const r = RIVALS.find(x => x.id === id); return r ? `<i class="sw" style="background:${r.color}"></i>` : `<i class="rico">${ROLE_ICON[id] || "◎"}</i>`; };
+const tgtMark = id => { const r = RIVALS.find(x => x.id === id); return r ? `<i class="sw" style="background:${r.color}"></i>` : `<i class="rico">${roleIco(id)}</i>`; };
 // the three target slots: filled ones can be dragged into order or cleared; empty ones say what to do
 function targetSlotsHTML() {
   const hostile = S.lists.hostile;
@@ -220,7 +221,7 @@ function targetBoardHTML(compact) {
 }
 function pickTab() {
   const hostile = S.lists.hostile, roles = Object.keys(PICK_ROLES).filter(k => !hostile.includes(k)), full = hostile.length >= PICK_MAX;
-  const chip = k => `<button class="chip" data-act="lmove" data-v="hostile" data-k="${k}" ${full ? "disabled" : dis()}><i class="rico">${ROLE_ICON[k] || "◎"}</i>${esc(PICK_ROLES[k])}</button>`;
+  const chip = k => `<button class="chip" data-act="lmove" data-v="hostile" data-k="${k}" ${full ? "disabled" : dis()}><i class="rico">${roleIco(k)}</i>${esc(PICK_ROLES[k])}</button>`;
   return `<div class="sec tight"><h3>1 · Today's targets <span class="cnt${hostile.length >= TARGETS_NEED() ? " ok" : ""}">${hostile.length}/${PICK_MAX}</span></h3>
       <p class="muted">Pick at least one target before you seal, and up to ${PICK_MAX}, in order: lords, roles, or a mix. Your army marches on them one by one and fights anything it meets on the way. After that it goes for ${fallbackLabel()}.</p>
       ${targetSlotsHTML()}

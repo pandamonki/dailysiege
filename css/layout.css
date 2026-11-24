@@ -145,7 +145,7 @@ html, body { overflow: hidden; overscroll-behavior: none; }
 .note.gold { border-left-color: var(--gold); background: rgba(230,180,60,.16); }
 .newslist { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 8px; }
 .newslist li { display: flex; gap: 10px; align-items: flex-start; padding: 6px 8px; border: 1px solid var(--wood-dark); border-radius: 8px; background: rgba(255,250,230,.45); }
-.newslist .ni { font-size: 22px; line-height: 1.2; } .newslist small { color: var(--ink-soft); }
+.newslist .ni { flex: none; width: 8px; height: 8px; margin: 6px 2px 0; background: var(--gold, #c9962f); border: 1px solid var(--wood-dark); transform: rotate(45deg); } .newslist small { color: var(--ink-soft); }
 
 /* shop: side bag button and single-page layout */
 #shopbtn { position: absolute; right: 0; top: 196px; z-index: 6; width: 50px; height: 54px; padding: 0; border: 2px solid var(--wood-dark); border-right: 0; border-radius: 27px 0 0 27px; background: #000; box-shadow: 0 2px 0 rgba(62,39,20,.5); display: flex; align-items: center; justify-content: center; cursor: pointer; }

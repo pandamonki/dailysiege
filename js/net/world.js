@@ -67,7 +67,7 @@ function wActivePairs(W, dayKey) {
   return raw.filter(s => { const [a, b] = Array.isArray(s) ? s : String(s).split("|"); return !((pb[a] || []).includes(b) || (pb[b] || []).includes(a)); });
 }
 const wFeudsBefore = (W, dayKey, week) => Array.from(new Set(Object.keys(W.battles).filter(k => k < dayKey && W.battles[k].week === week).flatMap(k => W.battles[k].feuds || [])));
-// the Divine Rapier belongs to whoever carried it off the field last: nobody else may start a fight holding it
+// the Sunsteel Rapier belongs to whoever carried it off the field last: nobody else may start a fight holding it
 function wRapierItems(W, items, uid, week, dayKey) {
   let holder = null; Object.keys(W.battles).filter(k => W.battles[k].week === week && k < dayKey).sort().forEach(k => { const r = W.battles[k].rapier; if (r && r.to) holder = r.to; });
   if (!holder) return items; const has = items.includes("rapier");

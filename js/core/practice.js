@@ -12,13 +12,13 @@ const heroV3Now = () => (typeof isLive === "function" && isLive() ? heroV3For(li
 let MY_COLOR = YOU_COLOR;
 // Example lobby for practice battles (castles are placed by the seat layout)
 const BOTS = [
-  { id: "p1", name: "Sam",    cls: "warrior", pos: [1, 8],  trust: "Loyal",   color: "#b8322a" },
-  { id: "p2", name: "Riley",  cls: "rogue",   pos: [3, 3],  trust: "Uneasy",  color: "#3d7a35" },
-  { id: "p3", name: "Jordan", cls: "mage",    pos: [3, 13], trust: "Wary",    color: "#7a3d8f" },
-  { id: "p4", name: "Alex",   cls: "shaman",  pos: [8, 1],  trust: "Wary",    color: "#c9862f" },
-  { id: "p5", name: "Casey",  cls: "archer",  pos: [8, 15], trust: "Alarmed", color: "#d6559a" },
-  { id: "p6", name: "Morgan", cls: "rogue",   pos: [13, 3], trust: "Loyal",   color: "#2d8a8a" },
-  { id: "p7", name: "Taylor", cls: "warrior", pos: [13, 13], trust: "Wary",    color: "#d8d2c0" },
+  { id: "p1", name: "Brannock", cls: "warrior", pos: [1, 8],  trust: "Loyal",   color: "#b8322a" },
+  { id: "p2", name: "Wenna",   cls: "rogue",   pos: [3, 3],  trust: "Uneasy",  color: "#3d7a35" },
+  { id: "p3", name: "Old Pell", cls: "mage",    pos: [3, 13], trust: "Wary",    color: "#7a3d8f" },
+  { id: "p4", name: "Hask",    cls: "shaman",  pos: [8, 1],  trust: "Wary",    color: "#c9862f" },
+  { id: "p5", name: "Fen",     cls: "archer",  pos: [8, 15], trust: "Alarmed", color: "#d6559a" },
+  { id: "p6", name: "Mudge",   cls: "rogue",   pos: [13, 3], trust: "Loyal",   color: "#2d8a8a" },
+  { id: "p7", name: "Ostrid",  cls: "warrior", pos: [13, 13], trust: "Wary",    color: "#d8d2c0" },
 ];
 let RIVALS = BOTS, RWALLS = [];
 const BOT_BANNERS = [{ pat: "halves", c1: null, c2: "#ecdcb4", em: "crown" }, { pat: "stripe", c1: null, c2: "#1e140c", em: "skull" }, { pat: "cross", c1: null, c2: "#ecdcb4", em: "star" }, { pat: "chevron", c1: null, c2: "#e2b33c", em: "sun" }, { pat: "quarters", c1: null, c2: "#ecdcb4", em: "none" }, { pat: "solid", c1: null, c2: "#ecdcb4", em: "moon" }, { pat: "stripe", c1: null, c2: "#e2b33c", em: "tower" }];

@@ -43,7 +43,7 @@ const bountyRank = id => { bountyMap(); return BOUNTY_CACHE.rk[id] || 0; }; // 1
 function boardSheet() {
   const rows = boardRows().sort((a, b) => b.pts - a.pts || b.lvl - a.lvl), n = rows.length, low = Math.max(1, Math.round(n * .3));
   const me = rows.findIndex(r => r.me), catchUp = isLive() && me > -1 ? catchUpGold(n, n - 1 - me) : 0;
-  return head(null, "Leaderboard", `${isLive() ? "Week standings" : "Test standings"} · day ${DAY} of 7`) + `<div class="body bdbody">
+  return head(null, "Leaderboard", `${isLive() ? "Week standings" : "Practice standings"} · day ${DAY} of 7`) + `<div class="body bdbody">
     <div class="bdhead"><span></span><span></span><span>Lord</span><span>Lv</span><span>Pts</span></div>
     ${rows.map((r, i) => `<div class="bd2${r.me ? " me" : ""}"><span class="ord">${i + 1}</span><img class="bmini" alt="" src="${bannerURL(r.banner, r.color, 24, 32)}"><span class="bdn"><b>${esc(r.name)}</b>${r.cls ? `<small>${CLASSES[r.cls].name}</small>` : ""}${i < 3 && n > 3 ? `<i class="tag bty" title="Bounty on their head: base + board position + hero level x 5">♛ ${bountyMap()[r.id] || ""}g</i>` : ""}${i >= n - low && n > 3 ? `<i class="tag cat" title="Earns catch-up gold">◈</i>` : ""}</span><span class="lv">${r.lvl}</span><span class="pts">${r.pts}${r.last != null ? `<small>+${r.last}</small>` : ""}</span></div>`).join("")}
     <p class="muted bdfoot"><b class="bounty">♛</b> bounty on the top three · <b class="catch">◈</b> catch-up gold for the bottom 30%${catchUp ? ` (you get +${catchUp})` : ""}. Points: ${(isLive() ? placeV2For(liveClock().planDay) : true) ? `one per place, so last scores 1 and first scores one per lord, +${PLACE_WIN_BONUS} for winning` : "10 for first place down to 0"}, +1 per hero slain, +${castlePts(isLive() ? fairV1For(liveClock().planDay) : true)} per castle taken, +1 if your hero survives the battle.</p></div>`;
@@ -177,8 +177,8 @@ function titleSheet() {
     <div class="row"><button class="btn small" data-act="open" data-v="title">← Back</button></div></div>`;
   return `<div class="splash-art" role="img" aria-label="Daily Siege: castles and armies around a hill at sunset"></div><div class="splash-menu">
     <div class="menu3">
-      <button class="btn wax big" data-act="playgo">⚔ Play with friends<small>${lobbyOpen(LIVE.config) ? (inGame ? (LIVE.players[LIVE.uid].pending ? "Finish registering for the war" : "Muster hall · registration open") : "Registration is open. Join the war") : inGame ? "Friends game · day " + (live ? DAY : liveClock().dayNo) + " of 7" : LIVE.config ? "Join your friends' next war" : can ? "Host a war and invite friends" : "Daily siege with friends"}</small></button>
-      ${inGame ? `<button class="btn small" data-act="open" data-v="game">⚙ Game settings</button>` : ""}${window.DS && DS.user ? `<button class="btn small" data-act="open" data-v="wars">🏰 Your wars${(DS.wars || []).length > 1 ? ` (${DS.wars.length})` : ""}</button>` : ""}${typeof PWA !== "undefined" && PWA.canOffer() ? `<button class="btn small" data-act="pwainstall">📲 Install app</button>` : ""}${alertsMenuButton()}<button class="btn small" data-act="open" data-v="patch">📜 Patch notes</button>${typeof LIVE === "object" && LIVE.config && (LIVE.config.hall || []).length ? `<button class="btn small" data-act="open" data-v="hall">🏆 Hall of fame</button>` : ""}<button class="btn small" data-act="wizard">🧙 How to play (tour)</button>
+      <button class="btn wax big" data-act="playgo">Play with friends<small>${lobbyOpen(LIVE.config) ? (inGame ? (LIVE.players[LIVE.uid].pending ? "Finish registering for the war" : "Muster hall · registration open") : "Registration is open. Join the war") : inGame ? "Friends game · day " + (live ? DAY : liveClock().dayNo) + " of 7" : LIVE.config ? "Join your friends' next war" : can ? "Host a war and invite friends" : "Host a war or join one"}</small></button>
+      ${inGame ? `<button class="btn small" data-act="open" data-v="game">Game settings</button>` : ""}${window.DS && DS.user ? `<button class="btn small" data-act="open" data-v="wars">Your wars${(DS.wars || []).length > 1 ? ` (${DS.wars.length})` : ""}</button>` : ""}${typeof PWA !== "undefined" && PWA.canOffer() ? `<button class="btn small" data-act="pwainstall">Install app</button>` : ""}${alertsMenuButton()}<button class="btn small" data-act="open" data-v="patch">Patch notes</button>${typeof LIVE === "object" && LIVE.config && (LIVE.config.hall || []).length ? `<button class="btn small" data-act="open" data-v="hall">🏆 Hall of fame</button>` : ""}<button class="btn small" data-act="wizard">How to play (tour)</button>
     </div></div>`;
 }
 function spellsSheet() {
@@ -209,11 +209,18 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "v1.23: new names", date: "24 Nov", fixes: [
+    "The practice leaderboard says Practice standings instead of Test standings, and the patch notes no longer show internal rule codes.",
+  ], balance: [], changes: [
+    "Items renamed (they work exactly as before): Crystalys is now Cutthroat's Crystal, Daedalus is Widowmaker, Divine Rapier is Sunsteel Rapier, Pipe of Insight is Hermit's Pipe, Shiva's Guard is Frostward Shield, Vanguard is Bulwark Shield, Anti-Magic Shell is Spellbreaker Ward, Healing Salve is Healing Broth, Ring of Health is Bloodstone Ring, Orb of Corruption is Orb of Ruin and Talisman of Evasion is Jade Talisman.",
+    "Skills renamed (they work exactly as before): Ignite is Smoulder, Combustion is Flashfire, Pyroblast is Great Firebolt, Shatter is Splinter Ice, Ice Barrier is Rime Ward, Cold Snap is Last Frost, Arcane Missiles is Spell Darts, Time Warp is Quickened Hour, Mana Shield is Aether Ward, Grounding Totem is Hearth Totem, Earthgrab Totem is Root Totem, Hex is Frog Curse, Cheap Shot is Dirty Blow, Shadow Dance is Knife Waltz, Crippling Poison is Hamstring Venom, Blade Fury is Whirl of Knives, Bloodthirst is Battle Hunger, Avatar of War is Wrath Unbound, Hunter's Mark is Marked Prey and Bounty Hunter is Prize Taker.",
+    "Practice rivals and the steward have new names, menus and the What's new list drop their emoji, and the target-role buttons use the game's own icons.",
+  ] },
   { v: "v1.22: betray the whole alliance and faster replays", date: "24 Nov", fixes: [
     "Watch replay and Highlights no longer pause for a second before starting: the battle is fought in the background while the report is open, and a Preparing the battle note shows at once if it is not ready.",
   ], balance: [
-    "From the 26 Nov battle (betrayV2): the betrayal time is picked from time slots (0:00 to 2:30 into the battle, like the wave deadlines) or conditions: another lord knocked out, their army gone, their hero away from home.",
-    "From the 26 Nov battle (betrayV2): a lord with two or more carried allies can betray the whole alliance at once. The hero goes to the nearest allied keep and bombs are planted in every allied keep at the same moment.",
+    "From the 26 Nov battle: the betrayal time is picked from time slots (0:00 to 2:30 into the battle, like the wave deadlines) or conditions: another lord knocked out, their army gone, their hero away from home.",
+    "From the 26 Nov battle: a lord with two or more carried allies can betray the whole alliance at once. The hero goes to the nearest allied keep and bombs are planted in every allied keep at the same moment.",
   ], changes: [
     "The betrayal banner names every lord betrayed.",
   ] },
@@ -223,7 +230,7 @@ const PATCHES = [
     "Team crests: a shield per alliance (a slice per lord, a white animal head, a gold rim) above allied castles and heroes in the replay and on the muster screen. It cracks and falls apart when the alliance breaks.",
     "The muster screen shows each alliance as a coloured side with the lone lords below; in the replay allied castles are grouped in the side strip, outlined in their team colour.",
   ], balance: [
-    "From the 25 Nov battle (breakV2): disbanding an alliance takes effect from the next battle. You still fight together tonight, a disbanded ally cannot be targeted, and only a betrayal turns on an ally mid-fight.",
+    "From the 25 Nov battle: disbanding an alliance takes effect from the next battle. You still fight together tonight, a disbanded ally cannot be targeted, and only a betrayal turns on an ally mid-fight.",
   ], changes: [
     "Disband asks \"are you sure?\" and the lord disbanded on gets an Alliance disbanded pop-up the next day.",
   ] },
@@ -240,8 +247,8 @@ const PATCHES = [
   { v: "v1.19: the crowning, the last alliance and faster heroes", date: "20 Nov", fixes: [
     "After the war's last battle the day 7 report opens first (Watch and Highlights work from it); closing it goes on to the war results.",
   ], balance: [
-    "From the 23 Nov battle (finV2): on day 7 pacts no longer end at dawn. They hold into the battle, and the moment one alliance is all that is left standing (or all that is left in sudden death) its pacts break, a banner announces it, and the allies fight on until one lord wins. Allies never share the war's last victory.",
-    "From the 23 Nov battle (lvlV2): heroes gain at least 3 and at most 4 levels a battle (was 2 to 3), up to level 25 (was 15). So after six battles a hero is level 19 to 25. Every level is still one skill point.",
+    "From the 23 Nov battle: on day 7 pacts no longer end at dawn. They hold into the battle, and the moment one alliance is all that is left standing (or all that is left in sudden death) its pacts break, a banner announces it, and the allies fight on until one lord wins. Allies never share the war's last victory.",
+    "From the 23 Nov battle: heroes gain at least 3 and at most 4 levels a battle (was 2 to 3), up to level 25 (was 15). So after six battles a hero is level 19 to 25. Every level is still one skill point.",
     "With lvlV2 each level adds 7% of the hero's base health (was 12%) and 5.25% of its base attack (was 9%), so a level 25 hero has the health and attack a level 15 hero had. Each level needs a flat 130 experience, so about a third of heroes reach 4 levels in a battle.",
   ], changes: [
     "The crowning: the first time the war results open, every other lord bows in a line below a podium, trumpets sound, and a bronze crown lands on 3rd, then silver on 2nd, then after a drum roll the big gold crown on 1st, with confetti and the winner's victory taunt. Each cheers when crowned; the winner dances and 2nd and 3rd shake their heads. Replay it with the Crowning button.",
@@ -255,15 +262,15 @@ const PATCHES = [
   { v: "v1.18: hero class, betrayal kills and the replay", date: "20 Nov", fixes: [
     "Mercenary camp: + and − now change the amount you are about to bid, from the group's minimum, and nothing is bid until you press Place bid (or Change bid). The group's tile and card show your bid, not the minimum.",
   ], balance: [
-    "From the 22 Nov battle (balV5): every hero attacks with the new Hero damage type (120% against light, medium and heavy armour, 50% against castles and walls) and wears Hero armour (90% from blade, pierce, magic and precision, 80% from siege). Ability hits that name their own type keep it.",
+    "From the 22 Nov battle: every hero attacks with the new Hero damage type (120% against light, medium and heavy armour, 50% against castles and walls) and wears Hero armour (90% from blade, pierce, magic and precision, 80% from siege). Ability hits that name their own type keep it.",
     "From the 22 Nov battle: a hero within 2.5 tiles of its own castle that has neither hit nor been hit for 2 seconds heals 8% of its health a second. Any hit stops it and restarts the wait.",
-    "From the 22 Nov battle: Mending Herbs 3 health a second (was 5), Ring of Health 5 a second (was 8), Mender's Charm 5 a second (was 8). Mending Herbs now costs 50 gold (was 40), Ring of Health 125 (was 100).",
+    "From the 22 Nov battle: Mending Herbs 3 health a second (was 5), Bloodstone Ring 5 a second (was 8), Mender's Charm 5 a second (was 8). Mending Herbs now costs 50 gold (was 40), Bloodstone Ring 125 (was 100).",
     "From the 22 Nov battle: every reinforcement wave goes at least 20 seconds after the last, whether by trigger, deadline or emergency rush (was 30 seconds, or 10 for a rush).",
     "From the 22 Nov battle: razing the castle of an ally you betrayed in the same battle scores 3 times the castle points (9 instead of 3, before the day's weighting).",
     "Hero rebalance from the 22 Nov battle, measured over 1,800 bot battles (every class now wins 11 to 14.5% of 8-lord battles; before, 9 to 18%). Warrior 700 health (was 760) and 25% armour (was 28%); Archer attack 24 (was 25); Mage attack 30 (was 28); Rogue 510 health (was 480).",
-    "Berserker (it won about 1 battle in 4): Executioner's Whirlwind base damage 5/9/13/17 a hit (was 20/30/40/50), Cleave 8/14/20/26% (was 15/25/35/45), Bloodthirst 2/3%, Blood Rage 3/5%. Avatar of War lasts 5s (was 7) and heals 15% (was 25%), and its splash is 35% (was 50%).",
+    "Berserker (it won about 1 battle in 4): Executioner's Whirlwind base damage 5/9/13/17 a hit (was 20/30/40/50), Cleave 8/14/20/26% (was 15/25/35/45), Battle Hunger 2/3%, Blood Rage 3/5%. Wrath Unbound lasts 5s (was 7) and heals 15% (was 25%), and its splash is 35% (was 50%).",
     "Tactician: Marching Cadence 10/17/24/31%, Command Banner 12/20/28/36%. Sniper: Headshot 50/90/130/170. Marksman: Eagle Eye's crit chance 3/6/9/12%.",
-    "Rogue: Ambush 40/70/100/130, Poisoned Blades 4/6/8/10 a stack. Mage: Fireball 85/140/195/250, Arcane Mastery +.3/.45/.6/.75 tiles and 6/9/12/15% resist, Mana Shield 25/40%, Empowered Synergies 25/40% and 12/20%. Shaman: Chain Lightning 75/120/165/210, Static Surge +5/9/13/17% and 30/45/60/75% arcs.",
+    "Rogue: Ambush 40/70/100/130, Poisoned Blades 4/6/8/10 a stack. Mage: Fireball 85/140/195/250, Arcane Mastery +.3/.45/.6/.75 tiles and 6/9/12/15% resist, Aether Ward 25/40%, Empowered Synergies 25/40% and 12/20%. Shaman: Chain Lightning 75/120/165/210, Static Surge +5/9/13/17% and 30/45/60/75% arcs.",
   ], changes: [
     "Replay: every lord's castle and hero sit along the top with health bars. Tap a hero to follow it with the camera; tap a castle to look at it. The unit panel has a Follow button for any hero.",
     "Arrow Volley's falling arrows are smaller.",
@@ -363,17 +370,17 @@ const PATCHES = [
     "Towers are drawn 20% shorter on the map. Their pictures in the menus are unchanged.",
   ] },
   { v: "Item rebalance", date: "18 Nov", fixes: [], balance: [
-    "From the battle of 20 Nov: Healing Salve heals 220 (was 300) and costs 60 (was 50). Ring of Health gives +120 health and 8 health a second (was 140 and 10) and costs 100 (was 90) before tier pricing.",
-    "Talisman of Will: stuns, roots, slows and silences last 75% shorter (was stuns and roots 60%). Orb of Fire splashes 50% within 1.5 tiles (was 35% within 1.3). Crystalys: 25% chance of 1.8x (was 20% of 1.6x). Pipe of Insight: 60% within 4 tiles (was 50% within 3). Boots of Speed: +0.42 move speed (was +0.35).",
-    "Divine Rapier: +100 damage on each weapon hit, and abilities and ultimates are no longer boosted (was double all of the holder's damage).",
+    "From the battle of 20 Nov: Healing Broth heals 220 (was 300) and costs 60 (was 50). Bloodstone Ring gives +120 health and 8 health a second (was 140 and 10) and costs 100 (was 90) before tier pricing.",
+    "Talisman of Will: stuns, roots, slows and silences last 75% shorter (was stuns and roots 60%). Orb of Fire splashes 50% within 1.5 tiles (was 35% within 1.3). Cutthroat's Crystal: 25% chance of 1.8x (was 20% of 1.6x). Hermit's Pipe: 60% within 4 tiles (was 50% within 3). Boots of Speed: +0.42 move speed (was +0.35).",
+    "Sunsteel Rapier: +100 damage on each weapon hit, and abilities and ultimates are no longer boosted (was double all of the holder's damage).",
   ], changes: [
-    "Anti-Magic Shell: no timing setting. It fires the moment your hero engages an enemy hero, whenever it is off cooldown, and for 7.5s (was 5s) makes the hero immune to hero abilities, ultimates and magic attacks (was 70% against abilities).",
+    "Spellbreaker Ward: no timing setting. It fires the moment your hero engages an enemy hero, whenever it is off cooldown, and for 7.5s (was 5s) makes the hero immune to hero abilities, ultimates and magic attacks (was 70% against abilities).",
     "Rune of Homecoming: no longer once a battle. When your castle is attacked or your hero drops below 30% health, away from home, the hero channels for 1.5s, then it and every ally within 4 tiles are teleported home. 45s cooldown. Not in sudden death.",
   ] },
   { v: "Skill scaling, tower upgrades, battle report", date: "18 Nov", fixes: [
     "From the battle of 19 Nov, towers never move from where they were placed. Magic Towers were being pushed after heroes and Fire Towers shifted with each shot.",
   ], balance: [
-    "From the battle of 20 Nov, every hero skill rises in even steps, each worth at least about two thirds of the first rank. Examples: Blood Rage 4/7% (was 4/5), Fireball 70/120/170/220 (was 90/125/165/205), Chain Lightning 60/100/140/180 damage and 3/4/4/5 targets, Ambush 30/55/80/105, Headshot 60/105/150/195, Poisoned Blades 3/5/7/9 a stack. Some first ranks are a little lower and top ranks a little higher. Full list in js/config/trees.js (TREE_V2).",
+    "From the battle of 20 Nov, every hero skill rises in even steps, each worth at least about two thirds of the first rank. Examples: Blood Rage 4/7% (was 4/5), Fireball 70/120/170/220 (was 90/125/165/205), Chain Lightning 60/100/140/180 damage and 3/4/4/5 targets, Ambush 30/55/80/105, Headshot 60/105/150/195, Poisoned Blades 3/5/7/9 a stack. Some first ranks are a little lower and top ranks a little higher.",
   ], changes: [
     "Tower slots are named Tower I and Tower II. Towers are named Archer Tower Lv1 and Lv2, then the Lv3 tower chosen (Archer Tower Lv3, Fire, Bomb, Magic or Sniper).",
     "A tower's slot in Defences lists its health, damage, shot speed, damage a second, range and damage type, and shows them beside the upgrade you pick. Tap each Lv3 tower to compare before upgrading.",
@@ -442,8 +449,8 @@ const PATCHES = [
     "The map no longer freezes after watching a replay. You can pan, zoom and select units again straight away.",
     "Victory screen: the winner's taunt now appears above their hero, not beside their name.",
   ], balance: [
-    "From the battle of 17 Nov, hero items add flat amounts instead of percentages, so they help most early in the week: Whetstone +6 attack, Gauntlets and Daedalus +12, Leather Jerkin +100 health, Ring of Health +140 health and 10 health a second, Vanguard +260 health, Mending Herbs 5 health a second, Healing Salve heals 300.",
-    "Swift Sandals +0.2 and Boots of Speed +0.35 tiles a second. Iron Buckler, Ring of Protection and Shiva's Guard now block 3, 6 and 5 damage from every normal hit. Elixir of Fury: 0.2 seconds faster between attacks.",
+    "From the battle of 17 Nov, hero items add flat amounts instead of percentages, so they help most early in the week: Whetstone +6 attack, Gauntlets and Widowmaker +12, Leather Jerkin +100 health, Bloodstone Ring +140 health and 10 health a second, Bulwark Shield +260 health, Mending Herbs 5 health a second, Healing Broth heals 300.",
+    "Swift Sandals +0.2 and Boots of Speed +0.35 tiles a second. Iron Buckler, Ring of Protection and Frostward Shield now block 3, 6 and 5 damage from every normal hit. Elixir of Fury: 0.2 seconds faster between attacks.",
     "Lifesteal, crits, dodge, reflect, slows, splash and the area auras stay percentages. The Iron Standard's aura is now 18% less damage taken (was 24%).",
     "Survivor: from the battle of 17 Nov, a lord whose hero is still alive when the battle ends scores 1 more point, even if their castle has fallen. Placement still goes by castles: the battle ends when one castle (or one alliance) is left, and only lords with a castle standing go to the sudden death arena.",
   ], changes: [
@@ -537,7 +544,7 @@ const PATCHES = [
     "Highlights reel: the camera sits one zoom step further out, and it now ends on the moment the last rival castle is destroyed instead of the winner's castle standing alone.",
   ], balance: [
     "These balance changes start with the battle of 14 Nov, and so do the hero and castle changes listed under 16 Nov below (heroes keep fighting, skills that hit castles, the stronger Meteor and magic against castles). Targeting, fair ties, no militia and 3-point castles still start on 16 Nov.",
-    "Items are worth more. Stat items are twice as strong, and they stay your hero's: Whetstone +14% attack, Leather Jerkin +12% health, Swift Sandals +12% speed, Iron Buckler 8% less damage, Boots of Speed +20% speed, Gauntlets of Power +30% attack, Ring of Protection 16% less damage, Ring of Health +16% health, Vanguard +30% health, Shiva's Guard 12% less damage and Daedalus +30% attack. The area-buff items are twice as strong too, and they are the ones that reach your soldiers: Banner +24% damage, Standard 24% less damage taken, Mender's Charm heals 8 a second and Pipe of Insight blocks 50% of enemy hero abilities. Crystalys, Fang and the orbs are unchanged.",
+    "Items are worth more. Stat items are twice as strong, and they stay your hero's: Whetstone +14% attack, Leather Jerkin +12% health, Swift Sandals +12% speed, Iron Buckler 8% less damage, Boots of Speed +20% speed, Gauntlets of Power +30% attack, Ring of Protection 16% less damage, Bloodstone Ring +16% health, Bulwark Shield +30% health, Frostward Shield 12% less damage and Widowmaker +30% attack. The area-buff items are twice as strong too, and they are the ones that reach your soldiers: Banner +24% damage, Standard 24% less damage taken, Mender's Charm heals 8 a second and Hermit's Pipe blocks 50% of enemy hero abilities. Cutthroat's Crystal, Fang and the orbs are unchanged.",
     "Fights: a hurt hero or soldier only falls back to heal while it is actually being hit, and goes back to the fight at 60% health (was 80%). A unit already fighting an enemy in reach is not pulled away by a provoker, and answers provokers only within 4 tiles (was 6).",
   ], changes: [] },
   { v: "Catapult", date: "13 Nov", fixes: [], balance: [], changes: [
@@ -578,7 +585,7 @@ const PATCHES = [
     "The unit strip under the map always shows something: your hero until you pick another unit. Health bars are the same width for every unit.",
     "Every page now has a small i in its top corner. Tap it for a short note on what the page is for.",
     "The hero page has a Stats tab (health, attack, speed and more). The red number on the Abilities tab shows unspent skill points.",
-    "Pixel-art animations for every hero skill, with ground effects drawn beneath the units. The Avatar of War hero is drawn larger.",
+    "Pixel-art animations for every hero skill, with ground effects drawn beneath the units. The Wrath Unbound hero is drawn larger.",
     "A gold coin icon on every price, new Orb of Frost and Orb of Poison art, and the Rune of Homecoming has its own icon.",
     "Bots added to empty seats now get a spread of heroes instead of always the wizard. The unit strip shows move speed again.",
   ] },
@@ -686,7 +693,7 @@ const PATCHES = [
     "Soldier tiers: Footman and Bowman tier 1, Knight tier 2, Raider and Cleric tier 3 (they need a Castle, Fortress or Citadel). Soldiers train to Lv3 at any castle tier. Only weapon and armour upgrades are locked by castle tier."],
   changes: [
     "Supply up to 8, each level dearer than the last (60, 100, 160, 240, 340 gold).",
-    "New item: the Divine Rapier (1000 gold). Doubles your hero's damage. It drops when its bearer falls, any hero can grab it, and whoever holds it at the end of the fight keeps it.",
+    "New item: the Sunsteel Rapier (1000 gold). Doubles your hero's damage. It drops when its bearer falls, any hero can grab it, and whoever holds it at the end of the fight keeps it.",
     "The muster screen shows who carries the Rapier, the scoreboard shows who ended with it, and drops and pickups appear in the highlight reel.",
     "A respawn countdown now shows over the castle of a fallen hero.",
     "You can sell soldiers for 25% of everything you spent on them.",

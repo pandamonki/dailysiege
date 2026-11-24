@@ -73,7 +73,7 @@ PIXFX.v3_warrior_b2_t2 = { dur: .8, n: 8,
       for (let t = 0; t < wd; t++) P.px(x * (1 - t * .09), y * (1 - t * .09), t ? "#8fa0b8" : c); }
     for (let b = 0; b < 2; b++) { const a = head + b * Math.PI, x = Math.round(Math.cos(a) * Rr), y = Math.round(Math.sin(a) * Rr * .72); P.rect(x - 1, y - 1, 3, 3, "#ffffff"); P.px(x + Math.round(Math.cos(a + 1.5) * 3), y + Math.round(Math.sin(a + 1.5) * 3), "#ffe29a"); }
   } };
-// Avatar of War: flames burn around the hero, embers rise, rage chevrons pop up over the head.
+// Wrath Unbound: flames burn around the hero, embers rise, rage chevrons pop up over the head.
 PIXFX.v3_warrior_b2_t4 = { under: true, dur: .9, n: 9,
   box: () => [60, 66, 30, 46],
   draw(P, f, n) {
@@ -177,7 +177,7 @@ PIXFX.v3_mage_b3_t2 = { dur: .5, n: 6, box: R => { const w = 2 * R + 16; return 
       for (let k = 0; k < 6; k++) { const a = k * 1.05, d = 14 - f * 4; P.rect(Math.round(Math.cos(a) * d), Math.round(Math.sin(a) * d * .7 - 6), 2, 2, k % 2 ? "#e6d4ff" : "#8e5fd8"); } }
     if (f >= 2) { const rad = Math.round(R * (f - 1) / 4); P.ell(rad, i => i % 3 < 2 ? (f < 4 ? "#ffffff" : "#c9a0ff") : null); for (let k = 0; k < 6; k++) { const a = k * 1.05 + .4; P.rect(Math.round(Math.cos(a) * rad), Math.round(Math.sin(a) * rad * .72) - 2, 2, 2, k % 2 ? "#ffffff" : "#8e5fd8"); } }
   } };
-// Mana Shield: a hexagonal bubble flashes on and pulses with orbiting runes.
+// Aether Ward: a hexagonal bubble flashes on and pulses with orbiting runes.
 PIXFX.v3_mage_b3_t2b = { dur: .9, n: 8, box: () => [44, 50, 22, 28],
   draw(P, f, n) {
     const vs = []; for (let k = 0; k < 6; k++) { const a = Math.PI / 2 + k * Math.PI / 3; vs.push([Math.cos(a) * 12, Math.sin(a) * 15 - 3]); }
@@ -185,7 +185,7 @@ PIXFX.v3_mage_b3_t2b = { dur: .9, n: 8, box: () => [44, 50, 22, 28],
     if (f >= 1) for (let k = 0; k < 6; k++) { const [x0, y0] = vs[k], [x1, y1] = vs[(k + 1) % 6]; if (f === n - 1) { P.px(x0, y0, "#c9a0ff"); continue; } P.line(x0, y0, x1, y1, (k + f) % 3 === 0 ? "#ffffff" : "#c9a0ff"); P.line(x0 * .88, y0 * .88 - 1, x1 * .88, y1 * .88 - 1, "#6e48b8"); }
     if (f >= 2 && f < n - 1) for (let k = 0; k < 3; k++) { const a = f * .9 + k * 2.1, x = Math.round(Math.cos(a) * 12), y = Math.round(Math.sin(a) * 14 - 3); pxSpot(P, x, y, "#ffffff"); }
   } };
-// Time Warp: a clock face of ticks spreads out, a hand sweeps backwards, ripples run out.
+// Quickened Hour: a clock face of ticks spreads out, a hand sweeps backwards, ripples run out.
 PIXFX.v3_mage_b3_t4 = { under: true, dur: 1.1, n: 10, box: R => { R = Math.min(R, 56); const w = 2 * R + 20; return [w, w * .72 + 20, w / 2, w * .36 + 8]; },
   draw(P, f, n, R) {
     R = Math.min(R, 56); const t = Math.min(1, (f + 1) / 4), rad = Math.round(R * t);
@@ -278,7 +278,7 @@ PIXFX.v3_shaman_b1_t4 = { dur: 1.1, n: 10, box: R => { R = Math.min(R, 48); cons
     const grow = Math.min(1, (f + 1) / 3); [[-14, 0, 9], [0, -3, 12], [14, 0, 9], [-6, 3, 7], [8, 3, 7]].forEach(([x, y, r], k) => pxBlob(P, Math.round(x * grow), -52 + y, Math.round(r * grow), ["#8a96b0", "#5e6a88", "#3e4866"], "#262c42", k));
     if (f >= 2 && f < n - 1) for (let k = 0; k < 3; k++) { if ((f + k) % 2) continue; const tx = (pxHash(k, f) - .5) * R * 1.4, ty = (pxHash(k, f + 20) - .5) * R * .9; pxBolt(P, tx * .3, -46, tx, ty, f, k * 7, "#ffffff", "#9fd0ff"); pxSpot(P, Math.round(tx), Math.round(ty), "#ffffff"); }
   } };
-// Grounding Totem: a small totem is planted, a green rune pulse runs round it and healing motes rise.
+// Hearth Totem: a small totem is planted, a green rune pulse runs round it and healing motes rise.
 PIXFX.v3_shaman_b2_t1 = { dur: .9, n: 8, box: R => { R = Math.min(R, 40); const w = 2 * R + 14; return [w, R * 1.44 + 40, w / 2, R * .72 + 28]; },
   draw(P, f, n, R) {
     R = Math.min(R, 40); const h = Math.min(14, (f + 1) * 5);
@@ -286,7 +286,7 @@ PIXFX.v3_shaman_b2_t1 = { dur: .9, n: 8, box: R => { R = Math.min(R, 40); const 
     if (f >= 1 && f < n - 1) P.ell(Math.round(R * Math.min(1, f / 4)), i => i % 6 < 2 ? "#7fe08a" : null);
     for (let k = 0; k < 7; k++) { if (f < 2 || (f === n - 1)) continue; const a = k * .9, x = Math.cos(a) * R * .7 * pxHash(k, 1), y = Math.sin(a) * R * .5 * pxHash(k, 1) - ((f * 3 + k * 4) % 20); pxSpot(P, Math.round(x), Math.round(y), k % 2 ? "#7fe08a" : "#d4ffd8"); }
   } };
-// Earthgrab Totem: roots burst out of the ground in a ring and twist.
+// Root Totem: roots burst out of the ground in a ring and twist.
 PIXFX.v3_shaman_b2_t2 = { under: true, dur: .9, n: 8, box: R => { R = Math.min(R, 40); const w = 2 * R + 20; return [w, R * 1.44 + 40, w / 2, R * .72 + 28]; },
   draw(P, f, n, R) {
     R = Math.min(R, 40);
@@ -318,7 +318,7 @@ PIXFX.v3_shaman_b3_t2 = { under: true, dur: .9, n: 8, box: R => { R = Math.min(R
       P.rect(x - 4, y, 9, 1, "#3a2a4a"); pxHand(P, x, y - 4 - Math.round(rise * 4) + 6 * (1 - rise), cur, "#d4c4ff", "#a090d8"); }
     for (let k = 0; k < 8; k++) { if (f < 1) continue; const x = (pxHash(k, 1) - .5) * 2 * R * .8, y = (pxHash(k, 2) - .5) * R * .8 - ((f * 3 + k * 3) % 22); P.px(x, y, k % 2 ? "#d4c4ff" : "#8e5fd8"); }
   } };
-// Hex: a spinning purple hexagram hangs over the target, wisps curl around it.
+// Frog Curse: a spinning purple hexagram hangs over the target, wisps curl around it.
 PIXFX.v3_shaman_b3_t2b = { dur: .7, n: 7, box: () => [52, 62, 26, 46],
   draw(P, f, n) {
     const cy = -20 - (f < 3 ? f : 3), rot = f * .45, r = f === 0 ? 5 : f === n - 1 ? 7 : 10;
@@ -371,7 +371,7 @@ PIXFX.v3_rogue_b3_t2 = { dur: .5, n: 6, box: () => [52, 52, 26, 30],
     if (f >= 2) for (let k = 0; k < 8; k++) { const a = k * .8 + .2, d = 8 + (f - 1) * 4; P.rect(Math.round(Math.cos(a) * d), Math.round(Math.sin(a) * d), 2, 2, k % 2 ? "#ffe29a" : "#ffffff"); }
     if (f >= 4) P.ell(10 + (f - 3) * 3, i => i % 3 < 1 ? "#ffe29a" : null, 0, Math.PI * 2, 1);
   } };
-// Blade Fury: a flurry of quick slashes from every angle, with red sparks.
+// Whirl of Knives: a flurry of quick slashes from every angle, with red sparks.
 PIXFX.v3_rogue_b3_t4 = { dur: .8, n: 8, box: () => [60, 60, 30, 34],
   draw(P, f, n) {
     const A = [[-12, 10, 12, -10], [12, 10, -12, -10], [-14, 0, 14, 0], [0, 14, 0, -14], [-10, -12, 10, 12], [10, -12, -10, 12]];

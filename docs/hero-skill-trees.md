@@ -25,7 +25,7 @@ The user's plan is the starting point. Changes made during review:
    which is day 4 or 5. With a two-day rest, most players would fire once. Decided: a **1-day
    rest**, which is the current rule. The ultimate is armed in orders and rests the day after it
    fires, so every hero gets at most two ultimates per war (§1.3).
-4. **Map-wide effects are cut to an area.** Blizzard, Dragon-Slayer Shot and Time Warp would hit
+4. **Map-wide effects are cut to an area.** Blizzard, Dragon-Slayer Shot and Quickened Hour would hit
    up to 11 rival lords at once in a 12-lord free-for-all.
 5. **Ranges are rescaled to the real map.** Today the Archer shoots 2.5 tiles and the Dwarven Sniper
    4.5. A Ranger with 5 tiles plus Eagle Eye's +2 would outrange castles and every soldier.
@@ -40,10 +40,10 @@ The user's plan is the starting point. Changes made during review:
 9. **Good mechanics kept from today's game:**
    - Arming the ultimate for a chosen night.
    - The Shaman's Spirit Wolves, as the Ancestral ultimate (in place of the plan's Spirit Walk).
-   - The Warrior's Last Stand cheat-death, folded into Avatar of War.
+   - The Warrior's Last Stand cheat-death, folded into Wrath Unbound.
    - The Rogue's finishing-blow trait, kept as the Rogue's innate.
    - Bloodlust, which becomes War Drum Pulse.
-   - The Healing Totem entity, reused for Grounding Totem.
+   - The Healing Totem entity, reused for Hearth Totem.
    - Blink-to-escape.
    - The Archer's Kite step.
    - Meteor damaging castles.
@@ -209,9 +209,9 @@ use `Math.random` or `Math.sin` and friends.
 | `shield` | `e.shield` absorbs damage before HP, after all multipliers. Stacks additively, capped at 40% of max HP. Each grant has its own expiry; store as a list `[{amt, until}]` and drain the oldest first. Shows as a bar overlay in the replay. |
 | `taunt` | `setFx(o, "taunt", dur)` with `o.tauntBy = src`. While active and `src` is alive, `pickTarget` returns `src`. Heroes get half duration. Castles, rams and carts are immune. |
 | `stealth` | `setFx(e, "stealth", dur)`. Treat it like `vanish` for targeting, except a hostile within `e.revealR` (default 1.0) can see and target it. Breaks when the stealthed unit deals damage. Not untargetable by area damage. |
-| `untargetable` | Reuse the existing `vanish` effect (immune to targeting, still hit by area damage) for Shadow Dance. |
+| `untargetable` | Reuse the existing `vanish` effect (immune to targeting, still hit by area damage) for Knife Waltz. |
 | Crit on basic attacks | `e.crit` (chance) and `e.critMul` (default 1.75). Roll with `rng()` in the basic-attack path only. Spells pass `crit` explicitly. |
-| Dodge | Generalise the current `evade`: `e.dodge = {all, melee}`. Melee means `src.range < 1.5`. It still only applies to non-area hits. Total dodge is capped at **30%**, except during Blade Fury. Hook `onDodge(e, src)` for Riposte, Flurry and Kite. |
+| Dodge | Generalise the current `evade`: `e.dodge = {all, melee}`. Melee means `src.range < 1.5`. It still only applies to non-area hits. Total dodge is capped at **30%**, except during Whirl of Knives. Hook `onDodge(e, src)` for Riposte, Flurry and Kite. |
 | Anti-heal | `setFx(o, "grievous", dur, v)`: `heal()` multiplies the amount by `1 - v`. |
 | Blind miss chance | Make the existing 50% configurable: `setFx(o, "blind", dur, missChance)`, defaulting to .5 when `val` is 1. |
 | `mres` | In `deal()`, after the type table: `if (atype === "magic") m *= 1 - (tgt.mres + fxv(tgt, "mresbuf"))`. |
@@ -223,7 +223,7 @@ use `Math.random` or `Math.sin` and friends.
 | Auras | Compute each tick, or every 5 ticks for speed, from the caster's position. Apply as short `setFx` refreshes (duration .6s) so they fall off when out of range. |
 
 CC rules (keep consistent):
-- Desperation Frenzy and Avatar of War block stun, root, slow, taunt and frozen. This is the
+- Desperation Frenzy and Wrath Unbound block stun, root, slow, taunt and frozen. This is the
   existing `frenzy` check in `setFx`; extend it to a `ccImmune` effect.
 - The Talisman of Will item still shortens stun and root by 60%.
 - Siege engines can't be slowed (existing). New rule: they **can** be rooted, but for half
@@ -272,10 +272,10 @@ Notation:
 The numbers below were checked at level 9 against a same-level Mage (about 820 HP, light armour)
 as the reference fragile hero. Fixes made:
 - **Rogue Shadow tree (the strongest).** As first written, Ambush hit a Mage for about 80% of its
-  HP and stunned it, then Vanish re-stealthed on a kill and Shadow Dance did that 5 times.
+  HP and stunned it, then Vanish re-stealthed on a kill and Knife Waltz did that 5 times.
   - Ambush base damage cut by a third and its multiplier ×2.5 → ×1.8. Hero stun cut to .5-.75s.
-  - Ambush and Shadow Dance **don't** get the Rogue's finishing-blow bonus.
-  - Shadow Dance strikes deal 60% of Ambush.
+  - Ambush and Knife Waltz **don't** get the Rogue's finishing-blow bonus.
+  - Knife Waltz strikes deal 60% of Ambush.
   - Vanish rank 2 shortens the internal cooldown; it never removes it.
   - Target: Ambush takes about 40% of a Mage's HP.
 - **Ranger Headshot** with Armour Piercer took about 95% of a Mage's HP every 14s.
@@ -289,13 +289,13 @@ as the reference fragile hero. Fixes made:
 - **Shaman Spirit Wolves.** Today's wolves (3 × 840 HP, 45s) are a likely reason the Shaman wins
   17%. They're set at today's rank 1 values with a shorter life.
 - **Rogue Deadly Cloud.** "Can't be targeted from outside the cloud" protected the enemy. Dropped.
-- **Dodge stacking.** Total dodge chance is capped at 30% outside Blade Fury (Reflexes, Fleet
+- **Dodge stacking.** Total dodge chance is capped at 30% outside Whirl of Knives (Reflexes, Fleet
   Footed and any item).
 - These checks used rank 3 values. Rank 4 adds roughly one more step of the same size. The
   balance lab must confirm that a depth build (11/3) and a breadth build (8/6) of the same tree
   win within 2 percentage points of each other. If depth wins clearly, flatten the rank-4 step;
   if breadth wins, raise it.
-- Reviewed and fine as written: Avatar of War (close to today's Last Stand), Fortress Wall, Time
+- Reviewed and fine as written: Wrath Unbound (close to today's Last Stand), Fortress Wall, Time
   Warp, Totem of the Titan, Whirlwind, Chain Lightning, Blizzard and Rallying Charge.
 
 ### 6.A Warrior
@@ -329,11 +329,11 @@ as the reference fragile hero. Fixes made:
 - **T3 Blood Rage (synergy):** kills by the Warrior, or by own melee soldiers within 3 tiles, grant
   a stack of +[4, 5]% attack speed, up to 6 stacks. All stacks expire 6s after the last stack was
   gained.
-- **T2b Bloodthirst (passive):** each kill by the Warrior heals [3, 5]% of its max HP. Internal cooldown
+- **T2b Battle Hunger (passive):** each kill by the Warrior heals [3, 5]% of its max HP. Internal cooldown
   .5s.
 - **T3b Unstoppable (passive):** slows and roots on the Warrior last 40% shorter. Below 30% HP it deals
   +15% damage.
-- **T4 Avatar of War (ultimate):** this replaces and absorbs Last Stand. It fires when the
+- **T4 Wrath Unbound (ultimate):** this replaces and absorbs Last Stand. It fires when the
   Warrior's HP is below 40% and 3+ enemies are within 2.5 tiles. For 7s:
   - the Warrior can't drop below 1 HP;
   - immune to crowd control;
@@ -387,20 +387,20 @@ as the reference fragile hero. Fixes made:
   - Enemies inside get −40% attack speed.
 
 **Totemic (field control)**
-- **T1 Grounding Totem (passive):** every 14s in combat, plants a totem. This reuses the existing
+- **T1 Hearth Totem (passive):** every 14s in combat, plants a totem. This reuses the existing
   Healing Totem entity: 120 HP, lasts 7s. Allies within 2.5 tiles of it:
   - take [6, 9, 12]% less physical damage;
   - heal [5, 8, 11] HP per second.
-- **T2 Earthgrab Totem (trigger):** fires when an enemy hero or siege engine comes within 3 tiles.
+- **T2 Root Totem (trigger):** fires when an enemy hero or siege engine comes within 3 tiles.
   - Roots up to [2, 3, 3] nearest enemies within 3 tiles for [2, 2.5, 3]s. Heroes and siege
     engines get half.
   - cd 16.
-- **T3 War Drum Pulse (synergy):** this keeps today's Bloodlust. While a Grounding Totem is up,
+- **T3 War Drum Pulse (synergy):** this keeps today's Bloodlust. While a Hearth Totem is up,
   every 4s own soldiers within 4 tiles of the Shaman gain +[12, 20]% attack speed for 4s. Melee
   soldiers also gain +[10, 15]% damage to castles and walls.
-- **T2b Ward Totem (passive):** each Grounding Totem blocks the first [1, 2] enemy hero attacks or
+- **T2b Ward Totem (passive):** each Hearth Totem blocks the first [1, 2] enemy hero attacks or
   abilities aimed at allies within its radius. The hit deals 0. This is today's "Ward" pick.
-- **T3b Healing Spring (passive):** Grounding Totem heals 50% more. This is today's "Spring" pick.
+- **T3b Healing Spring (passive):** Hearth Totem heals 50% more. This is today's "Spring" pick.
 - **T4 Totem of the Titan (ultimate):** fires when 4+ allies and 3+ enemies are within 3 tiles.
   - Drops a relic entity (kind `totem`, HP = 2.5 × Shaman max HP, lasts 8s).
   - 40% of damage aimed at allies within 3 tiles is redirected to the relic instead. Area damage
@@ -417,7 +417,7 @@ as the reference fragile hero. Fixes made:
 - **T3 Last Stand Offering (synergy):** while the Shaman's own castle is below 35% HP **or** the
   Shaman is below 35% HP, Spirit Leech is ×[1.5, 2] and the Shaman gains +[15, 25]% attack speed. It
   stacks with Desperation Frenzy; that's intended, as a comeback tool.
-- **T2b Hex (trigger):** fires when an enemy hero within 3 tiles drops below 50% HP. That hero deals
+- **T2b Frog Curse (trigger):** fires when an enemy hero within 3 tiles drops below 50% HP. That hero deals
   20% less damage (`weaken`) for [2, 3]s. cd 18.
 - **T3b Blood Pact (passive):** own soldiers within 4 tiles of the Shaman heal for 10% of the damage they
   deal. This is today's Bloodlust "Lifesteal" pick.
@@ -447,8 +447,8 @@ as the reference fragile hero. Fixes made:
 - **T2b Smoke Bomb (trigger):** fires when 3+ enemies are within 2 tiles of the Rogue. Blinds them (40%
   miss chance) for [2, 3]s and makes them drop the Rogue as a target. cd 16. This is today's Smoke
   Bomb.
-- **T3b Cheap Shot (passive):** Ambush also silences its target for 1.5s.
-- **T4 Shadow Dance (ultimate):** fires when 3+ enemy backline targets are within 6 tiles.
+- **T3b Dirty Blow (passive):** Ambush also silences its target for 1.5s.
+- **T4 Knife Waltz (ultimate):** fires when 3+ enemy backline targets are within 6 tiles.
   - Becomes untargetable for 4s and strikes up to 5 of them in sequence, one every .8s, nearest
     first.
   - Each strike deals 60% of the Ambush damage at the Rogue's current Ambush rank (rank 1 if not
@@ -469,7 +469,7 @@ as the reference fragile hero. Fixes made:
 - **T3 Corrosive Agent (synergy):** poisoned enemies take +[8, 12]% physical damage from all
   sources.
   This is the plan's "−25% armour", converted to this game's flat-armour model.
-- **T2b Crippling Poison (passive):** poisoned enemies move [10, 15]% slower.
+- **T2b Hamstring Venom (passive):** poisoned enemies move [10, 15]% slower.
 - **T3b Weakening Toxin (passive):** enemies at 5 poison stacks deal 15% less damage. This is today's
   "Weaken" pick.
 - **T4 Deadly Cloud (ultimate):** fires when 5+ enemies are within 2 tiles of a point within 4
@@ -490,7 +490,7 @@ as the reference fragile hero. Fixes made:
   +[15, 25]% damage to it. This keeps today's Backstab rule.
 - **T3b Evasive Roll (passive):** once per life, when the Rogue drops below 30% HP, it vanishes for 1.5s
   and steps 2 tiles away from the nearest enemy.
-- **T4 Blade Fury (ultimate):** fires when an enemy hero is within 1.5 tiles and the Rogue is below
+- **T4 Whirl of Knives (ultimate):** fires when an enemy hero is within 1.5 tiles and the Rogue is below
   70% HP.
   - For 5s the Rogue dodges 100% of non-area attacks.
   - Over that time it delivers 8 strikes to that hero, one every .6s, each for atk × 1.4.
@@ -499,7 +499,7 @@ as the reference fragile hero. Fixes made:
 ### 6.D Mage
 
 **Pyromancy (burst and burn)**
-- **T1 Ignite (passive):** spells and abilities add a burn worth [8, 12, 15]% of their damage over
+- **T1 Smoulder (passive):** spells and abilities add a burn worth [8, 12, 15]% of their damage over
   4s. Today's Burn pick becomes this.
 - **T2 Fireball (trigger):** fires when 3+ enemies are within 1.3 tiles of a point within 4.5 tiles.
   - Deals ([90, 125, 165] + atk) magic damage in radius 1.3 at that point.
@@ -508,9 +508,9 @@ as the reference fragile hero. Fixes made:
   - Reuse today's Fireball art.
 - **T3 Melt Armour (synergy):** burning targets take +[10, 15]% physical damage. This is reduced from
   20% because it stacks with Corrosive Agent and Pinning Shot when allied.
-- **T2b Combustion (passive):** when a burning enemy dies, it explodes for [30, 45] magic damage within 1
+- **T2b Flashfire (passive):** when a burning enemy dies, it explodes for [30, 45] magic damage within 1
   tile. At most 3 explosions per Mage per second.
-- **T3b Pyroblast (passive):** Fireball deals 50% more to its centre target if that target is a hero.
+- **T3b Great Firebolt (passive):** Fireball deals 50% more to its centre target if that target is a hero.
 - **T4 Meteor Strike (ultimate):** fires when 5+ enemies, or any enemy castle, are within the
   blast radius of a point within 6 tiles.
   - Warning for 1.6s, then the strike. This is today's Meteor code and art.
@@ -527,11 +527,11 @@ as the reference fragile hero. Fixes made:
   - Roots for [1.5, 2, 2.5]s (heroes half).
   - cd 11.
   - Reuse today's Frost Nova.
-- **T3 Ice Barrier (synergy):** each Frost Nova shields the Mage for [12, 20]% of its max HP, and
+- **T3 Rime Ward (synergy):** each Frost Nova shields the Mage for [12, 20]% of its max HP, and
   allies within 2 tiles for [6, 10]% of their own max HP. Lasts 5s.
-- **T2b Shatter (passive):** rooted or frozen enemies take +[12, 20]% damage from all sources. This is
-  today's "Shatter" pick.
-- **T3b Cold Snap (passive):** once per life, when the Mage drops below 35% HP, Frost Nova's cooldown is
+- **T2b Splinter Ice (passive):** rooted or frozen enemies take +[12, 20]% damage from all sources. This is
+  the old heroes' "Shatter" pick.
+- **T3b Last Frost (passive):** once per life, when the Mage drops below 35% HP, Frost Nova's cooldown is
   reset.
 - **T4 Blizzard (ultimate):** fires when 6+ enemies are within 4 tiles of a point within 6 tiles.
   It's an 8s zone of radius 4 (in place of map-wide):
@@ -549,11 +549,11 @@ as the reference fragile hero. Fixes made:
   - Replaces today's Escape pick. There's no decoy entity.
 - **T3 Empowered Synergies (synergy):** the Mage's spells ignore [20, 30]% of the target's `mres`
   and `dmgRed`. All of the Mage's other ability cooldowns are [10, 15]% shorter.
-- **T2b Mana Shield (trigger):** fires when the Mage drops below 50% HP. Gains a shield of [15, 25]% max HP
+- **T2b Aether Ward (trigger):** fires when the Mage drops below 50% HP. Gains a shield of [15, 25]% max HP
   for 6s. cd 30.
-- **T3b Arcane Missiles (passive):** every 4th basic attack also fires 2 bolts at other enemies within 3
+- **T3b Spell Darts (passive):** every 4th basic attack also fires 2 bolts at other enemies within 3
   tiles, each for 50% damage (area damage).
-- **T4 Time Warp (ultimate):** fires when 4+ allies and 2+ enemy heroes or 6+ enemies are within 5
+- **T4 Quickened Hour (ultimate):** fires when 4+ allies and 2+ enemy heroes or 6+ enemies are within 5
   tiles. For 6s, in radius 5:
   - allies get +50% move and attack speed;
   - enemy heroes inside have their cooldowns frozen (`cdfreeze`).
@@ -612,8 +612,8 @@ as the reference fragile hero. Fixes made:
   - If the target leaves range + 1 or dies, the shot is cancelled and half the cooldown refunded.
 - **T3 Armour Piercer (synergy):** Headshot ignores [30, 50]% of `armor` and `dmgRed`. It also
   applies a bleed: 2% of the target's max HP per second for 5s.
-- **T2b Hunter's Mark (passive):** the Headshot target takes +[8, 12]% damage from all sources for 6s.
-- **T3b Bounty Hunter (passive):** the lord earns 50% more gold from the hero's own kills of enemy
+- **T2b Marked Prey (passive):** the Headshot target takes +[8, 12]% damage from all sources for 6s.
+- **T3b Prize Taker (passive):** the lord earns 50% more gold from the hero's own kills of enemy
   heroes, bounties included.
 - **T4 Dragon-Slayer Shot (ultimate):** fires when an enemy hero is within 9 tiles (instead of
   map-wide) and either below 50% HP or carrying the bounty.
@@ -707,7 +707,7 @@ hash exactly as before, and 10 new golden battles (62 to 71) cover skill-tree he
   A lord who sealed nothing all week is fought on a stand-in `autoTree` build, as the old stand-in
   fought on `autoRanks`.
 - **Rank 4** values continue the trend of ranks 1 to 3 through `ext()`, as written in §1.2.
-- **Skills with no cooldown loop.** Riposte, Flurry, Evasive Roll, Cold Snap and the other reactive
+- **Skills with no cooldown loop.** Riposte, Flurry, Evasive Roll, Last Frost and the other reactive
   skills run from the hit that triggers them; their casts still show in the telemetry.
 - **Headshot.** The "always crits" in the spec is the x1.5 multiplier, not an extra x1.75 on top.
 - **Spell animations.** Every active skill has a `SPELL_ART` entry (`v3_<class>_<tree>_<node>`) that
@@ -718,6 +718,6 @@ hash exactly as before, and 10 new golden battles (62 to 71) cover skill-tree he
   draws them only from then on.
 - **Balance, first look** (`HERO_V3=1 node tools/balance.mjs 80 10`): class win rates 6% to 16% against
   a fair 10%. Shaman's Storm tree is the high spot (about 23%) and Mage's Pyromancy the low (about 2%).
-  Rallying Charge, Fortress Wall and Shadow Dance fire in under 70% of armed battles. The balance pass
+  Rallying Charge, Fortress Wall and Knife Waltz fire in under 70% of armed battles. The balance pass
   in §7 (first knobs: per-level growth, then T2 cooldowns, then ultimate damage) is still to do.
 - **Not done yet:** the in-game help text and the Spell book still describe the old abilities.

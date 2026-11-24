@@ -47,10 +47,10 @@ let ITEM_BOOST = 2, AURA_BOOST = 2;
 const ITEM_STATS = { whetstone: { atk: .07 }, gauntlets: { atk: .15 }, daedalus: { atk: .15 }, jerkin: { hp: .06 }, hpring: { hp: .08 }, vanguard: { hp: .15 }, sandals: { spd: .06 }, boots: { spd: .10 }, buckler: { dr: .04 }, ringprot: { dr: .08 }, shiva: { dr: .06 } };
 // Flat items (plans stamped itemV5, from ITEMS_V5_FROM): the hero's stat items add flat amounts instead of percentages, so they matter most early in the
 // week and less as the hero levels. Lifesteal, crits, dodge, reflect, slows, splash and the area auras stay percentages. Damage-reduction items block a
-// flat amount from every normal hit (like Vanguard). The Iron Standard's aura gives STANDARD_V5 less damage taken.
+// flat amount from every normal hit (like the Bulwark Shield). The Iron Standard's aura gives STANDARD_V5 less damage taken.
 const ITEM_FLAT = { whetstone: { atk: 6 }, gauntlets: { atk: 12 }, daedalus: { atk: 12 }, jerkin: { hp: 100 }, hpring: { hp: 140 }, vanguard: { hp: 260 }, sandals: { spd: .2 }, boots: { spd: .35 }, buckler: { block: 3 }, ringprot: { block: 6 }, shiva: { block: 5 } };
 const ITEM_REGEN_V5 = { hpring: 10, herbs: 5 }, SALVE_V5 = 300, ELIXIR_V5 = .2, STANDARD_V5 = .18;
-// Items v6 (plans stamped itemV6, battles from ITEMS_V6_FROM): Salve and Ring of Health toned down; Shell, Rune, Will, Fire orb, Crystalys, Pipe and Boots boosted
+// Items v6 (plans stamped itemV6, battles from ITEMS_V6_FROM): Salve and Bloodstone Ring toned down; Shell, Rune, Will, Fire orb, Cutthroat's Crystal, Pipe and Boots boosted
 // Items v7 (plans stamped balV5): the cheap regeneration items were too strong for their price
 const ITEM_V7 = { herbs: 3, hpringRegen: 5, mender: 5 };
 // Home healing (plans stamped balV5): a hero within HOME_HEAL_R tiles of its own castle that has neither hit nor been hit for HOME_HEAL_WAIT seconds
@@ -92,7 +92,7 @@ function runBattle(plans, seed, opts = {}) {
   const settle = e => { for (let i = 0; i < 5; i++) { const h = treeHit(e.x, e.y); if (!h) return; e.x += h.nx * (h.d + .01); e.y += h.ny * (h.d + .01); } }; // step clear of the trees (a few passes: a blockade's trees overlap)
   const EV2 = plans.some(p => p.engV2); // engines v2: heroes and soldiers drop what they are doing for an enemy siege engine near their own castle
   const WV2 = plans.some(p => p.wallV2); // walls v2: every fence blocks everyone, its owner's soldiers too, so they route round through the gaps
-  const RAPIER_V2 = plans.some(p => p.itemV6); // Divine Rapier v6: +100 on weapon hits instead of double damage
+  const RAPIER_V2 = plans.some(p => p.itemV6); // Sunsteel Rapier v6: +100 on weapon hits instead of double damage
   const BV5 = plans.some(p => p.balV5); // balance v5: hero attack and armour class, out-of-combat healing at home, 20s waves, betrayal castle bonus, regen items toned down
   const SD2 = plans.some(p => p.sdV2); // sudden death v2: a half-size arena nobody can leave, and no respawn timers inside it
   let sd = null; // sudden death: null until SD_AT, then { t0, go, skip, winners }
@@ -131,7 +131,7 @@ function runBattle(plans, seed, opts = {}) {
   // a taunt moment: who is speaking (their hero if it lives, else the fighter that did it) and why; at most one every 4 seconds per lord
   const quip = (pid, k, who) => { if (fast || !P[pid]) return; if (t - (P[pid].quipT ?? -9) < 4) return; const sp = (who && !who.dead && who.pid === pid ? who : null) || (champOf(pid) && !champOf(pid).dead ? champOf(pid) : null) || who; if (!sp) return; P[pid].quipT = t; ev({ ty: "quip", pid, k, id: sp.id }); };
   let firstBlood = false;
-  let rapierOwner = null, rapierHolder = null, rapierDrop = null; // the Divine Rapier: who started with it, who carries it now, and where it lies when its bearer falls
+  let rapierOwner = null, rapierHolder = null, rapierDrop = null; // the Sunsteel Rapier: who started with it, who carries it now, and where it lies when its bearer falls
   const respawnTime = lv => Math.min(60, 10 + 2.5 * lv); // a fallen hero is gone longer the higher their level
   const nm = pid => (pid === mePid ? "You" : P[pid].name);
   const poss = pid => (pid === mePid ? "Your" : P[pid].name + "'s");
@@ -332,7 +332,7 @@ function runBattle(plans, seed, opts = {}) {
       const AB = V4 ? AURA_BOOST : 1;
       if (s.has("banner")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => setFx(o, "atkbuf", 1.3, .12 * AB));
       if (s.has("standard")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => setFx(o, "guard", 1.3, e.itemV5 ? STANDARD_V5 : Math.min(.6, .12 * AB)));
-      if (s.has("hpring") && e.hp < e.maxhp) heal(e, BV5 ? ITEM_V7.hpringRegen : e.itemV6 ? ITEM_V6.hpringRegen : e.itemV5 ? ITEM_REGEN_V5.hpring : e.maxhp * .012, true, e, "Ring of Health");
+      if (s.has("hpring") && e.hp < e.maxhp) heal(e, BV5 ? ITEM_V7.hpringRegen : e.itemV6 ? ITEM_V6.hpringRegen : e.itemV5 ? ITEM_REGEN_V5.hpring : e.maxhp * .012, true, e, "Bloodstone Ring");
       if (s.has("herbs") && e.hp < e.maxhp) heal(e, BV5 ? ITEM_V7.herbs : e.itemV5 ? ITEM_REGEN_V5.herbs : e.maxhp * .006, true, e, "Mending Herbs");
       if (s.has("pipe")) friendsNear(e.pid, e.x, e.y, e.itemV6 ? ITEM_V6.pipeR : 3).forEach(o => setFx(o, "spellward", 1.3, e.itemV6 ? ITEM_V6.pipe : Math.min(.6, .25 * AB)));
       if (s.has("mender")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => { if (o.hp < o.maxhp) heal(o, BV5 ? ITEM_V7.mender : 4 * AB, true, e, "Mender's Charm"); });
@@ -341,11 +341,11 @@ function runBattle(plans, seed, opts = {}) {
     else if (s.has("antimagic")) { if (enemiesNear(e, e.x, e.y, 7).some(x => x.kind === "champ")) { if (e.engT == null) e.engT = t; } else e.engT = null; } // the clock on the Shell starts when an enemy hero comes into view
     (e.cons || []).forEach(c => {
       if (t < c.ready) return;
-      if (c.k === "salve" && e.hp / e.maxhp < .5) { c.ready = t + ITEMS[c.k].cd; heal(e, e.itemV6 ? ITEM_V6.salve : e.itemV5 ? SALVE_V5 : e.maxhp * .35, false, e, "Healing Salve"); txt(e, "Salve", "#9cf09c"); }
+      if (c.k === "salve" && e.hp / e.maxhp < .5) { c.ready = t + ITEMS[c.k].cd; heal(e, e.itemV6 ? ITEM_V6.salve : e.itemV5 ? SALVE_V5 : e.maxhp * .35, false, e, "Healing Broth"); txt(e, "Salve", "#9cf09c"); }
       else if (c.k === "elixir" && live(e.tgt) && d(e, e.tgt) <= e.range + 1) { c.ready = t + ITEMS[c.k].cd; setFx(e, "asbuf", 8, e.itemV5 ? ELIXIR_V5 / Math.max(.3, e.as - ELIXIR_V5) : .25); txt(e, "Fury!", "#ff8a7a"); }
       else if (c.k === "net") { const v = minBy(enemiesNear(e, e.x, e.y, 4).filter(x => x.kind === "champ"), x => d(x, e)); if (v) { c.ready = t + ITEMS[c.k].cd; setFx(v, "root", 2.5); shot(e, v, "#c9a46a", 2); txt(v, "Netted", "#e8cf9a"); } }
-      else if (c.k === "shiva") { const vs = enemiesNear(e, e.x, e.y, 3); if (vs.length >= 2) { c.ready = t + ITEMS[c.k].cd; aoe(e.x, e.y, 3, "#9fe4ff", .6); vs.forEach(x => { deal(e, x, 140, { aoe: 1, ab: "Shiva's Guard" }); if (live(x)) setFx(x, "slow", 4, .4); }); txt(e, "Shiva's Guard", "#bdeeff"); } }
-      else if (c.k === "antimagic" && e.engT != null && (e.shellV2 || t - e.engT >= e.shellAt - 1e-6)) { const sd = e.itemV6 ? ITEM_V6.shellDur : 5; c.ready = t + ITEMS[c.k].cd; setFx(e, "shell", sd, e.itemV6 ? 1 : .7); if (e.itemV6) e.shellFull = 1; ev({ ty: "shell", id: e.id, dur: sd }); txt(e, "Anti-Magic Shell", "#9ff0e0"); }
+      else if (c.k === "shiva") { const vs = enemiesNear(e, e.x, e.y, 3); if (vs.length >= 2) { c.ready = t + ITEMS[c.k].cd; aoe(e.x, e.y, 3, "#9fe4ff", .6); vs.forEach(x => { deal(e, x, 140, { aoe: 1, ab: "Frostward Shield" }); if (live(x)) setFx(x, "slow", 4, .4); }); txt(e, "Frostward Shield", "#bdeeff"); } }
+      else if (c.k === "antimagic" && e.engT != null && (e.shellV2 || t - e.engT >= e.shellAt - 1e-6)) { const sd = e.itemV6 ? ITEM_V6.shellDur : 5; c.ready = t + ITEMS[c.k].cd; setFx(e, "shell", sd, e.itemV6 ? 1 : .7); if (e.itemV6) e.shellFull = 1; ev({ ty: "shell", id: e.id, dur: sd }); txt(e, "Spellbreaker Ward", "#9ff0e0"); }
       else if (c.k === "scroll" && e.itemV6) { // Rune of Homecoming v6: whenever off cooldown, as the castle comes under attack or the hero runs low, a 1.5s channel, then home
         if (e.orphan || !p.castle || p.castle.dead || d(e, p.castle) <= 4 || e.runeAt != null || (sdOn() && t >= SD_AT)) return; // no way home once sudden death is called
         if (!(t - (p.castleHitT == null ? -99 : p.castleHitT) < .3 || e.hp / e.maxhp < ITEM_V6.runeLow)) return;
@@ -422,8 +422,8 @@ function runBattle(plans, seed, opts = {}) {
     let m = 1;
     if (src && src.key === "bowman" && tgt.kind === "champ") m *= 1.3; // bowmen are hero-hunters
     if (src) {
-      if (src.rapier) { if (RAPIER_V2) { if (src.kind === "champ" && !(o.ab || curAb) && !o.dot && !o.reflected) amt += ITEM_V6.rapier; } else m *= 2; } // Divine Rapier: v6 adds 100 to each weapon hit, abilities untouched; before, it doubled all hero damage
-      if (P[src.pid].frenzy && src.kind !== "castle") m *= 1.2; // Desperation Frenzy // Divine Rapier: double hero damage
+      if (src.rapier) { if (RAPIER_V2) { if (src.kind === "champ" && !(o.ab || curAb) && !o.dot && !o.reflected) amt += ITEM_V6.rapier; } else m *= 2; } // Sunsteel Rapier: v6 adds 100 to each weapon hit, abilities untouched; before, it doubled all hero damage
+      if (P[src.pid].frenzy && src.kind !== "castle") m *= 1.2; // Desperation Frenzy // Sunsteel Rapier: double hero damage
       m *= 1 + fxv(src, "atkbuf");
       if (fxv(src, "weaken")) m *= .8;
       if (P[src.pid].feud.has(tgt.pid)) m *= 1.2;
@@ -446,10 +446,10 @@ function runBattle(plans, seed, opts = {}) {
     if (!abil && src && tgt.shellFull && (o.atype || src.atype) === "magic" && fxv(tgt, "shell")) m = 0; // Shell v6: magic attacks do nothing either
     if (abil && src) { const sh = fxv(tgt, "shell"); if (sh) m *= 1 - sh; const sw = fxv(tgt, "spellward"); if (sw) m *= 1 - sw; }
     let critHit = false;
-    if (src && src.icm && plain && !o.aoe && !o.critMul) { m *= src.icm; src.icm = 0; critHit = true; } // Crystalys / Daedalus
+    if (src && src.icm && plain && !o.aoe && !o.critMul) { m *= src.icm; src.icm = 0; critHit = true; } // Cutthroat's Crystal / Widowmaker
     if (TW === "siege" && tgt.kind === "castle" && src && (src.kind === "unit" || src.kind === "summon")) m *= TWIST_SIEGE;
     let dmg = Math.max(1, amt * m);
-    if (tgt.block && plain) dmg = Math.max(1, dmg - tgt.block); // Vanguard
+    if (tgt.block && plain) dmg = Math.max(1, dmg - tgt.block); // Bulwark Shield
     if (HV3) { if (o.capAbs) dmg = Math.min(dmg, o.capAbs); dmg = kit.redirect(tgt, dmg); if (tgt.sh && tgt.sh.length) dmg = kit.absorb(tgt, dmg); }
     const eff = Math.min(dmg, tgt.hp);
     tgt.hp -= dmg; tgt.hitT = t;
@@ -524,7 +524,7 @@ function runBattle(plans, seed, opts = {}) {
         else { H({ kind: "spree", pid: kc.pid, t0: kp.kt[0][0], t2: t, n: kp.kt.length, x: e.x, y: e.y, score: Math.min(88, 46 + 5 * kp.kt.length), marks: [] }); sp = hl[hl.length - 1]; }
         let ti = STREAKS.length - 1; while (ti >= 0 && sum < STREAKS[ti][0]) ti--;
         if (ti > kp.tier) { kp.tier = ti; const nmS = STREAKS[ti][1]; sp.marks.push({ t, name: nmS, n: Math.round(sum) }); sp.streak = nmS; log(`${nm(kc.pid)}: ${nmS.toUpperCase()}! ${Math.round(sum)} kills in a row.`, "big"); } } }
-    if (e.kind === "champ" && e.rapier) { e.rapier = false; rapierDrop = { x: e.x, y: e.y, ev: null }; H({ kind: "rapierdrop", pid: e.pid, other: src ? (src.owner || src).pid : null, x: e.x, y: e.y, score: 54 }); ev({ ty: "rapier", x: e.x, y: e.y, until: null }); if (!fast) rapierDrop.ev = events[events.length - 1]; txt(e, "Rapier dropped!", "#ffd34d"); log(`${poss(e.pid)} hero drops the Divine Rapier.`, "big"); }
+    if (e.kind === "champ" && e.rapier) { e.rapier = false; rapierDrop = { x: e.x, y: e.y, ev: null }; H({ kind: "rapierdrop", pid: e.pid, other: src ? (src.owner || src).pid : null, x: e.x, y: e.y, score: 54 }); ev({ ty: "rapier", x: e.x, y: e.y, until: null }); if (!fast) rapierDrop.ev = events[events.length - 1]; txt(e, "Rapier dropped!", "#ffd34d"); log(`${poss(e.pid)} hero drops the Sunsteel Rapier.`, "big"); }
     if (e.kind === "champ" && P[e.pid].alive && e.respawns > 0 && !(SD2 && sdOn())) { e.respawns--; const rt = respawnTime(e.heroLvl) * (e.phoenix ? .5 : 1); e.respawnAt = t + rt; e.respawnLen = rt; const c = P[e.pid].castle; const rv = { ty: "respawn", pid: e.pid, id: e.id, x: c.x, y: c.y, t0: t, t1: t + rt }; ev(rv); e.respawnEv = rv; }
     if (e.kind === "castle") eliminate(e.pid, src ? src.pid : e.lastBy);
   }
@@ -1170,7 +1170,7 @@ function runBattle(plans, seed, opts = {}) {
       if (pid === mePid) log("Militia march out from your castle.", "you");
     });
     if (rapierDrop) { const g = ents.find(h => h.kind === "champ" && !h.dead && fighting(h.pid) && hyp(h.x - rapierDrop.x, h.y - rapierDrop.y) < .8);
-      if (g) { g.rapier = true; rapierHolder = g.pid; if (rapierDrop.ev) rapierDrop.ev.until = t; H({ kind: "rapierget", pid: g.pid, x: g.x, y: g.y, score: 56 }); txt(g, "Divine Rapier!", "#ffd34d"); aoe(g.x, g.y, 1, "#ffd34d", .8); log(`${poss(g.pid)} hero seizes the Divine Rapier.`, "big"); rapierDrop = null; } }
+      if (g) { g.rapier = true; rapierHolder = g.pid; if (rapierDrop.ev) rapierDrop.ev.until = t; H({ kind: "rapierget", pid: g.pid, x: g.x, y: g.y, score: 56 }); txt(g, "Sunsteel Rapier!", "#ffd34d"); aoe(g.x, g.y, 1, "#ffd34d", .8); log(`${poss(g.pid)} hero seizes the Sunsteel Rapier.`, "big"); rapierDrop = null; } }
     order.forEach(pid => { // formation: the line marches at its slowest soldier's pace until the first contact, then everyone fights freely
       const p = P[pid]; if (!p.alive || p.formation === false || p.released || t - (p.fchk || -9) < .25) return; p.fchk = t;
       const grp = ents.filter(x => !x.dead && x.pid === pid && x.kind === "unit" && !x.cart && !x.ram && !x.merc && !x.militia && (x.order || "army") === "army");

@@ -13,7 +13,7 @@ function diplomacyReport(plans, persist, hl, me) {
   const broke = old.filter(o => by[o] && (by[o].breaks || []).includes(me) && !(mine.breaks || []).includes(o)).map(pid => ({ pid }));
   return { offers, broke, bets: (hl || []).filter(h => h.kind === "betray" && h.other === me).map(h => ({ pid: h.pid, t: h.t })) };
 }
-const RAPIER_ICON = `<svg class="rap" viewBox="0 0 16 16" aria-label="Divine Rapier"><title>Divine Rapier</title><path d="M13.6 1.4 15 1l-.4 1.4-6.1 6.1-1.2-1.2z" fill="#ffd24a" stroke="#8a5a00" stroke-width=".7" stroke-linejoin="round"/><path d="M5.2 8.2l2.6 2.6-1 1-2.6-2.6z" fill="#e0a020" stroke="#8a5a00" stroke-width=".7"/><path d="M4.4 11.6 2 14l.2.2 2.4-2.4z" fill="#8a5a00" stroke="#8a5a00" stroke-width="1.2"/></svg>`;
+const RAPIER_ICON = `<svg class="rap" viewBox="0 0 16 16" aria-label="Sunsteel Rapier"><title>Sunsteel Rapier</title><path d="M13.6 1.4 15 1l-.4 1.4-6.1 6.1-1.2-1.2z" fill="#ffd24a" stroke="#8a5a00" stroke-width=".7" stroke-linejoin="round"/><path d="M5.2 8.2l2.6 2.6-1 1-2.6-2.6z" fill="#e0a020" stroke="#8a5a00" stroke-width=".7"/><path d="M4.4 11.6 2 14l.2.2 2.4-2.4z" fill="#8a5a00" stroke="#8a5a00" stroke-width="1.2"/></svg>`;
 function introData(plans, persist, bets, names, final) {
   const fin2 = !!final && plans.some(p => p.finV2); if (fin2) final = false; // finV2: day 7 pacts hold until one alliance is left
   const key = (a, b) => [a, b].sort().join("|"), byId = Object.fromEntries(plans.map(pl => [pl.pid, pl]));
@@ -67,7 +67,7 @@ function showIntro(it, done) {
   const nm = id => esc(it.names[id] || id), card = id => it.cards.find(c => c.pid === id);
   const traitors = new Set(it.bets.map(b => b.pid));
   const feed = []; let d = 2.4;
-  if (it.rapier) feed.push(`<li class="fresh" style="--d:${(d += .35).toFixed(2)}">⚔ <b>${nm(it.rapier)}</b> carries the Divine Rapier. Slay them and it can be yours.</li>`);
+  if (it.rapier) feed.push(`<li class="fresh" style="--d:${(d += .35).toFixed(2)}">⚔ <b>${nm(it.rapier)}</b> carries the Sunsteel Rapier. Slay them and it can be yours.</li>`);
   it.fresh.forEach(k => { const [a, b] = k.split("|"); feed.push(`<li class="fresh" style="--d:${(d += .35).toFixed(2)}">✦ <b>${nm(a)}</b> and <b>${nm(b)}</b> have formed an alliance.</li>`); });
   it.broken.forEach(x => { const [a, b] = x.k.split("|"); feed.push(`<li class="broke" style="--d:${(d += .35).toFixed(2)}">✕ ${x.final ? `The alliance between <b>${nm(a)}</b> and <b>${nm(b)}</b> ended with the final day.` : x.by ? `<b>${nm(x.by)}</b> ended the pact with <b>${nm(x.by === a ? b : a)}</b>.` : `<b>${nm(a)}</b> and <b>${nm(b)}</b> are no longer allies.`}</li>`); });
   it.bets.forEach(b => feed.push(`<li class="bet" style="--d:${(d += .35).toFixed(2)}">🗡 Last battle, <b>${nm(b.pid)}</b> betrayed <b>${nm(b.other)}</b> and blew up their keep.</li>`));

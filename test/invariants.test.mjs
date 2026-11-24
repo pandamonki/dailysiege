@@ -76,7 +76,7 @@ test("the scoreboard adds up: every hero kill is matched by a hero death, and as
   }
 });
 
-test("Anti-Magic Shell v2: fires on engaging a hero with no chosen delay, and never faster than its cooldown", () => {
+test("Spellbreaker Ward v2: fires on engaging a hero with no chosen delay, and never faster than its cooldown", () => {
   const run = at => `(() => { const { plans, L } = ${WAR(1, 5)}; plans.forEach(p => { p.items = ["antimagic"].concat((p.items || []).filter(k => k !== "antimagic")).slice(0, 6); p.shellV2 = true; p.shellAt = ${at}; });
     const opts = { N: L.N, ultV2: true, balV2: true, balV3: true, fairV1: true, pickV1: true, balV4: true, suddenV1: true, treesV1: true, heroV3: true, dayNo: 5 };
     return runBattle(plans, 4242, opts); })()`;
@@ -100,7 +100,7 @@ test("Items v6: the Rune of Homecoming can fire again after its 45s cooldown, ea
   assert.ok(r.portLag === null || r.portLag >= 1.5 - 1e-6, `a teleport came ${r.portLag}s after the channel began`);
 });
 
-test("Items v6: the Divine Rapier adds 100 to weapon hits, not to abilities", () => {
+test("Items v6: the Sunsteel Rapier adds 100 to weapon hits, not to abilities", () => {
   // battles with the Rapier resolve under both rules, and the shop text follows the battle date
   const r = JSON.parse(sim.run(`(() => { const go = v6 => { const { plans, L } = ${WAR(1, 5)}; plans.forEach(p => { p.items = (p.items || []).filter(k => k !== "rapier"); p.itemV6 = v6; }); plans[0].items = ["rapier"].concat(plans[0].items).slice(0, 6);
       return runBattle(plans, 99, { fast: true, N: L.N, ultV2: true, balV2: true, balV3: true, fairV1: true, pickV1: true, balV4: true, suddenV1: true, treesV1: true, heroV3: true, dayNo: 5 }); };

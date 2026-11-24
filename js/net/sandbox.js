@@ -18,7 +18,7 @@ function startPreview() {
   PREVIEW = { keep, liveS: LIVE_S, ls };
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC", cfg = { tz, lockHour: 20, lobby: true, lobbyEnds: Date.now() + 6 * 36e5, createdAt: Date.now(), host: "pv_bot0" }, store = { "game/config": cfg };
   const sb = sandboxDb(store); PREVIEW.sb = sb;
-  const bots = [["Sam", "Lord Hammer", "#b8322a", "warrior"], ["Riley", "The Fox", "#2f5fa8", "rogue"], ["Jordan", "Stormcaller", "#2d8a8a", "mage"]];
+  const bots = [["Brannock", "Lord Hammer", "#b8322a", "warrior"], ["Wenna", "The Fox", "#2f5fa8", "rogue"], ["Old Pell", "Stormcaller", "#2d8a8a", "mage"]];
   const names = { pv_you: { name: "New player" } };
   Object.keys(LIVE).forEach(k => delete LIVE[k]);
   Object.assign(LIVE, { db: sb.db, user: { id: async () => "pv_you", isOwner: async () => false, profiles: async ids => Object.fromEntries(ids.map(i => [i, names[i] || { name: "A lord" }])) },
