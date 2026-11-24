@@ -327,3 +327,15 @@ test("zones v1: soldiers placed in the Guard zone, and waves sent there, stay at
   assert.ok(r.seen > 0, "no guard soldier was seen on the field");
   assert.ok(r.far <= 9.5, `a guard soldier wandered ${r.far.toFixed(1)} tiles from its castle`);
 });
+
+test("fixed timing (timeV1): with no percentage chances in play, the dice no longer change the battle", () => {
+  // four lords with skill-free heroes and plain soldiers: nothing rolls for a dodge, crit or miss, so only the opening timing could differ
+  const war = (seed, on) => `(() => { const L = seatLayout(4, true), ids = ["t0", "t1", "t2", "t3"];
+    const plans = ids.map((uid, i) => { const zone = zoneFor(L.castles[i], L.N, L.castles, L.v2), p = lordBotPlan({ uid, cls: "warrior", i, ids, L, zone, dayNo: 4, lvl: 8, v2: true, v3: true, fair: true, pick: true, ranks: {}, sup: true, defV2: true });
+      p.tree = emptyTree(); p.items = []; p.pieces = p.pieces.filter(pc => pc.kind === "champ" || pc.kind === "unit").map(pc => pc.kind === "unit" ? { ...pc, type: ["footman", "knight", "bowman"][(pc.r + pc.c) % 3] } : pc);
+      return Object.assign(p, { pid: uid, name: uid, color: "#2f5fa8", castle: L.castles[i], level: 8, trapV2: true, sdV2: true, wallV2: true, engV2: true, ordV2: true, skV2: true, waveV2: true, waveV3: true, waveV4: true, balV5: true, itemV5: true, itemV6: true, shellV2: true, survV1: true, siegeV1: true, lvlV2: true, timeV1: ${on} }); });
+    return battleHash(runBattle(plans, ${seed}, { N: L.N, ultV2: true, balV2: true, balV3: true, fairV1: true, pickV1: true, balV4: true, suddenV1: true, treesV1: true, heroV3: true, dayNo: 4, fast: true })); })()`;
+  const on = [11, 222, 3333].map(s => sim.run(war(s, true))), off = [11, 222, 3333].map(s => sim.run(war(s, false)));
+  assert.equal(new Set(on).size, 1, "with fixed timing the same orders gave different battles on different days");
+  assert.ok(new Set(off).size > 1, "before fixed timing the opening was random (the check would prove nothing)");
+});

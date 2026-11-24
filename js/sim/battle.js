@@ -94,6 +94,7 @@ function runBattle(plans, seed, opts = {}) {
   const WV2 = plans.some(p => p.wallV2); // walls v2: every fence blocks everyone, its owner's soldiers too, so they route round through the gaps
   const RAPIER_V2 = plans.some(p => p.itemV6); // Divine Rapier v6: +100 on weapon hits instead of double damage
   const BV5 = plans.some(p => p.balV5); // balance v5: hero attack and armour class, out-of-combat healing at home, 20s waves, betrayal castle bonus, regen items toned down
+  const TV1 = plans.some(p => p.timeV1); // fixed timing: opening swings and skill cooldowns by place, not by the dice
   const ZV = plans.some(p => p.zoneV1 && p.ordV2); // zones v1: where a soldier is placed sets its job (Guard, Front, Left or Right flank), with a Front plan, two flank plans and an army temper
   const SD2 = plans.some(p => p.sdV2); // sudden death v2: a half-size arena nobody can leave, and no respawn timers inside it
   let sd = null; // sudden death: null until SD_AT, then { t0, go, skip, winners }
@@ -149,12 +150,12 @@ function runBattle(plans, seed, opts = {}) {
   // a hidden unit can be seen by a viewer standing within its reveal radius if it is only in stealth (skill-tree Rogues); a fully vanished one never can
   const vis = (o, v) => !fxv(o, "vanish") || !!(o.stealth && hyp(o.x - v.x, o.y - v.y) <= (o.revealR || 1));
 
-  function add(o) { Object.assign(o, { id: ents.length, fx: {}, dots: [], atkT: rng() * .8, tgt: null, rt: 0, dead: false, hitT: -9, tel: { dealt: 0, toChamp: 0, toUnit: 0, toCastle: 0, taken: 0, healed: 0, kills: 0, deaths: 0, diedAt: null, ab: {} } }); ents.push(o); return o; }
+  function add(o) { Object.assign(o, { id: ents.length, fx: {}, dots: [], atkT: (TV1 ? fixedFrac(ents.length + 1) : rng()) * .8, tgt: null, rt: 0, dead: false, hitT: -9, tel: { dealt: 0, toChamp: 0, toUnit: 0, toCastle: 0, taken: 0, healed: 0, kills: 0, deaths: 0, diedAt: null, ab: {} } }); ents.push(o); return o; }
   const abRec = (e, name) => e.tel.ab[name] || (e.tel.ab[name] = { casts: 0, dmg: 0, heal: 0 });
   const abName = (e, k) => (k === "a4" ? "Vigour" : k === "ult" ? CLASSES[e.cls].ult.name : CLASSES[e.cls].abilities.find(a => a.key === k).name);
   const DOT_AB = { burn: "Fireball", bleed: "Cleave", fire: "Volley", poison: "Poison Blade", orb: "Orb of Venom" };
   // skill-tree heroes (battles with opts.heroV3): all their skills live in sim/heroTrees.js, which reaches the battle through these hooks
-  const kit = HV3 ? makeTreeKit({ v4: V4, ents, DT, d, fxv, setFx, deal, heal, enemiesNear, friendsNear, minBy, ev, aoe, shot, slash, txt, add, pending, walls, traps, P, order, rng, NN, allied, hostile, log,
+  const kit = HV3 ? makeTreeKit({ v4: V4, fixT: TV1, ents, DT, d, fxv, setFx, deal, heal, enemiesNear, friendsNear, minBy, ev, aoe, shot, slash, txt, add, pending, walls, traps, P, order, rng, NN, allied, hostile, log,
     t: () => t, tickN: n => tick % n === 0, tickNo: () => tick, getAb: () => curAb, setAb: v => { curAb = v; }, abRec, atkEv, vis, fighting, kill: (e, s) => kill(e, s), cd: cdNote, blink: (e, x, y) => blink(e, x, y), wallAt: (e, x, y) => wallAt(e, x, y), addDot: (a, b, c, d2, k) => addDot(a, b, c, d2, k),
     trigOk: (e, key) => !e.triggers || !e.triggers[key] || triggerOk(e, key), poss: pid => poss(pid), isBounty: pid => !!RANKS[pid] && RANKS[pid] <= 3, onUlt: (e, name) => { P[e.pid].ultCast = true; anyUlt = true; if (!hl.some(h => h.kind === "ult" && h.pid === e.pid && h.t === t)) H({ kind: "ult", ab: name, gen: 1, pid: e.pid, x: e.x, y: e.y, score: 50 }); } }) : null;
   // one soldier of a lord's, from a plan piece: used for the army at the start and for reinforcement waves
@@ -222,7 +223,7 @@ function runBattle(plans, seed, opts = {}) {
         const e = add({ order: pl.ordV2 ? "army" : pc.order || "army", pid: pl.pid, kind: "champ", cls: pl.cls, key: "c-" + pl.cls, x: pc.c + .5, y: pc.r + .5, maxhp: b.hp * hpMul, atk: b.atk * atkMul, range: b.range, as: b.as,
           spd: b.spd * ((g.charm || 0) >= 1 ? 1.15 : 1), armor: b.armor,
           cdMul: (g.charm || 0) >= 2 ? .8 : 1, phoenix: (g.charm || 0) >= 3, respawns: opts.duel ? 0 : 2, shot: b.shot, ranks: { ...pl.ranks }, ranks0: { ...pl.ranks }, picks: pl.picks, triggers: pl.triggers, cds: {} });
-        e.hp = e.maxhp; if (!HV3) { ["a1", "a2", "a3"].forEach(k => e.cds[k] = 2 + rng() * 3); e.cds.ult = 10 + rng() * 8; }
+        e.hp = e.maxhp; if (!HV3) { ["a1", "a2", "a3"].forEach((k, j) => e.cds[k] = 2 + (TV1 ? fixedFrac(ents.length * 4 + j) : rng()) * 3); e.cds.ult = 10 + (TV1 ? fixedFrac(ents.length * 4 + 3) : rng()) * 8; }
         e.ultArm = pl.ultArm !== false; e.heroLvl = lvl; e.lvl0 = lvl; e.xp = pl.xp0 || 0; e.xp0 = e.xp; e.gains = 0;
         const its = new Set(pl.items || []); e.itemSet = its; if (its.has("rapier")) { e.rapier = true; rapierOwner = rapierHolder = pl.pid; }
         e.itemV5 = !!pl.itemV5; e.shellV2 = !!pl.shellV2; e.itemV6 = !!pl.itemV6;

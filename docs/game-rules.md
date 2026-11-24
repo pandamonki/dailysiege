@@ -31,6 +31,7 @@ practice games always stamp all of them (`js/sim/plans.js`).
 | 25 Nov | `breakV2` | Disbanding an alliance takes effect from the next battle (see Alliances) |
 | 23 Nov | `finV2` | Final-day alliances: day 7 pacts hold until one alliance is all that is left, then break and the allies fight on |
 | 23 Nov | `lvlV2` | Faster levelling: 3 to 4 levels a battle, up to level 25, smaller steps per level |
+| Prototype (practice only) | `timeV1` | Fixed timing: opening swings and hero skill cooldowns by place in the line-up, not the battle's dice (see The battle) |
 | Prototype (practice only) | `zoneV1` | Zones: placement sets each soldier's job, one #1 target, Front plans, flank plans, army temper, hill points, sudden-death damage tiebreak (see Zones) |
 
 ## The war
@@ -180,6 +181,11 @@ until a start date is chosen. They replace the army plan, the fall-back list, th
 
 ## The battle
 
+- **Opening timing.** Every fighter waits up to 0.8 seconds before its first swing, and each hero skill starts on a 2 to 5 second
+  cooldown (the ultimate 10 to 18). Until now these come from the battle's dice (the battle date in real wars), and in tests they
+  caused most of the luck in a battle. With fixed timing (prototype `timeV1`, `TIME_V1_FROM` in `js/config/orders.js`; practice always)
+  they are spread by each fighter's place in the line-up (`fixedFrac`), so the same orders against the same rivals give nearly the
+  same battle. Real percentage chances (dodges, crits, misses, skill procs) stay random.
 - Fought on a ring map: castles round the edge, a hill in the middle (holding it gives gold and hero experience, not
   points), forest round the rim and small tree blockades between bases. Trees and walls block movement.
 - Militia muster at every castle on a timer. Reinforcement waves march on their triggers.

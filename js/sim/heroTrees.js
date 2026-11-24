@@ -68,7 +68,7 @@ function makeTreeKit(X) {
     e.kc = [];
     for (let bi = 0; bi < 3; bi++) if (rk(e, bi, 5)) e.kc.push([bi, 5]);
     for (let bi = 0; bi < 3; bi++) [1, 2].forEach(i => { if (rk(e, bi, i) && TREES[c][bi].nodes[i].kind === "trigger") e.kc.push([bi, i]); });
-    e.kc.forEach(([bi, i]) => { e.cds[bi + "." + i] = i === 5 ? 10 + rng() * 8 : 2 + rng() * 3; });
+    e.kc.forEach(([bi, i], j) => { const r = X.fixT ? fixedFrac(e.id * 7 + j + 1) : rng(); e.cds[bi + "." + i] = i === 5 ? 10 + r * 8 : 2 + r * 3; }); // fixed timing: by place, not by the dice
     e.nextTotem = 6; e.v3as = 0; e.v3ms = 0;
     if (c === "rogue" && rk(e, 0, 0)) hide(e, 1e6, true);
   }

@@ -98,6 +98,11 @@ const CASTLE_ALERT_N = 3, TERRITORY_R = 5, FALLBACK_LINGER = 4, SIEGE_REACH = 1.
 // and the Left and Right flanks. The Front marches on the #1 target by its plan; each flank screens its side or raids the neighbour on that side;
 // the Guard stays home. Each wave picks a zone too. One army temper replaces the hero stance and the fall-back condition.
 // The prototype date is far off, so only practice uses these rules until a real start date is chosen.
+// Fixed timing (plans stamped timeV1, battles from TIME_V1_FROM; practice always): a fighter's wait before its first swing, and a hero's opening
+// skill cooldowns, no longer come from the battle's dice. They are spread by the fighter's place in the line-up instead, so the same orders against
+// the same rivals give (nearly) the same battle, and only the real percentage chances (dodges, crits, misses, procs) stay random.
+let TIME_V1_FROM = "2099-01-01"; const timeV1For = d => String(d) >= TIME_V1_FROM;
+const fixedFrac = k => { const x = k * .6180339887498949; return x - Math.floor(x); }; // an even spread in [0, 1) by place, the same on every device
 let ZONE_V1_FROM = "2099-01-01"; const zoneV1For = d => String(d) >= ZONE_V1_FROM;
 const ZONES = ["guard", "left", "front", "right"], ZONE_INFO = { guard: ["Guard", "Stays at home and defends the castle"], left: ["Left flank", "Holds or raids your left side"], front: ["Front", "Marches on your #1 target"], right: ["Right flank", "Holds or raids your right side"] };
 const ZONE_COL = { guard: "#2f5fa8", left: "#b23428", front: "#4f7a2e", right: "#c9962f" };
