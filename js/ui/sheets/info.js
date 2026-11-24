@@ -209,6 +209,14 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "v1.21: highlights, betrayals and disbanding", date: "24 Nov", fixes: [
+    "Highlights: only ultimates that killed a hero or 4 or more soldiers are shown, the best three, each framed to hold the hero and the impact zone, and every clip is at least 4 seconds. The reel ends on the Final placings.",
+    "The betrayal banner now pauses the replay, names the betrayer and the betrayed in their colours, and cuts to the hero planting the bomb and the castle blowing up before returning to your camera.",
+  ], balance: [
+    "From the 25 Nov battle (breakV2): disbanding an alliance takes effect from the next battle. You still fight together tonight, a disbanded ally cannot be targeted, and only a betrayal turns on an ally mid-fight.",
+  ], changes: [
+    "Disband asks \"are you sure?\" and the lord disbanded on gets an Alliance disbanded pop-up the next day.",
+  ] },
   { v: "v1.20: noticeboard, camp and tidy-ups", date: "23 Nov", fixes: [
     "The replay's castle tracker is back to a small castle for every lord down the left edge, instead of a wide bar of heroes and castles across the top.",
     "No crowns or bounties on day 1, while the leaderboard is empty. They are set after day 1's battle.",

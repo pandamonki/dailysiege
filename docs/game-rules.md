@@ -27,6 +27,7 @@ practice games always stamp all of them (`js/sim/plans.js`).
 | 20 Nov | `waveV4` | "Castle attacked" wave trigger becomes "enemies reach my castle" (within 3 tiles, or the first hit) |
 | 21 Nov | `placeV2` | Placement: one point per place, last scores 1, plus 2 for winning |
 | 22 Nov | `balV5` | Balance v5: hero rebalance (stats and skills), Hero damage and armour class for every hero, resting at home heals, regen items toned down, waves a flat 20s apart, triple castle points for a betrayal kill |
+| 25 Nov | `breakV2` | Disbanding an alliance takes effect from the next battle (see Alliances) |
 | 23 Nov | `finV2` | Final-day alliances: day 7 pacts hold until one alliance is all that is left, then break and the allies fight on |
 | 23 Nov | `lvlV2` | Faster levelling: 3 to 4 levels a battle, up to level 25, smaller steps per level |
 
@@ -200,6 +201,8 @@ practice games always stamp all of them (`js/sim/plans.js`).
 
 ## Screens
 
+- The pre-battle ("The houses gather") screen's redesign is under discussion: three options were drawn up for the host to pick.
+
 - Wars page > Diagnostics: Copy diagnostics gathers the war's clock, my saved orders per day, my army and the orders each battle used,
   plus recent errors, for sending to the developer (`js/net/diag.js`).
 
@@ -232,6 +235,12 @@ practice games always stamp all of them (`js/sim/plans.js`).
 - War results: podium, final standings and war prizes. Tap a lord for tabs: Stats (net worth, which is the gold in their final army, hero
   items, castle and defences; hero, unit and castle damage over the war; days won, kills, spoils, each day's points), Skills, Items,
   Army and Upgrades as they fought the last battle.
+- Highlights reel: only ultimates that mattered are shown (a hero killed, or 4+ soldiers, within 5 seconds and 11 tiles of the cast),
+  the best three of the fight by hero kills (45 each) and soldier kills (7 each). Every clip runs at least 4 seconds, and an ultimate's
+  clip keeps the casting hero and everything that fell to it in frame. The reel ends on the Final placings (same rows as the results
+  screen: place, colour, name, class, points, kills, castles).
+- Betrayal cut-away (main replay and highlights): the replay pauses and a banner names the betrayer and the betrayed in their colours,
+  the camera cuts to the hero with the bomb for 2 seconds, then the fuse and blast play in slow motion on the castle, then the camera returns.
 - Top 5 moments: the war's highlights are the five biggest moments of the whole war (at most two of a kind), played in order.
 - Muster Hall: a gold crown with a count beside each lord who has won a war in this game (from the hall of fame).
 
@@ -263,7 +272,12 @@ practice games always stamp all of them (`js/sim/plans.js`).
   still standing
   (`LONE_WOLF_STEP`). It is checked every second of the battle, so it ends the moment a second lord stands alone (a pact
   broken by a betrayal or a fallen castle) or the lone wolf is in a pact, and the extra health goes with it.
-- A pact can be broken cleanly or betrayed mid-battle with a bomb in the ally's keep (half its health). A lord can set Betray
+- From 25 Nov (`breakV2`, `js/config/orders.js`) disbanding a carried alliance (the Disband button, with an "are you sure?" step) takes
+  effect from the next battle: you still fight beside them in the battle you disbanded in, and the alliance is no longer carried into the
+  next one (`wActivePairs` in `js/net/world.js`). A disbanded ally cannot be targeted; only a betrayal turns on an ally mid-fight. The
+  lord who was disbanded on gets a pop-up when they next plan ("Alliance disbanded"). Before that date Break it ended the pact at the start
+  of the battle.
+- A pact can be disbanded cleanly or betrayed mid-battle with a bomb in the ally's keep (half its health). A lord can set Betray
   on more than one ally: each armed betrayal sends the hero to that keep, so the bombs go off one after another, never at once. The betrayer scores
   3 points and takes a quarter of the victim's battle spoils; the two deal 20% more damage to each other for the rest of the
   war and can never share an alliance again.

@@ -142,7 +142,10 @@ const A = {
       const who = takenColours()[k]; if (who) { toast(`${TEAM_COLOR_NAMES[k] || "That colour"} is taken by ${who}.`); return; }
       S.banner = { ...(S.banner || defaultBanner()), c1: k }; MY_COLOR = k; save(); renderLobby(); return; }
     S.banner = { ...(S.banner || defaultBanner()), [v]: k === "seat" ? null : k }; },
-  pact: (v, k) => { ensureDip(); S.pactAct[k] = v; if (v === "keep") S.lists.hostile = S.lists.hostile.filter(x => x !== k); if (v === "betray") S.pactWhen[k] = S.pactWhen[k] || BETRAY_WHEN[0]; },
+  pact: (v, k) => { ensureDip(); if (v === "break" && breakV2Now() && S.pactAct[k] !== "break") { S.pactAsk = k; return; } S.pactAsk = null; // disbanding asks "are you sure?" first
+    S.pactAct[k] = v; if (v === "keep" || (v === "break" && breakV2Now())) S.lists.hostile = S.lists.hostile.filter(x => x !== k); if (v === "betray") S.pactWhen[k] = S.pactWhen[k] || BETRAY_WHEN[0]; },
+  pactyes: (v, k) => { ensureDip(); S.pactAct[k] = "break"; S.pactAsk = null; S.lists.hostile = S.lists.hostile.filter(x => x !== k); },
+  pactno: () => { S.pactAsk = null; },
   bcopy: () => { const t = window.__bcheck || ""; try { navigator.clipboard.writeText(t).then(() => toast("Copied. Paste it into your message."), () => toast("Couldn't copy. Take a screenshot instead.")); } catch (e) { toast("Couldn't copy. Take a screenshot instead."); } },
   gpage: v => { sheet.pg = (sheet.pg || 0) + (+v); },
   gch: v => { const first = S && S.ob === 1, list = guidePages("book").filter(p => !first || p.ch === "basics"); sheet.pg = Math.max(0, list.findIndex(p => p.ch === v)); },

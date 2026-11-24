@@ -17,7 +17,7 @@ function resolveAlliances(plans, o = {}) {
   (o.persist || []).forEach(s => {
     const [x, y] = s.split("|"), a = by[x], b = by[y]; if (!a || !b) return;
     const key = [x, y].sort().join("|"); done.add(key);
-    if ((a.breaks || []).includes(y) || (b.breaks || []).includes(x)) { notes.push(`${a.name} and ${b.name} ended their alliance.`); return; }
+    if (!o.delayBreak && ((a.breaks || []).includes(y) || (b.breaks || []).includes(x))) { notes.push(`${a.name} and ${b.name} ended their alliance.`); return; }
     if (!canLink(a, b)) { notes.push(feudHit(a, b) && (o.feuds || []).length ? `${a.name} and ${b.name} had to part: there is bad blood between their camps after a betrayal.` : `${a.name} and ${b.name} had to part: at least two sides must stay in the fight.`); return; }
     link(a, b); notes.push(`${a.name} and ${b.name} are still allied.`);
     if (a.pbetray && a.pbetray[y]) a.betray[y] = a.pbetray[y];

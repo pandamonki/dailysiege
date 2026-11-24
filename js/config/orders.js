@@ -56,6 +56,10 @@ let BAL_V5_FROM = "2026-11-22"; const balV5For = d => String(d) >= BAL_V5_FROM, 
 // - lvlV2: heroes gain 3 to 4 levels a battle (MIN_GAIN_V2 / XP_CAP_V2) up to level MAX_HERO_LVL_V4, with smaller steps per level
 //   (HP_STEP_V4 / ATK_STEP_V4 in config/trees.js) so a level 25 hero is as strong in health and attack as a level 15 hero was.
 let FIN_V2_FROM = "2026-11-23"; const finV2For = d => String(d) >= FIN_V2_FROM, lvlV2For = d => String(d) >= FIN_V2_FROM;
+// breakV2: disbanding an alliance takes effect from the next battle. You still fight beside them in the battle you disbanded in; the only way
+// to turn on an ally mid-fight is a betrayal. The other lord is told the next day.
+let BREAK_V2_FROM = "2026-11-25"; const breakV2For = d => String(d) >= BREAK_V2_FROM;
+const breakV2Now = () => { try { return typeof isLive === "function" && isLive() && typeof liveClock === "function" ? breakV2For(liveClock().planDay) : false; } catch (e) { return false; } };
 const lvlV2Now = () => { try { return typeof isLive === "function" && isLive() && typeof liveClock === "function" ? lvlV2For(liveClock().planDay) : true; } catch (e) { return true; } };
 const WAVE_WHEN = [["timer", "At a set time"], ["castle_hit", "When my castle is attacked"], ["castle_low", "When my castle drops below half"], ["hero_dies", "When my hero dies"], ["army_dead", "When all my soldiers die"], ["enemy_hero", "When an enemy hero dies"], ["ult", "When any ultimate is cast"]];
 const WAVE_TIMES = [20, 30, 45, 60, 75, 90, 120, 150];

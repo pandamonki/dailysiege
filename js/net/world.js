@@ -60,6 +60,12 @@ function wCarriedPairs(W, dayKey) {
   const week = wWeekOf(W, dayKey); if (dayKey === week) return [];
   const b = W.battles[addDays(dayKey, -1)]; return b && b.week === week && b.pairsEnd ? b.pairsEnd : [];
 }
+// breakV2: the alliances that were disbanded in yesterday's orders end now, so they are no longer carried into today
+function wPrevBreaks(W, dayKey) { const b = W.battles[addDays(dayKey, -1)], o = {}; if (b && b.inputs) (b.inputs.plans || []).forEach(p => { if ((p.breaks || []).length) o[p.pid] = p.breaks; }); return o; }
+function wActivePairs(W, dayKey) {
+  const raw = wCarriedPairs(W, dayKey); if (!breakV2For(dayKey) || !raw.length) return raw; const pb = wPrevBreaks(W, dayKey);
+  return raw.filter(s => { const [a, b] = Array.isArray(s) ? s : String(s).split("|"); return !((pb[a] || []).includes(b) || (pb[b] || []).includes(a)); });
+}
 const wFeudsBefore = (W, dayKey, week) => Array.from(new Set(Object.keys(W.battles).filter(k => k < dayKey && W.battles[k].week === week).flatMap(k => W.battles[k].feuds || [])));
 // the Divine Rapier belongs to whoever carried it off the field last: nobody else may start a fight holding it
 function wRapierItems(W, items, uid, week, dayKey) {
@@ -142,7 +148,7 @@ function buildBattleInputs(W, dayKey, opts = {}) {
     ...(noOrders && !opts.test ? { noOrders: true } : {}) })); // noOrders: this lord sealed nothing all week, so these are the stand-in orders, not theirs
   const feuds0 = wFeudsBefore(W, dayKey, week), AV2 = allyV2For(dayKey);
   if (AV2) plans.forEach(q => { q.allyV2 = true; if ((roster.find(x => x.uid === q.pid) || {}).bot) Object.assign(q, wBotDiplomacy(q.pid, dayKey, roster.map(x => x.uid), rkm, feuds0)); }); // bots join the diplomacy from alliances v2
-  const { pairs, transfers } = resolveAlliances(plans, { persist: wCarriedPairs(W, dayKey), final: final && !finV2For(dayKey), prevDay: addDays(dayKey, -1), feuds: feuds0, blocMax: balV2For(dayKey) ? BLOC_MAX : 0, v2: AV2 });
+  const { pairs, transfers } = resolveAlliances(plans, { persist: wActivePairs(W, dayKey), delayBreak: breakV2For(dayKey), final: final && !finV2For(dayKey), prevDay: addDays(dayKey, -1), feuds: feuds0, blocMax: balV2For(dayKey) ? BLOC_MAX : 0, v2: AV2 });
   plans.feuds = feuds0;
   let mercs = {}; if (dayNo >= MERC_DAY) { const mer = resolveMercs(plans, { day: dayKey, dayNo, v2: mercV2For(dayKey), N: L.N, cool: id => mercCool(id, null, k => { const b = W.battles[addDays(dayKey, -k)]; return b && b.week === week ? b : null; }) }); plans.notes = (plans.notes || []).concat(mer.notes); mercs = mer.hires; }
   plans.mercs = mercs;
