@@ -60,6 +60,19 @@ let FIN_V2_FROM = "2026-11-23"; const finV2For = d => String(d) >= FIN_V2_FROM, 
 // to turn on an ally mid-fight is a betrayal. The other lord is told the next day.
 let BREAK_V2_FROM = "2026-11-25"; const breakV2For = d => String(d) >= BREAK_V2_FROM;
 const breakV2Now = () => { try { return typeof isLive === "function" && isLive() && typeof liveClock === "function" ? breakV2For(liveClock().planDay) : false; } catch (e) { return false; } };
+// betrayV2: a lord allied to two or more lords can betray the whole alliance at once. One trigger sends the hero to the nearest keep and, on arrival,
+// every bomb is planted at the same moment, so they all go off together.
+let BETRAY_V2_FROM = "2026-11-26"; const betrayV2For = d => String(d) >= BETRAY_V2_FROM;
+const betrayV2Now = () => { try { return typeof isLive === "function" && isLive() && typeof liveClock === "function" ? betrayV2For(liveClock().planDay) : false; } catch (e) { return false; } };
+// betrayV2 triggers: the time is picked from slots, like the wave deadlines ("At 1:30"), next to conditions that react to the ally. "At the 2-minute mark" and
+// "Halfway through the battle" still work in orders saved before.
+// the last slot is 2:30: sudden death starts at 3:00 (SD_AT), when the castles drop out of the fight and nobody can walk to a keep
+const BETRAY_SLOTS = [0, 30, 60, 90, 120, 150].map(s => `At ${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`), BETRAY_SLOT_RE = /^At (\d+):(\d\d)$/;
+const betraySlotSecs = trig => { const m = BETRAY_SLOT_RE.exec(trig || ""); return m ? +m[1] * 60 + +m[2] : null; };
+const BETRAY_WHEN_V2 = [...BETRAY_SLOTS, "When 3 players remain", "When another lord is knocked out", "When their castle drops below 30%", "When their castle is under attack", "When their army is gone", "When their hero is away from home", "When they attack my target", "When their hero drops below 30%", "When their hero has fallen"];
+const betrayWhenList = () => (betrayV2Now() ? BETRAY_WHEN_V2 : BETRAY_WHEN);
+const betrayDefault = () => (betrayV2Now() ? "At 1:30" : BETRAY_WHEN[0]);
+const BETRAY_ALL_WHEN = [...BETRAY_SLOTS, "When 3 players remain", "When another lord is knocked out"]; // triggers that do not depend on one victim
 const lvlV2Now = () => { try { return typeof isLive === "function" && isLive() && typeof liveClock === "function" ? lvlV2For(liveClock().planDay) : true; } catch (e) { return true; } };
 const WAVE_WHEN = [["timer", "At a set time"], ["castle_hit", "When my castle is attacked"], ["castle_low", "When my castle drops below half"], ["hero_dies", "When my hero dies"], ["army_dead", "When all my soldiers die"], ["enemy_hero", "When an enemy hero dies"], ["ult", "When any ultimate is cast"]];
 const WAVE_TIMES = [20, 30, 45, 60, 75, 90, 120, 150];

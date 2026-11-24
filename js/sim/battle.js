@@ -550,6 +550,18 @@ function runBattle(plans, seed, opts = {}) {
   }
   const feudsNew = new Set(), betrayedBy = {}; // betrayedBy: victim -> the lords who bombed their keep in this battle
   const treachery = []; // bombs that went off: [betrayer, victim]
+  // betrayV2: the lord betrays their whole alliance. When the trigger comes the hero heads for the nearest allied keep; on arrival every bomb is planted at
+  // the same instant, so they all go off together.
+  function betrayAllStep(pid, p) {
+    const tg = Object.keys(p.betray || {}).filter(q => P[q] && P[q].alive && p.pacts.has(q) && P[q].castle && P[q].castle.hp > 0); if (!tg.length) return;
+    const alive = alivePlayers(), trig = p.betray[tg[0]], slot = betraySlotSecs(trig);
+    const ok = slot != null ? t >= slot : trig === "When 3 players remain" ? alive.length <= 3 : trig === "At the 2-minute mark" ? t >= 120 : trig === "When another lord is knocked out" ? order.some(q => q !== pid && !P[q].alive) : (t >= 90 || alive.length <= Math.ceil(order.length / 2));
+    if (ok && !p.armedAll) { p.armedAll = true; if (pid === mePid) log("Your hero heads for the nearest keep. The whole alliance falls at once.", "you"); }
+    if (!p.armedAll) return;
+    const hero = champOf(pid); if (!hero || !live(hero)) return;
+    const near = tg.slice().sort((a, b) => d(hero, P[a].castle) - d(hero, P[b].castle) || (a < b ? -1 : 1))[0]; p.armed = { [near]: true }; // the hero walks to the nearest keep (see the armed betrayal movement)
+    if (d(hero, P[near].castle) <= 2.2) tg.forEach(q => betray(pid, q));
+  }
   function betray(pid, target, quiet) {
     if (!P[pid].pacts.has(target)) return;
     { const kc = P[target].castle; if (!P[target].alive || !kc || kc.hp <= 0) return; } // keep already destroyed: nothing to betray
@@ -891,6 +903,7 @@ function runBattle(plans, seed, opts = {}) {
         }
         if (pid === mePid) log(`Your order: ${r.if.toLowerCase()} → ${r.then.toLowerCase()}.`, "you");
       });
+      if (p.betrayAll) { betrayAllStep(pid, p); return; } // betray the whole alliance at once
       Object.entries(p.betray || {}).forEach(([target, trig]) => {
         if (!P[target] || !P[target].alive || !p.pacts.has(target)) return;
         let ok = false;
@@ -898,6 +911,10 @@ function runBattle(plans, seed, opts = {}) {
         else if (trig === "When their castle drops below 30%") ok = P[target].castle.hp / P[target].castle.maxhp < .3;
         else if (trig === "At the 2-minute mark") ok = t >= 120;
         else if (trig === "Halfway through the battle") ok = t >= 90 || alive.length <= Math.ceil(order.length / 2);
+        else if (betraySlotSecs(trig) != null) ok = t >= betraySlotSecs(trig); // a time slot picked from the list
+        else if (trig === "When another lord is knocked out") ok = order.some(q => q !== pid && q !== target && !P[q].alive);
+        else if (trig === "When their army is gone") ok = t >= 10 && !ents.some(e => !e.dead && e.pid === target && e.kind === "unit" && !e.free && !e.militia && !e.merc);
+        else if (trig === "When their hero is away from home") { const th = champOf(target); ok = !!th && !th.dead && d(th, P[target].castle) > 8; }
         else if (trig === "When they attack my target") ok = t - (p.stolenT || -9) < 1.2;
         else if (trig === "When their hero drops below 30%") { const th = champOf(target); ok = !!th && !th.dead && th.hp / th.maxhp < .3; }
         else if (trig === "When their castle is under attack") ok = t - (P[target].castleHitT ?? -99) < 1;

@@ -123,7 +123,10 @@ async function registerMe() {
     toast(wasPending ? `You're registered as ${lordLabel(me)}!` : "Changes saved."); }
   catch (e) { console.warn("register failed", e); toast(e && e.code === "invalid_argument" ? "You can watch but not join. Ask the host to add you as an Editor." : `Couldn't save just now${e && e.code ? " (" + e.code + ")" : ""}. Try again.`); }
 }
-async function watchLiveBattle(dayKey, how) {
+// Fighting a saved battle again on this phone takes a second or so, so it is done ahead of time while the report is being read (see queueBattlePrep)
+// and kept for the moment the lord presses Watch or Highlights. Each prepared fight is used once.
+const LIVE_PREP = new Map(); let PREP_TIMER = null;
+function prepareLiveBattle(dayKey) {
   const week = addDays(dayKey, -(weekdayOf(dayKey) - 1)), before = {};
   Object.entries(LIVE.battles).forEach(([k, b]) => { if (b.week === week && k < dayKey) (b.results || []).forEach(r => { before[r.pid] = (before[r.pid] || 0) + r.points; }); });
   const saved = LIVE.battles[dayKey] && LIVE.battles[dayKey].inputs;
@@ -133,6 +136,22 @@ async function watchLiveBattle(dayKey, how) {
   if (saved && saved.feuds) plans.feuds = saved.feuds.slice();
   if (saved && LIVE.battles[dayKey].mercs) plans.mercs = LIVE.battles[dayKey].mercs;
   const res = runBattle(plans, daySeed(dayKey), { N: size, finalDay: final, ultV2: saved ? !!saved.ultV2 : ultV2For(dayKey), balV2: saved ? !!saved.balV2 : balV2For(dayKey), balV3: saved ? !!saved.balV3 : balV3For(dayKey), fairV1: saved ? !!saved.fairV1 : fairV1For(dayKey), pickV1: saved ? !!saved.pickV1 : pickV1For(dayKey), balV4: saved ? !!saved.balV4 : balV4For(dayKey), suddenV1: saved ? !!saved.suddenV1 : suddenV1For(dayKey), treesV1: saved ? !!saved.treesV1 : treesV1For(dayKey), heroV3: saved ? !!saved.heroV3 : heroV3For(dayKey), dayNo: saved ? saved.dayNo : weekdayOf(dayKey), ranks: (saved && saved.ranks) || rankMap(before, plans.map(p => p.pid)) , twist: saved ? saved.twist || null : wTwist(LIVE, dayKey) });
+  return { week, before, saved, plans, transfers, final, res, hash: (LIVE.battles[dayKey] || {}).resultHash };
+}
+function queueBattlePrep(dayKey) { // when the report is on screen and idle, fight the battle behind it
+  if (!isLive() || !dayKey || LIVE_PREP.has(dayKey) || !LIVE.battles[dayKey] || !LIVE.namesLoaded) return;
+  clearTimeout(PREP_TIMER); PREP_TIMER = setTimeout(() => { PREP_TIMER = null; try { if (!LIVE_PREP.has(dayKey) && LIVE.battles[dayKey] && !replay) LIVE_PREP.set(dayKey, prepareLiveBattle(dayKey)); } catch (e) { console.warn("battle prep", e); } }, 900);
+}
+// the same "Preparing the battle…" note for the practice game, whose fight also takes a moment
+function withPrepNote(fn) { const note = document.createElement("div"); note.className = "prepnote"; note.textContent = "Preparing the battle…"; document.body.appendChild(note); requestAnimationFrame(() => setTimeout(() => { try { fn(); } finally { note.remove(); } }, 30)); }
+async function watchLiveBattle(dayKey, how) {
+  let P = LIVE_PREP.get(dayKey); LIVE_PREP.delete(dayKey);
+  if (P && P.hash !== (LIVE.battles[dayKey] || {}).resultHash) P = null; // a battle of another war on the same date, or one that changed: fight it again
+  if (!P) { // not fought ahead: say so first and let the screen paint, so the button answers at once
+    const note = document.createElement("div"); note.className = "prepnote"; note.textContent = "Preparing the battle…"; document.body.appendChild(note);
+    await new Promise(r => requestAnimationFrame(() => setTimeout(r, 30)));
+    try { P = prepareLiveBattle(dayKey); } finally { note.remove(); } }
+  const { week, before, saved, plans, transfers, final, res } = P;
   { // the saved result is the official one; this device's replay must match it exactly, or what is shown would not be what was scored
     const want = saved && LIVE.battles[dayKey].resultHash, got = want && battleHash(res);
     if (want && got !== want) { console.warn("Daily Siege: this device replayed", dayKey, "differently", got, want); toast("This device replayed the battle differently from the official result. Scores shown are the official ones. Please tell the host."); if (window.DS && DS.reportMismatch) DS.reportMismatch(dayKey, got, want); } }
@@ -146,7 +165,7 @@ async function watchLiveBattle(dayKey, how) {
   res.dip = diplomacyReport(plans, carriedPairs(dayKey), res.hl, res.me);
   if (how === "play") { replay.done = false; render(); showIntro(introData(plans, carriedPairs(dayKey), liveYesterdayBets(dayKey), res.names, final), () => { if (replay) replay.playing = true; }); } else if (how === "reel") startReel(false); else open("results");
 }
-function openReportFor(k) { try { localStorage.setItem(seenKey(), k); } catch (e) {} reportBack = k; sheet = { type: "report", id: k }; render(); }
+function openReportFor(k) { try { localStorage.setItem(seenKey(), k); } catch (e) {} reportBack = k; sheet = { type: "report", id: k }; render(); queueBattlePrep(k); }
 const GAME_URL = () => { if (window.DS && DS.inviteUrl) return DS.inviteUrl(); let u = "https://claude.ai/artifact/7WwWgy4irntRjE6ep653Am"; try { if (/claude\.ai/.test(location.href)) u = location.href.split("#")[0]; } catch (e) {} return u; };
 function invitePanel(open) {
   return `<div class="sec lbox"><h3>Invite friends${open ? ` · ${open} seat${open === 1 ? "" : "s"} open` : ""}</h3>

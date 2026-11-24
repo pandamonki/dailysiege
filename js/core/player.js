@@ -152,8 +152,10 @@ function carriedPartners() { // players I was still allied with at the end of th
 }
 // an ally can't be put on the target list unless the pact is set to Betray (or Break) for this battle
 const allyShielded = id => !pactsEndToday() && carriedPartners().includes(id) && !(breakV2Now() ? ["betray"] : ["betray", "break"]).includes((S.pactAct || {})[id]); // breakV2: a disbanded ally still fights beside you tonight, so only a betrayal makes them a target
+// betray the whole alliance: on when there are two or more carried allies and the lord picked it (S.pactAll holds the trigger)
+const betrayAllOn = () => !!(S && S.pactAll && betrayV2Now() && carriedPartners().length >= 2 && !pactsEndToday());
 function pactPlan() { // what I've decided about each carried alliance: keep, break at the start, or betray when the set condition is met
-  const breaks = [], pbetray = {};
-  carriedPartners().forEach(id => { const a = (S.pactAct || {})[id]; if (a === "break") breaks.push(id); else if (a === "betray") pbetray[id] = (S.pactWhen || {})[id] || BETRAY_WHEN[0]; });
-  return { breaks, pbetray };
+  const breaks = [], pbetray = {}, all = betrayAllOn();
+  carriedPartners().forEach(id => { const a = (S.pactAct || {})[id]; if (a === "break") breaks.push(id); else if (all) pbetray[id] = S.pactAll; else if (a === "betray") pbetray[id] = (S.pactWhen || {})[id] || betrayDefault(); });
+  return { breaks, pbetray, ...(all ? { betrayAll: true } : {}) };
 }

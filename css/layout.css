@@ -199,3 +199,5 @@ html, body { overflow: hidden; overscroll-behavior: none; }
 #ctrack .ct.down svg { filter: grayscale(1) brightness(.55); opacity: .7; }
 #ctrack .ct.down::after { content: ""; position: absolute; inset: -1px; background: linear-gradient(45deg, transparent 44%, #e0392b 44% 56%, transparent 56%), linear-gradient(-45deg, transparent 44%, #e0392b 44% 56%, transparent 56%); }
 .ugrid.tpick { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; margin: 6px 0; } .ugrid.tpick .ucard { padding: 4px 1px; } .ugrid.tpick .ucard b { font-size: 11px; } /* tower upgrade picker: all five Lv3 towers on one row */
+
+.prepnote { position: fixed; left: 50%; top: 42%; transform: translateX(-50%); z-index: 120; padding: 12px 22px; border-radius: 10px; background: rgba(20,12,6,.92); color: #f3e6c8; border: 2px solid #c9962f; font: 700 18px Alegreya, Georgia, serif; pointer-events: none; }

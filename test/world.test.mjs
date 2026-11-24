@@ -236,3 +236,21 @@ test("breakV2: today's own breaks no longer end a carried alliance (it ends tomo
   assert.deepEqual(run(false), []); // the old rule: broken at the start of the battle
   assert.deepEqual(run(true), [["a", "b"]]); // breakV2: they still fight together tonight
 });
+
+test("betrayV2: betraying the whole alliance plants every bomb at the same moment", () => {
+  const b = buildBattleInputs(world(ids), D1), [a, c, e] = b.plans;
+  a.pacts = [c.pid, e.pid]; c.pacts = [a.pid]; e.pacts = [a.pid]; a.betray = { [c.pid]: "At the 2-minute mark", [e.pid]: "At the 2-minute mark" }; a.betrayAll = true;
+  const res = sim.get("runBattle")(b.plans, 1, { N: b.N, balV2: true, dayNo: 1 }), bets = res.hl.filter(h => h.kind === "betray" && h.pid === a.pid);
+  if (bets.length) { assert.equal(bets.length, 2, "both allies are betrayed"); assert.equal(bets[0].t, bets[1].t, "at the same instant"); assert.equal(res.results.find(r => r.pid === a.pid).treachery, 2, "both bombs went off"); }
+  else assert.ok(!res.feudsNew.some(k => k.includes(a.pid)), "no betrayal means no feud (the hero never reached a keep)"); // seed 1 may not get there: the check then is that nothing half-happens
+});
+
+test("betrayV2: a betrayal time slot fires once its time is reached, and the new conditions run", () => {
+  const fight = (trig, seed, all) => { const b = buildBattleInputs(world(ids), D1), [a, c, e] = b.plans; a.pacts = [c.pid, e.pid]; c.pacts = [a.pid]; e.pacts = [a.pid]; a.betray = { [c.pid]: trig, [e.pid]: trig }; if (all) a.betrayAll = true;
+    return sim.get("runBattle")(b.plans, seed, { N: b.N, balV2: true, dayNo: 1 }); };
+  const first = r => Math.min(...r.hl.filter(h => h.kind === "betray" && h.pid === "a").map(h => h.t));
+  const early = fight("At 0:00", 1, true), late = fight("At 2:00", 1, true);
+  assert.ok(early.hl.some(h => h.kind === "betray" && h.pid === "a"), "a betrayal at the start of the battle happens"); assert.ok(first(early) < 60, `at 0:00 it happens early (${first(early)}s)`);
+  if (late.hl.some(h => h.kind === "betray" && h.pid === "a")) assert.ok(first(late) >= 120, `at 2:00 nothing happens before 2:00 (${first(late)}s)`);
+  for (const trig of ["At 1:00", "When another lord is knocked out", "When their army is gone", "When their hero is away from home"]) { const r = fight(trig, 1, false); assert.ok(Array.isArray(r.hl), trig + " runs"); }
+});

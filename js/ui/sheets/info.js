@@ -209,6 +209,14 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "v1.22: betray the whole alliance and faster replays", date: "24 Nov", fixes: [
+    "Watch replay and Highlights no longer pause for a second before starting: the battle is fought in the background while the report is open, and a Preparing the battle note shows at once if it is not ready.",
+  ], balance: [
+    "From the 26 Nov battle (betrayV2): the betrayal time is picked from time slots (0:00 to 2:30 into the battle, like the wave deadlines) or conditions: another lord knocked out, their army gone, their hero away from home.",
+    "From the 26 Nov battle (betrayV2): a lord with two or more carried allies can betray the whole alliance at once. The hero goes to the nearest allied keep and bombs are planted in every allied keep at the same moment.",
+  ], changes: [
+    "The betrayal banner names every lord betrayed.",
+  ] },
   { v: "v1.21: highlights, betrayals and disbanding", date: "24 Nov", fixes: [
     "Highlights: only ultimates that killed a hero or 4 or more soldiers are shown, the best three, each framed to hold the hero and the impact zone, and every clip is at least 4 seconds. The reel ends on the Final placings.",
     "The betrayal banner now pauses the replay, names the betrayer and the betrayed in their colours, and cuts to the hero planting the bomb and the castle blowing up before returning to your camera.",
