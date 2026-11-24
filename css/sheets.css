@@ -236,7 +236,7 @@ button.rrow { width: 100%; text-align: left; font: inherit; color: inherit; curs
 .rsum { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 2px 0 8px; }
 .rsum b { font-family: var(--f-display); font-size: 26px; font-weight: 400; color: var(--wax); line-height: 1; }
 .rsum span { font-size: 14px; color: var(--ink-soft); }
-.rbtns { margin: 0 0 8px; gap: 6px; } .rbtns .btn { padding: 7px 8px; font-size: 16px; }
+.rbtns { margin: 0 0 8px; gap: 6px; } .rbtns .btn { padding: 7px 8px; font-size: 16px; } .rbtns .wide { grid-column: 1 / -1; }
 .daychips { margin-bottom: 6px; }
 .rrow { padding: 5px 8px; margin-bottom: 4px; gap: 2px 8px; }
 .rrow .rk, .wrow .rk { font-size: 18px; } .rrow .pts { font-size: 17px; } .rrow .pts small { display: none; }

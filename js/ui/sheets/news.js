@@ -4,6 +4,10 @@
 // the id is remembered on their device, so changing the id is all it takes to show it again.
 // Only major changes players will notice, in two to five items. Fixes, tidy-ups and small balance tweaks don't belong here.
 const RELEASES = [
+  { id: "1.23", title: "What's new in v1.23", sub: "Share the day with your group chat", items: [
+    ["Share the day", "The battle report has a Share the day button: a picture of the winner, the biggest upset, any betrayal and how the standings moved."],
+    ["Send it anywhere", "It opens your phone's share sheet with a few lines of text to go with the picture."],
+  ] },
   { id: "1.22", title: "What's new in v1.22", sub: "Betray the whole alliance, and replays that start at once", items: [
     ["Betray the whole alliance", "From 26 Nov, with two or more allies you can betray them all at once: one trigger, and bombs in every allied keep go off together."],
     ["Pick the betrayal time", "Choose a time slot like the wave deadlines (0:00 to 2:30 into the fight, before sudden death), or a condition such as their army being gone or their hero away from home."],

@@ -79,7 +79,7 @@ function reportSheet(id) {
   const sorted = d.results.slice().sort((a, b) => a.place - b.place || b.points - a.points), gain = d.gain[me] || 0;
   return head(null, `Day ${d.day} report`, d.team ? "Allies won the Daily Siege together" : "The battle has been fought") + `<div class="body">
     ${dayChips(id, d)}
-    ${mine ? `<div class="rhead"><div class="rsum"><b>${mine.place === 1 ? (d.team ? "Victory, together" : "Victory") : ord(mine.place) + " of " + d.results.length}</b><span>${mine.points} pt${mine.points === 1 ? "" : "s"} · +${d.gold[me] != null ? d.gold[me] : (mine.gold || 0)}g${gain ? ` · +${gain} lvl` : ""}</span></div>` : `<div class="rhead"><p class="muted">You weren't in this battle.</p>`}<div class="rbtns"><button class="btn wax" data-act="rwatch" data-v="${id}">▶ Watch</button><button class="btn wood" data-act="rreelm" data-v="${id}">★ Highlights</button></div></div>
+    ${mine ? `<div class="rhead"><div class="rsum"><b>${mine.place === 1 ? (d.team ? "Victory, together" : "Victory") : ord(mine.place) + " of " + d.results.length}</b><span>${mine.points} pt${mine.points === 1 ? "" : "s"} · +${d.gold[me] != null ? d.gold[me] : (mine.gold || 0)}g${gain ? ` · +${gain} lvl` : ""}</span></div>` : `<div class="rhead"><p class="muted">You weren't in this battle.</p>`}<div class="rbtns"><button class="btn wax" data-act="rwatch" data-v="${id}">▶ Watch</button><button class="btn wood" data-act="rreelm" data-v="${id}">★ Highlights</button><button class="btn small wide" data-act="rshare" data-v="${id}">Share the day</button></div></div>
     ${boardHTML(d, sorted, me, nm)}
     ${weekHTML(d, me, nm)}
     ${awardsHTML(d.awards, nm)}
@@ -209,6 +209,9 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "v1.23: share the day", date: "24 Nov", fixes: [], balance: [], changes: [
+    "The battle report has a Share the day button: a picture and a few lines about the day's battle to send to your group chat.",
+  ] },
   { v: "v1.22: betray the whole alliance", date: "24 Nov", fixes: [], balance: [], changes: [
     "From the 26 Nov battle, with two or more allies you can betray them all at once: bombs go off in every allied keep together.",
     "The betrayal time is picked from time slots (0:00 to 2:30 into the battle) or conditions, like their army being gone.",
