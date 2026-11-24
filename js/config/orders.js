@@ -66,7 +66,8 @@ let BETRAY_V2_FROM = "2026-11-26"; const betrayV2For = d => String(d) >= BETRAY_
 const betrayV2Now = () => { try { return typeof isLive === "function" && isLive() && typeof liveClock === "function" ? betrayV2For(liveClock().planDay) : false; } catch (e) { return false; } };
 // betrayV2 triggers: the time is picked from slots, like the wave deadlines ("At 1:30"), next to conditions that react to the ally. "At the 2-minute mark" and
 // "Halfway through the battle" still work in orders saved before.
-const BETRAY_SLOTS = [0, 30, 60, 90, 120, 150, 180].map(s => `At ${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`), BETRAY_SLOT_RE = /^At (\d+):(\d\d)$/;
+// the last slot is 2:30: sudden death starts at 3:00 (SD_AT), when the castles drop out of the fight and nobody can walk to a keep
+const BETRAY_SLOTS = [0, 30, 60, 90, 120, 150].map(s => `At ${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`), BETRAY_SLOT_RE = /^At (\d+):(\d\d)$/;
 const betraySlotSecs = trig => { const m = BETRAY_SLOT_RE.exec(trig || ""); return m ? +m[1] * 60 + +m[2] : null; };
 const BETRAY_WHEN_V2 = [...BETRAY_SLOTS, "When 3 players remain", "When another lord is knocked out", "When their castle drops below 30%", "When their castle is under attack", "When their army is gone", "When their hero is away from home", "When they attack my target", "When their hero drops below 30%", "When their hero has fallen"];
 const betrayWhenList = () => (betrayV2Now() ? BETRAY_WHEN_V2 : BETRAY_WHEN);

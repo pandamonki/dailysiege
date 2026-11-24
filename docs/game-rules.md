@@ -293,7 +293,7 @@ practice games always stamp all of them (`js/sim/plans.js`).
   on more than one ally: each armed betrayal sends the hero to that keep, so the bombs go off one after another. From 26 Nov (`betrayV2`) a lord with two or more carried allies can instead choose
   **Betray the whole alliance** (Alliances > Betray all; trigger: halfway, 3 players left or the 2-minute mark): the hero heads for the nearest
   allied keep and, on arriving, a bomb is planted in every allied keep at the same instant so they all go off together (`betrayAllStep` in
-  `js/sim/battle.js`, plan field `betrayAll`). It makes every ally a bitter enemy at once. From 26 Nov the Betray when list is picked like the wave deadlines: a time slot (At 0:00, 0:30, 1:00, 1:30, 2:00, 2:30 or 3:00)
+  `js/sim/battle.js`, plan field `betrayAll`). It makes every ally a bitter enemy at once. From 26 Nov the Betray when list is picked like the wave deadlines: a time slot (At 0:00, 0:30, 1:00, 1:30, 2:00 or 2:30: battle time, so 0:00 is the start of the fight; there is no slot at 3:00 because sudden death starts then and the castles are out of the fight)
   or a condition (3 players remain, another lord is knocked out, their castle drops below 30% or is under attack, their army is gone, their hero
   is away from home, they attack my target, their hero drops below 30% or has fallen). The old Halfway and 2-minute mark still work in saved orders.
   The betrayer scores

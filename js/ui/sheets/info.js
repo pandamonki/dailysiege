@@ -212,7 +212,7 @@ const PATCHES = [
   { v: "v1.22: betray the whole alliance and faster replays", date: "24 Nov", fixes: [
     "Watch replay and Highlights no longer pause for a second before starting: the battle is fought in the background while the report is open, and a Preparing the battle note shows at once if it is not ready.",
   ], balance: [
-    "From the 26 Nov battle (betrayV2): the betrayal time is picked from time slots (0:00 to 3:00, like the wave deadlines) or conditions: another lord knocked out, their army gone, their hero away from home.",
+    "From the 26 Nov battle (betrayV2): the betrayal time is picked from time slots (0:00 to 2:30 into the battle, like the wave deadlines) or conditions: another lord knocked out, their army gone, their hero away from home.",
     "From the 26 Nov battle (betrayV2): a lord with two or more carried allies can betray the whole alliance at once. The hero goes to the nearest allied keep and bombs are planted in every allied keep at the same moment.",
   ], changes: [
     "The betrayal banner names every lord betrayed.",
