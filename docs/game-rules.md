@@ -205,6 +205,12 @@ practice games always stamp all of them (`js/sim/plans.js`).
 - Watch replay and Highlights: the battle is fought again on the phone, which takes about a second, so it is done in the background while the
   report is on screen and kept for the button. If it is not ready, a "Preparing the battle…" note appears at once while it runs.
 
+- Share the day (battle report, under Watch and Highlights; `js/ui/share.js`): builds a 1080 × 1350 picture and a few lines of text
+  from the saved battle: the day's winner (or the allies who won together) with their hero, the biggest upset (a lord who came into the
+  day at least 3 places lower and finished in the top three), each betrayal whose bomb went off and whom it hit, the most kills, and the
+  war's standings with each lord's move since the day before (the sharer's row is highlighted). It opens the phone's share sheet; where
+  that isn't available it saves the picture and copies the text.
+
 - Pre-battle screen ("The houses gather"): a line says whether you have allies; then each alliance is a coloured side with a header
   ("Your alliance" or "Alliance of X", lord count, new today / held from yesterday / grew today), separated by VS, then the lone lords
   ("Lone wolf" when exactly one stands alone). Team colours come from `allianceGroups` in `js/replay/flow.js`.

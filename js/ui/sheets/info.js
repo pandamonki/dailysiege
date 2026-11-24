@@ -79,7 +79,7 @@ function reportSheet(id) {
   const sorted = d.results.slice().sort((a, b) => a.place - b.place || b.points - a.points), gain = d.gain[me] || 0;
   return head(null, `Day ${d.day} report`, d.team ? "Allies won the Daily Siege together" : "The battle has been fought") + `<div class="body">
     ${dayChips(id, d)}
-    ${mine ? `<div class="rhead"><div class="rsum"><b>${mine.place === 1 ? (d.team ? "Victory, together" : "Victory") : ord(mine.place) + " of " + d.results.length}</b><span>${mine.points} pt${mine.points === 1 ? "" : "s"} · +${d.gold[me] != null ? d.gold[me] : (mine.gold || 0)}g${gain ? ` · +${gain} lvl` : ""}</span></div>` : `<div class="rhead"><p class="muted">You weren't in this battle.</p>`}<div class="rbtns"><button class="btn wax" data-act="rwatch" data-v="${id}">▶ Watch</button><button class="btn wood" data-act="rreelm" data-v="${id}">★ Highlights</button></div></div>
+    ${mine ? `<div class="rhead"><div class="rsum"><b>${mine.place === 1 ? (d.team ? "Victory, together" : "Victory") : ord(mine.place) + " of " + d.results.length}</b><span>${mine.points} pt${mine.points === 1 ? "" : "s"} · +${d.gold[me] != null ? d.gold[me] : (mine.gold || 0)}g${gain ? ` · +${gain} lvl` : ""}</span></div>` : `<div class="rhead"><p class="muted">You weren't in this battle.</p>`}<div class="rbtns"><button class="btn wax" data-act="rwatch" data-v="${id}">▶ Watch</button><button class="btn wood" data-act="rreelm" data-v="${id}">★ Highlights</button><button class="btn small wide" data-act="rshare" data-v="${id}">📤 Share the day</button></div></div>
     ${boardHTML(d, sorted, me, nm)}
     ${weekHTML(d, me, nm)}
     ${awardsHTML(d.awards, nm)}
@@ -209,6 +209,9 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "v1.23: share the day", date: "24 Nov", changes: [
+    "The battle report has a Share the day button: it makes a picture of the day (the winner and their hero, the biggest upset, any betrayal, the most kills and how the war's standings moved) with a few lines of text, and opens your phone's share sheet so you can post it in the group chat. Where sharing isn't available, the picture is saved and the text copied.",
+  ] },
   { v: "v1.22: betray the whole alliance and faster replays", date: "24 Nov", fixes: [
     "Watch replay and Highlights no longer pause for a second before starting: the battle is fought in the background while the report is open, and a Preparing the battle note shows at once if it is not ready.",
   ], balance: [
