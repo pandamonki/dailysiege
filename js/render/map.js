@@ -97,8 +97,9 @@ function paintBackground() {
     c.fillStyle = "#8f8b82"; c.fillRect(sx - u * 2 + u * .5, sy - u * 7 + u * .5, u * 3, u * 7); c.fillStyle = "#b8b4a8"; c.fillRect(sx - u * 2 + u * .5, sy - u * 7 + u * .5, u, u * 7); c.fillStyle = "#c9c5b9"; c.fillRect(sx - u * 2 + u * .5, sy - u * 7 + u * .5, u * 3, u);
   }
   // your deployment field: tinted tiles with a dashed fence along its outer edge
+  const ZT = zoneV1Now() ? { guard: "rgba(138,92,240,.34)", left: "rgba(224,69,58,.3)", front: "rgba(41,198,232,.3)", right: "rgba(242,182,50,.34)" } : null; // zones v1: each zone tinted in its colour (ZONE_COL)
   zoneSet.forEach(k => { const [r, q] = k.split(",").map(Number);
-    c.fillStyle = "rgba(255,236,170,.10)"; c.fillRect(q * ts, r * ts, ts, ts);
+    c.fillStyle = ZT ? ZT[(z => (z === "left" || z === "right") && !myNeighbour(z) ? "front" : z)(myZone(r, q))] : "rgba(255,236,170,.10)"; c.fillRect(q * ts, r * ts, ts, ts);
     c.strokeStyle = "rgba(255,236,170,.18)"; c.lineWidth = 1; c.strokeRect(q * ts + .5, r * ts + .5, ts - 1, ts - 1);
     c.strokeStyle = "#6b4527"; c.lineWidth = ts * .06; c.setLineDash([ts * .18, ts * .1]);
     [[-1, 0, 0, 0, 1, 0], [1, 0, 0, 1, 1, 1], [0, -1, 0, 0, 0, 1], [0, 1, 1, 0, 1, 1]].forEach(([dr, dc, x0, y0, x1, y1]) => {
@@ -308,7 +309,38 @@ function arrow(x1, y1, x2, y2, color, w, alpha, t) {
   ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(ex + bx * w * 2.2, ey + by * w * 2.2); ctx.lineTo(ex - by * w * 1.8, ey + bx * w * 1.8); ctx.lineTo(ex + by * w * 1.8, ey - bx * w * 1.8); ctx.fill();
   ctx.restore();
 }
+// zones v1: a dashed, moving line along a route (tile coordinates [x, y]), with an arrowhead at the end, or a ring where it holds
+function routeLine(pts, color, t, hold) {
+  if (pts.length < 2) return; const P2 = pts.map(([x, y]) => [x * ts, y * ts]), w = ts * .09;
+  ctx.save(); ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.globalAlpha = .9;
+  // a rounded path: straight to the first corner's midpoint, a curve round each corner, straight on to the end
+  const path = () => { ctx.beginPath(); ctx.moveTo(...P2[0]); for (let i = 1; i < P2.length - 1; i++) { const [x, y] = P2[i], [nx, ny] = P2[i + 1]; ctx.quadraticCurveTo(x, y, (x + nx) / 2, (y + ny) / 2); } ctx.lineTo(...P2[P2.length - 1]); };
+  ctx.strokeStyle = "rgba(20,12,6,.75)"; ctx.lineWidth = w * 2; path(); ctx.stroke(); // a dark backing so the route reads on grass
+  ctx.strokeStyle = color; ctx.lineWidth = w; ctx.setLineDash([ts * .3, ts * .2]); ctx.lineDashOffset = -t * ts * .8; path(); ctx.stroke(); ctx.setLineDash([]);
+  const [ex, ey] = P2[P2.length - 1], [px, py] = P2.length > 2 ? [(P2[P2.length - 2][0] + ex) / 2, (P2[P2.length - 2][1] + ey) / 2] : P2[P2.length - 2], L = Math.hypot(ex - px, ey - py) || 1, bx = (ex - px) / L, by = (ey - py) / L;
+  ctx.fillStyle = color; ctx.beginPath();
+  if (hold) { ctx.arc(ex, ey, ts * .22, 0, 7); ctx.strokeStyle = "rgba(20,12,6,.75)"; ctx.lineWidth = w * 2; ctx.stroke(); ctx.strokeStyle = color; ctx.lineWidth = w; ctx.stroke(); }
+  else { ctx.moveTo(ex + bx * w * 2.2, ey + by * w * 2.2); ctx.lineTo(ex - by * w * 1.9, ey + bx * w * 1.9); ctx.lineTo(ex + by * w * 1.9, ey - bx * w * 1.9); ctx.fill(); }
+  ctx.restore();
+}
+// zones v1: each zone's route from my deploy field, as the battle walks it: the Front out through my gate and in through the target's gate
+// (or to the hill), each raiding flank along the side to its neighbour, each screening flank to the spot it holds. The Guard stays home.
+function drawZoneRoutes(t) {
+  const j = myJobs(), st = S.strategy || {}, fl = cleanFlanks(st.flanks), mid = N / 2, cpt = rc => [rc[1] + .5, rc[0] + .5];
+  const TG = treeGeom(RIVALS.length + 1, N), gr = TG.clumps.length ? Math.max(CTR_R + .8, Math.min(...TG.clumps.map(c => Math.hypot(c.x - TG.cc, c.y - TG.cc) - c.r)) - RING_GAP) : null;
+  const gate = rc => { const [x, y] = cpt(rc), dx = mid - x, dy = mid - y, L = Math.hypot(dx, dy) || 1, k = gr != null ? Math.max(0, L - gr) : Math.min(GATE_OUT, L * .6); return [x + dx / L * k, y + dy / L * k]; };
+  const zc = z => { const tl = [...zoneSet].map(k => k.split(",").map(Number)).filter(([r, q]) => { let zz = myZone(r, q); if ((zz === "left" || zz === "right") && !myNeighbour(zz)) zz = "front"; return zz === z; }); if (!tl.length) return null; return [tl.reduce((s, a) => s + a[1], 0) / tl.length + .5, tl.reduce((s, a) => s + a[0], 0) / tl.length + .5]; };
+  const used = z => j[z] > 0 || j.hero === z || (S.garrison || []).some((w, i) => waveOpen(i) && (ZONES.includes(w.zone) ? w.zone : "front") === z);
+  if (used("front")) { const from = zc("front"), me = gate(CASTLE);
+    if ((FRONT_PLANS.includes(st.front) ? st.front : "assault") === "hill") routeLine([from, me, [mid, mid]], ZONE_COL.front, t, true);
+    else { const r = RIVALS.find(x => x.id === (S.lists.hostile || [])[0]); if (r) { const c = cpt(r.pos), g = gate(r.pos);
+      routeLine(Math.hypot(me[0] - g[0], me[1] - g[1]) < 1 ? [from, me, c] : [from, me, g, c], ZONE_COL.front, t); } } }
+  ["left", "right"].forEach(side => { const r = myNeighbour(side); if (!r || !used(side)) return; const from = zc(side), c = cpt(r.pos);
+    if (fl[side] === "raid") routeLine([from, c], ZONE_COL[side], t);
+    else { const [x0, y0] = cpt(CASTLE), dx = c[0] - x0, dy = c[1] - y0, L = Math.hypot(dx, dy) || 1, k = Math.min(SCREEN_OUT, L / 2); routeLine([from, [x0 + dx / L * k, y0 + dy / L * k]], ZONE_COL[side], t, true); } });
+}
 function drawOrderArrows(t) {
+  if (zoneV1Now()) { drawZoneRoutes(t); return; }
   const [zx, zy] = zoneCentre(), tgt = id => RIVALS.find(r => r.id === id), hd = S.strategy ? S.strategy.heading : "near";
   // where the army heads: their hero or their castle, per the Strategy tab
   const aim = r => { if (hd === "hero") { const h = RARMY.find(u => u.rid === r.id && u.champ); if (h) return [(h.c + .5) * ts, (h.r + .5) * ts]; } return [(r.pos[1] + .5) * ts, (r.pos[0] + .3) * ts]; };

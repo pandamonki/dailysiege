@@ -80,7 +80,7 @@ const WAVE_ORDERS = [["default", "Default orders", "Each soldier follows its gro
 const WAVE_DEFAULT = [{ when: "castle_hit", at: 45 }, { when: "hero_dies", at: 90 }, { when: "timer", at: 150 }];
 function cleanWaves(w) { // exactly WAVE_COUNT waves; unknown conditions fall back to the default; at most WAVE_SLOTS soldiers each (never a mercenary)
   return [...Array(WAVE_COUNT)].map((_, i) => { const x = Array.isArray(w) && w[i] || {}, d = WAVE_DEFAULT[i];
-    return { when: WAVE_WHEN.some(o => o[0] === x.when) ? x.when : d.when, at: WAVE_TIMES.includes(+x.at) ? +x.at : d.at, order: WAVE_ORDERS.some(o => o[0] === x.order) ? x.order : "default", rush: x.rush !== false, // rush: may this wave rush out in an emergency (missing = yes)
+    return { when: WAVE_WHEN.some(o => o[0] === x.when) ? x.when : d.when, at: WAVE_TIMES.includes(+x.at) ? +x.at : d.at, order: WAVE_ORDERS.some(o => o[0] === x.order) ? x.order : "default", rush: x.rush !== false, ...(ZONES.includes(x.zone) ? { zone: x.zone } : {}), // rush: may this wave rush out in an emergency (missing = yes)
       units: (Array.isArray(x.units) ? x.units : []).filter(u => u && UNITS[u.type] && !UNITS[u.type].merc).slice(0, WAVE_SLOTS).map(u => ({ type: u.type, lvl: Math.max(1, Math.min(3, Math.round(u.lvl) || 1)), id: u.id || null, hp: 1 })) }; });
 }
 
@@ -93,3 +93,47 @@ const ARMY_PLAN_INFO = { conquest: ["Conquest", "Hero, then army, then castle. T
 const FALL_BACK_INFO = { none: ["Never", "Never turn back"], castle: ["Castle under attack", "3+ enemies at your castle"], siege: ["Siege engine nears", "A ram, catapult or powder cart nears"],
   herodies: ["Hero falls", "Until your hero is back up"], heroback: ["Hero falls back", "Go home with your hero"] };
 const CASTLE_ALERT_N = 3, TERRITORY_R = 5, FALLBACK_LINGER = 4, SIEGE_REACH = 1.5; // enemies at the castle (within 3 tiles) that count as an attack; how near an engine is "in your land"; seconds the army stays home after the danger passes; how close an enemy must be for a siege army to stop for it
+// Zones v1 (plans stamped zoneV1, battles from ZONE_V1_FROM; practice always): where a soldier (or the hero) is placed sets its job for the battle.
+// The deploy field splits into four zones, seen from the castle looking at the hill: Guard (the tiles round the castle), the Front (straight ahead),
+// and the Left and Right flanks. The Front marches on the #1 target by its plan; each flank screens its side or raids the neighbour on that side;
+// the Guard stays home. Each wave picks a zone too. One army temper replaces the hero stance and the fall-back condition.
+// The prototype date is far off, so only practice uses these rules until a real start date is chosen.
+// Fixed timing (plans stamped timeV1, battles from TIME_V1_FROM; practice always): a fighter's wait before its first swing, and a hero's opening
+// skill cooldowns, no longer come from the battle's dice. They are spread by the fighter's place in the line-up instead, so the same orders against
+// the same rivals give (nearly) the same battle, and only the real percentage chances (dodges, crits, misses, procs) stay random.
+let TIME_V1_FROM = "2099-01-01"; const timeV1For = d => String(d) >= TIME_V1_FROM;
+const fixedFrac = k => { const x = k * .6180339887498949; return x - Math.floor(x); }; // an even spread in [0, 1) by place, the same on every device
+let ZONE_V1_FROM = "2099-01-01"; const zoneV1For = d => String(d) >= ZONE_V1_FROM;
+const ZONES = ["guard", "left", "front", "right"], ZONE_INFO = { guard: ["Guard", "Stays at home and defends the castle"], left: ["Left flank", "Holds or raids your left side"], front: ["Front", "Marches on your #1 target"], right: ["Right flank", "Holds or raids your right side"] };
+const ZONE_COL = { guard: "#8a5cf0", left: "#e0453a", front: "#29c6e8", right: "#f2b632" }; // purple, red, cyan, amber: easy to tell apart, and none of them green like the grass
+const ZONE_INK = { guard: "#6a3fd0", left: "#b8322a", front: "#127a91", right: "#9a6a0c" }; // the same, dark enough for words on parchment
+const ZONE_GUARD_R = 1.5, ZONE_FRONT_A = .5; // tiles from the castle that count as Guard; how far (radians) either side of straight ahead still counts as the Front
+const FRONT_PLANS = ["assault", "siege", "hunt", "hill"], FRONT_INFO = { assault: ["Assault", "Fights whatever it meets on the way to your target"], siege: ["Siege", "Slips past armies and goes for the castle"], hunt: ["Hero hunt", "Goes for heroes first"], hill: ["Hold the hill", "Takes the hill and holds it until 2:00, then marches on your target"] };
+const FRONT_BEATS = { hill: "assault", assault: "hunt", hunt: "siege", siege: "hill" }; // the loop: a Front fighting a Front its plan beats deals FRONT_BEAT_X damage
+const FRONT_BEAT_X = 1.25, FRONT_ARMY = { assault: "conquest", siege: "siege", hunt: "hunt", hill: "conquest" }; // which orders-v2 army plan each Front plan fights by
+const FLANK_PLANS = ["screen", "raid"], FLANK_INFO = { screen: ["Screen", "Stops raiders from that side, then pushes on to that neighbour once it has been quiet for a while"], raid: ["Raid", "Goes straight for the neighbour's castle on that side"] };
+const SCREEN_OUT = 4.5, SCREEN_R = 4, SCREEN_QUIET = 20, SCREEN_MIN = 60; // a screen holds this far out toward its neighbour, fights what comes within SCREEN_R of that spot, and pushes on once nothing has come for SCREEN_QUIET seconds (not before SCREEN_MIN)
+const TEMPERS = ["reckless", "steady", "wary"], TEMPER_INFO = { reckless: ["Reckless", "+15% damage, 15% more damage taken, never falls back"], steady: ["Steady", "No change; the army falls back if the castle is attacked"], wary: ["Wary", "10% less damage, 20% less damage taken, falls back early"] };
+const TEMPER_DMG = { reckless: 1.15, steady: 1, wary: .9 }, TEMPER_TAKEN = { reckless: 1.15, steady: 1, wary: .8 }, TEMPER_STANCE = { reckless: "aggressive", steady: "skirmish", wary: "cautious" }, TEMPER_FALLBACK = { reckless: "none", steady: "castle", wary: "castle" }, TEMPER_ALERT = { reckless: 99, steady: 3, wary: 2 };
+const RING_FAR = 3, RING_CLEAR = 3.2, RING_R = 6, RING_STEP = .6, RING_GAP = .8, STUCK_SECS = 2; // a flank heading for a far target (not its neighbour), whose straight way passes within RING_CLEAR of the hill,
+// walks round the outside instead (RING_GAP beyond the tree clumps between bases; RING_R without trees), aiming RING_STEP radians at a time. The Front goes straight. A soldier that has tried to walk for STUCK_SECS without getting anywhere may step through its own side's fence
+const GATE_OUT = 4.5, GATE_CONE = .6; // the Front marches out through its own gate (on the road toward the hill, just inside the tree clumps between bases; GATE_OUT tiles out
+// without trees), on to the target castle's gate, and in along that castle's road. GATE_CONE: how far off straight ahead a goal must be before it leaves by its gate
+const GUARD_LEASH = 7; // a Guard soldier that has chased this far from its castle drops the chase and walks home
+const HILL_PTS = 2, HILL_MIN = 10; // the lord who held the hill longest (at least HILL_MIN seconds) scores this, times the day's weight
+// (hyp and datan2 come from core/util.js and core/detmath.js, so every device classifies the same way)
+// the zone of a deploy tile for a castle at [cr, cc] on an n-by-n field
+function zoneOfTile(cr, cc, r, c, n) {
+  const dr = r - cr, dc = c - cc; if (hyp(dr, dc) <= ZONE_GUARD_R) return "guard";
+  const ctr = (n - 1) / 2, fwd = datan2(ctr - cr, ctr - cc); let a = datan2(dr, dc) - fwd;
+  while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI;
+  return a > ZONE_FRONT_A ? "right" : a < -ZONE_FRONT_A ? "left" : "front";
+}
+// the neighbour on one side of a castle: the nearest castle whose bearing (looking at the hill) is to that side. castles: [[r, c], ...]
+function flankNeighbour(castles, i, side, n) {
+  const [cr, cc] = castles[i], ctr = (n - 1) / 2, fwd = datan2(ctr - cr, ctr - cc); let best = -1, bd = 1e9;
+  castles.forEach(([r, c], k) => { if (k === i) return; let a = datan2(r - cr, c - cc) - fwd; while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI;
+    if ((side === "right") !== (a > 0)) return; const dd = Math.round(hyp(r - cr, c - cc) * 1e6); if (dd < bd) { bd = dd; best = k; } });
+  return best;
+}
+const cleanFlanks = f => ({ left: FLANK_PLANS.includes(f && f.left) ? f.left : "screen", right: FLANK_PLANS.includes(f && f.right) ? f.right : "screen" });

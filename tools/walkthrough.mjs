@@ -100,6 +100,18 @@ for (const name of engines) {
     if ((await js(() => S.walls.length)) - n0 < 2) throw new Error("walls were not built"); });
   await step("set the army plan and fall-back", async () => { await closeAll(); await tap('#cmdbar [data-act="openorders"]'); await tap('#sheet .tabs button:has-text("Strategy")');
     if (await page.locator('#sheet [data-act="aplan"]').count()) { await tap('#sheet [data-act="aplan"][data-v="hunt"]'); await tap('#sheet [data-act="fback"][data-v="castle"]'); if (!(await js(() => S.strategy.plan === "hunt" && S.strategy.fallback === "castle"))) throw new Error("orders did not stick"); } await closeAll(); });
+  await step("zones: the Front plan, both flanks and the temper reach the battle plan, and each wave picks a zone", async () => { await closeAll(); if (!(await js(() => zoneV1Now()))) return;
+    await tap('#cmdbar [data-act="openorders"]'); await tap('#sheet .tabs button:has-text("Strategy")');
+    if (!(await page.locator("#sheet .zjobs").count())) throw new Error("the Strategy tab does not show the army's jobs");
+    await tap('#sheet [data-act="zfront"][data-v="hill"]'); await tap('#sheet [data-act="ztemper"][data-v="wary"]');
+    const fl = page.locator('#sheet [data-act="zflank"][data-v="raid"]'); if (await fl.count()) await fl.first().click();
+    const p = await js(() => { const q = buildPlans()[0]; return { front: q.front, temper: q.temper, raid: Object.values(q.flanks).includes("raid"), flanks: document.querySelectorAll('#sheet [data-act="zflank"]').length }; });
+    if (p.front !== "hill" || p.temper !== "wary" || (p.flanks && !p.raid)) throw new Error("zone orders did not reach the plan: " + JSON.stringify(p));
+    await closeAll(); await tap('#cmdbar [data-v="recruit"]'); await tap('#sheet .tabs button:has-text("Deploy")');
+    const lines = await js(() => { const nb = myNeighbour("left"); if (nb) S.lists.hostile = [nb.id]; const keep = routeLine, out = []; routeLine = (pts, c) => out.push(c); try { drawZoneRoutes(0); } finally { routeLine = keep; } return out; });
+    if (!lines.includes(await js(() => ZONE_COL.front))) throw new Error("the map draws no route for the Front: " + JSON.stringify(lines));
+    const wz = page.locator('#sheet [data-act="wzone"][data-v="guard"]'); if (await wz.count()) { await wz.first().click(); if (!(await js(() => buildPlans()[0].waves.some(w => w.zone === "guard")))) throw new Error("a wave's zone did not reach the plan"); }
+    await closeAll(); });
   await step("pick today's targets", async () => { await tap('#cmdbar [data-act="openorders"]'); await tap('#sheet .tabs button:has-text("Strategy")');
     for (let i = 0; i < 6 && !(await js(() => targetsReady())); i++) { const add = page.locator('#sheet [data-act="lmove"][data-v="hostile"]:visible'); if (!(await add.count())) break; await add.first().click(); await page.waitForTimeout(150); }
     if (!(await js(() => targetsReady()))) throw new Error("could not pick enough targets"); await closeAll(); });

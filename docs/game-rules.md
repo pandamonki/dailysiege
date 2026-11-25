@@ -31,6 +31,8 @@ practice games always stamp all of them (`js/sim/plans.js`).
 | 25 Nov | `breakV2` | Disbanding an alliance takes effect from the next battle (see Alliances) |
 | 23 Nov | `finV2` | Final-day alliances: day 7 pacts hold until one alliance is all that is left, then break and the allies fight on |
 | 23 Nov | `lvlV2` | Faster levelling: 3 to 4 levels a battle, up to level 25, smaller steps per level |
+| Prototype (practice only) | `timeV1` | Fixed timing: opening swings and hero skill cooldowns by place in the line-up, not the battle's dice (see The battle) |
+| Prototype (practice only) | `zoneV1` | Zones: placement sets each soldier's job, one #1 target, Front plans, flank plans, army temper, hill points, sudden-death damage tiebreak (see Zones) |
 
 ## The war
 
@@ -147,8 +149,58 @@ practice games always stamp all of them (`js/sim/plans.js`).
 - Before 20 Nov: a "heading", up to 5 if-then battle commands, and per-soldier orders (escort, attack a lord). These
   only apply to replays of older battles.
 
+## Zones (prototype, `zoneV1`)
+
+Practice always uses these rules. Real wars use them from `ZONE_V1_FROM` in `js/config/orders.js`, set far in the future
+until a start date is chosen. They replace the army plan, the fall-back list, the hero stance and the three target slots.
+
+- **Placement sets the job.** The deploy field splits into four zones, seen from the castle looking at the hill
+  (`zoneOfTile`): **Guard** (tiles within 1.5 of the castle) stays home and defends; the **Front** (straight ahead, within about
+  30° either side) marches on the #1 target; the **left** and **right flanks** face the nearest lord on that side
+  (`flankNeighbour`). A flank with no lord on its side fights with the Front. The hero takes the job of the zone it stands in.
+  The map tints each zone and labels it, and the Strategy tab counts what each zone holds and warns about an empty Front or an open side.
+- **One #1 target.** The Front marches on it; when it falls, the lord just above you on the board.
+- **The Front's plan:** Assault (fights what it meets), Siege (slips past armies to the castle), Hero hunt (heroes first) or Hold
+  the hill (takes the hill and holds it until 2:00, then marches on the target). They form a loop: Hold the hill beats Assault,
+  Assault beats Hero hunt, Hero hunt beats Siege, Siege beats Hold the hill. A Front hitting a Front whose plan it beats does 25%
+  more damage (`FRONT_BEATS`, `FRONT_BEAT_X`).
+- **Each flank:** Screen (holds a spot 4.5 tiles out toward that neighbour and fights what comes within 4 tiles of it; once nothing
+  has come for 20 seconds, and not before 1:00, it pushes on to that neighbour) or Raid (goes straight for that neighbour's castle).
+  Siege engines on a flank always go for that neighbour.
+- **Army temper** (whole army, hero included): Reckless (+15% damage, 15% more damage taken, never falls back, aggressive hero),
+  Steady (falls back when 3 enemies reach the castle) or Wary (10% less damage, 20% less taken, falls back when 2 enemies reach the
+  castle, cautious hero).
+- **Waves pick a zone** on the Deploy tab (Guard, Left, Front or Right) and take that zone's job once they have cleared the castle area.
+- **On the march** ranged soldiers and clerics stay behind their zone's melee line until they are near the fight. Only the Front
+  marches in formation.
+- **Routes follow the zone:** the Front marches out along its own road to its gate (where the road leaves its base, just inside the
+  small tree clumps between bases), on to the target castle's gate, then in along that castle's road, so a Front and a flank aimed at
+  the same neighbour hit it from the middle and from the side (cutting straight across from gate to castle ran into the tree clumps).
+  A flank goes straight along the side to its neighbour; heading anywhere else (once that neighbour has fallen, say) it takes the long
+  way round the outside, beyond the tree clumps (`gateRoute`, `ringRoute`; `GATE_*`, `RING_*` in `js/config/orders.js`).
+- **Route lines:** while planning orders the map draws each zone's route in its colour: the Front's through the gates to the #1
+  target (or to the hill when holding it), each raiding flank's to its neighbour, and each screening flank's to the spot it holds,
+  ending in a ring. A zone with nobody in it (soldiers, hero or waves) draws nothing; the Guard never does.
+- **Getting unstuck:** a soldier that has tried to walk for 2 seconds without getting anywhere takes a step to one side (the other side
+  the next time) and, next to one of its own side's walls, may step through its own side's walls for a moment.
+- **Default placement:** a new player's soldiers all start in the Front with the hero (`zoneSpots`); newly bought soldiers join it too.
+  Each player shapes their own army from there.
+- **Bot shapes:** each bot keeps one shape for the war, picked by its seed (`BOT_SHAPES` in `js/sim/bots.js`): spearhead (all Front),
+  pincer (both flanks raiding), left or right hook (heavy on one side), turtle (Guard and screening flanks) or balanced. The shape
+  sets where its soldiers stand, its flank plans and its waves' zones; its build still sets the Front's plan. Practice rivals stand
+  their two soldiers by the same shapes.
+- **Hill points:** the lord who held the hill longest (at least 10 seconds) scores 2 points, times the day's weight; a tie shares them.
+- **Sudden death time-out:** the winner is the side with the best health left plus damage dealt all battle (each as a share of
+  the sides still standing), not health alone.
+- Bots: each build has a Front plan (the shape, above, sets where soldiers stand and may set the flanks); their temper follows their old stance.
+
 ## The battle
 
+- **Opening timing.** Every fighter waits up to 0.8 seconds before its first swing, and each hero skill starts on a 2 to 5 second
+  cooldown (the ultimate 10 to 18). Until now these come from the battle's dice (the battle date in real wars), and in tests they
+  caused most of the luck in a battle. With fixed timing (prototype `timeV1`, `TIME_V1_FROM` in `js/config/orders.js`; practice always)
+  they are spread by each fighter's place in the line-up (`fixedFrac`), so the same orders against the same rivals give nearly the
+  same battle. Real percentage chances (dodges, crits, misses, skill procs) stay random.
 - Fought on a ring map: castles round the edge, a hill in the middle (holding it gives gold and hero experience, not
   points), forest round the rim and small tree blockades between bases. Trees and walls block movement.
 - Militia muster at every castle on a timer. Reinforcement waves march on their triggers.

@@ -199,7 +199,8 @@ function previewOrder() {
 }
 // Pick your targets (PICK_V1): one to three targets a day (at least TARGETS_NEED), in order. Once they have fallen, the army goes for the lord just above on the board.
 // how many targets a lord must pick before sealing: three, or every option there is if fewer
-const TARGETS_NEED = () => 1; // at least one target before sealing; up to PICK_MAX
+const TARGETS_NEED = () => 1; // at least one target before sealing; up to pickMax()
+const pickMax = () => (zoneV1Now() ? 1 : PICK_MAX); // zones v1: one #1 target, which the Front marches on
 const targetsReady = () => !pickV1Now() || S.lists.hostile.length >= TARGETS_NEED();
 const ROLE_ICON = { "@weakcastle": "castle1", "@leader": "board", "@above": "roster", "@nearcastle": "base", "@neararmy": "army" }; // pictures in icons/ui
 const roleIco = k => (ROLE_ICON[k] ? `<img alt="" src="icons/ui/${ROLE_ICON[k]}.webp">` : "◎");
@@ -208,22 +209,22 @@ const tgtMark = id => { const r = RIVALS.find(x => x.id === id); return r ? `<i 
 // the three target slots: filled ones can be dragged into order or cleared; empty ones say what to do
 function targetSlotsHTML() {
   const hostile = S.lists.hostile;
-  return `<ol class="tslots" id="tgtlist">${[0, 1, 2].slice(0, PICK_MAX).map(i => { const id = hostile[i];
+  return `<ol class="tslots" id="tgtlist">${[0, 1, 2].slice(0, pickMax()).map(i => { const id = hostile[i];
     if (id && tgtName(id)) return `<li class="tgt tslot on" data-k="${id}"><span class="grip" aria-label="Drag to reorder">⠿</span><span class="ord">${i + 1}</span>${tgtMark(id)}<span class="tnm"><b>${esc(tgtName(id))}</b>${PICK_ROLES[id] ? `<small>role</small>` : ""}</span><button class="tx" data-act="lmove" data-v="neutral" data-k="${id}" aria-label="Stop attacking ${esc(tgtName(id))}" ${dis()}>✕</button></li>`;
     return `<li class="tslot empty"><span class="ord">${i + 1}</span><span class="tnm">${i === hostile.length ? (i === 0 ? "<b>Pick your first target</b>" : "<b>Pick your next target</b>") : ""}</span><small class="req">${i < TARGETS_NEED() ? "required" : "optional"}</small></li>`; }).join("")}</ol>`;
 }
 // the board as it stands: rank, points and a target button for every lord (used on the Strategy tab and the seal screen)
 function targetBoardHTML(compact) {
-  const rows = boardRows().sort((a, b) => b.pts - a.pts || b.lvl - a.lvl), hostile = S.lists.hostile, full = hostile.length >= PICK_MAX, bty = bountyMap();
+  const rows = boardRows().sort((a, b) => b.pts - a.pts || b.lvl - a.lvl), hostile = S.lists.hostile, full = hostile.length >= pickMax(), bty = bountyMap();
   return `<div class="tboard${compact ? " compact" : ""}">${rows.map((r, i) => { const n = hostile.indexOf(r.id) + 1;
     return `<div class="tbr${r.me ? " me" : ""}${n ? " on" : ""}"><span class="rk">${i + 1}</span><i class="sw" style="background:${r.color}"></i><span class="nm"><b>${esc(r.me ? "You" : r.name)}</b>${r.cls && !compact ? `<small>${esc(CLASSES[r.cls].name)}</small>` : ""}</span><span class="pt">${r.pts} pts</span><span class="tby r${bountyRank(r.id)}"${bty[r.id] ? ` title="Bounty: gold for killing their hero or taking their castle"` : ""}>${bty[r.id] ? `♛ +${bty[r.id]}g` : ""}</span>
       ${r.me ? `<span class="tbt self">—</span>` : !n && allyShielded(r.id) ? `<button class="tbt ally" data-act="sealgo" data-v="alliances" aria-label="${esc(r.name)} is your ally: open Alliances">🤝 Ally</button>` : n ? `<button class="tbt on" data-act="lmove" data-v="neutral" data-k="${r.id}" ${dis()} aria-label="Stop attacking ${esc(r.name)}">Target ${n} ✕</button>` : `<button class="tbt" data-act="lmove" data-v="hostile" data-k="${r.id}" ${full ? "disabled" : dis()}>Target</button>`}</div>`; }).join("")}</div>`;
 }
 function pickTab() {
-  const hostile = S.lists.hostile, roles = Object.keys(PICK_ROLES).filter(k => !hostile.includes(k)), full = hostile.length >= PICK_MAX;
+  const hostile = S.lists.hostile, roles = Object.keys(PICK_ROLES).filter(k => !hostile.includes(k)), full = hostile.length >= pickMax();
   const chip = k => `<button class="chip" data-act="lmove" data-v="hostile" data-k="${k}" ${full ? "disabled" : dis()}><i class="rico">${roleIco(k)}</i>${esc(PICK_ROLES[k])}</button>`;
-  return `<div class="sec tight"><h3>1 · Today's targets <span class="cnt${hostile.length >= TARGETS_NEED() ? " ok" : ""}">${hostile.length}/${PICK_MAX}</span></h3>
-      <p class="muted">Pick 1 to ${PICK_MAX}, in order. After them: ${fallbackLabel()}.</p>
+  return `<div class="sec tight"><h3>1 · ${zoneV1Now() ? "#1 target" : "Today's targets"} <span class="cnt${hostile.length >= TARGETS_NEED() ? " ok" : ""}">${hostile.length}/${pickMax()}</span></h3>
+      <p class="muted">${zoneV1Now() ? `Pick one lord or role. Your <b style="color:${ZONE_INK.front}">Front</b> marches on them. After them: ${fallbackLabel()}.` : `Pick 1 to ${PICK_MAX}, in order. After them: ${fallbackLabel()}.`}</p>
       ${targetSlotsHTML()}
       ${roles.length ? `<h4 class="minih">Or a role</h4><div class="chips">${roles.map(chip).join("")}</div>` : ""}
       <h4 class="minih">Lords${Object.keys(bountyMap()).length ? " · ♛ bounty gold" : ""}</h4>${targetBoardHTML()}</div>
@@ -247,7 +248,26 @@ function strategyTab() {
 }
 const ordersV2Now = () => (isLive() ? ordersV2For(liveClock().planDay) : true); // orders v2: army plan and fall-back replace the heading, battle commands and soldiers' own orders
 const STANCE_V2 = { aggressive: "Heals at home below 12% health", skirmish: "Heals at home below 30% health", cautious: "Heals at home below 45% health" };
+// zones v1: the Front's plan, each flank's plan, the army temper, and what each zone holds today
+function zoneJobsHTML() {
+  const j = myJobs(), nb = { left: myNeighbour("left"), right: myNeighbour("right") }, waves = (S.garrison || []).map((w, i) => waveOpen(i) ? (ZONES.includes(w.zone) ? w.zone : "front") : null);
+  const cell = z => `<span class="zj"><i style="background:${ZONE_COL[z]}"></i>${ZONE_INFO[z][0].replace(" flank", "")} <b>${j[z]}</b>${j.hero === z ? " + hero" : ""}</span>`;
+  const warn = j.front === 0 && j.hero !== "front" ? "Nobody is in your Front, so nothing marches on your target." : j.front === 0 ? "Your Front is just your hero. Place a soldier in front of the castle, or send a wave to the Front." : (["left", "right"].filter(z => nb[z] && !j[z] && j.hero !== z && !waves.includes(z)).map(z => `Your ${z} side is open: raids from ${esc(nb[z].name)} walk straight in.`)[0] || "");
+  return `<div class="zjobs">${ZONES.map(cell).join("")}</div>${waves.some(Boolean) ? `<p class="muted">Waves: ${waves.map((z, i) => z ? `${i + 1} → ${ZONE_INFO[z][0].replace(" flank", "")}` : "").filter(Boolean).join(" · ")}</p>` : ""}${warn ? `<p class="zwarn">⚠ ${warn}</p>` : ""}`;
+}
+function zoneOrdersHTML(st) {
+  const fr = FRONT_PLANS.includes(st.front) ? st.front : "assault", fl = cleanFlanks(st.flanks), tp = TEMPERS.includes(st.temper) ? st.temper : "steady";
+  const opt = (act, k, cur, [n, d], extra = "") => `<button class="opt${cur === k ? " on" : ""}" data-act="${act}" data-v="${k}"${extra} ${dis()}><b>${esc(n)}</b><span>${esc(d)}</span></button>`;
+  const beats = k => { const w = FRONT_BEATS[k], l = Object.keys(FRONT_BEATS).find(q => FRONT_BEATS[q] === k); return `<span class="zvs"><em class="g">▲ beats ${esc(FRONT_INFO[w][0])}</em> <em class="b">▼ loses to ${esc(FRONT_INFO[l][0])}</em></span>`; };
+  const flank = side => { const r = myNeighbour(side); return `<div class="zfl"><h4 class="minih"><i class="zsw" style="background:${ZONE_COL[side]}"></i>${side === "left" ? "Left" : "Right"} flank${r ? ` · <i class="sw" style="background:${r.color}"></i> ${esc(r.name)}` : ""}</h4>
+    ${r ? `<div class="seg3 two">${FLANK_PLANS.map(k => `<button class="btn small${fl[side] === k ? " on" : ""}" data-act="zflank" data-k="${side}" data-v="${k}" ${dis()}>${FLANK_INFO[k][0]}</button>`).join("")}</div><p class="muted">${esc(FLANK_INFO[fl[side]][1])}.</p>` : `<p class="muted">No lord on this side: soldiers placed here join the Front.</p>`}</div>`; };
+  return `<div class="sec tight"><h3>2 · Your army's jobs <small class="hnote">set by where you place them</small></h3><p class="muted">On the map, the tiles round your castle are the <b style="color:${ZONE_INK.guard}">Guard</b>, straight ahead is the <b style="color:${ZONE_INK.front}">Front</b>, and either side are your <b style="color:${ZONE_INK.left}">left</b> and <b style="color:${ZONE_INK.right}">right</b> flanks. Your hero takes the job of its zone too.</p>${zoneJobsHTML()}</div>
+    <div class="sec tight"><h3>3 · The Front's plan</h3><div class="olist">${FRONT_PLANS.map(k => opt("zfront", k, fr, FRONT_INFO[k])).join("")}</div>${beats(fr)}<p class="muted">A Front fighting a Front whose plan it beats does ${Math.round((FRONT_BEAT_X - 1) * 100)}% more damage. Holding the hill longest in a battle scores ${HILL_PTS} points.</p></div>
+    <div class="sec tight"><h3>4 · The flanks</h3>${flank("left")}${flank("right")}</div>
+    <div class="sec tight"><h3>5 · Army temper</h3><div class="seg3">${TEMPERS.map(k => `<button class="btn small${tp === k ? " on" : ""}" data-act="ztemper" data-v="${k}" ${dis()}>${TEMPER_INFO[k][0]}</button>`).join("")}</div><p class="muted">${esc(TEMPER_INFO[tp][1])}. It covers the whole army, hero included.</p></div>`;
+}
 function strategyTabRest(st) {
+  if (zoneV1Now()) return zoneOrdersHTML(st);
   if (ordersV2Now()) { const pl = st.plan || "conquest", fb = st.fallback || "none", opt = (act, k, cur, [n, d]) => `<button class="opt${cur === k ? " on" : ""}" data-act="${act}" data-v="${k}" ${dis()}><b>${esc(n)}</b><span>${esc(d)}</span></button>`;
     return `<div class="sec tight"><h3>2 · Army plan</h3><div class="olist">${ARMY_PLANS.map(k => opt("aplan", k, pl, ARMY_PLAN_INFO[k])).join("")}</div>
       <label class="inline"><input type="checkbox" data-act="hillfirst" ${st.heading === "centre" ? "checked" : ""} ${dis()}> Hold the hill for 2 minutes first</label></div>
@@ -408,7 +428,7 @@ function sealChecks() {
   if ((S.walls || []).length || S.traps.length) ck(wt ? "warn" : "ok", wt ? `<b>${wt} wall${wt > 1 ? "s or traps" : " or trap"} not set</b> on the field` : "Walls and traps are set", "map");
   { const at = S.lists.hostile.filter(allyShielded); if (at.length) ck("need", `<b>${at.map(id => esc(tgtName(id))).join(", ")} ${at.length > 1 ? "are allies" : "is an ally"}</b>: take them off your targets, or set the pact to Betray`, "strategy"); }
   const fp = freePts(); ck(fp ? "warn" : "ok", fp ? `<b>${fp} skill point${fp > 1 ? "s" : ""} unspent</b>` : "All skill points spent", "hero");
-  if (pickV1Now()) ck(targetsReady() ? "ok" : "need", targetsReady() ? `Targets: ${S.lists.hostile.map(id => esc(tgtName(id))).join(" → ")}` : `<b>Pick a target</b> (1 to ${PICK_MAX} a day)`, "strategy");
+  if (pickV1Now()) ck(targetsReady() ? "ok" : "need", targetsReady() ? `Targets: ${S.lists.hostile.map(id => esc(tgtName(id))).join(" → ")}` : `<b>Pick a target</b> (${pickMax() === 1 ? "your #1 target" : `1 to ${PICK_MAX} a day`})`, "strategy");
   if (contractsOn() && myOffers().length) { const c = contractParse(S.contract); ck(c ? "ok" : "warn", c ? `Contract: ${esc(c.c.name)}` : "<b>No contract taken</b>", "contracts"); }
   if (day >= 2 && ct < 2) ck("warn", "Castle is still tier 1. A Fortress pays for itself in two days", "castle");
   else if (day >= 4 && ct < 3) ck("warn", "Castle is a Fortress. A Citadel opens tier 3 soldiers and gear", "castle");
