@@ -89,7 +89,7 @@
     try {
       clearTimeout(saveTimer); saveTimer = null; // drop any autosave still waiting from the game we are leaving
       LIVE.uid = null; LIVE.config = null; LIVE.configLoaded = false; LIVE.players = {}; LIVE.playersLoaded = false; LIVE.battles = {}; LIVE.names = {}; LIVE.stateLoaded = false; LIVE.isOwner = false; LIVE_S = null;
-      if (gameMode === "friends") { gameMode = "practice"; enterPractice(); }
+      if (gameMode === "friends") { gameMode = "practice"; enterPractice(); } PRACTICE_PICKED = false; // reconnecting: no war on screen until one loads
       const lob = document.getElementById("lobby"); if (lob) lob.remove();
       connectLive().then(redraw);
     } catch (e) { console.warn(e); }

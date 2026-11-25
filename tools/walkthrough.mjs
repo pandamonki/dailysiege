@@ -168,6 +168,14 @@ for (const name of engines) {
     for (const t of ["skills", "items", "army", "ups"]) { await tap(`#sheet [data-act="wltab"][data-v="${t}"]`); if (!(await js(() => document.querySelector("#sheet .wtab-body").children.length > 0))) throw new Error("the " + t + " tab is empty"); }
     await js(() => { LIVE.prevWar = null; sheet = null; render(); });
     if (!(await js(() => /<b>2<\/b>/.test(warCrownHTML(2))))) throw new Error("the war crown has no count"); });
+  await step("signed in with no war, closing a screen goes to the friends game screen, not the practice board", async () => {
+    const r = await js(() => { const hadDS = "DS" in window, ds = window.DS, picked = PRACTICE_PICKED, loaded = LIVE.configLoaded, gm = gameMode;
+      window.DS = Object.assign({}, ds || {}, { user: { uid: "walkthrough" } }); LIVE.configLoaded = true; gameMode = "practice"; PRACTICE_PICKED = false;
+      const noWar = noWarBoard(); PRACTICE_PICKED = true; const chosen = noWarBoard();
+      PRACTICE_PICKED = picked; LIVE.configLoaded = loaded; gameMode = gm; if (hadDS) window.DS = ds; else delete window.DS;
+      return { noWar, chosen }; });
+    if (!r.noWar) throw new Error("with no war, closing a screen would show the practice board");
+    if (r.chosen) throw new Error("a chosen practice game should still show its board"); });
   await step("no script errors anywhere", async () => { if (errors.length) throw new Error(errors.length + " errors: " + errors.slice(0, 3).join(" ; ")); });
 
   console.log(`\n[${name} walkthrough]\n` + results.map(([s, t]) => `${s === "ok" ? "  ✓" : "  ✗"} ${t}`).join("\n"));
