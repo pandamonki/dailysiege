@@ -203,8 +203,13 @@ function runBattle(plans, seed, opts = {}) {
     if (re < RING_FAR || rt < RING_FAR || L2 < 16) return null;
     const u = Math.max(0, Math.min(1, -(ex * dx + ey * dy) / L2)); if (hyp(ex + dx * u, ey + dy * u) >= RING_CLEAR) return null;
     let da = datan2(ty, tx) - datan2(ey, ex); while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI;
-    const a = datan2(ey, ex) + (da < 0 ? -1 : 1) * Math.min(Math.abs(da), RING_STEP), r = Math.max(RING_R, Math.min(re, rt)); return [ctrX + dcos(a) * r, ctrY + dsin(a) * r]; };
-  const goTo = (e, x, y, stop) => { const w = ZV ? ringRoute(e, x, y) : null; if (w) moveToward(e, w[0], w[1], .2); else moveToward(e, x, y, stop); };
+    const a = datan2(ey, ex) + (da < 0 ? -1 : 1) * Math.min(Math.abs(da), RING_STEP), r = Math.max(ringR, Math.min(re, rt, ringR + 1.5)); return [ctrX + dcos(a) * r, ctrY + dsin(a) * r]; };
+  const ringR = TG && TG.clumps.length ? Math.max(CTR_R + 1.2, Math.min(...TG.clumps.map(c => hyp(c.x - TG.cc, c.y - TG.cc) - c.r)) - RING_GAP) : RING_R; // the way round the hill: inside the tree clumps between bases, clear of the hill
+  // zones v1: walk toward (x, y), round the hill if need be; a soldier that keeps trying and getting nowhere (pinned on its own fence, or between trees and a fence) may step through its own side's fences for a moment
+  const goTo = (e, x, y, stop) => { if (!ZV) { moveToward(e, x, y, stop); return; } const w = ringRoute(e, x, y);
+    if (!e.mv || t - e.mv.t >= 1) { const moved = e.mv ? hyp(e.x - e.mv.x, e.y - e.mv.y) : 1; e.stuckN = moved < .15 && hyp(x - e.x, y - e.y) > stop + .5 ? (e.stuckN || 0) + 1 : 0; e.mv = { t, x: e.x, y: e.y };
+      if (e.stuckN >= STUCK_SECS && walls.some(q => q.hp > 0 && !hostile(e.pid, q.pid) && hyp(q.x0 + .5 - e.x, q.y0 + .5 - e.y) < 2.2)) { e.ghostT = t + 1.5; e.wp = null; e.stuckN = 0; } }
+    if (w) moveToward(e, w[0], w[1], .2); else moveToward(e, x, y, stop); };
   const holdsHill = e => { const p = P[e.pid]; return p.zv ? e.job === "front" && p.front === "hill" : p.heading === "centre"; };
   const screening = e => { const p = P[e.pid]; return !!p.zv && !sdOn() && (e.job === "left" || e.job === "right") && p.flanks[e.job] === "screen" && !p.pushed[e.job] && !!p.screenAt[e.job] && !e.cart && !e.ram && !e.cat; };
   plans.forEach(pl => pl.pacts.forEach(o => { if (P[o]) { P[pl.pid].pacts.add(o); P[o].pacts.add(pl.pid); } }));

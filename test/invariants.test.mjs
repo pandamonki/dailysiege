@@ -349,3 +349,22 @@ test("zones v1: a Front that is not holding the hill goes round it to a far targ
   assert.ok(hill.share > 0.01, `holding the hill, only ${(hill.share * 100).toFixed(1)}% of soldier time was on it`);
   assert.ok(round.share < hill.share / 3, `assaulting Fronts spent ${(round.share * 100).toFixed(1)}% of their time on the hill (holding it: ${(hill.share * 100).toFixed(1)}%)`);
 });
+
+test("zones v1: soldiers never stay stuck behind their own walls", () => {
+  // lord 0 drops 5 walls at random on its field, then sends everyone out (Front on Assault, both flanks Raid); every soldier must get
+  // at least 3 tiles from where it started within 40 seconds, unless it dies first
+  const worst = [];
+  for (let g = 0; g < 6; g++) {
+    const tweak = `{ const p = plans[0], r = mulberry(${g} * 31 + 7), taken = new Set(p.pieces.map(q => q.r + "," + q.c)); taken.add(p.castle.join(","));
+      const free = [...p.zoneSet].filter(k => !taken.has(k) && !treeTile(...k.split(",").map(Number), 8, L.N));
+      p.pieces = p.pieces.filter(q => q.kind !== "wall" && !(q.kind === "trap" && q.type === "tower")); for (let k = 0; k < 5 && free.length; k++) { const i = Math.floor(r() * free.length), [a, b] = free.splice(i, 1)[0].split(",").map(Number); p.pieces.push({ kind: "wall", r: a, c: b, dir: r() < .5 ? "h" : "v" }); }
+      p.front = "assault"; p.flanks = { left: "raid", right: "raid" }; p.temper = "reckless"; p.waves = null; plans.forEach(q => { q.timeV1 = true; }); }`;
+    const r = JSON.parse(sim.run(`(() => { const { full, plans } = ${ZWAR(10 + g, 4, tweak)}; const p = plans[0]; let worst = 99;
+      full.meta.forEach((m, j) => { if (m.pid !== p.pid || m.kind !== "unit" || m.militia || m.free || (UNITS[m.key] && (UNITS[m.key].tower || UNITS[m.key].engine))) return; const i = j * 4; let s0 = null, far = 0, died = false;
+        full.frames.forEach(f => { if (f.t > 40 || died) return; if (f.d.length <= i + 3) return; if (f.d[i + 3] & 1) { if (s0) died = true; return; } if (!s0) s0 = [f.d[i], f.d[i + 1]]; far = Math.max(far, Math.hypot(f.d[i] - s0[0], f.d[i + 1] - s0[1])); });
+        if (s0 && !died) worst = Math.min(worst, far); });
+      return JSON.stringify({ worst }); })()`));
+    worst.push(r.worst);
+  }
+  assert.ok(worst.every(w => w >= 3), `a soldier got no further than ${Math.min(...worst).toFixed(1)} tiles in 40 seconds (per game: ${worst.map(w => w.toFixed(1)).join(", ")})`);
+});

@@ -105,9 +105,10 @@ function botDefencePieces({ seed, build, dayNo, me, N, zone, taken, tier, lords 
 }
 // A bot lord's castle tier by day: tier 1 for the first two days, tier 2 on day 3, and tier 3 from day 4, so it can field tier 3 soldiers (knights, snipers, siege engines) for the rest of the week.
 const botTier = dayNo => dayNo >= 4 ? 3 : dayNo >= 3 ? 2 : 1;
-// zones v1: each build's Front plan, flank plans and the jobs its soldiers are placed for, in order (the hero leads the Front)
-const BOT_ZONES = { warband: { front: "assault", flanks: { left: "raid", right: "raid" }, jobs: ["left", "right", "front", "front", "front"] }, fortress: { front: "hill", flanks: { left: "screen", right: "screen" }, jobs: ["guard", "left", "right", "front", "front"] },
-  champion: { front: "hunt", flanks: { left: "screen", right: "screen" }, jobs: ["front", "left", "right", "front", "front"] }, mixed: { front: "siege", flanks: { left: "screen", right: "raid" }, jobs: ["left", "right", "front", "guard", "front"] } };
+// zones v1: each build's Front plan, flank plans and the jobs its soldiers are placed for, in order (the hero leads the Front). The first two
+// always join the Front: armies spread thin over the flanks from the start took half as many castles by 1:30
+const BOT_ZONES = { warband: { front: "assault", flanks: { left: "raid", right: "raid" }, jobs: ["front", "front", "left", "right", "front"] }, fortress: { front: "hill", flanks: { left: "screen", right: "screen" }, jobs: ["front", "front", "guard", "left", "right"] },
+  champion: { front: "hunt", flanks: { left: "screen", right: "screen" }, jobs: ["front", "front", "left", "right", "front"] }, mixed: { front: "siege", flanks: { left: "screen", right: "raid" }, jobs: ["front", "front", "left", "right", "guard"] } };
 const BOT_TEMPER = { aggressive: "reckless", skirmish: "steady", cautious: "wary" };
 function lordBotPlan({ uid, cls, i, ids, L, zone, dayNo, lvl, v2, v3, fair, pick, ranks, sup, defV2, zv }) { // defV2: from TRAPS_V2_FROM bots buy traps, towers and walls by their build, at the cost of soldiers or items // sup: the supply rules from SUPPLY_V2_FROM (at most FIELD_MAX soldiers on the map)
   const seed = botSeed(uid), me = L.castles[i], c = CLASSES[cls] || CLASSES.warrior, sp = armySpots(me, L.N);

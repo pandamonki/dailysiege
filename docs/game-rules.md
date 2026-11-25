@@ -174,10 +174,14 @@ until a start date is chosen. They replace the army plan, the fall-back list, th
 - **On the march** ranged soldiers and clerics stay behind their zone's melee line until they are near the fight. Only the Front
   marches in formation.
 - **Round the hill:** a Front that is not holding the hill, whose straight way to its target passes over the hill, walks round
-  it (at least 5 tiles out) instead of through it, so armies don't all meet in the middle by default (`RING_*` in `js/config/orders.js`).
-- **Default placement:** a new player's first soldiers stand on the left flank, then the right flank, then the Front, then the
-  Guard, with the hero leading the Front (`zoneSpots`); newly bought soldiers fill the same order. Practice rivals and real-war bots
-  place theirs by their build's jobs, flanks first.
+  it instead of through it, keeping inside the small tree clumps between bases, so armies don't all meet in the middle by default
+  (`RING_*` in `js/config/orders.js`).
+- **Getting unstuck:** a soldier that has tried to walk for 2 seconds without getting anywhere, next to one of its own side's walls,
+  may step through its own side's walls for a moment.
+- **Default placement:** a new player's first two soldiers join the Front with the hero, the next go to the left and right flanks
+  (`zoneSpots`); newly bought soldiers fill the same order. Bots put their first two in the Front too, then fill the zones their
+  build wants; practice rivals put one in the Front and one on a flank. (Spreading the first soldiers over the flanks halved how
+  many castles fell by 1:30.)
 - **Hill points:** the lord who held the hill longest (at least 10 seconds) scores 2 points, times the day's weight; a tie shares them.
 - **Sudden death time-out:** the winner is the side with the best health left plus damage dealt all battle (each as a share of
   the sides still standing), not health alone.
