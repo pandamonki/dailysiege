@@ -353,6 +353,23 @@ test("zones v1: the Front goes straight through the middle to a far target, whil
   assert.ok(flanks.share < front.share / 3, `flanks spent ${(flanks.share * 100).toFixed(1)}% of their time in the middle (the Front: ${(front.share * 100).toFixed(1)}%)`);
 });
 
+test("zones v1: a Front aimed at the neighbour beside it marches out through its own gate, while its flank goes straight along the side", () => {
+  // lord 0 targets its left neighbour, with footmen split between the Front and the left flank (Raid); the other lords field only their heroes
+  const tweak = `{ const p = plans[0], cs = plans.map(q => q.castle), k = flankNeighbour(cs, 0, "left", L.N), nb = plans[k], [cr, cc] = p.castle;
+    p.targets = [nb.pid]; p.front = "assault"; p.flanks = { left: "raid", right: "screen" }; p.waves = null; plans.forEach((q, i) => { q.timeV1 = true; if (i) { q.pieces = q.pieces.filter(x => x.kind === "champ"); q.waves = null; q.front = "hill"; } });
+    const tiles = z => [...p.zoneSet].map(t => t.split(",").map(Number)).filter(([r, c]) => zoneOfTile(cr, cc, r, c, L.N) === z), F = tiles("front"), Lf = tiles("left"); let n = 0;
+    p.pieces = p.pieces.filter(q => q.kind !== "wall" && !(q.kind === "trap")).map(q => { if (q.kind !== "unit") return q; const t = (n++ % 2 ? Lf : F).shift(); return t ? { ...q, type: "footman", r: t[0], c: t[1] } : q; }).filter(q => q.kind !== "unit" || q.type === "footman"); }`;
+  const r = JSON.parse(sim.run(`(() => { const { full, plans, L } = ${ZWAR(20, 4, tweak)}; const p = plans[0], cx = p.castle[1] + .5, cy = p.castle[0] + .5, mid = L.N / 2, toMid = Math.hypot(mid - cx, mid - cy);
+    const out = { front: [], flank: [] };
+    full.meta.forEach((m, j) => { if (m.pid !== p.pid || m.kind !== "unit" || m.key !== "footman") return; const i = j * 4; let s0 = null, best = 0;
+      full.frames.forEach(f => { if (f.t > 20 || f.d.length <= i + 3 || (f.d[i + 3] & 1)) return; const x = f.d[i], y = f.d[i + 1]; if (!s0) s0 = zoneOfTile(p.castle[0], p.castle[1], Math.floor(y), Math.floor(x), L.N); best = Math.max(best, ((x - cx) * (mid - cx) + (y - cy) * (mid - cy)) / toMid); });
+      if (s0 === "front" || s0 === "left") out[s0 === "front" ? "front" : "flank"].push(best); });
+    return JSON.stringify(out); })()`));
+  assert.ok(r.front.length && r.flank.length, "no Front or flank footmen to follow");
+  // how far toward the middle each got: the Front walks out past the tree line, the flank never needs to
+  assert.ok(Math.min(...r.front) > Math.max(...r.flank) + 1, `Front got ${r.front.map(v => v.toFixed(1)).join(", ")} tiles toward the middle, the flank ${r.flank.map(v => v.toFixed(1)).join(", ")}`);
+});
+
 test("zones v1: soldiers never stay stuck behind their own walls", () => {
   // lord 0 drops 5 walls at random on its field, then sends everyone out (Front on Assault, both flanks Raid). In the first 60 seconds no
   // soldier may stand within 0.3 tiles of the same spot for 8 seconds with no enemy (soldier, hero or castle) within 2.5 tiles: that is stuck, not fighting

@@ -207,9 +207,24 @@ function runBattle(plans, seed, opts = {}) {
     const a = datan2(ey, ex) + (da < 0 ? -1 : 1) * Math.min(Math.abs(da), RING_STEP), r = Math.max(ringR, Math.min(re, rt)); return [ctrX + dcos(a) * r, ctrY + dsin(a) * r]; };
   const ringR = TG && TG.clumps.length ? Math.max(...TG.clumps.map(c => hyp(c.x - TG.cc, c.y - TG.cc) + c.r)) + RING_GAP : RING_R; // the way round the outside: beyond the tree clumps between bases
   // zones v1: walk toward (x, y), round the hill if need be; a soldier that keeps trying and getting nowhere (pinned on its own fence, or between trees and a fence) may step through its own side's fences for a moment
-  const goTo = (e, x, y, stop) => { if (!ZV) { moveToward(e, x, y, stop); return; } const w = ringRoute(e, x, y);
+  // zones v1: a castle's gate, GATE_OUT tiles out from it toward the hill, where the road leaves its base through the trees
+  const gateR = TG && TG.clumps.length ? Math.max(CTR_R + .8, Math.min(...TG.clumps.map(c => hyp(c.x - TG.cc, c.y - TG.cc) - c.r)) - RING_GAP) : null; // how far from the middle the gates stand: just inside the tree clumps
+  const gateOf = c => { const dx = ctrX - c.x, dy = ctrY - c.y, L = hyp(dx, dy) || 1, k = gateR != null ? Math.max(0, L - gateR) : Math.min(GATE_OUT, L * .6); return { x: c.x + dx / L * k, y: c.y + dy / L * k, fx: dx / L, fy: dy / L }; };
+  // the Front marches out through its own gate into the middle, then comes at a lord's base through that lord's gate (so a Front and a flank
+  // aimed at the same neighbour hit it from two sides). o: what it is walking to; returns a waypoint, or null to walk straight
+  const gateRoute = (e, x, y, o) => { const p = P[e.pid]; if (!p.zv || e.job !== "front" || sdOn() || !p.castle || p.castle.dead) return null;
+    const my = gateOf(p.castle), out = (e.x - p.castle.x) * my.fx + (e.y - p.castle.y) * my.fy;
+    const gd = hyp(my.x - p.castle.x, my.y - p.castle.y); if (out >= gd - .5) e.outGate = true; else if (hyp(e.x - p.castle.x, e.y - p.castle.y) < 2) e.outGate = false; // once through its gate it heads on (not back to it) until it is home again
+    if (!e.outGate && out < gd - .5 && hyp(x - e.x, y - e.y) > 3 && hyp(x - p.castle.x, y - p.castle.y) > hyp(my.x - p.castle.x, my.y - p.castle.y) + 1 && ((x - p.castle.x) * my.fx + (y - p.castle.y) * my.fy) < hyp(x - p.castle.x, y - p.castle.y) * dcos(GATE_CONE)) return [my.x, my.y]; // still inside my base, the goal outside it and off to one side: out through my gate first
+    const q = o && P[o.pid] && P[o.pid].castle; if (!q || q.dead || o.pid === e.pid || hyp(o.x - q.x, o.y - q.y) > hyp(gateOf(q).x - q.x, gateOf(q).y - q.y) + 1) return null; // only a goal inside a lord's base is come at through its gate
+    const g = gateOf(q), rq = hyp(e.x - q.x, e.y - q.y); if (rq <= hyp(g.x - q.x, g.y - q.y) + .3) return null; // already inside their base
+    return ((e.x - q.x) * g.fx + (e.y - q.y) * g.fy) / rq >= dcos(GATE_CONE) ? null : [g.x, g.y]; }; // in front of their gate already: straight in; else to their gate first
+  const goTo = (e, x, y, stop, o) => { if (!ZV) { moveToward(e, x, y, stop); return; } const w = ringRoute(e, x, y) || gateRoute(e, x, y, o);
     if (!e.mv || t - e.mv.t >= 1) { const moved = e.mv ? hyp(e.x - e.mv.x, e.y - e.mv.y) : 1; e.stuckN = moved < .15 && hyp(x - e.x, y - e.y) > stop + .5 ? (e.stuckN || 0) + 1 : 0; e.mv = { t, x: e.x, y: e.y };
-      if (e.stuckN >= STUCK_SECS && walls.some(q => q.hp > 0 && !hostile(e.pid, q.pid) && hyp(q.x0 + .5 - e.x, q.y0 + .5 - e.y) < 2.2)) { e.ghostT = t + 1.5; e.wp = null; e.stuckN = 0; } }
+      if (e.stuckN >= STUCK_SECS) { // pinned (between trees and a fence, say): through its own side's fences for a moment, and a step aside, each time the other way
+        if (walls.some(q => q.hp > 0 && !hostile(e.pid, q.pid) && hyp(q.x0 + .5 - e.x, q.y0 + .5 - e.y) < 2.2)) e.ghostT = t + 1.5;
+        const gx = x - e.x, gy = y - e.y, gl = hyp(gx, gy) || 1, sd = (e.sideN = (e.sideN || 0) + 1) % 2 ? 1 : -1; e.detour = { x: e.x - gy / gl * 1.6 * sd - gx / gl * .6, y: e.y + gx / gl * 1.6 * sd - gy / gl * .6, until: t + 1.2 }; e.wp = null; e.stuckN = 0; } }
+    if (e.detour && t < e.detour.until) { moveToward(e, e.detour.x, e.detour.y, .2); return; }
     if (w) moveToward(e, w[0], w[1], .2); else moveToward(e, x, y, stop); };
   const holdsHill = e => { const p = P[e.pid]; return p.zv ? e.job === "front" && p.front === "hill" : p.heading === "centre"; };
   const screening = e => { const p = P[e.pid]; return !!p.zv && !sdOn() && (e.job === "left" || e.job === "right") && p.flanks[e.job] === "screen" && !p.pushed[e.job] && !!p.screenAt[e.job] && !e.cart && !e.ram && !e.cat; };
@@ -1106,8 +1121,8 @@ function runBattle(plans, seed, opts = {}) {
         moveToward(e, o.x + dcos(a) * reach * .8, o.y + dsin(a) * reach * .8, .05);
       } else if (ZV && e.kind === "unit" && e.range > 1.5 && e.job && e.job !== "guard" && P[e.pid].zv && d(e, o) > e.range + 2) { // zones v1: on the march, ranged soldiers and clerics keep behind their zone's melee line
         const lead = ents.filter(x => !x.dead && x.pid === e.pid && x.kind === "unit" && x.job === e.job && x.range < 1.5 && !x.cart && !x.ram && !x.cat && x.order !== "guard");
-        if (!lead.length || d(e, o) >= Math.min(...lead.map(x => d(x, o))) + .9) goTo(e, o.x, o.y, reach * .9);
-      } else goTo(e, o.x, o.y, reach * .9);
+        if (!lead.length || d(e, o) >= Math.min(...lead.map(x => d(x, o))) + .9) goTo(e, o.x, o.y, reach * .9, o);
+      } else goTo(e, o.x, o.y, reach * .9, o);
       return;
     }
     if (fxv(e, "aim")) return; // a Sniper lining up a Headshot holds fire
