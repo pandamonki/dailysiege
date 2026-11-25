@@ -173,11 +173,14 @@ until a start date is chosen. They replace the army plan, the fall-back list, th
 - **Waves pick a zone** on the Deploy tab (Guard, Left, Front or Right) and take that zone's job once they have cleared the castle area.
 - **On the march** ranged soldiers and clerics stay behind their zone's melee line until they are near the fight. Only the Front
   marches in formation.
-- **Routes follow the zone:** the Front marches out through its own gate (where the road leaves its base, just inside the small
-  tree clumps between bases), then comes at a lord's base through that lord's gate, so a Front and a flank aimed at the same
-  neighbour hit it from the middle and from the side. A target across the map is straight on from the gate, through the middle.
+- **Routes follow the zone:** the Front marches out along its own road to its gate (where the road leaves its base, just inside the
+  small tree clumps between bases), on to the target castle's gate, then in along that castle's road, so a Front and a flank aimed at
+  the same neighbour hit it from the middle and from the side (cutting straight across from gate to castle ran into the tree clumps).
   A flank goes straight along the side to its neighbour; heading anywhere else (once that neighbour has fallen, say) it takes the long
   way round the outside, beyond the tree clumps (`gateRoute`, `ringRoute`; `GATE_*`, `RING_*` in `js/config/orders.js`).
+- **Route lines:** while planning orders the map draws each zone's route in its colour: the Front's through the gates to the #1
+  target (or to the hill when holding it), each raiding flank's to its neighbour, and each screening flank's to the spot it holds,
+  ending in a ring. A zone with nobody in it (soldiers, hero or waves) draws nothing; the Guard never does.
 - **Getting unstuck:** a soldier that has tried to walk for 2 seconds without getting anywhere takes a step to one side (the other side
   the next time) and, next to one of its own side's walls, may step through its own side's walls for a moment.
 - **Default placement:** a new player's soldiers all start in the Front with the hero (`zoneSpots`); newly bought soldiers join it too.

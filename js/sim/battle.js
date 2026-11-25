@@ -215,10 +215,13 @@ function runBattle(plans, seed, opts = {}) {
   const gateRoute = (e, x, y, o) => { const p = P[e.pid]; if (!p.zv || e.job !== "front" || sdOn() || !p.castle || p.castle.dead) return null;
     const my = gateOf(p.castle), out = (e.x - p.castle.x) * my.fx + (e.y - p.castle.y) * my.fy;
     const gd = hyp(my.x - p.castle.x, my.y - p.castle.y); if (out >= gd - .5) e.outGate = true; else if (hyp(e.x - p.castle.x, e.y - p.castle.y) < 2) e.outGate = false; // once through its gate it heads on (not back to it) until it is home again
-    if (!e.outGate && out < gd - .5 && hyp(x - e.x, y - e.y) > 3 && hyp(x - p.castle.x, y - p.castle.y) > hyp(my.x - p.castle.x, my.y - p.castle.y) + 1 && ((x - p.castle.x) * my.fx + (y - p.castle.y) * my.fy) < hyp(x - p.castle.x, y - p.castle.y) * dcos(GATE_CONE)) return [my.x, my.y]; // still inside my base, the goal outside it and off to one side: out through my gate first
+    if (!e.outGate && out < gd - .5 && hyp(x - e.x, y - e.y) > 3 && hyp(x - p.castle.x, y - p.castle.y) > hyp(my.x - p.castle.x, my.y - p.castle.y) + 1 && ((x - p.castle.x) * my.fx + (y - p.castle.y) * my.fy) < hyp(x - p.castle.x, y - p.castle.y) * dcos(GATE_CONE)) { // still inside my base, the goal outside it and off to one side: out through my gate first,
+      const lat = (e.x - p.castle.x) * my.fy - (e.y - p.castle.y) * my.fx, k = Math.min(gd, Math.max(0, out) + 1); // keeping to my road (clear of trees) once on it
+      return Math.abs(lat) > .5 ? [p.castle.x + my.fx * k, p.castle.y + my.fy * k] : [my.x, my.y]; }
     const q = o && P[o.pid] && P[o.pid].castle; if (!q || q.dead || o.pid === e.pid || hyp(o.x - q.x, o.y - q.y) > hyp(gateOf(q).x - q.x, gateOf(q).y - q.y) + 1) return null; // only a goal inside a lord's base is come at through its gate
-    const g = gateOf(q), rq = hyp(e.x - q.x, e.y - q.y); if (rq <= hyp(g.x - q.x, g.y - q.y) + .3) return null; // already inside their base
-    return ((e.x - q.x) * g.fx + (e.y - q.y) * g.fy) / rq >= dcos(GATE_CONE) ? null : [g.x, g.y]; }; // in front of their gate already: straight in; else to their gate first
+    const g = gateOf(q), gq = hyp(g.x - q.x, g.y - q.y), rq = hyp(e.x - q.x, e.y - q.y); if (rq <= gq + .3) return null; // already inside their base
+    // to their gate first (gate to gate stays inside the tree clumps between bases), then in along their road; a cut straight across ran into the clumps
+    const on = (e.x - q.x) * g.fy - (e.y - q.y) * g.fx; return hyp(e.x - g.x, e.y - g.y) < 1 || (Math.abs(on) < .6 && ((e.x - q.x) * g.fx + (e.y - q.y) * g.fy) > 0) ? null : [g.x, g.y]; };
   const goTo = (e, x, y, stop, o) => { if (!ZV) { moveToward(e, x, y, stop); return; } const w = ringRoute(e, x, y) || gateRoute(e, x, y, o);
     if (!e.mv || t - e.mv.t >= 1) { const moved = e.mv ? hyp(e.x - e.mv.x, e.y - e.mv.y) : 1; e.stuckN = moved < .15 && hyp(x - e.x, y - e.y) > stop + .5 ? (e.stuckN || 0) + 1 : 0; e.mv = { t, x: e.x, y: e.y };
       if (e.stuckN >= STUCK_SECS) { // pinned (between trees and a fence, say): through its own side's fences for a moment, and a step aside, each time the other way

@@ -309,7 +309,36 @@ function arrow(x1, y1, x2, y2, color, w, alpha, t) {
   ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(ex + bx * w * 2.2, ey + by * w * 2.2); ctx.lineTo(ex - by * w * 1.8, ey + bx * w * 1.8); ctx.lineTo(ex + by * w * 1.8, ey - bx * w * 1.8); ctx.fill();
   ctx.restore();
 }
+// zones v1: a dashed, moving line along a route (tile coordinates [x, y]), with an arrowhead at the end, or a ring where it holds
+function routeLine(pts, color, t, hold) {
+  if (pts.length < 2) return; const P2 = pts.map(([x, y]) => [x * ts, y * ts]), w = ts * .09;
+  ctx.save(); ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.globalAlpha = .9;
+  ctx.strokeStyle = "rgba(20,12,6,.75)"; ctx.lineWidth = w * 2; ctx.beginPath(); P2.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.stroke(); // a dark backing so the route reads on grass
+  ctx.strokeStyle = color; ctx.lineWidth = w; ctx.setLineDash([ts * .3, ts * .2]); ctx.lineDashOffset = -t * ts * .8; ctx.beginPath(); P2.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.stroke(); ctx.setLineDash([]);
+  const [ex, ey] = P2[P2.length - 1], [px, py] = P2[P2.length - 2], L = Math.hypot(ex - px, ey - py) || 1, bx = (ex - px) / L, by = (ey - py) / L;
+  ctx.fillStyle = color; ctx.beginPath();
+  if (hold) { ctx.arc(ex, ey, ts * .22, 0, 7); ctx.strokeStyle = "rgba(20,12,6,.75)"; ctx.lineWidth = w * 2; ctx.stroke(); ctx.strokeStyle = color; ctx.lineWidth = w; ctx.stroke(); }
+  else { ctx.moveTo(ex + bx * w * 2.2, ey + by * w * 2.2); ctx.lineTo(ex - by * w * 1.9, ey + bx * w * 1.9); ctx.lineTo(ex + by * w * 1.9, ey - bx * w * 1.9); ctx.fill(); }
+  ctx.restore();
+}
+// zones v1: each zone's route from my deploy field, as the battle walks it: the Front out through my gate and in through the target's gate
+// (or to the hill), each raiding flank along the side to its neighbour, each screening flank to the spot it holds. The Guard stays home.
+function drawZoneRoutes(t) {
+  const j = myJobs(), st = S.strategy || {}, fl = cleanFlanks(st.flanks), mid = N / 2, cpt = rc => [rc[1] + .5, rc[0] + .5];
+  const TG = treeGeom(RIVALS.length + 1, N), gr = TG.clumps.length ? Math.max(CTR_R + .8, Math.min(...TG.clumps.map(c => Math.hypot(c.x - TG.cc, c.y - TG.cc) - c.r)) - RING_GAP) : null;
+  const gate = rc => { const [x, y] = cpt(rc), dx = mid - x, dy = mid - y, L = Math.hypot(dx, dy) || 1, k = gr != null ? Math.max(0, L - gr) : Math.min(GATE_OUT, L * .6); return [x + dx / L * k, y + dy / L * k]; };
+  const zc = z => { const tl = [...zoneSet].map(k => k.split(",").map(Number)).filter(([r, q]) => { let zz = myZone(r, q); if ((zz === "left" || zz === "right") && !myNeighbour(zz)) zz = "front"; return zz === z; }); if (!tl.length) return null; return [tl.reduce((s, a) => s + a[1], 0) / tl.length + .5, tl.reduce((s, a) => s + a[0], 0) / tl.length + .5]; };
+  const used = z => j[z] > 0 || j.hero === z || (S.garrison || []).some((w, i) => waveOpen(i) && (ZONES.includes(w.zone) ? w.zone : "front") === z);
+  if (used("front")) { const from = zc("front"), me = gate(CASTLE);
+    if ((FRONT_PLANS.includes(st.front) ? st.front : "assault") === "hill") routeLine([from, me, [mid, mid]], ZONE_COL.front, t, true);
+    else { const r = RIVALS.find(x => x.id === (S.lists.hostile || [])[0]); if (r) { const c = cpt(r.pos), g = gate(r.pos);
+      routeLine(Math.hypot(me[0] - g[0], me[1] - g[1]) < 1 ? [from, me, c] : [from, me, g, c], ZONE_COL.front, t); } } }
+  ["left", "right"].forEach(side => { const r = myNeighbour(side); if (!r || !used(side)) return; const from = zc(side), c = cpt(r.pos);
+    if (fl[side] === "raid") routeLine([from, c], ZONE_COL[side], t);
+    else { const [x0, y0] = cpt(CASTLE), dx = c[0] - x0, dy = c[1] - y0, L = Math.hypot(dx, dy) || 1, k = Math.min(SCREEN_OUT, L / 2); routeLine([from, [x0 + dx / L * k, y0 + dy / L * k]], ZONE_COL[side], t, true); } });
+}
 function drawOrderArrows(t) {
+  if (zoneV1Now()) { drawZoneRoutes(t); return; }
   const [zx, zy] = zoneCentre(), tgt = id => RIVALS.find(r => r.id === id), hd = S.strategy ? S.strategy.heading : "near";
   // where the army heads: their hero or their castle, per the Strategy tab
   const aim = r => { if (hd === "hero") { const h = RARMY.find(u => u.rid === r.id && u.champ); if (h) return [(h.c + .5) * ts, (h.r + .5) * ts]; } return [(r.pos[1] + .5) * ts, (r.pos[0] + .3) * ts]; };

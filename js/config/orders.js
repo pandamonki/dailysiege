@@ -117,7 +117,7 @@ const TEMPER_DMG = { reckless: 1.15, steady: 1, wary: .9 }, TEMPER_TAKEN = { rec
 const RING_FAR = 3, RING_CLEAR = 3.2, RING_R = 6, RING_STEP = .6, RING_GAP = .8, STUCK_SECS = 2; // a flank heading for a far target (not its neighbour), whose straight way passes within RING_CLEAR of the hill,
 // walks round the outside instead (RING_GAP beyond the tree clumps between bases; RING_R without trees), aiming RING_STEP radians at a time. The Front goes straight. A soldier that has tried to walk for STUCK_SECS without getting anywhere may step through its own side's fence
 const GATE_OUT = 4.5, GATE_CONE = .6; // the Front marches out through its own gate (on the road toward the hill, just inside the tree clumps between bases; GATE_OUT tiles out
-// without trees) and comes at a castle through that castle's gate, unless already within GATE_CONE radians of straight in front of it
+// without trees), on to the target castle's gate, and in along that castle's road. GATE_CONE: how far off straight ahead a goal must be before it leaves by its gate
 const GUARD_LEASH = 7; // a Guard soldier that has chased this far from its castle drops the chase and walks home
 const HILL_PTS = 2, HILL_MIN = 10; // the lord who held the hill longest (at least HILL_MIN seconds) scores this, times the day's weight
 // (hyp and datan2 come from core/util.js and core/detmath.js, so every device classifies the same way)

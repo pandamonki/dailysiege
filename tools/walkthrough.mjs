@@ -108,6 +108,8 @@ for (const name of engines) {
     const p = await js(() => { const q = buildPlans()[0]; return { front: q.front, temper: q.temper, raid: Object.values(q.flanks).includes("raid"), flanks: document.querySelectorAll('#sheet [data-act="zflank"]').length }; });
     if (p.front !== "hill" || p.temper !== "wary" || (p.flanks && !p.raid)) throw new Error("zone orders did not reach the plan: " + JSON.stringify(p));
     await closeAll(); await tap('#cmdbar [data-v="recruit"]'); await tap('#sheet .tabs button:has-text("Deploy")');
+    const lines = await js(() => { const nb = myNeighbour("left"); if (nb) S.lists.hostile = [nb.id]; const keep = routeLine, out = []; routeLine = (pts, c) => out.push(c); try { drawZoneRoutes(0); } finally { routeLine = keep; } return out; });
+    if (!lines.includes(await js(() => ZONE_COL.front))) throw new Error("the map draws no route for the Front: " + JSON.stringify(lines));
     const wz = page.locator('#sheet [data-act="wzone"][data-v="guard"]'); if (await wz.count()) { await wz.first().click(); if (!(await js(() => buildPlans()[0].waves.some(w => w.zone === "guard")))) throw new Error("a wave's zone did not reach the plan"); }
     await closeAll(); });
   await step("pick today's targets", async () => { await tap('#cmdbar [data-act="openorders"]'); await tap('#sheet .tabs button:has-text("Strategy")');
