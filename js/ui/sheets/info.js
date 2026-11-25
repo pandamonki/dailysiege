@@ -79,7 +79,7 @@ function reportSheet(id) {
   const sorted = d.results.slice().sort((a, b) => a.place - b.place || b.points - a.points), gain = d.gain[me] || 0;
   return head(null, `Day ${d.day} report`, d.team ? "Allies won the Daily Siege together" : "The battle has been fought") + `<div class="body">
     ${dayChips(id, d)}
-    ${mine ? `<div class="rhead"><div class="rsum"><b>${mine.place === 1 ? (d.team ? "Victory, together" : "Victory") : ord(mine.place) + " of " + d.results.length}</b><span>${mine.points} pt${mine.points === 1 ? "" : "s"} · +${d.gold[me] != null ? d.gold[me] : (mine.gold || 0)}g${gain ? ` · +${gain} lvl` : ""}</span></div>` : `<div class="rhead"><p class="muted">You weren't in this battle.</p>`}<div class="rbtns"><button class="btn wax" data-act="rwatch" data-v="${id}">▶ Watch</button><button class="btn wood" data-act="rreelm" data-v="${id}">★ Highlights</button><button class="btn small wide" data-act="rshare" data-v="${id}">Share the day</button></div></div>
+    ${mine ? `<div class="rhead"><div class="rsum"><b>${mine.place === 1 ? (d.team ? "Victory, together" : "Victory") : ord(mine.place) + " of " + d.results.length}</b><span>${mine.points} pt${mine.points === 1 ? "" : "s"} · +${d.gold[me] != null ? d.gold[me] : (mine.gold || 0)}g${gain ? ` · +${gain} lvl` : ""}</span></div>` : `<div class="rhead"><p class="muted">You weren't in this battle.</p>`}<div class="rbtns"><button class="btn wax" data-act="rwatch" data-v="${id}">Watch</button><button class="btn wood" data-act="rreelm" data-v="${id}">Highlights</button><button class="btn small wide" data-act="rshare" data-v="${id}">Share the day</button></div></div>
     ${boardHTML(d, sorted, me, nm)}
     ${weekHTML(d, me, nm)}
     ${awardsHTML(d.awards, nm)}
@@ -169,8 +169,8 @@ function titleSheet() {
   const live = isLive(), c = !!sheet.confirm, can = !!(LIVE.db && LIVE.uid), inGame = can && LIVE.config && LIVE.players && LIVE.players[LIVE.uid];
   if (sheet.tab === "test") return head(null, "Test mode", "A private sandbox against bots") + `<div class="body">
     <div class="menu3">
-      <button class="btn wax big" data-act="testgo">▶ Continue<small>Practice game · day ${gameMode === "practice" ? DAY : practiceDay()} of 7</small></button>
-      <button class="btn wood big" data-act="pvstart">✦ Preview a new player's first run<small>From opening the invite link: register → tutorial → hero → name, army colour, coat of arms → Day 1. A private sandbox with bot lords; your test game isn't touched.</small></button>
+      <button class="btn wax big" data-act="testgo">Continue<small>Practice game · day ${gameMode === "practice" ? DAY : practiceDay()} of 7</small></button>
+      <button class="btn wood big" data-act="pvstart">Preview a new player's first run<small>From opening the invite link: register → tutorial → hero → name, army colour, coat of arms → Day 1. A private sandbox with bot lords; your test game isn't touched.</small></button>
       <button class="btn ${c ? "wax" : ""} small" data-act="newgame">${c ? "Tap again: restart the test game" : "Restart the test game from day 1"}</button>
     </div>
     <div class="sec"><h3>Testing tools</h3><div class="row"><button class="btn small" data-act="testnext">Skip to the next day</button><button class="btn small" data-act="lab">Balance lab</button><button class="btn small" data-act="reset">Reset setup</button></div></div>
@@ -209,6 +209,10 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "v1.24: drawn icons", date: "25 Nov", fixes: ["After a host deletes a war, closing a screen no longer shows an old practice game."], balance: [], changes: [
+    "Emoji across the game are replaced with icons drawn in the game's own style: medals, prizes, stats and buttons.",
+    "The shared battle text is plain words, without emoji.",
+  ] },
   { v: "v1.23: share the day", date: "24 Nov", fixes: [], balance: [], changes: [
     "The battle report has a Share the day button: a picture and a few lines about the day's battle to send to your group chat.",
   ] },

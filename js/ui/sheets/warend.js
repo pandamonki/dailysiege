@@ -68,7 +68,7 @@ function warEndSheet() {
     ${open === p.pid ? lordWeekHTML(p) : ""}`;
   return head(null, `War ${W.war} is won`, a ? `${esc(lordName(a))} takes the crown with ${a.pts} points` : "") + `<div class="body warend">
     <div class="podium">${step(b, 2)}${step(a, 1)}${step(c, 3)}</div>
-    <div class="row wbtns"><button class="btn wax" data-act="warcrown">👑 Crowning</button><button class="btn wax" data-act="warreel">▶ Top 5 moments</button><button class="btn wood" data-act="warfinal">Watch the final battle</button></div>
+    <div class="row wbtns"><button class="btn wax" data-act="warcrown">👑 Crowning</button><button class="btn wax" data-act="warreel">Top 5 moments</button><button class="btn wood" data-act="warfinal">Watch the final battle</button></div>
     <div class="sec tight"><h3>Final standings</h3><p class="muted">Points each day, then the war total. Tap a lord for their week.</p>${W.rank.map(row).join("")}</div>
     ${W.prizes.length ? `<div class="sec tight"><h3>War prizes</h3><div class="prizes">${W.prizes.map(([g, t, p, f]) => `<div class="prize"><span class="pg">${g}</span><span><b>${t}</b><small>${esc(lordName(p))} · ${esc(f(p))}</small></span></div>`).join("")}</div></div>` : ""}
     <div class="row"><button class="btn" data-act="open" data-v="hall">Hall of fame</button><button class="btn wax" data-act="close">${inLobby() ? "To the Muster Hall" : "Close"}</button></div></div>`;

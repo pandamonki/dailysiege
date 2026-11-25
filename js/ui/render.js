@@ -48,4 +48,7 @@ function wizStartStep() { const c = wizCtx; wizCtx = null; if (!c) return 0; // 
     : c.type === "champ" ? '[data-act="openhero"]' : c.type === "orders" ? (c.grp === "alli" ? '[data-act="openorders"][data-v="alli"]' : '[data-act="openorders"][data-v="ord"]')
     : ["gold", "day", "board", "rep"].includes(c.type) ? ".topchips" : null;
   const i = k ? guideFind(k.startsWith("[") ? "#cmdbar " + k : k) : 0; return i < 0 ? 0 : i; }
-function close() { sheet = null; if (mode === "plan") reportBack = null; if (mode === "plan" && typeof WAR_VIEW !== "undefined" && WAR_VIEW && !WAR_REEL) { endPrevView(); return; } render(); }
+// signed in but in no war (say the host just deleted it): the board behind the sheets is the local practice game, which isn't a real war,
+// so closing a screen goes to the friends game screen (set up a war, or register for one) instead of showing it
+const noWarBoard = () => mode === "plan" && !PRACTICE_PICKED && !!(window.DS && DS.user) && LIVE.configLoaded && !PREVIEW && !isLive() && !inLobby();
+function close() { sheet = null; if (mode === "plan") reportBack = null; if (mode === "plan" && typeof WAR_VIEW !== "undefined" && WAR_VIEW && !WAR_REEL) { endPrevView(); return; } if (noWarBoard()) { open("game"); return; } render(); }
