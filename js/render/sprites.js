@@ -205,7 +205,8 @@ function spr(key, color = YOU_COLOR, pose = "") {
     if (key.startsWith("c-")) { // heroes wear two tones of the lord's colour: the bright colour for trim, sashes and shields, a dark shade for the outfit
       const dark = mixHex(color, "#000000", key === "c-rogue" ? .78 : .68), darker = mixHex(color, "#000000", key === "c-rogue" ? .86 : .78), bright = mixHex(color, "#ffffff", .12);
       sp.b = bright; sp.a = dark; if ("sh" in sp) sp.sh = bright; if (sp.hc) sp.hc = darker;
-      if (key === "c-shaman") { sp.hc = bright; sp.sash = 1; } }
+      if (key === "c-shaman") { sp.hc = bright; sp.sash = 1; }
+      if (key === "c-mage") sp.g = bright; } // the wizard hat band matches the trim
     else if (color !== YOU_COLOR) ["b", "sh"].forEach(k => { if (sp[k] === YOU_COLOR) sp[k] = color; });
     SPR[id] = buildSprite(sp, pose);
   }
