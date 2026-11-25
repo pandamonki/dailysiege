@@ -222,7 +222,8 @@ test("a lord can leave a war: their castle is out, they lose access, and the war
   await P.alice.waitForFunction(() => !LIVE.config, null, WAIT);
   await P.host.waitForFunction(n => rosterFor(liveClock().week).length === n - 1, lords, WAIT);
   assert.equal(await list(P.alice, `games/${gameId}/players`), "permission-denied");
-  assert.equal(await P.alice.evaluate(async g => { const u = await firebase.firestore().doc("users/" + LIVE.uid).get({ source: "server" }); return (u.get("games") || []).includes(g) || u.get("gameId") === g; }, gameId), false);
+  // the uid comes from the test, not LIVE.uid: once the lord has left, the game may have cleared it, and reading "users/undefined" is refused
+  assert.equal(await P.alice.evaluate(async ([g, uid]) => { const u = await firebase.firestore().doc("users/" + uid).get({ source: "server" }); return (u.get("games") || []).includes(g) || u.get("gameId") === g; }, [gameId, U.alice]), false);
 });
 
 test("the host cannot leave their own war", async () => {
@@ -246,7 +247,7 @@ test("the host can delete the war: it is gone for everyone, with its invite link
   await P.host.waitForFunction(() => !LIVE.config, null, WAIT);
   assert.equal(await read(P.mallory, `invites/${code}`), "missing", "the invite link is dead");
   assert.ok(["missing", "permission-denied"].includes(await read(P.host, `games/${gameId}`)), "the game is gone");
-  assert.equal(await P.host.evaluate(async g => { const u = await firebase.firestore().doc("users/" + LIVE.uid).get({ source: "server" }); return (u.get("games") || []).includes(g) || u.get("gameId") === g; }, gameId), false, "and off the host's list");
+  assert.equal(await P.host.evaluate(async ([g, uid]) => { const u = await firebase.firestore().doc("users/" + uid).get({ source: "server" }); return (u.get("games") || []).includes(g) || u.get("gameId") === g; }, [gameId, U.host]), false, "and off the host's list"); // the uid from the test, as above
 });
 
 test("the game is installable and opens with no connection", async () => {
