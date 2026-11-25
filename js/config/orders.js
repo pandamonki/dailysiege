@@ -105,7 +105,8 @@ let TIME_V1_FROM = "2099-01-01"; const timeV1For = d => String(d) >= TIME_V1_FRO
 const fixedFrac = k => { const x = k * .6180339887498949; return x - Math.floor(x); }; // an even spread in [0, 1) by place, the same on every device
 let ZONE_V1_FROM = "2099-01-01"; const zoneV1For = d => String(d) >= ZONE_V1_FROM;
 const ZONES = ["guard", "left", "front", "right"], ZONE_INFO = { guard: ["Guard", "Stays at home and defends the castle"], left: ["Left flank", "Holds or raids your left side"], front: ["Front", "Marches on your #1 target"], right: ["Right flank", "Holds or raids your right side"] };
-const ZONE_COL = { guard: "#2f5fa8", left: "#b23428", front: "#4f7a2e", right: "#c9962f" };
+const ZONE_COL = { guard: "#8a5cf0", left: "#e0453a", front: "#29c6e8", right: "#f2b632" }; // purple, red, cyan, amber: easy to tell apart, and none of them green like the grass
+const ZONE_INK = { guard: "#6a3fd0", left: "#b8322a", front: "#127a91", right: "#9a6a0c" }; // the same, dark enough for words on parchment
 const ZONE_GUARD_R = 1.5, ZONE_FRONT_A = .5; // tiles from the castle that count as Guard; how far (radians) either side of straight ahead still counts as the Front
 const FRONT_PLANS = ["assault", "siege", "hunt", "hill"], FRONT_INFO = { assault: ["Assault", "Fights whatever it meets on the way to your target"], siege: ["Siege", "Slips past armies and goes for the castle"], hunt: ["Hero hunt", "Goes for heroes first"], hill: ["Hold the hill", "Takes the hill and holds it until 2:00, then marches on your target"] };
 const FRONT_BEATS = { hill: "assault", assault: "hunt", hunt: "siege", siege: "hill" }; // the loop: a Front fighting a Front its plan beats deals FRONT_BEAT_X damage

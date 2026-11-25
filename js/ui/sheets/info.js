@@ -209,6 +209,11 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "v1.25: army zones (practice)", date: "25 Nov", fixes: [], balance: [], changes: [
+    "Practice only for now: where you place a soldier sets its job (Guard, Front, left or right flank); one #1 target; Front plans Assault, Siege, Hero hunt and Hold the hill; flanks Screen or Raid; an army temper replaces stance and fall-back.",
+    "Practice battles no longer roll each soldier's opening timing, so the same orders give the same battle. Holding the hill longest scores 2 points.",
+    "Real wars keep the current rules until a start date is chosen.",
+  ] },
   { v: "v1.24: drawn icons", date: "25 Nov", fixes: ["After a host deletes a war, closing a screen no longer shows an old practice game."], balance: [], changes: [
     "Emoji across the game are replaced with icons drawn in the game's own style: medals, prizes, stats and buttons.",
     "The shared battle text is plain words, without emoji.",

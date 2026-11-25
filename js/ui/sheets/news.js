@@ -4,6 +4,12 @@
 // the id is remembered on their device, so changing the id is all it takes to show it again.
 // Only major changes players will notice, in two to five items. Fixes, tidy-ups and small balance tweaks don't belong here.
 const RELEASES = [
+  { id: "1.25", title: "What's new in v1.25", sub: "Practice: army zones, to try before they reach real wars", items: [
+    ["Where you place soldiers sets their job", "In practice, your field splits into Guard, Front, and left and right flanks. The Front marches on your #1 target; each flank screens its side or raids that neighbour."],
+    ["Four Front plans", "Assault, Siege, Hero hunt or Hold the hill, each beating one other. Holding the hill longest scores 2 points."],
+    ["Routes on the map", "While you set orders, each zone's route is drawn on the map, and each wave picks a zone."],
+    ["Fairer battles", "In practice the same orders now give the same battle: soldiers' opening timing no longer comes from the dice."],
+  ] },
   { id: "1.23", title: "What's new in v1.23", sub: "Share the day with your group chat", items: [
     ["Share the day", "The battle report has a Share the day button: a picture of the winner, the biggest upset, any betrayal and how the standings moved."],
     ["Send it anywhere", "It opens your phone's share sheet with a few lines of text to go with the picture."],

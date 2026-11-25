@@ -97,7 +97,7 @@ function paintBackground() {
     c.fillStyle = "#8f8b82"; c.fillRect(sx - u * 2 + u * .5, sy - u * 7 + u * .5, u * 3, u * 7); c.fillStyle = "#b8b4a8"; c.fillRect(sx - u * 2 + u * .5, sy - u * 7 + u * .5, u, u * 7); c.fillStyle = "#c9c5b9"; c.fillRect(sx - u * 2 + u * .5, sy - u * 7 + u * .5, u * 3, u);
   }
   // your deployment field: tinted tiles with a dashed fence along its outer edge
-  const ZT = zoneV1Now() ? { guard: "rgba(47,95,168,.26)", left: "rgba(178,52,40,.24)", front: "rgba(79,122,46,.28)", right: "rgba(201,150,47,.28)" } : null; // zones v1: each zone tinted in its colour
+  const ZT = zoneV1Now() ? { guard: "rgba(138,92,240,.34)", left: "rgba(224,69,58,.3)", front: "rgba(41,198,232,.3)", right: "rgba(242,182,50,.34)" } : null; // zones v1: each zone tinted in its colour (ZONE_COL)
   zoneSet.forEach(k => { const [r, q] = k.split(",").map(Number);
     c.fillStyle = ZT ? ZT[(z => (z === "left" || z === "right") && !myNeighbour(z) ? "front" : z)(myZone(r, q))] : "rgba(255,236,170,.10)"; c.fillRect(q * ts, r * ts, ts, ts);
     c.strokeStyle = "rgba(255,236,170,.18)"; c.lineWidth = 1; c.strokeRect(q * ts + .5, r * ts + .5, ts - 1, ts - 1);
@@ -313,9 +313,11 @@ function arrow(x1, y1, x2, y2, color, w, alpha, t) {
 function routeLine(pts, color, t, hold) {
   if (pts.length < 2) return; const P2 = pts.map(([x, y]) => [x * ts, y * ts]), w = ts * .09;
   ctx.save(); ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.globalAlpha = .9;
-  ctx.strokeStyle = "rgba(20,12,6,.75)"; ctx.lineWidth = w * 2; ctx.beginPath(); P2.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.stroke(); // a dark backing so the route reads on grass
-  ctx.strokeStyle = color; ctx.lineWidth = w; ctx.setLineDash([ts * .3, ts * .2]); ctx.lineDashOffset = -t * ts * .8; ctx.beginPath(); P2.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.stroke(); ctx.setLineDash([]);
-  const [ex, ey] = P2[P2.length - 1], [px, py] = P2[P2.length - 2], L = Math.hypot(ex - px, ey - py) || 1, bx = (ex - px) / L, by = (ey - py) / L;
+  // a rounded path: straight to the first corner's midpoint, a curve round each corner, straight on to the end
+  const path = () => { ctx.beginPath(); ctx.moveTo(...P2[0]); for (let i = 1; i < P2.length - 1; i++) { const [x, y] = P2[i], [nx, ny] = P2[i + 1]; ctx.quadraticCurveTo(x, y, (x + nx) / 2, (y + ny) / 2); } ctx.lineTo(...P2[P2.length - 1]); };
+  ctx.strokeStyle = "rgba(20,12,6,.75)"; ctx.lineWidth = w * 2; path(); ctx.stroke(); // a dark backing so the route reads on grass
+  ctx.strokeStyle = color; ctx.lineWidth = w; ctx.setLineDash([ts * .3, ts * .2]); ctx.lineDashOffset = -t * ts * .8; path(); ctx.stroke(); ctx.setLineDash([]);
+  const [ex, ey] = P2[P2.length - 1], [px, py] = P2.length > 2 ? [(P2[P2.length - 2][0] + ex) / 2, (P2[P2.length - 2][1] + ey) / 2] : P2[P2.length - 2], L = Math.hypot(ex - px, ey - py) || 1, bx = (ex - px) / L, by = (ey - py) / L;
   ctx.fillStyle = color; ctx.beginPath();
   if (hold) { ctx.arc(ex, ey, ts * .22, 0, 7); ctx.strokeStyle = "rgba(20,12,6,.75)"; ctx.lineWidth = w * 2; ctx.stroke(); ctx.strokeStyle = color; ctx.lineWidth = w; ctx.stroke(); }
   else { ctx.moveTo(ex + bx * w * 2.2, ey + by * w * 2.2); ctx.lineTo(ex - by * w * 1.9, ey + bx * w * 1.9); ctx.lineTo(ex + by * w * 1.9, ey - bx * w * 1.9); ctx.fill(); }
