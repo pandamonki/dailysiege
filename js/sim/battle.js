@@ -197,14 +197,15 @@ function runBattle(plans, seed, opts = {}) {
   const setJob = (e, z) => { const p = P[e.pid]; if ((z === "left" || z === "right") && !p.nb[z]) z = "front"; e.job = z; if (z === "guard") e.order = "guard"; };
   // the army plan this fighter goes by: the Front's plan, a raiding flank marches like a siege, a screen that has pushed on fights like a conquest
   const planOf = e => { const p = P[e.pid]; if (!p.zv || !e.job || e.job === "front" || e.job === "guard") return p.armyPlan; return p.flanks[e.job] === "raid" ? "siege" : "conquest"; };
-  // zones v1: a Front that is not holding the hill goes round it to a far target, so armies do not all meet in the middle by default
-  const ringRoute = (e, x, y) => { const p = P[e.pid]; if (!p.zv || e.job !== "front" || p.front === "hill" || sdOn()) return null;
+  // zones v1: the zone sets the route. The Front goes straight at its target, through the middle; a flank heading anywhere but its own
+  // neighbour takes the long way round the outside (beyond the tree clumps between bases)
+  const ringRoute = (e, x, y) => { const p = P[e.pid]; if (!p.zv || (e.job !== "left" && e.job !== "right") || sdOn()) return null;
     const ex = e.x - ctrX, ey = e.y - ctrY, tx = x - ctrX, ty = y - ctrY, re = hyp(ex, ey), rt = hyp(tx, ty), dx = x - e.x, dy = y - e.y, L2 = dx * dx + dy * dy;
     if (re < RING_FAR || rt < RING_FAR || L2 < 16) return null;
     const u = Math.max(0, Math.min(1, -(ex * dx + ey * dy) / L2)); if (hyp(ex + dx * u, ey + dy * u) >= RING_CLEAR) return null;
     let da = datan2(ty, tx) - datan2(ey, ex); while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI;
-    const a = datan2(ey, ex) + (da < 0 ? -1 : 1) * Math.min(Math.abs(da), RING_STEP), r = Math.max(ringR, Math.min(re, rt, ringR + 1.5)); return [ctrX + dcos(a) * r, ctrY + dsin(a) * r]; };
-  const ringR = TG && TG.clumps.length ? Math.max(CTR_R + 1.2, Math.min(...TG.clumps.map(c => hyp(c.x - TG.cc, c.y - TG.cc) - c.r)) - RING_GAP) : RING_R; // the way round the hill: inside the tree clumps between bases, clear of the hill
+    const a = datan2(ey, ex) + (da < 0 ? -1 : 1) * Math.min(Math.abs(da), RING_STEP), r = Math.max(ringR, Math.min(re, rt)); return [ctrX + dcos(a) * r, ctrY + dsin(a) * r]; };
+  const ringR = TG && TG.clumps.length ? Math.max(...TG.clumps.map(c => hyp(c.x - TG.cc, c.y - TG.cc) + c.r)) + RING_GAP : RING_R; // the way round the outside: beyond the tree clumps between bases
   // zones v1: walk toward (x, y), round the hill if need be; a soldier that keeps trying and getting nowhere (pinned on its own fence, or between trees and a fence) may step through its own side's fences for a moment
   const goTo = (e, x, y, stop) => { if (!ZV) { moveToward(e, x, y, stop); return; } const w = ringRoute(e, x, y);
     if (!e.mv || t - e.mv.t >= 1) { const moved = e.mv ? hyp(e.x - e.mv.x, e.y - e.mv.y) : 1; e.stuckN = moved < .15 && hyp(x - e.x, y - e.y) > stop + .5 ? (e.stuckN || 0) + 1 : 0; e.mv = { t, x: e.x, y: e.y };

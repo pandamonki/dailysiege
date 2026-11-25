@@ -33,8 +33,8 @@ function setupPractice() {
       const r = Math.round(b.pos[0] + uy * 3), c = Math.round(b.pos[1] + ux * 3), dir = Math.abs(uy) >= Math.abs(ux) ? "h" : "v", z = zoneFor(b.pos, L.N, L.castles, true);
       const sp = armySpots(b.pos, L.N), held = new Set([sp.champ, ...sp.units.slice(0, 2)].map(q => q.join(","))); // never build over where the army stands
       (dir === "h" ? [[r, c - 1], [r, c], [r, c + 1]] : [[r - 1, c], [r, c], [r + 1, c]]).forEach(([a, bb]) => { if (z.has(`${a},${bb}`) && !held.has(`${a},${bb}`)) RWALLS.push({ rid: b.id, r: a, c: bb, dir }); }); }); }
-  // zones v1: each rival puts one soldier in the Front and one on a flank (left and right by turns)
-  RIVALS.forEach((rv, i) => { const sp = zoneV1Now() ? zoneSpots(rv.pos, L.N, new Set([...zoneFor(rv.pos, L.N, L.castles, true)].filter(k => !RWALLS.some(w => w.rid === rv.id && `${w.r},${w.c}` === k))), ["front", i % 2 ? "right" : "left"]) : armySpots(rv.pos, L.N);
+  // zones v1: each rival stands its soldiers by its shape (BOT_SHAPES), like the bots in a real war
+  RIVALS.forEach((rv, i) => { const sp = zoneV1Now() ? zoneSpots(rv.pos, L.N, new Set([...zoneFor(rv.pos, L.N, L.castles, true)].filter(k => !RWALLS.some(w => w.rid === rv.id && `${w.r},${w.c}` === k))), botShape(rv.id).jobs.slice(0, 2)) : armySpots(rv.pos, L.N);
     RARMY.push({ rid: rv.id, r: sp.champ[0], c: sp.champ[1], champ: true, key: "c-" + rv.cls, hp: .55 + hash(i, 1, 9) * .45 });
     sp.units.slice(0, 2).forEach((p, j) => RARMY.push({ rid: rv.id, r: p[0], c: p[1], champ: false, key: UTYPES[(i + j * 2) % UTYPES.length], lvl: 1 + (hash(p[0], p[1], 8) > .5 ? 1 : 0), hp: .35 + hash(i, j, 4) * .65 })); });
   applyLayout(L.N, L.castles[0], RIVALS.map(r => r.pos), true);

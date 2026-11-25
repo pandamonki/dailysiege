@@ -86,7 +86,7 @@ function routeOpen(key, ref) {
   return false;
 }
 function autoPlace(id) {
-  const sp = zoneV1Now() ? zoneSpots(CASTLE, N, zoneSet, ["front", "front", "left", "right"]) : armySpots(CASTLE, N), pref = sp.units.map(x => x.join(",")), dist = k => { const [r, c] = k.split(",").map(Number); return hyp(r - CASTLE[0], c - CASTLE[1]); };
+  const sp = zoneV1Now() ? zoneSpots(CASTLE, N, zoneSet, ["front", "front", "front", "front"]) : armySpots(CASTLE, N), pref = sp.units.map(x => x.join(",")), dist = k => { const [r, c] = k.split(",").map(Number); return hyp(r - CASTLE[0], c - CASTLE[1]); };
   const free = k => zoneSet.has(k) && !S.place[k] && !wallRefAt(...k.split(",").map(Number)) && (!findWall(id) || routeOpen(k, id));
   const k = pref.find(free) || [...zoneSet].filter(free).sort((x, y) => dist(x) - dist(y) || (x < y ? -1 : 1))[0];
   if (!k) return false; S.place[k] = id; return true;

@@ -27,7 +27,7 @@ function newPlayerState() {
     castle: 1, items: [], walls: [], banner: defaultBanner(), pairs: [], pactAct: {}, pactWhen: {}, xp: 0, lvl: 1, gain: 0, ob: 1 };
 }
 function defaultPlace(ids) {
-  const sp = typeof zoneV1Now === "function" && zoneV1Now() && zoneSet && zoneSet.size ? zoneSpots(CASTLE, N, zoneSet, ["front", "front", "left", "right"]) : armySpots(CASTLE, N), out = { [sp.champ.join(",")]: "champ" };
+  const sp = typeof zoneV1Now === "function" && zoneV1Now() && zoneSet && zoneSet.size ? zoneSpots(CASTLE, N, zoneSet, ["front", "front", "front", "front"]) : armySpots(CASTLE, N), out = { [sp.champ.join(",")]: "champ" };
   ids.forEach((id, i) => { if (sp.units[i]) out[sp.units[i].join(",")] = id; });
   return out;
 }

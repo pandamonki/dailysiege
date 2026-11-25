@@ -173,20 +173,21 @@ until a start date is chosen. They replace the army plan, the fall-back list, th
 - **Waves pick a zone** on the Deploy tab (Guard, Left, Front or Right) and take that zone's job once they have cleared the castle area.
 - **On the march** ranged soldiers and clerics stay behind their zone's melee line until they are near the fight. Only the Front
   marches in formation.
-- **Round the hill:** a Front that is not holding the hill, whose straight way to its target passes over the hill, walks round
-  it instead of through it, keeping inside the small tree clumps between bases, so armies don't all meet in the middle by default
-  (`RING_*` in `js/config/orders.js`).
+- **Routes follow the zone:** the Front goes straight at its target, through the middle if that is the way. A flank heading anywhere
+  but its own neighbour (once that neighbour has fallen, say) takes the long way round the outside, beyond the small tree clumps
+  between bases (`RING_*` in `js/config/orders.js`).
 - **Getting unstuck:** a soldier that has tried to walk for 2 seconds without getting anywhere, next to one of its own side's walls,
   may step through its own side's walls for a moment.
-- **Default placement:** a new player's first two soldiers join the Front with the hero, the next go to the left and right flanks
-  (`zoneSpots`); newly bought soldiers fill the same order. Bots put their first two in the Front too, then fill the zones their
-  build wants; practice rivals put one in the Front and one on a flank. (Spreading the first soldiers over the flanks halved how
-  many castles fell by 1:30.)
+- **Default placement:** a new player's soldiers all start in the Front with the hero (`zoneSpots`); newly bought soldiers join it too.
+  Each player shapes their own army from there.
+- **Bot shapes:** each bot keeps one shape for the war, picked by its seed (`BOT_SHAPES` in `js/sim/bots.js`): spearhead (all Front),
+  pincer (both flanks raiding), left or right hook (heavy on one side), turtle (Guard and screening flanks) or balanced. The shape
+  sets where its soldiers stand, its flank plans and its waves' zones; its build still sets the Front's plan. Practice rivals stand
+  their two soldiers by the same shapes.
 - **Hill points:** the lord who held the hill longest (at least 10 seconds) scores 2 points, times the day's weight; a tie shares them.
 - **Sudden death time-out:** the winner is the side with the best health left plus damage dealt all battle (each as a share of
   the sides still standing), not health alone.
-- Bots: each build has a Front plan, flank plans and zones it places soldiers in (`BOT_ZONES` in `js/sim/bots.js`); their temper
-  follows their old stance.
+- Bots: each build has a Front plan (the shape, above, sets where soldiers stand and may set the flanks); their temper follows their old stance.
 
 ## The battle
 

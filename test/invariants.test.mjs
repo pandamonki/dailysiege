@@ -340,31 +340,39 @@ test("fixed timing (timeV1): with no percentage chances in play, the dice no lon
   assert.ok(new Set(off).size > 1, "before fixed timing the opening was random (the check would prove nothing)");
 });
 
-test("zones v1: a Front that is not holding the hill goes round it to a far target, and a Front holding it goes there", () => {
-  // every lord aims its Front at the castle across the map; the Fronts either all hold the hill or all assault (the first 30 seconds, within 3 tiles of the middle)
-  const run = front => JSON.parse(sim.run(`(() => { const { full, plans, L } = ${ZWAR(4, 3, `plans.forEach((p, i) => { p.targets = [plans[(i + 4) % 8].pid]; p.front = "${front}"; p.timeV1 = true; });`)};
+test("zones v1: the Front goes straight through the middle to a far target, while flanks keep to the sides", () => {
+  // every lord aims at the castle across the map; either every soldier stands in the Front (Assault), or every soldier stands on a flank (Raid)
+  // (the first 30 seconds, soldiers within 3 tiles of the middle)
+  const run = shape => JSON.parse(sim.run(`(() => { const { full, plans, L } = ${ZWAR(4, 3, `plans.forEach((p, i) => { p.targets = [plans[(i + 4) % 8].pid]; p.front = "assault"; p.flanks = { left: "raid", right: "raid" }; p.timeV1 = true;
+      const [cr, cc] = p.castle, want = "${shape}" === "front" ? ["front"] : ["left", "right"], used = new Set(), tiles = [...p.zoneSet].map(k => k.split(",").map(Number)).filter(([r, c]) => want.includes(zoneOfTile(cr, cc, r, c, L.N)) && !(r === cr && c === cc));
+      p.pieces = p.pieces.filter(q => q.kind === "champ" || q.kind === "unit").filter(q => { if (q.kind === "champ") return true; const t = tiles.filter(([r, c]) => !used.has(r + "," + c))[used.size % 2 ? tiles.length - 1 : 0] || tiles.find(([r, c]) => !used.has(r + "," + c)); if (!t) return false; used.add(t.join(",")); q.r = t[0]; q.c = t[1]; return true; }); p.waves = null; });`)};
     const c = L.N / 2; let on = 0, all = 0; full.frames.forEach(f => { if (f.t > 30) return; full.meta.forEach((m, j) => { if (m.kind !== "unit" || m.militia || m.free) return; const i = j * 4; if (f.d.length <= i + 3 || (f.d[i + 3] & 1)) return; all++; if (Math.hypot(f.d[i] - c, f.d[i + 1] - c) <= 3) on++; }); });
     return JSON.stringify({ share: on / all }); })()`));
-  const round = run("assault"), hill = run("hill");
-  assert.ok(hill.share > 0.01, `holding the hill, only ${(hill.share * 100).toFixed(1)}% of soldier time was on it`);
-  assert.ok(round.share < hill.share / 3, `assaulting Fronts spent ${(round.share * 100).toFixed(1)}% of their time on the hill (holding it: ${(hill.share * 100).toFixed(1)}%)`);
+  const front = run("front"), flanks = run("flanks");
+  assert.ok(front.share > 0.02, `a Front aimed across the map spent only ${(front.share * 100).toFixed(1)}% of its time in the middle`);
+  assert.ok(flanks.share < front.share / 3, `flanks spent ${(flanks.share * 100).toFixed(1)}% of their time in the middle (the Front: ${(front.share * 100).toFixed(1)}%)`);
 });
 
 test("zones v1: soldiers never stay stuck behind their own walls", () => {
-  // lord 0 drops 5 walls at random on its field, then sends everyone out (Front on Assault, both flanks Raid); every soldier must get
-  // at least 3 tiles from where it started within 40 seconds, unless it dies first
-  const worst = [];
+  // lord 0 drops 5 walls at random on its field, then sends everyone out (Front on Assault, both flanks Raid). In the first 60 seconds no
+  // soldier may stand within 0.3 tiles of the same spot for 8 seconds with no enemy (soldier, hero or castle) within 2.5 tiles: that is stuck, not fighting
+  const bad = [];
   for (let g = 0; g < 6; g++) {
     const tweak = `{ const p = plans[0], r = mulberry(${g} * 31 + 7), taken = new Set(p.pieces.map(q => q.r + "," + q.c)); taken.add(p.castle.join(","));
       const free = [...p.zoneSet].filter(k => !taken.has(k) && !treeTile(...k.split(",").map(Number), 8, L.N));
       p.pieces = p.pieces.filter(q => q.kind !== "wall" && !(q.kind === "trap" && q.type === "tower")); for (let k = 0; k < 5 && free.length; k++) { const i = Math.floor(r() * free.length), [a, b] = free.splice(i, 1)[0].split(",").map(Number); p.pieces.push({ kind: "wall", r: a, c: b, dir: r() < .5 ? "h" : "v" }); }
-      p.front = "assault"; p.flanks = { left: "raid", right: "raid" }; p.temper = "reckless"; p.waves = null; plans.forEach(q => { q.timeV1 = true; }); }`;
-    const r = JSON.parse(sim.run(`(() => { const { full, plans } = ${ZWAR(10 + g, 4, tweak)}; const p = plans[0]; let worst = 99;
-      full.meta.forEach((m, j) => { if (m.pid !== p.pid || m.kind !== "unit" || m.militia || m.free || (UNITS[m.key] && (UNITS[m.key].tower || UNITS[m.key].engine))) return; const i = j * 4; let s0 = null, far = 0, died = false;
-        full.frames.forEach(f => { if (f.t > 40 || died) return; if (f.d.length <= i + 3) return; if (f.d[i + 3] & 1) { if (s0) died = true; return; } if (!s0) s0 = [f.d[i], f.d[i + 1]]; far = Math.max(far, Math.hypot(f.d[i] - s0[0], f.d[i + 1] - s0[1])); });
-        if (s0 && !died) worst = Math.min(worst, far); });
-      return JSON.stringify({ worst }); })()`));
-    worst.push(r.worst);
+      p.front = "assault"; p.flanks = { left: "raid", right: "raid" }; p.temper = "reckless"; plans.forEach(q => { q.timeV1 = true; }); }`;
+    const r = JSON.parse(sim.run(`(() => { const { full, plans, L } = ${ZWAR(10 + g, 4, tweak)}; const p = plans[0], fr = full.frames.filter(f => f.t <= 60), out = [];
+      const at = (f, j) => { const i = j * 4; return f.d.length > i + 3 && !(f.d[i + 3] & 1) ? [f.d[i], f.d[i + 1]] : null; };
+      full.meta.forEach((m, j) => { if (m.pid !== p.pid || m.kind !== "unit" || m.militia || m.free || (UNITS[m.key] && (UNITS[m.key].tower || UNITS[m.key].engine))) return;
+        const f0 = fr.find(f => at(f, j)); if (!f0 || m.key === "guard") return; const p0 = at(f0, j); if (zoneOfTile(p.castle[0], p.castle[1], Math.floor(p0[1]), Math.floor(p0[0]), L.N) === "guard") return; // Guard soldiers are meant to stand at home
+        for (let a = 0; a < fr.length; a++) { const s0 = at(fr[a], j); if (!s0) continue; let b = a, still = true;
+          while (b + 1 < fr.length && fr[b + 1].t - fr[a].t <= 8) { b++; const q = at(fr[b], j); if (!q || Math.hypot(q[0] - s0[0], q[1] - s0[1]) > .3) { still = false; break; } }
+          if (!still || fr[b].t - fr[a].t < 8) continue;
+          const foe = full.meta.some((m2, j2) => m2.pid !== p.pid && (m2.kind === "unit" || m2.kind === "champ" || m2.kind === "castle") && (() => { const q = at(fr[b], j2); return q && Math.hypot(q[0] - s0[0], q[1] - s0[1]) <= 2.5; })());
+          if (!foe) { out.push(m.key + " at " + s0.map(v => v.toFixed(1)) + " from " + fr[a].t.toFixed(0) + "s"); break; } } });
+      return JSON.stringify(out); })()`));
+    if (r.length) bad.push(`game ${g}: ${r.join("; ")}`);
   }
-  assert.ok(worst.every(w => w >= 3), `a soldier got no further than ${Math.min(...worst).toFixed(1)} tiles in 40 seconds (per game: ${worst.map(w => w.toFixed(1)).join(", ")})`);
+  assert.deepEqual(bad, [], "stuck soldiers");
 });
