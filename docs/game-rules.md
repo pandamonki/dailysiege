@@ -199,8 +199,9 @@ until a start date is chosen. They replace the army plan, the fall-back list, th
 - **Opening timing.** Every fighter waits up to 0.8 seconds before its first swing, and each hero skill starts on a 2 to 5 second
   cooldown (the ultimate 10 to 18). Until now these come from the battle's dice (the battle date in real wars), and in tests they
   caused most of the luck in a battle. With fixed timing (prototype `timeV1`, `TIME_V1_FROM` in `js/config/orders.js`; practice always)
-  they are spread by each fighter's place in the line-up (`fixedFrac`), so the same orders against the same rivals give nearly the
-  same battle. Real percentage chances (dodges, crits, misses, skill procs) stay random.
+  they are spread by each fighter's place in its own lord's line-up (`fixedFrac` of its slot), so the same orders against the same
+  rivals give nearly the same battle, and no seat gets better timing than another (the first version counted fighters across the whole
+  battle, seat by seat, which favoured some seats). Real percentage chances (dodges, crits, misses, skill procs) stay random.
 - Fought on a ring map: castles round the edge, a hill in the middle (holding it gives gold and hero experience, not
   points), forest round the rim and small tree blockades between bases. Trees and walls block movement.
 - Militia muster at every castle on a timer. Reinforcement waves march on their triggers.
