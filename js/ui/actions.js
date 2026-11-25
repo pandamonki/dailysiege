@@ -8,7 +8,7 @@ const A = {
   diagcopy: () => { diagCopy(); },
   battle: () => { if (isLive() && (LIVE.readOnly || !S)) return; sheet = null; startBattle(); }, // in the friends game this is a rehearsal: my orders against what I know of my rivals
   testmenu: () => { sheet = { type: "title", tab: "test" }; },
-  testgo: () => { if (gameMode !== "practice") setMode("practice"); sheet = null; render(); },
+  testgo: () => { PRACTICE_PICKED = true; if (gameMode !== "practice") setMode("practice"); sheet = null; render(); },
   testnext: () => { if (gameMode !== "practice") setMode("practice"); A.nextday(); sheet = null; render(); },
   playgo: () => { if (LIVE.db && LIVE.uid && LIVE.players && LIVE.players[LIVE.uid] && LIVE.config) { if (gameMode !== "friends") setMode("friends"); if (isLive() || inLobby()) { sheet = null; render(); return; } } open("game"); },
   copyinvite: () => { const u = GAME_URL(); const fb = () => toast("Copy this link: " + u); try { navigator.clipboard.writeText(u).then(() => toast("Invite link copied."), fb); } catch (e) { fb(); } },

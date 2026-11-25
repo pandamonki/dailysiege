@@ -69,7 +69,7 @@ function spinSheet() {
     : `<button class="reel pick${k === pick && stage === "done" ? " on" : ""}" data-act="spinsel" data-v="${k}" aria-label="${esc(ITEMS[k].name)}" aria-pressed="${k === pick}">${land(k, i)}</button>`).join("");
   const desc = stage === "done" || stage === "stopping" ? `<div class="spindesc"><b>${esc(ITEMS[pick].name)}</b><span class="muted">${esc(itemDesc(pick))}</span></div>`
     : `<div class="spindesc"><b>${stage === "spin" ? "The reels are spinning…" : "Roll for your gift"}</b><span class="muted">${stage === "spin" ? "Press Stop and they slow down onto three items. You keep one." : `Three tier ${sp.tier} items are waiting. Roll the reels to see them.`}</span></div>`;
-  const btn = stage === "ready" ? `<button class="btn wax" data-act="spinroll">🎲 Roll</button>` : stage === "spin" ? `<button class="btn wax" data-act="spinstop">✋ Stop</button>`
+  const btn = stage === "ready" ? `<button class="btn wax" data-act="spinroll">🎲 Roll</button>` : stage === "spin" ? `<button class="btn wax" data-act="spinstop">Stop</button>`
     : `<button class="btn wax" data-act="spinpick" data-v="${pick}">Pick ${esc(ITEMS[pick].name)}</button>`;
   return `<header><div><h2>Day ${sp.day} gift</h2><div class="sub">${sp.bonus ? "Underdog bonus: " : ""}one free tier ${sp.tier} item</div></div>${close}</header><div class="body">
     <div class="spin st-${stage}${stage === "stopping" ? " go" : ""}">

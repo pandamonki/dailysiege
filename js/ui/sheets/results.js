@@ -51,7 +51,7 @@ function resultsSheet() {
   return head(null, R.rehearsal ? `Day ${dayNo} Rehearsal` : `Day ${dayNo} Recap`, `The fighting lasted ${fmt(R.duration)}`) + `<div class="body">
     ${R.rehearsal ? `<p class="twistnote">A rehearsal: your current orders against what you know of your rivals. Nothing here counts toward the war.</p>` : ""}
     <div class="verdict"><b>${me.place === 1 ? (R.team ? "Victory, together" : "Victory") : ord(me.place) + " of " + R.results.length}</b><span class="muted">${R.team ? "Allies won the Daily Siege together. " : ""}${R.rehearsal ? `Would score ${me.points} point${me.points === 1 ? "" : "s"}` : `${me.points} point${me.points === 1 ? "" : "s"} toward this week's leaderboard`}</span></div>
-    <div class="row"><button class="btn wax" data-act="reel">▶ Play highlights</button>${canRecord() && window.claude ? `<button class="btn wood" data-act="reelrec">Save highlights video</button>` : ""}</div>
+    <div class="row"><button class="btn wax" data-act="reel">Play highlights</button>${canRecord() && window.claude ? `<button class="btn wood" data-act="reelrec">Save highlights video</button>` : ""}</div>
     <div class="stats">
       <div class="stat"><b>${Math.round(mine.dealt).toLocaleString()}</b><span>damage by your army</span></div>
       <div class="stat"><b>${mine.kills}</b><span>foes cut down</span></div>

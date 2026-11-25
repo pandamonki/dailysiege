@@ -15,5 +15,5 @@ function takenColours() { // colour -> who holds it, for everyone except me
   const tc = teamColours(), out = {}; Object.entries(tc).forEach(([uid, c]) => { if (uid !== LIVE.uid) out[c] = nameOf(uid); }); return out;
 }
 const LIVE = { db: null, user: null, uid: null, isOwner: false, config: null, configLoaded: false, players: {}, playersLoaded: false, battles: {}, names: {}, readOnly: false, stateLoaded: false };
-let gameMode = "practice", PRACTICE_S = null, LIVE_S = null, saveTimer = null, saving = false, saveAgain = false;
+let gameMode = "practice", PRACTICE_PICKED = false, PRACTICE_S = null, LIVE_S = null, saveTimer = null, saving = false, saveAgain = false;
 try { if (localStorage.getItem("lastbanner.mode") === "friends") gameMode = "friends"; } catch (e) {}
