@@ -130,10 +130,13 @@ for (const name of engines) {
   await step("the battle report shows every lord and opens their builds", async () => { await page.waitForTimeout(1500); for (let i = 0; i < 6; i++) { const c = page.locator('button:has-text("Continue"):visible'); if (await c.count()) { await c.first().click(); await page.waitForTimeout(600); } }
     await closeAll(); await js(() => { sheet = { type: "report" }; render(); }); if ((await page.locator("#sheet .rrow.hs").count()) < 2) throw new Error("the scoreboard has too few lords");
     await tap('#sheet [data-act="rkit"][data-v="*"]'); if ((await page.locator("#sheet .kitwrap").count()) < 2) throw new Error("Show all builds opened no builds"); await closeAll(); });
+  await step("emoji on screen are drawn as the game's own icons", async () => { await js(() => { sheet = { type: "report" }; render(); }); await page.waitForTimeout(100);
+    const r = await js(() => ({ glyphs: document.querySelectorAll("#sheet .glyph svg").length, left: /[\u{1F947}-\u{1F949}\u{1F4A5}\u2620\u2694]/u.test(document.getElementById("sheet").innerText) }));
+    if (!r.glyphs) throw new Error("the report shows no drawn icons"); if (r.left) throw new Error("medal or stat emoji are still showing on the report"); await closeAll(); });
   await step("the share card: the report's Share button builds the picture and the text", async () => { await js(() => { sheet = { type: "report" }; render(); });
     if (!(await page.locator('#sheet [data-act="rshare"]').count())) throw new Error("the report has no Share button");
     const r = await js(async () => { const s = shareStory("practice"), t = shareText(s), cv = await shareCanvas(s); return { t, w: cv.width, h: cv.height, rows: s.table.length }; });
-    if (!/won the day/.test(r.t) || !/day \d/.test(r.t)) throw new Error("the share text has no winner or day: " + r.t); if (r.w !== 1080 || r.h !== 1350 || r.rows < 2) throw new Error("the share picture is wrong"); await closeAll(); });
+    if (!/won the day/.test(r.t) || !/day \d/i.test(r.t)) throw new Error("the share text has no winner or day: " + r.t); if (r.w !== 1080 || r.h !== 1350 || r.rows < 2) throw new Error("the share picture is wrong"); await closeAll(); });
   await step("the results screens appear and close", async () => { await page.waitForTimeout(1500); for (let i = 0; i < 6; i++) { const c = page.locator('button:has-text("Continue"):visible'); if (await c.count()) { await c.first().click(); await page.waitForTimeout(600); } }
     await closeAll(); });
   await step("the Allies screen shows the alliances, who stands alone and the history", async () => { await js(() => { if (mode === "replay") leaveBattle(); sheet = null; render(); }); await closeAll();

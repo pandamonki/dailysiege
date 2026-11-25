@@ -46,17 +46,17 @@ function teamOf(pid, b, sorted) {
 const shareOrd = n => n + (n % 100 > 10 && n % 100 < 14 ? "th" : ["th", "st", "nd", "rd"][Math.min(n % 10, 4) % 4] || "th");
 const shareList = a => (a.length <= 1 ? a.join("") : a.slice(0, -1).join(", ") + " and " + a[a.length - 1]);
 
-// the lines that go with the picture
+// the lines that go with the picture: plain words, no emoji (they read as generic in a group chat)
 function shareText(s) {
-  const L = [`⚔ Daily Siege, day ${s.day}`];
-  L.push(s.team && s.team.length > 1 ? `🏆 ${shareList(s.team.map(l => l.name))} won the day together` : `🏆 ${s.winner.name} won the day${s.winner.cls && CLASSES[s.winner.cls] ? " (" + CLASSES[s.winner.cls].name + ")" : ""}`);
-  if (s.upset) L.push(`😲 Upset: ${s.upset.name} came in ${shareOrd(s.upset.from)} and finished ${shareOrd(s.upset.place)}`);
-  s.betrayals.forEach(t => L.push(`🗡 Betrayal: ${t.by.name} betrayed ${t.victims.length ? shareList(t.victims.map(v => v.name)) : "an ally"}`));
-  if (s.kills) L.push(`💀 Most kills: ${s.kills.name}, ${s.kills.n}`);
+  const L = [`Daily Siege · Day ${s.day}`];
+  L.push(s.team && s.team.length > 1 ? `${shareList(s.team.map(l => l.name))} won the day together` : `${s.winner.name} won the day${s.winner.cls && CLASSES[s.winner.cls] ? " (" + CLASSES[s.winner.cls].name + ")" : ""}`);
+  if (s.upset) L.push(`Upset: ${s.upset.name} came in ${shareOrd(s.upset.from)} and finished ${shareOrd(s.upset.place)}`);
+  s.betrayals.forEach(t => L.push(`Betrayal: ${t.by.name} betrayed ${t.victims.length ? shareList(t.victims.map(v => v.name)) : "an ally"}`));
+  if (s.kills) L.push(`Most kills: ${s.kills.name}, ${s.kills.n}`);
   if (s.week && s.table.length) {
     const lead = s.table[0], climb = s.table.filter(l => l.move > 0).sort((a, b) => b.move - a.move)[0];
-    L.push(`👑 Leading the war: ${lead.name}, ${lead.pts} pts`);
-    if (climb && climb.move >= 2) L.push(`📈 Biggest climb: ${climb.name}, up ${climb.move} to ${shareOrd(climb.rank)}`);
+    L.push(`Leading the war: ${lead.name}, ${lead.pts} pts`);
+    if (climb && climb.move >= 2) L.push(`Biggest climb: ${climb.name}, up ${climb.move} to ${shareOrd(climb.rank)}`);
   }
   if (s.mine) L.push(`Me: ${shareOrd(s.mine.place)} of ${s.mine.of}, ${s.mine.points} pts`);
   return L.join("\n");
