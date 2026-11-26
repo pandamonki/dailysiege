@@ -31,7 +31,7 @@ function contractsTab() {
     const k = contractParse(key), pay = contractPay(key, tw), took = S.contract === key;
     return `<button class="cxcard${took ? " on" : ""} t${k.c.tier}" data-act="cxpick" data-v="${took ? "" : esc(key)}" ${lk ? "disabled" : ""} aria-pressed="${took}">${artImg(ART.cx[k.id], "cxart")}<span class="cx-tx"><span class="cxh"><small>${TIER_NAME[k.c.tier]}</small><b>${esc(k.c.name)}</b></span><span>${esc(contractText(key, cxName))}</span></span>
       <span class="cxpay"><b>+${pay.pts}</b><small>pts</small><b>+${pay.gold}</b><small>gold</small></span><span class="cxtick">${took ? "✓" : ""}</span></button>`; }).join("");
-  return `<div class="sec tight"><h3>Contracts for the next battle ${S.contract ? `<span class="cnt ok">taken</span>` : `<span class="cnt">pick one</span>`}</h3><p class="muted">Tap one to take it, tap again to drop it. Complete it in the battle for the bonus. You can change it until you seal.</p>${cards}</div>
+  return `<div class="sec tight"><h3>Contracts for the next battle ${S.contract ? `<span class="cnt ok">taken</span>` : `<span class="cnt">pick one</span>`}</h3><p class="muted">Take one for a bonus if you complete it. You can change it until you seal.</p>${cards}</div>
     ${twistStripHTML()}`;
 }
 

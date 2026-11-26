@@ -16,8 +16,8 @@ const FIELD_MAX = 4, WAVE_UNLOCK_COSTS = [60, 100, 150];
 // ---- castle tiers, walls, shop items, hero levelling, gold ----
 const CASTLE_TIERS = [
   { name: "Castle", cost: 0, hp: 1, note: "Where every lord begins. Earns base pay of 225 gold after day 1, growing 30 a day." },
-  { name: "Fortress", cost: 100, hp: 1.15, note: "+15% castle health and +70 gold a day, so it pays for itself in under two days. Opens tier 2 gear, Arrow Slits, Bastions and stronger timber walls." },
-  { name: "Citadel", cost: 200, hp: 1.3, note: "+30% castle health and +130 gold a day in all. Opens tier 3 gear, the Ballista and stone walls." },
+  { name: "Fortress", cost: 100, hp: 1.15, note: "+15% castle health, +70 gold a day. Opens tier 2 gear and defences." },
+  { name: "Citadel", cost: 200, hp: 1.3, note: "+30% castle health, +130 gold a day. Opens tier 3 gear, the Ballista and stone walls." },
 ];
 const CASTLE_INCOME = [0, 70, 130]; // extra gold a day for each castle tier
 const UPGRADE_NEEDS = { weapon: [1, 2, 3], armour: [1, 2, 3], charm: [1, 2, 3], walls: [1, 2], tower: [2, 3] }; // castle tier each upgrade tier needs

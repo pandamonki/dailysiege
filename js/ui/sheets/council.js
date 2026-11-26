@@ -67,7 +67,7 @@ function inviteSheet() {
       ${allyV2Now() && allyGroup(r.id).length > 1 ? `<p class="muted">${esc(r.name)} is allied with ${allyGroup(r.id).filter(x => x !== r.id).map(x => esc((RIVALS.find(q => q.id === x) || {}).name || "a lord")).join(" and ")}. You join their alliance only if every member invites you and you accept them all.</p>` : ""}
       ${allyAnswersHTML(r.id)}<div class="row"><button class="btn wax" data-act="ireply" data-k="${r.id}" data-v="accept" ${dis()}>Accept</button><button class="btn" data-act="ireply" data-k="${r.id}" data-v="reject" ${dis()}>Decline</button></div></div>`).join("") : `<p class="muted">All answered.</p>`}
     <p class="muted">Accepting forms the alliance at the start of tonight's battle, and everyone sees it on the muster screen. The dowry is paid to you if you accept.</p>
-    <p class="note"><b>Remember:</b> you can betray an ally at any point in the game. Open <b>Alliances</b> and choose <b>Betray</b>, then set when to turn on them. Allies who survive together win together.</p>
+    <p class="note">Allies who survive together win together. You can still betray one later, from <b>Alliances</b>.</p>
     <div><button class="btn small" data-act="idismiss">Decide later</button></div></div>`;
 }
 function targetsHTML() {
@@ -261,8 +261,8 @@ function zoneOrdersHTML(st) {
   const beats = k => { const w = FRONT_BEATS[k], l = Object.keys(FRONT_BEATS).find(q => FRONT_BEATS[q] === k); return `<span class="zvs"><em class="g">▲ beats ${esc(FRONT_INFO[w][0])}</em> <em class="b">▼ loses to ${esc(FRONT_INFO[l][0])}</em></span>`; };
   const flank = side => { const r = myNeighbour(side); return `<div class="zfl"><h4 class="minih"><i class="zsw" style="background:${ZONE_COL[side]}"></i>${side === "left" ? "Left" : "Right"} flank${r ? ` · <i class="sw" style="background:${r.color}"></i> ${esc(r.name)}` : ""}</h4>
     ${r ? `<div class="seg3 two">${FLANK_PLANS.map(k => `<button class="btn small${fl[side] === k ? " on" : ""}" data-act="zflank" data-k="${side}" data-v="${k}" ${dis()}>${FLANK_INFO[k][0]}</button>`).join("")}</div><p class="muted">${esc(FLANK_INFO[fl[side]][1])}.</p>` : `<p class="muted">No lord on this side: soldiers placed here join the Front.</p>`}</div>`; };
-  return `<div class="sec tight"><h3>2 · Your army's jobs <small class="hnote">set by where you place them</small></h3><p class="muted">On the map, the tiles round your castle are the <b style="color:${ZONE_INK.guard}">Guard</b>, straight ahead is the <b style="color:${ZONE_INK.front}">Front</b>, and either side are your <b style="color:${ZONE_INK.left}">left</b> and <b style="color:${ZONE_INK.right}">right</b> flanks. Your hero takes the job of its zone too.</p>${zoneJobsHTML()}</div>
-    <div class="sec tight"><h3>3 · The Front's plan</h3><div class="olist">${FRONT_PLANS.map(k => opt("zfront", k, fr, FRONT_INFO[k])).join("")}</div>${beats(fr)}<p class="muted">A Front fighting a Front whose plan it beats does ${Math.round((FRONT_BEAT_X - 1) * 100)}% more damage. Holding the hill longest in a battle scores ${HILL_PTS} points.</p></div>
+  return `<div class="sec tight"><h3>2 · Your army's jobs <small class="hnote">set by where you place them</small></h3><p class="muted"><b style="color:${ZONE_INK.guard}">Guard</b> round your castle, <b style="color:${ZONE_INK.front}">Front</b> ahead, <b style="color:${ZONE_INK.left}">left</b> and <b style="color:${ZONE_INK.right}">right</b> flanks either side. Your hero takes its zone's job.</p>${zoneJobsHTML()}</div>
+    <div class="sec tight"><h3>3 · The Front's plan</h3><div class="olist">${FRONT_PLANS.map(k => opt("zfront", k, fr, FRONT_INFO[k])).join("")}</div>${beats(fr)}<p class="muted">A plan deals ${Math.round((FRONT_BEAT_X - 1) * 100)}% more damage to the Front it beats. Holding the hill longest scores ${HILL_PTS} points.</p></div>
     <div class="sec tight"><h3>4 · The flanks</h3>${flank("left")}${flank("right")}</div>
     <div class="sec tight"><h3>5 · Army temper</h3><div class="seg3">${TEMPERS.map(k => `<button class="btn small${tp === k ? " on" : ""}" data-act="ztemper" data-v="${k}" ${dis()}>${TEMPER_INFO[k][0]}</button>`).join("")}</div><p class="muted">${esc(TEMPER_INFO[tp][1])}. It covers the whole army, hero included.</p></div>`;
 }
@@ -327,9 +327,9 @@ function knownAlliancesHTML() {
   return `<div class="sec"><h3>Alliances in the war</h3>
     ${teams.length ? `<div class="agrid">${teams.map(t => `<div class="ateam${t.lords.some(p => p.id === me) ? " mine" : ""}"><small>${t.lords.some(p => p.id === me) ? "Your alliance" : "Alliance"} · ${t.lords.length} lords</small><div>${t.lords.map(chip).join("")}</div>${t.whole ? "" : `<p class="muted anote">Not all of them are allied to each other, so some of their armies still fight.</p>`}</div>`).join("")}</div>` : `<p class="muted">No alliances stand right now. Everyone is on their own.</p>`}
     ${alone.length ? `<div class="ateam solo"><small>Standing alone${wolf ? " · lone wolf" : ""}</small><div>${alone.map(chip).join("")}</div></div>` : ""}
-    ${v2 ? `<p class="note${wolf ? " gold" : ""}">${wolf ? `<b>🐺 ${nm(alone[0])} ${alone[0].id === me ? "are" : "is"} the lone wolf.</b> Standing alone against ${foes} allied lords, ${alone[0].id === me ? "your" : "their"} army and castle deal ${Math.round(foes * LONE_WOLF_STEP * 100)}% more damage and has ${Math.round(foes * LONE_WOLF_STEP * 100)}% more health in battle. It ends if a second lord stands alone or they join an alliance.` : `Lone wolf: when only one lord is left outside every alliance, their army and castle get +${Math.round(LONE_WOLF_STEP * 100)}% damage and health in battle for each allied lord.`}</p>` : ""}
+    ${v2 ? `<p class="note${wolf ? " gold" : ""}">${wolf ? `<b>🐺 ${nm(alone[0])} ${alone[0].id === me ? "are" : "is"} the lone wolf.</b> Standing alone against ${foes} allied lords, ${alone[0].id === me ? "your" : "their"} army and castle deal ${Math.round(foes * LONE_WOLF_STEP * 100)}% more damage and has ${Math.round(foes * LONE_WOLF_STEP * 100)}% more health in battle. It ends if a second lord stands alone or they join an alliance.` : `Lone wolf: the last lord outside every alliance gets +${Math.round(LONE_WOLF_STEP * 100)}% damage and health for each allied lord.`}</p>` : ""}
     ${feuds.length ? `<div class="ateam solo"><small>Bad blood · +20% damage to each other, and never allies again</small><div>${feuds.map(([a, b]) => { const bt = betrayer(a, b); return `<span class="tm">${bt ? `${chip(bt[0])} betrayed ${chip(bt[1])}` : `${chip(a)} ⚔ ${chip(b)}`}</span>`; }).join("")}</div></div>` : ""}
-    <p class="muted">Pacts as they stood after the last battle. New invitations are announced when the next battle begins.</p></div>
+    <p class="muted">As of the last battle. New pacts start with the next one.</p></div>
     ${hist.length ? `<div class="sec"><h3>Alliance history</h3><div class="ahist">${hist.map(h => `<div class="ahday"><b>Day ${h.day}</b><ul>${h.ev.map(e => `<li>${line(e)}</li>`).join("")}</ul></div>`).join("")}</div></div>` : ""}`;
 }
 function alliancesTab() {
@@ -351,7 +351,7 @@ function alliancesTab() {
     <div class="sec"><h3>Your invitations <small class="hnote">${sent.length}/${MAX_INVITES} open</small></h3>${sent.length ? sent.map(sentRow).join("") : `<p class="muted">None open.</p>`}</div>
     ${!fin ? `<div class="sec"><h3>Invite a lord</h3>${free.map(r => { const full = allyV2Now() && allyGroup(r.id).length + allyGroup(meId).length > BLOC_MAX, theirs = allyV2Now() ? allyGroup(r.id).length : 1;
       return `<div class="alrow fl"><span class="who"><i class="sw" style="background:${r.color}"></i><b>${esc(r.name)}</b>${theirs > 1 ? `<small class="inc">in an alliance of ${theirs}</small>` : ""}</span>${full ? `<span class="chip weak">Alliance full</span>` : `<button class="btn small ally" data-act="invite" data-k="${r.id}" ${dis(sent.length >= MAX_INVITES)}>Invite</button>`}</div>`; }).join("") || `<p class="muted">Everyone is allied or invited.</p>`}
-      ${sent.length >= MAX_INVITES ? `<p class="muted">Two invitations are open. Wait for answers before sending more.</p>` : `<p class="muted">The dowry is set aside until they answer, and paid only if they accept.</p>`}</div>` : ""}`;
+      ${sent.length >= MAX_INVITES ? `<p class="muted">Two invitations are open. Wait for answers before sending more.</p>` : `<p class="muted">The dowry is paid only if they accept.</p>`}</div>` : ""}`;
 }
 const planDayKey = () => (isLive() ? liveClock().planDay : DAY);
 const ultCooling = () => { if (!isLive()) return S.ultLast != null && S.ultLast === DAY - 1; const ck = liveClock(), b = LIVE.battles[addDays(ck.planDay, -1)]; return !!(b && b.week === ck.week && b.ults && b.ults[LIVE.uid]); };
@@ -370,7 +370,7 @@ function ultPlanHTML() {
 // the weekly ritual: one per war week, for a single battle
 function blessPlanHTML() {
   const used = blessLocked();
-  return `<p class="muted">${used ? "You have used this week's ritual. The next one comes with a new war week." : "One ritual per war week, for a single battle. Pick one, or none to save it."}</p>
+  return `<p class="muted">${used ? "Your ritual for this war is used." : "One ritual a war, for one battle. Use it now or save it."}</p>
     ${Object.entries(BLESSINGS).map(([k, [n, ds]]) => { const on = S.bless === k && !used;
       return `<button class="ritcard btnlike${on ? " on" : ""}${used ? " off" : ""}" data-act="bless" data-v="${on ? "" : k}" ${dis(used)} aria-pressed="${on}">${artImg(ART.bless[k], "ritart")}<span class="ritx"><b>${esc(n)}${on ? " ✓" : ""}</b><span class="muted">${esc(ds)}</span></span></button>`; }).join("")}`;
 }
@@ -385,8 +385,8 @@ function combatGroupsHTML() {
   const grp = ([k, name, sub, opts]) => `<div class="grp${open === k ? " open" : ""}"><button class="gsum" data-act="gtoggle" data-k="${k}" aria-expanded="${open === k}"><span class="ico">${{ hero: "♛", melee: "⚔", ranged: "➶", heal: "✚" }[k]}</span><span class="gn"><b>${name}</b><small>${sub}</small></span><span class="cur">${S.gprio[k].map(id => esc(shorten(gprioName(opts, id)))).join(" → ")}</span><span class="chev">▾</span></button>
     ${open === k ? `<div class="gbody">${[...Array(GPRIO_SLOTS)].map((_, i) => `<label class="prow"><span>${["1st", "2nd", "3rd"][i]}</span><select data-act="gprioset" data-k="${k}" data-v="${i}" ${dis()}>${i ? `<option value=""${S.gprio[k][i] ? "" : " selected"}>None</option>` : ""}${opts.map(([id, n]) => `<option value="${id}"${S.gprio[k][i] === id ? " selected" : ""}>${n}</option>`).join("")}</select></label>`).join("")}
       ${k === "heal" ? `<p class="muted">Healers only heal allies within reach. With nobody hurt, they stay with the army. If none of your picks is hurt, they heal whoever is most wounded.</p>` : `<p class="muted">Picks from the top slot down, among enemies within reach. Anything not listed is fought last, nearest first.</p>`}</div>` : ""}</div>`;
-  return `<div class="sec tight"><h3>Combat reach</h3><div class="reach"><span class="stepper"><button class="btn small" data-act="engage" data-v="-1" ${dis(S.engage <= ENGAGE_MIN)}>−</button><b>${S.engage} tile${S.engage === 1 ? "" : "s"}</b><button class="btn small" data-act="engage" data-v="1" ${dis(S.engage >= ENGAGE_MAX)}>+</button></span><small class="muted">Fighters join a fight when an enemy is this close. Short reach keeps marching on the castle; long reach brawls.</small></div></div>
-    <div class="sec tight"><h3>Who each group fights first</h3><p class="muted">Tap a group to change its priorities.</p>${COMBAT_GROUPS.map(grp).join("")}
+  return `<div class="sec tight"><h3>Combat reach</h3><div class="reach"><span class="stepper"><button class="btn small" data-act="engage" data-v="-1" ${dis(S.engage <= ENGAGE_MIN)}>−</button><b>${S.engage} tile${S.engage === 1 ? "" : "s"}</b><button class="btn small" data-act="engage" data-v="1" ${dis(S.engage >= ENGAGE_MAX)}>+</button></span><small class="muted">How close an enemy must be before your fighters turn to fight it.</small></div></div>
+    <div class="sec tight"><h3>Who each group fights first</h3>${COMBAT_GROUPS.map(grp).join("")}
       <div class="grp fixed"><div class="fx"><span class="ico">⚑</span><span class="gn"><b>Raiders</b><small>fixed</small></span></div><p class="muted">Make for the castle. Struck by a melee fighter they turn and fight it; struck from range they keep going.</p></div>
       <div class="grp fixed"><div class="fx"><span class="ico">⛫</span><span class="gn"><b>Rams and Powder Carts</b><small>fixed</small></span></div><p class="muted">Always roll on the castle. They can't be stunned, rooted, slowed or turned aside.</p></div>
       <p class="muted">Anyone who is hit always answers back first.</p></div>`;
@@ -397,7 +397,7 @@ function ordersSheet() {
   const tabs = [["strategy", "Strategy"], ["tactics", "Combat"], ["contracts", "Contracts"], ["alliances", "Alliances"], ["rituals", "Rituals"]];
   let body = "";
   if (tab === "strategy") body = strategyTab();
-  if (tab === "tactics") body = `<p class="muted tight">These rules only apply mid-skirmish, once your soldiers are in a fight. Strategy decides where they go.</p>
+  if (tab === "tactics") body = `<p class="muted tight">How your soldiers fight once a fight starts.</p>
     ${combatGroupsHTML()}
     ${ordersV2Now() ? "" : `<div class="sec tight"><h3>Battle commands</h3><p class="muted">If this happens mid-battle, do that. Each costs one order seal (${OP_MAX - opUsed()} left).</p>
       ${S.rules.map((r, i) => `<div class="rule"><label><span>If</span><select data-act="rif" data-v="${i}" ${dis()}>${opts(IFS, r.if)}</select></label><label><span>Then</span><select data-act="rthen" data-v="${i}" ${dis()}>${opts(THENS, r.then)}</select></label><button class="btn small" data-act="rdel" data-v="${i}" aria-label="Remove command" ${dis()}>✕</button></div>`).join("")}

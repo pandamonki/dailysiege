@@ -167,11 +167,11 @@ function lordSheet(d, pid, nm) {
 }
 function titleSheet() {
   const live = isLive(), c = !!sheet.confirm, can = !!(LIVE.db && LIVE.uid), inGame = can && LIVE.config && LIVE.players && LIVE.players[LIVE.uid];
-  if (sheet.tab === "test") return head(null, "Test mode", "A private sandbox against bots") + `<div class="body">
+  if (sheet.tab === "test") return head(null, "Practice", "A private game against bots") + `<div class="body">
     <div class="menu3">
       <button class="btn wax big" data-act="testgo">Continue<small>Practice game · day ${gameMode === "practice" ? DAY : practiceDay()} of 7</small></button>
-      <button class="btn wood big" data-act="pvstart">Preview a new player's first run<small>From opening the invite link: register → tutorial → hero → name, army colour, coat of arms → Day 1. A private sandbox with bot lords; your test game isn't touched.</small></button>
-      <button class="btn ${c ? "wax" : ""} small" data-act="newgame">${c ? "Tap again: restart the test game" : "Restart the test game from day 1"}</button>
+      <button class="btn wood big" data-act="pvstart">Preview a new player's first run<small>From opening the invite link: register → tutorial → hero → name, army colour, coat of arms → Day 1. A private sandbox with bot lords; your practice game isn't touched.</small></button>
+      <button class="btn ${c ? "wax" : ""} small" data-act="newgame">${c ? "Tap again: restart the practice game" : "Restart the practice game from day 1"}</button>
     </div>
     <div class="sec"><h3>Testing tools</h3><div class="row"><button class="btn small" data-act="testnext">Skip to the next day</button><button class="btn small" data-act="lab">Balance lab</button><button class="btn small" data-act="reset">Reset setup</button></div></div>
     <div class="row"><button class="btn small" data-act="open" data-v="title">← Back</button></div></div>`;

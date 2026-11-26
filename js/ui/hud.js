@@ -2,7 +2,7 @@
 
 // ================= UI =================
 const esc = s => String(s).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
-const opts = (list, cur) => list.map(x => `<option${x === cur ? " selected" : ""}>${esc(x)}</option>`).join("");
+const opts = (list, cur) => list.map(x => `<option value="${esc(x)}"${x === cur ? " selected" : ""}>${esc(String(x).replace(/\bplayers\b/, "lords"))}</option>`).join(""); // saved values keep their old wording; the label says lords
 const dis = c => (c || S.locked ? "disabled" : "");
 let toastT;
 function toast(m, ms) { try { diagLog("toast", m); } catch (e) {} const t = document.getElementById("toast"); t.textContent = m; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => (t.hidden = true), 1900); }

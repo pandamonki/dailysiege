@@ -45,13 +45,13 @@ function deploymentTab() {
   const gslot = guard ? tile(findUnit(guard)).replace('class="gr-t', 'class="gr-t guard').replace('"><img', '" data-drop="guard"><span class="gtag">🏰 Guard</span><img')
     : `<button class="gr-t gr-ph guard empty" data-act="wguard" data-drop="guard" ${dis()} aria-label="Castle guard slot"><span>🏰<br>guard</span></button>`;
   return `<div class="gr-sum"><span><b>${fieldCount()}/${S.slots}</b>field</span><span class="y"><b>${garrisonCount()}/${garrisonCap()}</b>waves</span><span><b>${reserve.length}</b>reserve</span></div>
-    <p class="muted gr-tip">${S.locked ? "Your orders are sealed. Draft new orders to change this." : "Drag a soldier from one row to another, or tap a soldier then tap where it should go."}</p>
+    <p class="muted gr-tip">${S.locked ? "Your orders are sealed. Draft new orders to change this." : "Drag a soldier, or tap it and then its new row."}</p>
     <div class="gr-waves">
       ${row("On the field", `${guard ? "1 guard · " : ""}${attackers.length} attack${attackers.length === 1 ? "s" : ""}`, "dep", gslot + attackers.map(tile).join("") + (freeField ? [...Array(freeField)].map(() => ph("wdep", "free")).join("") : ph("wdep", "deploy")))}
       ${row("Reserve", `${reserve.length} waiting`, "res", reserve.map(tile).join("") + ph("wres", reserve.length ? "bench" : "empty"))}
       ${S.garrison.map(garrisonWaveHTML).join("")}</div>
-    <p class="muted gr-tip">The guard stays home and defends your castle all battle. It is one of your ${FIELD_MAX} soldiers on the field. Drag it back among the attackers to send it out again.</p>
-    <p class="muted gr-tip">${waveV2Now() ? `${waveV3Now() ? `Each wave goes when its trigger happens, or at the time on its stopwatch, whichever comes first. Tap the trigger to change it.` : `Tap a wave's chip to change when it goes. One wave is forced out at each minute mark.`} Each wave first clears enemies near your castle, then follows your army plan. Waves are at least ${balV5Now() ? WAVE_GAP_V5 : WAVE_GAP}s apart; if your castle drops below 75%, 50% or 25% health, the next wave with its Rush box ticked goes out early${balV5Now() ? "" : `, at least ${WAVE_EMERGENCY_GAP}s after the last`}. Untick a wave to keep it for its own trigger.` : `Tap a chip to change when a wave goes or what it does. Waves are at least ${WAVE_GAP}s apart and one is forced out at each minute mark.`} Training and selling are on the Train tab.</p>`;
+    <p class="muted gr-tip">The guard stays home all battle. Drag it back to send it out.</p>
+    <p class="muted gr-tip">${waveV2Now() ? `${waveV3Now() ? `Each wave goes at its trigger or its time, whichever comes first.` : `Tap a wave's chip to change when it goes. One wave is forced out at each minute mark.`} Ticked waves rush out when your castle drops below 75%, 50% or 25%.` : `Tap a chip to change when a wave goes or what it does. Waves are at least ${WAVE_GAP}s apart and one is forced out at each minute mark.`}</p>`;
 }
 // actions
 Object.assign(A, {
