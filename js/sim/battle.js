@@ -189,7 +189,7 @@ function runBattle(plans, seed, opts = {}) {
       targets: (pl.targets || []).slice(), ordV2: !!pl.ordV2, armyPlan: ARMY_PLANS.includes(pl.armyPlan) ? pl.armyPlan : "conquest", fallback: FALL_BACKS.includes(pl.fallback) ? pl.fallback : "none", fallbackUntil: 0, hitT: -9, castleHitT: -9, castleHitBy: null, trapT: -9, pacts: new Set(), hostileTo: new Set(pl.hostile), revenge: new Set(), feud: new Set(), bell: false, retreatT: -99, elimT: null };
   });
   if (ZV) { const cs = plans.map(q => q.castle); plans.forEach((pl, i) => { if (!pl.zoneV1) return; const p = P[pl.pid];
-    p.zv = true; p.front = FRONT_PLANS.includes(pl.front) ? pl.front : "assault"; p.flanks = cleanFlanks(pl.flanks); p.temper = TEMPERS.includes(pl.temper) ? pl.temper : "steady";
+    p.zv = true; p.front = FRONT_PLANS.includes(pl.front) ? pl.front : "assault"; p.syn = !!pl.tuneV1 && HV3 && treePlanOf(pl.cls, pl.tree) === (FRONT_PLANS.includes(pl.front) ? pl.front : "assault"); // agency pass: the hero's main tree suits the Front's plan p.flanks = cleanFlanks(pl.flanks); p.temper = TEMPERS.includes(pl.temper) ? pl.temper : "steady";
     p.stance = TEMPER_STANCE[p.temper]; p.fallback = TEMPER_FALLBACK[p.temper]; p.armyPlan = FRONT_ARMY[p.front];
     p.nb = {}; p.screenAt = {}; p.screenSeen = { left: 0, right: 0 }; p.pushed = {};
     ["left", "right"].forEach(side => { const k = flankNeighbour(cs, i, side, NN); if (k < 0) return; const q = plans[k], [r0, c0] = pl.castle, [r1, c1] = q.castle, L = hyp(c1 - c0, r1 - r0) || 1;
@@ -261,9 +261,10 @@ function runBattle(plans, seed, opts = {}) {
         const its = new Set(pl.items || []); e.itemSet = its; if (its.has("rapier")) { e.rapier = true; rapierOwner = rapierHolder = pl.pid; }
         e.itemV5 = !!pl.itemV5; e.shellV2 = !!pl.shellV2; e.itemV6 = !!pl.itemV6;
         if (e.itemV5) { // flat items
-          its.forEach(k => { const st = e.itemV6 && k === "hpring" ? { hp: ITEM_V6.hpringHp } : e.itemV6 && k === "boots" ? { spd: ITEM_V6.bootsSpd } : ITEM_FLAT[k]; if (!st) return; if (st.atk) { e.atk += st.atk; e.flatAtk = (e.flatAtk || 0) + st.atk; } if (st.hp) { e.maxhp += st.hp; e.flatHp = (e.flatHp || 0) + st.hp; } if (st.spd) e.spd += st.spd; if (st.block) e.block = (e.block || 0) + st.block; });
-          e.hp = e.maxhp; if (its.has("vanguard")) e.block = (e.block || 0) + 12;
-          if (its.has("fang")) e.lifesteal = (e.lifesteal || 0) + .12; if (its.has("thornmail")) e.thorns = .15; if (its.has("talisman")) e.will = true;
+          const IX = pl.tuneV1 ? ITEM_X : 1; // agency pass: items' stats ITEM_X stronger
+          its.forEach(k => { const st0 = e.itemV6 && k === "hpring" ? { hp: ITEM_V6.hpringHp } : e.itemV6 && k === "boots" ? { spd: ITEM_V6.bootsSpd } : ITEM_FLAT[k]; if (!st0) return; const st = IX === 1 ? st0 : Object.fromEntries(Object.entries(st0).map(([q, v]) => [q, v * IX])); if (st.atk) { e.atk += st.atk; e.flatAtk = (e.flatAtk || 0) + st.atk; } if (st.hp) { e.maxhp += st.hp; e.flatHp = (e.flatHp || 0) + st.hp; } if (st.spd) e.spd += st.spd; if (st.block) e.block = (e.block || 0) + st.block; });
+          e.hp = e.maxhp; if (its.has("vanguard")) e.block = (e.block || 0) + 12 * IX;
+          if (its.has("fang")) e.lifesteal = (e.lifesteal || 0) + .12 * IX; if (its.has("thornmail")) e.thorns = .15 * IX; if (its.has("talisman")) e.will = true;
           if (its.has("antimagic")) e.shellAt = Math.max(1, Math.min(10, Math.round(+pl.shellAt || 2)));
           { const oc = ["frostdagger", "fireorb", "venomorb", "corruptorb"].filter(k => its.has(k)); if (oc.length) e.orbCols = oc.map(k => ITEMS[k].col); }
           if (its.has("crystalys")) e.itemCrit = e.itemV6 ? ITEM_V6.crys.slice() : [.2, 1.6]; if (its.has("daedalus")) e.itemCrit = [.25, 2.4];
@@ -483,7 +484,8 @@ function runBattle(plans, seed, opts = {}) {
     if (ZV) { const ps = src && P[src.pid], pt = P[tgt.pid]; // zones v1: the army temper, and the Front plan that beats the other's
       if (ps && ps.zv && src.kind !== "castle") m *= TEMPER_DMG[ps.temper];
       if (pt && pt.zv && tgt.kind !== "castle") m *= TEMPER_TAKEN[pt.temper];
-      if (ps && pt && ps.zv && pt.zv && src.job === "front" && tgt.job === "front" && FRONT_BEATS[ps.front] === pt.front) m *= FRONT_BEAT_X; }
+      if (ps && pt && ps.zv && pt.zv && src.job === "front" && tgt.job === "front" && FRONT_BEATS[ps.front] === pt.front) m *= FRONT_BEAT_X;
+      if (ps && ps.syn && src.job === "front" && ps.champ && ps.champ.job === "front") m *= src.kind === "champ" ? TREE_PLAN_HERO : TREE_PLAN_ARMY; } // a hero leading the Front it is built for
     // attack type against armour type (the only matchup rule)
     { let at = o.atype || (src && src.atype) || "pure", ar = tgt.armour || "medium"; if (BV5) { if (src && src.kind === "champ" && !o.atype) at = "hero"; if (tgt.kind === "champ") ar = "hero"; } m *= V4 && at === "magic" && ar === "fortified" ? MAGIC_VS_FORT : TYPE_TABLE[at][ar]; }
     if (src && src.vsEngine && (tgt.cart || tgt.ram || tgt.cat)) m *= src.vsEngine; // a Fire Tower's burning arrows against siege engines

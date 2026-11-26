@@ -14,7 +14,7 @@ function makeTreeKit(X) {
   const foes = (e, x, y, r) => enemiesNear(e, x, y, r).filter(o => o.kind !== "totem");
   const rk = (e, bi, i) => (e.tr ? e.tr[bi][i] : 0);
   const V2 = e => (P[e.pid] && P[e.pid].skV2 ? (P[e.pid].balV5 ? 5 : true) : false); // skill scaling v2 (battles from 20 Nov); 5 = the balance v5 values (TREE_V5) // skill scaling v2 (battles from 20 Nov)
-  const V = (e, bi, i, vi) => nodeVal(e.cls, bi, i, vi, rk(e, bi, i), V2(e));
+  const V = (e, bi, i, vi) => nodeVal(e.cls, bi, i, vi, rk(e, bi, i), V2(e)) * (e.tunX || 1); // agency pass: every talent value TALENT_X stronger
   let hc = { k: -1, m: {} }; // the heroes of each lord, worked out once a tick
   const heroes = pid => { const k = X.tickNo(); if (hc.k !== k) hc = { k, m: {} }; return hc.m[pid] || (hc.m[pid] = ents.filter(h => h.kind === "champ" && h.tr && h.pid === pid)); };
   const heroOf = (pid, cls, bi, i) => heroes(pid).find(h => !h.dead && h.cls === cls && rk(h, bi, i) > 0);
@@ -58,6 +58,7 @@ function makeTreeKit(X) {
     return cd * BAL.cd * e.cdMul * (e.cdScale || 1); };
   // ----- setting a hero up -----
   function setup(e, pl) {
+    e.tunX = pl.tuneV1 ? TALENT_X : 1;
     e.tr = TREE_BKEY.map((b, bi) => cleanTree(pl.tree)[b]); e.tr0 = e.tr.map(a => a.slice()); e.cds = {}; e.icd = {};
     e.mres = CHAMP_V3[e.cls].mres || 0; e.dodge = { all: 0, melee: 0 };
     const c = e.cls;

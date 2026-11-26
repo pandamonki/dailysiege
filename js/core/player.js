@@ -145,6 +145,7 @@ function myPieces() {
 }
 const finalToday = () => (typeof isLive === "function" && isLive() ? liveClock().dayNo : DAY) === 7;
 // zones v1 (prototype): where a soldier is placed sets its job. Practice always uses them; real wars from ZONE_V1_FROM
+const tuneV1Now = () => (typeof isLive === "function" && isLive() ? tuneV1For(liveClock().planDay) : true); // agency pass (practice always)
 const zoneV1Now = () => (typeof isLive === "function" && isLive() ? zoneV1For(liveClock().planDay) : true);
 const myZone = (r, q) => zoneOfTile(CASTLE[0], CASTLE[1], r, q, N);
 // the rival on my left or right (looking at the hill), or null; my flank with nobody there fights with the Front
