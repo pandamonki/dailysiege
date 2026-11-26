@@ -736,4 +736,4 @@ Every class has one **base skill** above its three trees (`BASE_NODE` in `js/con
 - The game is not live, so none of this is date-gated: old saves and golden battles were regenerated.
 - Icons: `icons/skills/<class>_base.webp` (stand-ins until the painted art is added; see the prompt pack).
 
-**Update (26 Nov 2026):** Healing Wave is now a bouncing chain of light (like Chain Lightning, but it heals) that also heals the Shaman. The per-skill "Cast when" choice was removed from the hero and orders screens: every skill casts as soon as its own condition holds and it has recharged. First casts come sooner (about half a second to two seconds in for a skill, five to nine for an ultimate).
+**Update (26 Nov 2026):** Healing Wave is now a bouncing chain of light (like Chain Lightning, but it heals) that also heals the Shaman. The per-skill "Cast when" choice was removed from the hero and orders screens: every skill casts as soon as its own condition holds and it has recharged.
