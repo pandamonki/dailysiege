@@ -1,7 +1,8 @@
 name: CI
 
 # Runs on pull requests only. A merge to main is not tested a second time here: the Deploy workflow
-# runs lint, the tests and the rules tests before it ships, so this saves Actions minutes.
+# runs lint, the tests and the rules tests before it ships, unless the merged code is exactly what this
+# workflow already passed on the pull request (then Deploy skips them), so this saves Actions minutes.
 on:
   pull_request:
     paths-ignore: ["**.md"]

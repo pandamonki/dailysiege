@@ -9,7 +9,7 @@ const RELEASES = [
     ["Gold coin over their heads", "Every mercenary in a battle replay carries a floating gold coin, replacing the old MERC label."],
   ] },
   { id: "1.28", title: "What's new in v1.28", sub: "A base skill for every hero, and later ultimates", items: [
-    ["A skill from level 1", "Every hero now has a base skill: Ground Slam, Healing Wave, Shadow Step, Teleport or Piercing Shot. One point opens the three trees."],
+    ["A skill from level 1", "Every hero now has a base skill: Ground Slam, Healing Wave, Flicker Strike, Teleport or Piercing Shot. One point opens the three trees."],
     ["Later ultimates", "The ultimate now needs hero level 12 and ten points in its tree, so it arrives on day 4 for a fast-levelling hero and day 5 for the rest."],
     ["Mage change", "The Arcane tree's Blink skill became Disrupt, since the Mage now teleports from the base skill."],
   ] },
