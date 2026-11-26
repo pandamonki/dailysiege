@@ -1,0 +1,65 @@
+<!doctype html><meta charset="utf-8"><title>Merc options</title>
+<style>
+body{margin:0;background:#2b1f14;color:#ecdcb4;font:600 15px Georgia,serif;padding:14px;width:760px}
+h2{margin:4px 0 8px;font-size:20px;color:#ffd24a}
+.row{display:flex;gap:10px;align-items:flex-end;justify-content:space-around;margin-bottom:16px;background:#3a2b1c;padding:12px 6px 8px;border-radius:10px}
+.cell{text-align:center}
+.cell canvas{display:block;margin:0 auto 6px}
+.cell small{display:block;color:#bba980;font-weight:400}
+.cell b{color:#ffd24a}
+.field{background:#6f8a4a}
+.note{color:#bba980;font-weight:400;margin:0 0 10px}
+</style>
+<body>
+<script>const YOU_COLOR = "#3a7bd5", MY_COLOR = "#3a7bd5";</script>
+<script src="merc-art2.js"></script>
+<script>
+const PARTS = ["back", "legs", "body", "head", "arms", "weapon", "over"];
+function buildMerc(key, vid, pose, team) {
+  const base = MERC_ART[key], v = vid && base.vars[vid] || { pal: {}, parts: {} };
+  const spec = { W: base.W, H: base.H, x0: base.x0, pal: Object.assign({}, base.pal, v.pal), parts: Object.assign({}, base.parts, v.parts) }; if (team) spec.pal.T = team;
+  const g = Array.from({ length: spec.H }, () => Array(spec.W).fill(null)); pose = pose || "";
+  const wf = pose[0] === "w" ? +pose[1] : -1, ap = pose[0] === "a" ? +pose[1] : 0, contact = wf === 0 || wf === 2, odd = wf === 1 || wf === 3, DY = contact ? 1 : 0;
+  const put = (x, y, k) => { if (x >= 0 && x < spec.W && y >= 0 && y < spec.H) g[y][x] = spec.pal[k] || k; };
+  const mk = dy => ({ P: (x, y, k) => put(x, y + dy, k), R: (x0, y0, x1, y1, k) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) put(x, y + dy, k); } });
+  const b = mk(DY), f = mk(0), c = { P: b.P, R: b.R, F: f.P, RF: f.R, wf, ap, contact, odd, x0: spec.x0 };
+  PARTS.forEach(p => spec.parts[p] && spec.parts[p](c));
+  const out = g.map(r => r.slice());
+  for (let y = 0; y < spec.H; y++) for (let x = 0; x < spec.W; x++) { if (g[y][x]) continue; if ((g[y - 1] && g[y - 1][x]) || (g[y + 1] && g[y + 1][x]) || g[y][x - 1] || g[y][x + 1]) out[y][x] = "#1e140c"; }
+  const cv = document.createElement("canvas"); cv.width = spec.W; cv.height = spec.H; const cx = cv.getContext("2d");
+  out.forEach((r, y) => r.forEach((cc, x) => { if (cc) { cx.fillStyle = cc; cx.fillRect(x, y, 1, 1); } }));
+  return cv;
+}
+const COINS = {
+  blades: { rows: ["..kkkkk..", ".kYYYYYk.", "kYdYYYdYk", "kYYdYdYYk", "kYYYdYYYk", "kYYdYdYYk", "kYdYYYdYk", ".kYYYYYk.", "..kkkkk.."], pal: { k: "#3e2714", Y: "#ffd24a", d: "#9a5a10" }, name: "Coin with crossed blades" },
+  badge: { rows: ["kkkkkkkkk", "kYYYdYYYk", "kYYYdYYYk", "kYdddddYk", "kYYYdYYYk", "kYYYdYYYk", ".kYYdYYk.", "..kYdYk..", "...kYk...", "....k...."], pal: { k: "#3e2714", Y: "#ffd24a", d: "#9a5a10" }, name: "Gold shield with sword" },
+  pouch: { rows: ["..kkkkk..", "...kRk...", "..kkRkk..", ".kYYYYYk.", "kYYYdYYYk", "kYYdYYYYk", "kYYYdYYYk", "kYYYYdYYk", "kYYdYYdYk"+"", ".kYYYYYk.", "..kkkkk.."].map(r => r.slice(0, 9)), pal: { k: "#3e2714", Y: "#ffd24a", d: "#9a5a10", R: "#c8342a" }, name: "Gold pouch" } };
+function coinCv(id) { const d = COINS[id], cv = document.createElement("canvas"); cv.width = 9; cv.height = d.rows.length; const c = cv.getContext("2d"); d.rows.forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== ".") { c.fillStyle = d.pal[ch]; c.fillRect(x, y, 1, 1); } })); return cv; }
+function show(src, scale, parent, label, sub) { const d = document.createElement("div"); d.className = "cell"; const cv = document.createElement("canvas"); cv.width = src.width * scale; cv.height = src.height * scale; const c = cv.getContext("2d"); c.imageSmoothingEnabled = false; c.drawImage(src, 0, 0, cv.width, cv.height); d.appendChild(cv); if (label) { const l = document.createElement("div"); l.innerHTML = label; d.appendChild(l); } if (sub) { const s = document.createElement("small"); s.textContent = sub; d.appendChild(s); } parent.appendChild(d); return d; }
+const NAMES = { trollw: "Troll Warlord", orc: "Orc Berserker", ogre: "Ogre Breaker", centaur: "Centaur Archer", delf: "Dark Elf Assassin", necro: "Necromancer", skel: "Skeleton Guard" };
+const body = document.body, mode = location.hash.slice(1);
+function head(t, sub) { const h = document.createElement("h2"); h.textContent = t; body.appendChild(h); if (sub) { const p = document.createElement("p"); p.className = "note"; p.textContent = sub; body.appendChild(p); } }
+function row(cls) { const r = document.createElement("div"); r.className = "row" + (cls ? " " + cls : ""); body.appendChild(r); return r; }
+function options(key, scale) { head(NAMES[key]); const r = row(); show(buildMerc(key, ""), scale, r, "<b>A</b>", "first draft"); Object.entries(MERC_ART[key].vars).forEach(([id, v], i) => show(buildMerc(key, id), scale, r, "<b>" + "BCD"[i] + "</b>", v.name)); }
+const GROUPS = { o1: ["trollw", "orc", "ogre"], o2: ["centaur", "delf"], o3: ["necro", "skel"] };
+if (GROUPS[mode]) GROUPS[mode].forEach(k => options(k, k === "centaur" ? 4 : mode === "o1" ? 4 : 6));
+if (mode === "tag") {
+  head("Coin tag options", "Shown at 12x");
+  let r = row(); Object.keys(COINS).forEach((id, i) => show(coinCv(id), 12, r, "<b>" + "123"[i] + "</b>", COINS[id].name));
+  head("On the field (4x, like in a replay)", "Gold glow, team-colour ground ring, health bar, and the coin hovering above");
+  r = row("field"); r.style.gap = "40px";
+  const unit = (key, vid, coinId, team, label, hp) => { const px = 4, spr = buildMerc(key, vid, "", team), W = Math.max(spr.width * px, 60) + 30, H = spr.height * px + 8 + 12 * px + 30, cv = document.createElement("canvas"); cv.width = W; cv.height = H; const c = cv.getContext("2d"); c.imageSmoothingEnabled = false;
+    const cx = W / 2, by = H - 10;
+    c.fillStyle = "rgba(0,0,0,.3)"; c.beginPath(); c.ellipse(cx, by, spr.width * px * .32, 7, 0, 0, 7); c.fill();
+    c.fillStyle = team + "47"; c.strokeStyle = team; c.lineWidth = 3; c.beginPath(); c.ellipse(cx, by - 2, 26, 9, 0, 0, 7); c.fill(); c.stroke();
+    c.save(); c.shadowColor = "#ffd24a"; c.shadowBlur = 22; c.drawImage(spr, cx - spr.width * px / 2, by - spr.height * px, spr.width * px, spr.height * px); c.restore(); c.drawImage(spr, cx - spr.width * px / 2, by - spr.height * px, spr.width * px, spr.height * px);
+    const top = by - spr.height * px + 6, bw = 50, bh = 7, by2 = top - bh - 3; c.fillStyle = "rgba(20,12,6,.9)"; c.fillRect(cx - bw / 2 - 2, by2 - 2, bw + 4, bh + 4); c.fillStyle = "#47b04b"; c.fillRect(cx - bw / 2, by2, bw * hp, bh);
+    if (coinId) { const cn = coinCv(coinId), s = 3, cy = by2 - cn.height * s - 6; c.drawImage(cn, cx - cn.width * s / 2, cy, cn.width * s, cn.height * s); }
+    show(cv, 1, r, label); };
+  unit("orc", "", "blades", "#3a7bd5", "1 blades", .8); unit("orc", "", "badge", "#3a7bd5", "2 shield", .8); unit("orc", "", "pouch", "#3a7bd5", "3 pouch", .8);
+  head("A few other mercenaries on the field (different lords, different ring colours)");
+  r = row("field"); r.style.gap = "40px";
+  unit("orc", "", "blades", "#d53a3a", "Orc, other lord", .6); unit("trollw", "", "blades", "#3a7bd5", "Troll", 1); unit("necro", "", "blades", "#3ad56a", "Necromancer", .5); unit("centaur", "", "blades", "#d5a03a", "Centaur", .9);
+}
+</script>
+</body>
