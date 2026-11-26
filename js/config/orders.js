@@ -97,17 +97,17 @@ const CASTLE_ALERT_N = 3, TERRITORY_R = 5, FALLBACK_LINGER = 4, SIEGE_REACH = 1.
 // The deploy field splits into four zones, seen from the castle looking at the hill: Guard (the tiles round the castle), the Front (straight ahead),
 // and the Left and Right flanks. The Front marches on the #1 target by its plan; each flank screens its side or raids the neighbour on that side;
 // the Guard stays home. Each wave picks a zone too. One army temper replaces the hero stance and the fall-back condition.
-// The prototype date is far off, so only practice uses these rules until a real start date is chosen.
+// In real wars from the 26 Nov battle.
 // Fixed timing (plans stamped timeV1, battles from TIME_V1_FROM; practice always): a fighter's wait before its first swing, and a hero's opening
 // skill cooldowns, no longer come from the battle's dice. They are spread by the fighter's place in the line-up instead, so the same orders against
 // the same rivals give (nearly) the same battle, and only the real percentage chances (dodges, crits, misses, procs) stay random.
-let TIME_V1_FROM = "2099-01-01"; const timeV1For = d => String(d) >= TIME_V1_FROM;
+let TIME_V1_FROM = "2026-11-26"; const timeV1For = d => String(d) >= TIME_V1_FROM;
 const fixedFrac = k => { const x = k * .6180339887498949; return x - Math.floor(x); }; // an even spread in [0, 1) by place, the same on every device
 // Agency pass (plans stamped tuneV1, battles from TUNE_V1_FROM; practice always): talents and items count for more, and bots answer whoever
-// attacked them the day before. Far off for now, so only practice uses it.
-let TUNE_V1_FROM = "2099-01-01"; const tuneV1For = d => String(d) >= TUNE_V1_FROM;
+// attacked them the day before. In real wars from the 26 Nov battle.
+let TUNE_V1_FROM = "2026-11-26"; const tuneV1For = d => String(d) >= TUNE_V1_FROM;
 const TALENT_X = 1.25, ITEM_X = 1.15, MERC_ARRIVE = 10; // MERC_ARRIVE: hired mercenaries march out of the castle this many seconds into the battle, not at the start; // every talent value, and the stats items add (health, attack, block, speed, lifesteal, thorns), are this much stronger
-let ZONE_V1_FROM = "2099-01-01"; const zoneV1For = d => String(d) >= ZONE_V1_FROM;
+let ZONE_V1_FROM = "2026-11-26"; const zoneV1For = d => String(d) >= ZONE_V1_FROM;
 const ZONES = ["guard", "left", "front", "right"], ZONE_INFO = { guard: ["Guard", "Stays at home and defends the castle"], left: ["Left flank", "Holds or raids your left side"], front: ["Front", "Marches on your #1 target"], right: ["Right flank", "Holds or raids your right side"] };
 const ZONE_COL = { guard: "#8a5cf0", left: "#e0453a", front: "#29c6e8", right: "#f2b632" }; // purple, red, cyan, amber: easy to tell apart, and none of them green like the grass
 const ZONE_INK = { guard: "#6a3fd0", left: "#b8322a", front: "#127a91", right: "#9a6a0c" }; // the same, dark enough for words on parchment
