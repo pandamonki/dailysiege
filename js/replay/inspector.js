@@ -18,7 +18,7 @@ function pickInReplay(x, y) {
 }
 const portraitURL = {};
 function portraitFor(m, color) {
-  if (m.kind === "castle" || !SPECS[m.key]) return null; // castles have their own art; a summon or totem with no sprite of its own shows a letter, not a stand-in figure
+  if (m.kind === "castle" || !SPECS[m.key] && !MERC_ART[m.key]) return null; // castles have their own art; a summon or totem with no sprite of its own shows a letter, not a stand-in figure
   const id = m.key + "|" + color;
   if (portraitURL[id]) return portraitURL[id];
   const s = spr(m.key, color), cv = document.createElement("canvas"); cv.width = s.width * 4; cv.height = s.height * 4;

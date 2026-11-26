@@ -209,6 +209,9 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "v1.29: mercenaries look like monsters", date: "26 Nov", fixes: [], balance: [], changes: [
+    "Mercenaries have new creature sprites (troll, orc, ogre, centaur, dark elf, necromancer, skeleton) and a floating gold coin over their heads in replays instead of the MERC label.",
+  ] },
   { v: "v1.28: base skills", date: "26 Nov", fixes: [], balance: [], changes: [
     "Every hero has a base skill (Ground Slam, Healing Wave, Flicker Strike, Teleport, Piercing Shot): 3 ranks, and one point opens the three trees.",
     "The ultimate needs hero level 12 and ten points in its tree. One ultimate per hero, as before.",

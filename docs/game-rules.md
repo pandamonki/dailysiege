@@ -224,8 +224,9 @@ Practice and real wars from the 26 Nov battle (`TUNE_V1_FROM` in `js/config/orde
 - **Talents:** every skill-tree value is 25% stronger (`TALENT_X`), and the hero screen shows the stronger values.
 - **Items:** the health, attack, block, speed, lifesteal and thorns that items add are 15% stronger (`ITEM_X`).
 - **Mercenaries arrive 10 seconds in:** hired mercenaries march out of their lord's castle 10 seconds into the battle (`MERC_ARRIVE`),
-  not at the start. In replays every mercenary carries a gold MERC tag, and their looks no longer copy a hero's (the Dark Elves wear
-  purple headbands, the Necromancers green with horns).
+  not at the start. In replays every mercenary carries a floating gold coin with crossed blades (the old MERC label is gone), and every mercenary
+  type has its own creature sprite, drawn in `js/render/mercSprites.js`: Swamp Troll, Skull Warlord orc, one-eyed Ogre, Centaur (a
+  human archer on a horse), purple Dark Elf, hooded Necromancer and Skeleton Guard. Only a small accent shows the lord's colour.
 - **The Rogue fights like every hero:** it no longer has its own 7-tile hunt for Mages and Archers (or the backline hunt while hidden);
   like every hero it picks targets by its lord's Combat settings: the hero's target order (heroes, melee, ranged, lowest health and
   so on) and the Combat reach, 1 to 5 tiles, 2 to start with. Its finishing blows on weakened enemies stay.
