@@ -1,5 +1,15 @@
 # Daily Siege: notes for Claude
 
+## Game status: in testing, not live
+
+The game is **not live yet**. It is still being tested, so there are no real players or wars to protect.
+
+- **Don't date-gate major features or rule changes.** No new `*_FROM` dates, version flags or "keep the old path working"
+  code for existing saves and replays. Change the rules directly and replace the old behaviour.
+- Old saved battles, plans and hero builds may break or be reset. That is fine; don't write migrations for them.
+- Remove old gates and legacy paths when a change makes them redundant, rather than adding to them.
+- When the game goes live, this section will be replaced with a rule to gate changes by date again.
+
 ## How to talk to the user
 
 The user rarely works at a computer. They work mostly from their phone, often in voice mode or
