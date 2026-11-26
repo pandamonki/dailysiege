@@ -210,6 +210,9 @@ function spriteURL(k, color = MY_COLOR) {
   const cx = cv.getContext("2d"); cx.imageSmoothingEnabled = false; cx.drawImage(s, 0, 0, cv.width, cv.height);
   return (SPR_URL[id] = cv.toDataURL());
 }
+// the same picture in a walking or attacking pose ("w0" to "w3", "a1", "a2"), as a data URL (the replay and the hiring march use these)
+const SPR_POSE_URL = {};
+function mercPoseURL(k, color, pose) { const id = k + "|" + color + "|" + pose; return SPR_POSE_URL[id] || (SPR_POSE_URL[id] = spr(k, color, pose).toDataURL()); }
 // trap icons drawn as small canvases
 function trapIcon(type, size) {
   const cv = document.createElement("canvas"); cv.width = cv.height = size; const c = cv.getContext("2d");
