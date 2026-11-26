@@ -25,7 +25,7 @@ let RIVALS = BOTS, RWALLS = [];
 const BOT_BANNERS = [{ pat: "halves", c1: null, c2: "#ecdcb4", em: "crown" }, { pat: "stripe", c1: null, c2: "#1e140c", em: "skull" }, { pat: "cross", c1: null, c2: "#ecdcb4", em: "star" }, { pat: "chevron", c1: null, c2: "#e2b33c", em: "sun" }, { pat: "quarters", c1: null, c2: "#ecdcb4", em: "none" }, { pat: "solid", c1: null, c2: "#ecdcb4", em: "moon" }, { pat: "stripe", c1: null, c2: "#e2b33c", em: "tower" }];
 
 function setupPractice() {
-  const L = seatLayout(8, true, zoneV1Now()); // practice always uses the bigger fields, and the roomier prototype fields with the zones
+  const L = seatLayout(8, true); // practice always uses the bigger fields
   BOTS.forEach((b, i) => { b.pos = L.castles[i + 1]; });
   RIVALS = BOTS; RARMY = []; RWALLS = [];
   BOTS.forEach((b, i) => { b.banner = BOT_BANNERS[i % BOT_BANNERS.length]; b.ctier = 1 + (hash(i, 7, 41) > .6 ? 1 : 0); });

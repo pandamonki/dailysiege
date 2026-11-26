@@ -33,7 +33,6 @@ practice games always stamp all of them (`js/sim/plans.js`).
 | 27 Nov | `auraV2` | Aura items v2: no aura is stronger than 30% (Pipe of Insight 60% to 30%), and Mender's Charms from several heroes do not stack |
 | 23 Nov | `lvlV2` | Faster levelling: 3 to 4 levels a battle, up to level 25, smaller steps per level |
 | 26 Nov | `timeV1` | Fixed timing: opening swings and hero skill cooldowns by place in the line-up, not the battle's dice (see The battle) |
-| Wars from 1 Nov | `mapV3` | Roomier fields: maps 4 tiles bigger again, so neighbours stand about 8.5 tiles apart instead of 6.7 (8 lords); `MAP_V3_FROM` in `js/core/layout.js` |
 | 26 Nov | `tuneV1` | Agency pass: talents 25% and item stats 15% stronger, bots answer yesterday's attacker, mercenaries arrive 10s in, the Rogue follows Combat settings (see Agency pass) |
 | 26 Nov | `zoneV1` | Zones: placement sets each soldier's job, one #1 target, Front plans, flank plans, army temper, hill points, sudden-death damage tiebreak (see Zones) |
 

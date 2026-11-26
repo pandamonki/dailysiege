@@ -416,18 +416,6 @@ test("agency pass (tuneV1): battles with it end, place every lord once and play 
   assert.ok(r.same, "fast and full runs disagree");
 });
 
-test("roomier prototype fields (map v3): 4 tiles bigger, every lord's field the same size, and battles on them run cleanly", () => {
-  const r = JSON.parse(sim.run(`(() => { const a = seatLayout(8, true), b = seatLayout(8, true, true), sizes = new Set(b.castles.map(c => [...zoneFor(c, b.N, b.castles, true)].length));
-    const near = L => Math.min(...L.castles.slice(1).map(c => Math.hypot(c[0] - L.castles[0][0], c[1] - L.castles[0][1])));
-    return JSON.stringify({ grow: b.N - a.N, sizes: sizes.size, gap: [near(a), near(b)] }); })()`));
-  assert.equal(r.grow, 4);
-  assert.equal(r.sizes, 1, "every lord's deploy field has the same number of tiles");
-  assert.ok(r.gap[1] > r.gap[0] + 1.5, `neighbours only ${r.gap[1].toFixed(1)} tiles apart (was ${r.gap[0].toFixed(1)})`);
-  const z = JSON.parse(sim.run(`(() => { const { full, fast } = ${ZWAR(40, 4).replace("seatLayout(8, true)", "seatLayout(8, true, true)")}; return JSON.stringify({ places: full.results.map(x => x.place).sort((a, b) => a - b), same: battleHash(full) === battleHash(fast) }); })()`));
-  assert.deepEqual(z.places, [1, 2, 3, 4, 5, 6, 7, 8]);
-  assert.ok(z.same, "fast and full runs disagree");
-});
-
 test("agency pass (tuneV1): hired mercenaries march out 10 seconds into the battle, not at the start", () => {
   const tweak = `{ const p = plans[0], [cr, cc] = p.castle, free = [...p.zoneSet].map(k => k.split(",").map(Number)).filter(([r, c]) => !p.pieces.some(q => q.r === r && q.c === c) && !(r === cr && c === cc)).slice(0, 2);
     free.forEach(([r, c]) => p.pieces.push({ kind: "unit", type: "delf", lvl: 1, hp: 1, r, c, merc: "elves" })); plans.forEach(q => { q.tuneV1 = true; q.timeV1 = true; }); }`;
