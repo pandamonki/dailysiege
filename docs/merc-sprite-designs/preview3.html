@@ -1,0 +1,56 @@
+<!doctype html><meta charset="utf-8"><title>Merc simple</title>
+<style>
+body{margin:0;background:#2b1f14;color:#ecdcb4;font:600 15px Georgia,serif;padding:14px;width:760px}
+h2{margin:4px 0 8px;font-size:20px;color:#ffd24a}
+.row{display:flex;gap:10px;align-items:flex-end;justify-content:space-around;margin-bottom:16px;background:#3a2b1c;padding:12px 6px 8px;border-radius:10px}
+.cell{text-align:center}
+.cell canvas{display:block;margin:0 auto 6px}
+.cell small{display:block;color:#bba980;font-weight:400}
+.cell b{color:#ffd24a}
+.field{background:#6f8a4a}
+.note{color:#bba980;font-weight:400;margin:0 0 10px}
+</style>
+<body>
+<script>const YOU_COLOR = "#3a7bd5", MY_COLOR = "#3a7bd5";</script>
+<script src="/home/user/dailysiege/js/render/sprites.js"></script>
+<script src="merc-art2.js"></script>
+<script src="merc-art3.js"></script>
+<script>
+const PARTS = ["back", "legs", "body", "head", "arms", "weapon", "over"];
+function buildMerc(key, vid, pose, team) {
+  const base = MERC_ART[key], v = vid && base.vars[vid] || { pal: {}, parts: {} };
+  const spec = { W: base.W, H: base.H, x0: base.x0, pal: Object.assign({}, base.pal, v.pal), parts: Object.assign({}, base.parts, v.parts) }; if (team) spec.pal.T = team;
+  const g = Array.from({ length: spec.H }, () => Array(spec.W).fill(null)); pose = pose || "";
+  const wf = pose[0] === "w" ? +pose[1] : -1, ap = pose[0] === "a" ? +pose[1] : 0, contact = wf === 0 || wf === 2, odd = wf === 1 || wf === 3, DY = contact ? 1 : 0;
+  const put = (x, y, k) => { if (x >= 0 && x < spec.W && y >= 0 && y < spec.H) g[y][x] = spec.pal[k] || k; };
+  const mk = dy => ({ P: (x, y, k) => put(x, y + dy, k), R: (x0, y0, x1, y1, k) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) put(x, y + dy, k); } });
+  const b = mk(DY), f = mk(0), c = { P: b.P, R: b.R, F: f.P, RF: f.R, wf, ap, contact, odd, x0: spec.x0 };
+  PARTS.forEach(p => spec.parts[p] && spec.parts[p](c));
+  const out = g.map(r => r.slice());
+  for (let y = 0; y < spec.H; y++) for (let x = 0; x < spec.W; x++) { if (g[y][x]) continue; if ((g[y - 1] && g[y - 1][x]) || (g[y + 1] && g[y + 1][x]) || g[y][x - 1] || g[y][x + 1]) out[y][x] = "#1e140c"; }
+  const cv = document.createElement("canvas"); cv.width = spec.W; cv.height = spec.H; const cx = cv.getContext("2d");
+  out.forEach((r, y) => r.forEach((cc, x) => { if (cc) { cx.fillStyle = cc; cx.fillRect(x, y, 1, 1); } }));
+  return cv;
+}
+const COINS = {
+  blades: { rows: ["..kkkkk..", ".kYYYYYk.", "kYdYYYdYk", "kYYdYdYYk", "kYYYdYYYk", "kYYdYdYYk", "kYdYYYdYk", ".kYYYYYk.", "..kkkkk.."], pal: { k: "#3e2714", Y: "#ffd24a", d: "#9a5a10" }, name: "Coin with crossed blades" },
+  badge: { rows: ["kkkkkkkkk", "kYYYdYYYk", "kYYYdYYYk", "kYdddddYk", "kYYYdYYYk", "kYYYdYYYk", ".kYYdYYk.", "..kYdYk..", "...kYk...", "....k...."], pal: { k: "#3e2714", Y: "#ffd24a", d: "#9a5a10" }, name: "Gold shield with sword" },
+  pouch: { rows: ["..kkkkk..", "...kRk...", "..kkRkk..", ".kYYYYYk.", "kYYYdYYYk", "kYYdYYYYk", "kYYYdYYYk", "kYYYYdYYk", "kYYdYYdYk"+"", ".kYYYYYk.", "..kkkkk.."].map(r => r.slice(0, 9)), pal: { k: "#3e2714", Y: "#ffd24a", d: "#9a5a10", R: "#c8342a" }, name: "Gold pouch" } };
+function coinCv(id) { const d = COINS[id], cv = document.createElement("canvas"); cv.width = 9; cv.height = d.rows.length; const c = cv.getContext("2d"); d.rows.forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== ".") { c.fillStyle = d.pal[ch]; c.fillRect(x, y, 1, 1); } })); return cv; }
+function show(src, scale, parent, label, sub) { const d = document.createElement("div"); d.className = "cell"; const cv = document.createElement("canvas"); cv.width = src.width * scale; cv.height = src.height * scale; const c = cv.getContext("2d"); c.imageSmoothingEnabled = false; c.drawImage(src, 0, 0, cv.width, cv.height); d.appendChild(cv); if (label) { const l = document.createElement("div"); l.innerHTML = label; d.appendChild(l); } if (sub) { const s = document.createElement("small"); s.textContent = sub; d.appendChild(s); } parent.appendChild(d); return d; }
+
+const NAMES = { trollw: "Troll", orc: "Orc", ogre: "Ogre", centaur: "Centaur", delf: "Dark Elf", necro: "Necro", skel: "Skeleton" };
+const body = document.body;
+function hd(t, sub) { const h = document.createElement("h2"); h.textContent = t; body.appendChild(h); if (sub) { const p = document.createElement("p"); p.className = "note"; p.textContent = sub; body.appendChild(p); } }
+function row(cls) { const r = document.createElement("div"); r.className = "row" + (cls ? " " + cls : ""); body.appendChild(r); return r; }
+const mode = location.hash.slice(1);
+if (mode === "new") {
+  [["trollw", "Troll Warlord"], ["ogre", "Ogre Breaker"], ["centaur", "Centaur Archer"]].forEach(([k, n]) => { hd(n); const r = row(); show(buildMerc(k, ""), 7, r, "<b>A</b>", ""); show(buildMerc(k, "b"), 7, r, "<b>B</b>", MERC_ART[k].vars.b.name); });
+}
+if (mode === "all") {
+  hd("Your picks, with the simpler troll, ogre and centaur (option A of each) at game size", "Human soldiers on the left for comparison");
+  const r = row("field"); r.style.cssText = "gap:14px;padding:30px 12px 14px;flex-wrap:wrap";
+  ["footman", "bowman", "knight"].forEach(k => show(spr(k, "#3a7bd5"), 4, r, null, "soldier"));
+  [["trollw", ""], ["ogre", ""], ["centaur", ""], ["orc", "c"], ["necro", ""], ["delf", ""], ["skel", ""]].forEach(([k, v]) => { const d = show(buildMerc(k, v, "", "#3a7bd5"), 4, r, null, NAMES[k]); });
+}
+</script></body>
