@@ -20,16 +20,19 @@ function autoRanks(lvl, seed) {
   return r;
 }
 
-// A bot's skill-tree build (heroes from HERO_V3_FROM): one main tree filled to its ultimate, then, by seed, either depth (the main tree to 11, 3 into a second) or breadth (6 into a second).
+// A bot's skill-tree build (heroes from HERO_V3_FROM): the base skill, one main tree filled to its ultimate (the 12th point), then, by seed, either depth (more of the main tree) or breadth (a second tree).
 // Roughly a third of builds take a side talent on the way. The same seed, level and class always give the same build.
 function autoTree(lvl, seed, cls, slot) { // slot: the bot's place in the roster; it rotates the main tree so lords in one game spread across all three
   const tr = emptyTree(), main = (Math.floor(hash(seed, 3, 91) * 3) + (slot || 0)) % 3, other = (main + 1 + Math.floor(hash(seed, 4, 91) * 2)) % 3, depth = hash(seed, 5, 91) < .5, sides = hash(seed, 6, 91) < .34;
-  const seq = [[0, 0], [0, 0], [0, 1], [0, 1], [0, 1], [0, 3], [0, sides ? 4 : 3], [0, 5]];
-  if (depth) seq.push([0, 0], [0, 0], [0, 1], [1, 0], [1, 0], [1, 1]); else seq.push([1, 0], [1, 0], [1, 1], [1, 1], [1, 1], [1, 3]);
-  seq.push([0, 3], [0, 0], [0, 1], [0, 2], [0, 2], [1, 3], [1, 1], [1, 0], [0, 4], [1, 2], [1, 4]);
+  // the base skill first (it opens the branches), then ten points in the main tree and its ultimate as the 12th point
+  const seq = [[0, 0], [0, 0], [0, 1], [0, 1], [0, 1], [0, 0], [0, 1], [0, 3], [0, 3], [0, sides ? 4 : 0], [0, 5]];
+  if (depth) seq.push([0, 0], [0, 0], [1, 0], [1, 0], [1, 1], [1, 1]); else seq.push([1, 0], [1, 0], [1, 1], [1, 1], [1, 1], [1, 0]);
+  seq.push([0, 2], [0, 2], [0, 4], [1, 3], [1, 1], [1, 0], [1, 3], [1, 2], [1, 4]);
   const bk = [main, other], L = Math.min(lvl, MAX_HERO_LVL_V4);
   TREE_NAME_CLS = cls || "warrior";
+  if (treeCanLearnBase(tr, L)) tr.base++;
   seq.forEach(([w, i]) => { if (treeCanLearn(tr, TREE_BKEY[bk[w]], i, L)) tr[TREE_BKEY[bk[w]]][i]++; });
+  [1, 2].forEach(() => { if (treeCanLearnBase(tr, L)) tr.base++; }); // spare points deepen the base skill
   return tr;
 }
 

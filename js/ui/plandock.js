@@ -23,7 +23,7 @@ function planSrc(p) {
   if (p.t === "champ") {
     const v3 = heroV3Now(), b = v3 ? champBase(S.cls, balV5Now()) : CHAMP[S.cls], now = v3 ? champNowV3() : champNow(), c = CLASSES[S.cls];
     return { m: { kind: "champ", key: "c-" + S.cls, cls: S.cls, lvl: level(), maxhp: now.hp, hp: now.hp, atk: now.atk, fatk: itemAtk(S.items), atype: heroTypes(S.cls, balV5Now())[0], armour: heroTypes(S.cls, balV5Now())[1], armor: b.armor, as: b.as, range: b.range, spd: b.spd, evade: 0,
-      tree: v3 && S.tree ? TREE_BKEY.map(k => (S.tree[k] || []).slice()) : null, ranks: v3 ? {} : S.ranks, items: (S.items || []).filter(Boolean), gear: S.gear }, color: MY_COLOR, who: "You", title: c.name, role: c.role, ranks: v3 ? {} : S.ranks, cd: none };
+      tree: v3 && S.tree ? treeRows(S.tree) : null, ranks: v3 ? {} : S.ranks, items: (S.items || []).filter(Boolean), gear: S.gear }, color: MY_COLOR, who: "You", title: c.name, role: c.role, ranks: v3 ? {} : S.ranks, cd: none };
   }
   if (p.t === "unit") {
     const u = findUnit(p.id); if (!u) return null; const b = UNITS[u.type], s = unitStats(u), sim = UNIT_SIM[u.type] || {}, ty = UNIT_TYPES[u.type] || [];
@@ -38,7 +38,7 @@ function planSrc(p) {
     const e = p.u != null ? RARMY[p.u] : null;
     if (e && e.champ) { // a rival's hero: only its class is known, so show the class kit without ranks
       const h = rivalHeroData(r), cl = h ? h.cls : (e.key || "").replace("c-", "") || r.cls, c = CLASSES[cl]; if (!c) return null;
-      const v3 = heroV3Now(), b = v3 ? champBase(cl, balV5Now()) : CHAMP[cl], L = h ? h.level : Math.max(1, r.lvl || DAY), rk = h ? h.ranks : { a1: 1, a2: 1, a3: 1, ult: 1 }, tree = h && h.tree && v3 ? TREE_BKEY.map(k => (h.tree[k] || []).slice()) : null;
+      const v3 = heroV3Now(), b = v3 ? champBase(cl, balV5Now()) : CHAMP[cl], L = h ? h.level : Math.max(1, r.lvl || DAY), rk = h ? h.ranks : { a1: 1, a2: 1, a3: 1, ult: 1 }, tree = h && h.tree && v3 ? treeRows(h.tree) : null;
       return { m: { kind: "champ", key: "c-" + cl, cls: cl, lvl: L, maxhp: Math.round(b.hp * (v3 ? hpLvV3(L, lvlV2Now()) : 1 + .08 * (L - 1))), hp: Math.round(b.hp * (v3 ? hpLvV3(L, lvlV2Now()) : 1 + .08 * (L - 1))), atk: Math.round(b.atk * (v3 ? atkLvV3(L, lvlV2Now()) : 1 + .06 * (L - 1))), fatk: h ? itemAtk(h.items) : 0, atype: heroTypes(cl, balV5Now())[0], armour: heroTypes(cl, balV5Now())[1], armor: b.armor, as: b.as, range: b.range, spd: b.spd, evade: 0,
         tree, ranks: rk, items: h ? h.items.filter(k => ITEMS[k]) : [], gear: h ? h.gear : {} }, color: r.color, who: r.name, title: c.name, role: "Rival hero", ranks: rk, cd: none, hideRanks: !h, scouted: !!h, rival: true };
     }

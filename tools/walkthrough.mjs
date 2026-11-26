@@ -124,6 +124,15 @@ for (const name of engines) {
     await tap("#twistbtn"); if (!(await page.locator("#twistpop .nbh").count())) throw new Error("the noticeboard has no heading"); await closeAll(); await page.mouse.click(5, 5);
     await tap("#twistbtn"); await tap('#twistpop [data-act="opentoday"]'); if (!(await page.locator('#sheet [data-act="cxpick"]').count())) throw new Error("the contracts tab didn't open"); await closeAll();
     await tap("#twistbtn"); await tap('#twistpop [data-act="sealgo"][data-v="strategy"]'); if (!(await page.locator("#sheet #tgtlist").count())) throw new Error("the targets didn't open"); await closeAll(); });
+  await step("the base skill opens the trees: learn it, then a first tree skill", async () => { await tap('#cmdbar [data-act="openhero"]');
+    if (!(await page.locator("#sheet .trunkn").count())) throw new Error("no base skill node on the hero screen");
+    const before = await js(() => freePts());
+    if (before > 1) {
+      await tap("#sheet .trunkn"); const l = page.locator('#sheet [data-act="tlearn"]:not([disabled])'); if (!(await l.count())) throw new Error("the base skill cannot be learned");
+      await l.first().click(); await page.waitForTimeout(150); if (!(await js(() => S.tree.base === 1))) throw new Error("the base skill was not learned"); if ((await js(() => freePts())) >= before) throw new Error("no point was spent");
+      await tap('#sheet [data-act="tnode"][data-v="0.0"]'); if (!(await page.locator('#sheet [data-act="tlearn"]:not([disabled])').count())) throw new Error("a tree's first skill should open once the base skill is learned");
+    }
+    await closeAll(); });
   await step("learn a hero skill", async () => { await tap('#cmdbar [data-act="openhero"]'); const before = await js(() => freePts());
     if (before > 0 && await page.locator('#sheet [data-act="tnode"]').count()) { await page.locator('#sheet [data-act="tnode"]').last().click(); await page.waitForTimeout(150); const l = page.locator('#sheet [data-act="tlearn"]:not([disabled])'); if (await l.count()) { await l.first().click(); await page.waitForTimeout(150); if ((await js(() => freePts())) >= before) throw new Error("no point was spent"); } }
     await closeAll(); });
