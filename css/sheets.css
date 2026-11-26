@@ -25,6 +25,9 @@
 .btn.small { padding: 4px 9px; font-size: 14px; }
 .btn.wood { background: linear-gradient(#835a34, #5e3c1f); color: var(--parchment); }
 .btn.wax { background: linear-gradient(#a8382b, #7a2219); color: var(--parchment); border-color: #4d140e; }
+.btn.begin { background: linear-gradient(#58a83a, #2f7a1f); color: #fff; border-color: #1a4a10; font-weight: 700; font-size: 17px; padding: 10px 16px; text-shadow: 0 1px 0 rgba(0,0,0,.45); box-shadow: 0 2px 0 #1a4a10, 0 0 10px rgba(110,200,70,.45); }
+.btn.begin.sure { background: linear-gradient(#7ad04e, #3f9a28); animation: beginPulse 1s ease-in-out infinite; }
+@keyframes beginPulse { 50% { box-shadow: 0 2px 0 #1a4a10, 0 0 18px rgba(150,235,100,.9); } }
 .btn.on { background: linear-gradient(#5d7a3a, #3f5a24); color: var(--parchment); border-color: #26381a; }
 .btn.hostile.on { background: linear-gradient(#a8382b, #7a2219); border-color: #4d140e; }
 .btn.ally.on { background: linear-gradient(#3e6eb5, #284d86); border-color: #1a3460; }

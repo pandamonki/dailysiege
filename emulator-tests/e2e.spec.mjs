@@ -121,7 +121,7 @@ test("nobody can read another lord's private state or today's orders, by any rou
   assert.deepEqual(Object.keys(seen.plans), [], "no orders of a rival before a battle has been fought");
   assert.equal(seen.sealedFor, planDay, "only the fact that they sealed");
   assert.ok(!JSON.stringify(seen).includes(U.bob), "alice's target (bob) is nowhere in what bob's device received");
-  assert.deepEqual(Object.keys(seen.state).sort(), ["banner", "items", "week"]);
+  assert.deepEqual(Object.keys(seen.state).sort(), ["banner", "cls", "items", "week"], "once registration has closed a rival's hero is public, nothing else is");
 });
 
 test("nobody can write battle results", async () => {

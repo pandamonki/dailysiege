@@ -219,7 +219,7 @@
         for (const [day, b] of bt) { const pl = b.inputs && (b.inputs.plans || []).find(p => p.pid === id); if (!pl) continue;
           if (b.week === pub.week) cls = pl.cls || cls;
           if (!pl.noOrders) base.plans[day] = Object.assign({}, pl, { pieces: (pl.pieces || []).filter(pc => !pc.merc), sealed: true }); }
-        base.state = { week: pub.week || null, banner: pub.banner || null, items: pub.hasRapier ? ["rapier"] : [] }; if (cls) base.state.cls = cls;
+        base.state = { week: pub.week || null, banner: pub.banner || null, items: pub.hasRapier ? ["rapier"] : [] }; { const open = lobbyOpen(g.game), h = cls || (open ? null : pub.cls); if (h) base.state.cls = h; } // the hero: from a fought battle, or the one named on their public profile (the lobby screens keep rivals' heroes hidden until the war begins)
       }
       out[id] = base;
     }
@@ -246,6 +246,7 @@
     const pub = { fromWeek: doc.fromWeek || "0000-00-00", joinedAt: doc.joinedAt || Date.now(), nick: doc.nick || "", real: doc.real || "", pending: !!doc.pending,
       banner: st.banner || (cur && cur.banner) || null, hasRapier: (st.items || []).includes("rapier"), week: st.week || null, war: curWar(), sealedFor: last && doc.plans[last] && doc.plans[last].sealed ? last : null,
       allyReplies: { day: st.day || null, r: Object.fromEntries(Object.entries(st.replies || {}).filter(([, v]) => v === "accept" || v === "reject")) } }; // today's answers to invitations, so allies can see them
+    { const h = st.cls || (cur && cur.cls); if (h && G && G.game && !lobbyOpen(G.game)) pub.cls = h; } // my hero goes on my public profile only once registration has closed, so every lord can see it from then on
     if (cur && cur.left !== undefined) pub.left = cur.left;
     if (!cur || pub.joinedAt !== cur.joinedAt) pub.joinedAt = Math.round(pub.joinedAt + clockSkew); // a new sign-up time is stamped in server time
     return copy(pub);

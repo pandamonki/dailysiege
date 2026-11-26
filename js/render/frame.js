@@ -43,6 +43,10 @@ function draw(t) {
   const items = [];
   RIVALS.forEach(rv => items.push([rv.pos[0], () => drawCastle(rv.pos[0], rv.pos[1], rv.color, t, rivalLabel(rv), S.lists ? (bucketOf(rv.id) === "neutral" ? null : bucketOf(rv.id)) : null, null, rv.banner, rv.ctier || 1, bountyRank(rv.id))]));
   items.push([CASTLE[0], () => drawCastle(CASTLE[0], CASTLE[1], MY_COLOR, t, isLive() ? MY_NAME : "You", null, null, S.banner, S.castle || 1, bountyRank(isLive() ? LIVE.uid : "you"))]);
+  if (!seeArmies() && isLive()) { // before the first battle every lord's hero stands guard beside their castle (yours too, until you place it yourself)
+    const guard = (r, q, key, color) => { const dr = r < CENTRE ? 1 : -1, dq = q < CENTRE ? 1 : -1; items.push([r + dr + .1, () => drawFigure(key, color, r + dr, q + dq, true, 1, false, t, {})]); };
+    RIVALS.forEach(rv => { if (rv.cls && CLASSES[rv.cls]) guard(rv.pos[0], rv.pos[1], "c-" + rv.cls, rv.color); });
+    if (!Object.values(S.place).includes("champ") && CLASSES[S.cls]) guard(CASTLE[0], CASTLE[1], "c-" + S.cls, MY_COLOR); }
   RWALLS.forEach(w => { const rv = RIVALS.find(x => x.id === w.rid); if (!rv) return; const mine = RWALLS.filter(o => o.rid === w.rid).map(o => [o.r, o.c]); wallTiles(w.r, w.c, w.dir).forEach(([a, b]) => items.push([a + .2, () => drawWallTile(ctx, a, b, rv.ctier || 1, 1, rv.color, t, w.dir, wallLinks(mine, a, b))])); });
   if (seeArmies()) RARMY.forEach(u => {
     const rv = RIVALS.find(x => x.id === u.rid), friendly = (S.diplo[u.rid] || {}).rel === "ally";
