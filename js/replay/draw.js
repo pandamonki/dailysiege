@@ -104,6 +104,7 @@ function drawReplay(t) {
       if (fl & 32) { ctx.strokeStyle = "rgba(127,178,255,.9)"; ctx.lineWidth = ts * .05; ctx.beginPath(); ctx.arc(cx, by - ts * .45, ts * .42, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke(); }
       const yb = hpBar(cx, top, Math.max(0, Math.min(1, frac)), fr);
       if (m.champ) drawTeamCrest(R, m.pid, cx, yb - ts * .33 - ts * .26, ts * .44, time);
+      if (m.merc) mercTag(cx, yb - ts * .03); // a small gold MERC tag, so hired swords never pass for heroes
       if (m.champ) nameTag(cx, yb - ts * .02, R.names[m.pid], color, (m.lvl || 1) + ((atkIndex(), replay.lvlEv.get(k)) || []).filter(e => e.t <= time).length);
       if (replay.sel === k) { ctx.strokeStyle = "#ffe082"; ctx.lineWidth = ts * .07; ctx.beginPath(); ctx.ellipse(cx, by - ts * .05, ts * .44, ts * .17, 0, 0, 7); ctx.stroke(); }
       if (fl & 2) { ctx.fillStyle = "#ffe082"; for (let s = 0; s < 3; s++) { const an = t * 5 + s * 2.1; ctx.beginPath(); ctx.arc(cx + Math.cos(an) * ts * .22, yb - ts * .1 + Math.sin(an) * ts * .06, ts * .045, 0, 7); ctx.fill(); } }
@@ -469,4 +470,11 @@ function drawQuipFx(e, time) { // a speech bubble over whoever struck the blow, 
   ctx.beginPath(); ctx.moveTo(-fs * .35, -1); ctx.lineTo(0, fs * .6); ctx.lineTo(fs * .35, -1); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.fillStyle = "#f6ecd0"; ctx.fillRect(-fs * .33, -ctx.lineWidth - 1, fs * .66, ctx.lineWidth + 2);
   ctx.fillStyle = "#2b1b0c"; lines.forEach((l, i) => ctx.fillText(l, 0, -h + fs * .4 + fs * 1.2 * (i + .5)));
   ctx.restore();
+}
+
+// the tag over a mercenary in the replay: a small dark pill with MERC in gold
+function mercTag(cx, y) {
+  const fs = Math.max(7, ts * .15); ctx.save(); ctx.font = `800 ${fs}px Alegreya, Georgia, serif`; const w = ctx.measureText("MERC").width + fs * .8, h = fs * 1.25, x = cx - w / 2, yy = y - h;
+  ctx.fillStyle = "rgba(30,20,12,.85)"; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, yy, w, h, h / 2) : ctx.rect(x, yy, w, h); ctx.fill();
+  ctx.strokeStyle = "#ffd24a"; ctx.lineWidth = Math.max(1, fs * .1); ctx.stroke(); ctx.fillStyle = "#ffd24a"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("MERC", cx, yy + h / 2 + 1); ctx.restore();
 }

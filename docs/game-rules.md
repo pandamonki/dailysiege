@@ -34,7 +34,7 @@ practice games always stamp all of them (`js/sim/plans.js`).
 | 23 Nov | `lvlV2` | Faster levelling: 3 to 4 levels a battle, up to level 25, smaller steps per level |
 | Prototype (practice only) | `timeV1` | Fixed timing: opening swings and hero skill cooldowns by place in the line-up, not the battle's dice (see The battle) |
 | Prototype (practice only) | `mapV3` | Roomier fields: maps 4 tiles bigger again, so neighbours stand about 8.5 tiles apart instead of 6.7 (8 lords); wars from `MAP_V3_FROM` in `js/core/layout.js` |
-| Prototype (practice only) | `tuneV1` | Agency pass: talents 25% and item stats 15% stronger, bots answer yesterday's attacker (see Agency pass) |
+| Prototype (practice only) | `tuneV1` | Agency pass: talents 25% and item stats 15% stronger, bots answer yesterday's attacker, mercenaries arrive 10s in, the Rogue follows Combat settings (see Agency pass) |
 | Prototype (practice only) | `zoneV1` | Zones: placement sets each soldier's job, one #1 target, Front plans, flank plans, army temper, hill points, sudden-death damage tiebreak (see Zones) |
 
 ## The war
@@ -216,6 +216,12 @@ Practice always uses it; real wars from `TUNE_V1_FROM` in `js/config/orders.js`,
 
 - **Talents:** every skill-tree value is 25% stronger (`TALENT_X`), and the hero screen shows the stronger values.
 - **Items:** the health, attack, block, speed, lifesteal and thorns that items add are 15% stronger (`ITEM_X`).
+- **Mercenaries arrive 10 seconds in:** hired mercenaries march out of their lord's castle 10 seconds into the battle (`MERC_ARRIVE`),
+  not at the start. In replays every mercenary carries a gold MERC tag, and their looks no longer copy a hero's (the Dark Elves wear
+  purple headbands, the Necromancers green with horns).
+- **The Rogue fights like every hero:** it no longer has its own 7-tile hunt for Mages and Archers (or the backline hunt while hidden);
+  like every hero it picks targets by its lord's Combat settings: the hero's target order (heroes, melee, ranged, lowest health and
+  so on) and the Combat reach, 1 to 5 tiles, 2 to start with. Its finishing blows on weakened enemies stay.
 - **Bots answer their attacker:** a bot whose castle was some lord's #1 target in the last battle takes the Front plan that beats that
   lord's Front plan, and, if that lord is its neighbour, screens that side and moves a soldier there (`botReact` in `js/sim/bots.js`).
   Practice rivals do the same with the player's orders from the last practice battle.

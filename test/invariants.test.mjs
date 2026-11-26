@@ -427,3 +427,14 @@ test("roomier prototype fields (map v3): 4 tiles bigger, every lord's field the 
   assert.deepEqual(z.places, [1, 2, 3, 4, 5, 6, 7, 8]);
   assert.ok(z.same, "fast and full runs disagree");
 });
+
+test("agency pass (tuneV1): hired mercenaries march out 10 seconds into the battle, not at the start", () => {
+  const tweak = `{ const p = plans[0], [cr, cc] = p.castle, free = [...p.zoneSet].map(k => k.split(",").map(Number)).filter(([r, c]) => !p.pieces.some(q => q.r === r && q.c === c) && !(r === cr && c === cc)).slice(0, 2);
+    free.forEach(([r, c]) => p.pieces.push({ kind: "unit", type: "delf", lvl: 1, hp: 1, r, c, merc: "elves" })); plans.forEach(q => { q.tuneV1 = true; q.timeV1 = true; }); }`;
+  const r = JSON.parse(sim.run(`(() => { const { full, fast, plans } = ${ZWAR(50, 4, tweak)}; const p = plans[0]; let first = null, n = 0;
+    full.meta.forEach((m, j) => { if (m.pid !== p.pid || !m.merc) return; n++; const f = full.frames.find(f => f.d.length > j * 4 + 3 && !(f.d[j * 4 + 3] & 1)); if (f && (first == null || f.t < first)) first = f.t; });
+    return JSON.stringify({ n, first, same: battleHash(full) === battleHash(fast) }); })()`));
+  assert.equal(r.n, 2, "both mercenaries take the field");
+  assert.ok(r.first >= sim.get("MERC_ARRIVE") - .01, `a mercenary was on the field at ${r.first}s`);
+  assert.ok(r.same, "fast and full runs disagree");
+});
