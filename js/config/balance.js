@@ -39,6 +39,11 @@ const GOLD_KILL = { unit: 2, militia: 1, summon: 1, guard: 2 };
 const BASE_INCOME = 225, INCOME_RAMP = 30; // pay after battle 1, and how much it grows with each day of the week
 const baseIncome = d => BASE_INCOME + INCOME_RAMP * (Math.max(1, d) - 1); // base pay earned after the battle of day d
 const startGold = dayNo => { let g = 300; for (let d = 1; d < dayNo; d++) g += baseIncome(d); return g; }; // what a lord who joins on day dayNo starts with
+// Pacing v2 (wars whose first day is on or after PACE_V2_FROM): contracts and reinforcement waves open on day 2, and the free
+// item gifts move from days 2 and 5 to days 3 and 6, so day 1 is only the basics. Wars already running keep the old days.
+let PACE_V2_FROM = "2026-11-27"; const paceV2For = week => String(week) >= PACE_V2_FROM;
+const paceV2Now = () => (typeof isLive === "function" && isLive() ? paceV2For(liveClock().week) : true);
+const PACE_OPENS = 2; // the day contracts and waves open under pacing v2
 const curDayNo = () => (typeof isLive === "function" && isLive()) ? liveClock().dayNo : DAY; // the day being planned
 function catchUpGold(n, idxFromBottom) { const k = Math.max(1, Math.round(n * .3)); return idxFromBottom < k ? Math.round(140 + 160 * (1 - idxFromBottom / k)) : 0; }
 

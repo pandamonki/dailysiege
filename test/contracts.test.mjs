@@ -66,3 +66,11 @@ test("twists that change the fight do change it: Iron Walls gives castles 30% mo
     const hp = res => res.meta.filter(m => m.kind === "castle").map(m => m.maxhp); return [hp(a), hp(b)]; })()`));
   r[1].forEach((v, i) => assert.ok(Math.abs(v / r[0][i] - 1.3) < 1e-9));
 });
+
+test("pacing v2: no contracts on day 1 of a war that began on or after PACE_V2_FROM; older wars keep them", () => {
+  const W = war(); sim.context.__W = W;
+  const D1 = sim.run(`wWeekOf(__W, __D1)`); sim.context.__WK = D1;
+  sim.run(`PACE_V2_FROM = __WK`); assert.deepEqual(J(sim.run(`wContractOffers(__W, __WK, "b0")`)), [], "day 1 of a paced war has no contracts");
+  sim.run(`PACE_V2_FROM = "2099-01-01"`); assert.equal(J(sim.run(`wContractOffers(__W, __WK, "b0")`)).length, 3, "an older war still offers them on day 1");
+  sim.run(`PACE_V2_FROM = "2026-11-27"`);
+});

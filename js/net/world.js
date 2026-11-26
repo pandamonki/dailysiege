@@ -87,6 +87,7 @@ const wTwist = (W, dayKey) => contractsFor(dayKey) ? dayTwist(wWeekOf(W, dayKey)
 function wContractOffers(W, dayKey, uid) {
   if (!contractsFor(dayKey)) return [];
   const week = wWeekOf(W, dayKey), ids = wRoster(W, week).map(p => p.uid); if (!ids.includes(uid)) return [];
+  if (paceV2For(week) && wWeekdayOf(dayKey, W.config) < PACE_OPENS) return []; // pacing v2: no contracts on day 1
   const pts = wStandings(W, week, addDays(dayKey, -1)), lead = Object.entries(pts).filter(([p, v]) => v > 0 && ids.includes(p)).sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1))[0];
   const prev = W.battles[addDays(dayKey, -1)], nemesis = prev && prev.week === week && prev.foes ? prev.foes[uid] || null : null;
   return contractOffers({ uid, dayKey, rivals: ids, leader: lead ? lead[0] : null, nemesis });

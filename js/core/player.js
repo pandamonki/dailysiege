@@ -32,6 +32,7 @@ const balV5Now = () => (typeof isLive === "function" && isLive() ? balV5For(live
 const waveV4Now = () => (typeof isLive === "function" && isLive() ? waveV4For(liveClock().planDay) : true); // "castle attacked" becomes "enemies reach my castle"
 const wavesOpen = () => (supplyV2Now() ? Math.max(0, Math.min(WAVE_COUNT, S.wavesOpen || 0)) : WAVE_COUNT);
 const waveOpen = i => i < wavesOpen();
+const wavesWait = () => supplyV2Now() && paceV2Now() && curDayNo() < PACE_OPENS; // pacing v2: waves open on day 2
 const waveUnlockCost = () => WAVE_UNLOCK_COSTS[wavesOpen()]; // the next wave's price (undefined once all are open)
 const garrisonCap = () => WAVE_SLOTS * wavesOpen();
 // the top chip: every soldier you own (field and waves) out of all the room you have (the field plus each unlocked wave); before the wave rules, the field alone

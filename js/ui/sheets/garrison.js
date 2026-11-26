@@ -23,7 +23,7 @@ function garrisonWaveHTML(w, i) {
     ${waveV2Now() ? `<button class="gr-rush${w.rush !== false ? " on" : ""}" data-act="wrush" data-k="${i}" role="checkbox" aria-checked="${w.rush !== false}" ${dis()}><i aria-hidden="true"></i><span>Rush out if my castle drops <small>below 75%, 50% or 25% health</small></span></button>` : ""}
     ${garrisonPopHTML(i)}
     <div class="gr-r4"><div class="gr-s free${waveOpen(i) ? "" : " lk"}" title="Every wave brings a free Footman"><img alt="" src="${spriteURL("footman")}"><b>Footman</b><small>${waveOpen(i) ? "free" : "free once open"}</small></div>${waveOpen(i) ? w.slots.map(slot).join("")
-      : `<div class="gr-lock">${i === wavesOpen() ? `<button class="btn small wax" data-act="wunlock" ${dis(avail() < waveUnlockCost())}>🔒 Unlock ${WAVE_SLOTS} slots · ${waveUnlockCost()}g</button>` : `<span>🔒 Unlock Wave ${i} first</span>`}</div>`}</div></div>`;
+      : `<div class="gr-lock">${i === wavesOpen() && wavesWait() ? `<span>Opens on day 2</span>` : i === wavesOpen() ? `<button class="btn small wax" data-act="wunlock" ${dis(avail() < waveUnlockCost())}>🔒 Unlock ${WAVE_SLOTS} slots · ${waveUnlockCost()}g</button>` : `<span>🔒 Unlock Wave ${i} first</span>`}</div>`}</div></div>`;
 }
 // the castle guard: one soldier on the field whose order is to stay home (the "guard" order the battle already knows)
 function guardOf() { const ids = Object.keys(S.uorders || {}).filter(k => S.uorders[k] === "guard"), keep = ids.find(k => findUnit(k) && placedAt(k)) || null;

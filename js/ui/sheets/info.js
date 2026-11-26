@@ -209,6 +209,10 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "v1.24: a gentler start", date: "26 Nov", fixes: [], balance: [], changes: [
+    "In wars that begin on or after 27 Nov, contracts and reinforcement waves open on day 2, and the free item gifts come on days 3 and 6.",
+    "Screens across Base, Army, Alliances and Orders say less, with the detail behind each i button.",
+  ] },
   { v: "v1.25: army zones (practice)", date: "25 Nov", fixes: [], balance: [], changes: [
     "Practice only for now: where you place a soldier sets its job (Guard, Front, left or right flank); one #1 target; Front plans Assault, Siege, Hero hunt and Hold the hill; flanks Screen or Raid; an army temper replaces stance and fall-back.",
     "Practice battles no longer roll each soldier's opening timing, so the same orders give the same battle. Holding the hill longest scores 2 points.",

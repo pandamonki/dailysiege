@@ -4,6 +4,11 @@
 // the id is remembered on their device, so changing the id is all it takes to show it again.
 // Only major changes players will notice, in two to five items. Fixes, tidy-ups and small balance tweaks don't belong here.
 const RELEASES = [
+  { id: "1.24", title: "What's new in v1.24", sub: "A gentler start to each war", items: [
+    ["Day 1 is the basics", "Contracts and reinforcement waves now open on day 2, so the first day is about your castle, army, hero and allies."],
+    ["Gifts on days 3 and 6", "The free item gifts move from days 2 and 5 to days 3 and 6."],
+    ["New wars only", "This starts with wars that begin on 27 Nov. Wars already running keep their old days."],
+  ] },
   { id: "1.25", title: "What's new in v1.25", sub: "Practice: army zones, to try before they reach real wars", items: [
     ["Where you place soldiers sets their job", "In practice, your field splits into Guard, Front, and left and right flanks. The Front marches on your #1 target; each flank screens its side or raids that neighbour."],
     ["Four Front plans", "Assault, Siege, Hero hunt or Hold the hill, each beating one other. Holding the hill longest scores 2 points."],

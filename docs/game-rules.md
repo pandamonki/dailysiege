@@ -31,6 +31,7 @@ practice games always stamp all of them (`js/sim/plans.js`).
 | 25 Nov | `breakV2` | Disbanding an alliance takes effect from the next battle (see Alliances) |
 | 23 Nov | `finV2` | Final-day alliances: day 7 pacts hold until one alliance is all that is left, then break and the allies fight on |
 | 23 Nov | `lvlV2` | Faster levelling: 3 to 4 levels a battle, up to level 25, smaller steps per level |
+| Wars from 27 Nov | `paceV2` (by the war's first day, `PACE_V2_FROM` in `js/config/balance.js`) | Pacing: contracts and reinforcement waves open on day 2; the free item gifts move to days 3 and 6. Wars already running keep the old days |
 | Prototype (practice only) | `timeV1` | Fixed timing: opening swings and hero skill cooldowns by place in the line-up, not the battle's dice (see The battle) |
 | Prototype (practice only) | `zoneV1` | Zones: placement sets each soldier's job, one #1 target, Front plans, flank plans, army temper, hill points, sudden-death damage tiebreak (see Zones) |
 
@@ -62,7 +63,7 @@ practice games always stamp all of them (`js/sim/plans.js`).
 ## Soldiers
 
 - Bought with gold, trained up to level 3 (each level +30% health and attack). Up to 4 start on the field; up to 3
-  reinforcement waves (unlocked for 60, 100 and 150 gold) hold 3 more each and march out later in the battle.
+  reinforcement waves (unlocked for 60, 100 and 150 gold, from day 2 in wars that began on or after 27 Nov) hold 3 more each and march out later in the battle.
 - **Every soldier starts every battle at full health.** (Older text that says fallen soldiers come back at half health
   is out of date.)
 - One soldier on the Deploy tab's first field square is the castle guard and stays home.
@@ -252,7 +253,7 @@ until a start date is chosen. They replace the army plan, the fall-back list, th
   its owner in the same battle scores 3 times as much (9; `BETRAY_CASTLE_X`). Placing, kills and castles count 1.5 times on days 5, 6 and 7
   (`DAY_WEIGHT_PICK`). Then 1 for surviving with your hero alive, 3 for a betrayal whose bomb goes off, and contracts
   (2 easy, 3 hard, 5 against a rival; doubled on a Glory day).
-- Contracts add points and gold. Take one from Orders > Contracts, or from the Daily Noticeboard (the ! above the map): it
+- Contracts add points and gold, from day 2 (from day 1 in wars that began before 27 Nov). Take one from Orders > Contracts, or from the Daily Noticeboard (the ! above the map): it
   shows the day's effect (the twist; day 1 shows a welcome to the war instead), the alliance changes at the last battle, any
   new mercenary headliner, and the Daily Contract and Daily Target buttons.
   It pulses each new day, and until a contract and a target are picked. The contract board no longer pops up by itself.
@@ -291,7 +292,7 @@ until a start date is chosen. They replace the army plan, the fall-back list, th
 - Victory screen: allies who win together all appear; the winner's allies whose castles fell float beside them as ghosts (a wispy tail
   instead of legs), cheering them on; a winner
   who betrayed an ally that battle has the betrayed hero face down at their feet with a dagger in its back.
-- Gift (day 2 and 5): Roll spins three reels, Stop slows them onto the three items (fixed in advance), the first is picked; one
+- Gift (days 3 and 6; days 2 and 5 in wars that began before 27 Nov): Roll spins three reels, Stop slows them onto the three items (fixed in advance), the first is picked; one
   description and one Pick button below.
 - Mercenary camp: it pops up once, on day 4 when it is introduced. After that each new headliner is announced on the Daily
   Noticeboard, and the Camp button pulses until the camp is opened (the headliner is tagged New today). + and − set the amount (from the minimum) and Place bid submits it; tiles show your bid.

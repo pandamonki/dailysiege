@@ -1,6 +1,7 @@
 // Free item spinner: raising a castle to Fortress or Citadel offers a pick of three different items of the matching tier
 
-const SPIN_DAYS = { 2: 1, 5: 2 };  // day of the week -> item tier on offer
+const SPIN_DAYS_V1 = { 2: 1, 5: 2 }, SPIN_DAYS_V2 = { 3: 1, 6: 2 };  // day of the war -> item tier on offer (v2: pacing v2 wars)
+const spinDays = () => (paceV2Now() ? SPIN_DAYS_V2 : SPIN_DAYS_V1);
 const SPIN_GOLD = 60;              // taken instead of an item when every item slot is full
 const spinPool = (tier, owned) => Object.keys(ITEMS).filter(k => { const it = ITEMS[k]; return it.tier === tier && !it.fixed && !it.unique && !(owned || []).includes(k); });
 const spinHash = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); return h >>> 0; };
@@ -12,7 +13,7 @@ function rollSpin(seed, tier, owned) {
 }
 // what today's spin is for this lord: null for none, "wait" until yesterday's result is in, else { tier, bonus }
 function spinPlan() {
-  const day = curDayNo(), base = SPIN_DAYS[day]; if (!base) return null;
+  const day = curDayNo(), base = spinDays()[day]; if (!base) return null;
   if (!isLive()) return { tier: base, bonus: false };
   const ck = liveClock(); if (!LIVE.battles[addDays(ck.planDay, -1)]) return "wait";
   const ids = rosterFor(ck.week).map(p => p.uid), pts = standings(ck.week), order = ids.slice().sort((x, y) => (pts[x] || 0) - (pts[y] || 0)), n = order.length, i = order.indexOf(LIVE.uid);
@@ -34,7 +35,7 @@ function spinCheck() {
   if (S.spin && spinStale()) S.spin = null;
   if (S.spin) { if (S.spin.shown) return false; S.spin.shown = true; return true; }
   if (S.lobbyPrep || S.ob) return false;
-  const day = curDayNo(); if (!SPIN_DAYS[day] || (S.spinSeen || {})[day]) return false;
+  const day = curDayNo(); if (!spinDays()[day] || (S.spinSeen || {})[day]) return false;
   const plan = spinPlan(); if (plan === "wait") return false;
   S.spinSeen = S.spinSeen || {}; S.spinSeen[day] = 1; if (!plan) return false;
   if (!S.spinSeed) S.spinSeed = Math.floor(Math.random() * 1e9);

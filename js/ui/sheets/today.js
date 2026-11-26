@@ -9,7 +9,7 @@ function pracOffers() {
   const ids = ["you", ...RIVALS.map(r => r.id)], lead = Object.entries(PRACTICE_BOARD || {}).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1])[0];
   return contractOffers({ uid: "you", dayKey: "practice-" + DAY, rivals: ids, leader: lead ? lead[0] : null, nemesis: null });
 }
-function myOffers() { if (!S || !contractsOn()) return []; return isLive() ? wContractOffers(LIVE, liveClock().planDay, LIVE.uid) : pracOffers(); }
+function myOffers() { if (!S || !contractsOn() || (paceV2Now() && curDayNo() < PACE_OPENS)) return []; return isLive() ? wContractOffers(LIVE, liveClock().planDay, LIVE.uid) : pracOffers(); }
 const cxName = id => isLive() ? nameOf(id) : ((RIVALS.find(r => r.id === id) || {}).name || "A rival");
 const buyCost = k => myTwist() === "market" && !ITEMS[k].fixed ? Math.round(itemCost(k) * TWIST_MARKET / 5) * 5 : itemCost(k);
 function contractPay(key, twist) { const k = contractParse(key); if (!k) return { pts: 0, gold: 0 }; const p = CONTRACT_PAY[k.c.tier]; return { pts: p.pts * (twist === "glory" ? 2 : 1), gold: p.gold * (twist === "goldrush" ? 2 : 1) }; }
@@ -27,7 +27,7 @@ function twistStripHTML(compact, next) { // next: worded for the coming battle (
 }
 function contractsTab() {
   const tw = myTwist(), offers = myOffers(), lk = S.locked || (isLive() && LIVE.readOnly), on = contractsOn();
-  const cards = !on ? `<p class="muted">Contracts begin with the battle of ${esc(CONTRACTS_FROM)}.</p>` : !offers.length ? `<p class="muted">No contracts for you today.</p>` : offers.map(key => {
+  const cards = !on ? `<p class="muted">Contracts begin with the battle of ${esc(CONTRACTS_FROM)}.</p>` : !offers.length ? `<p class="muted">${paceV2Now() && curDayNo() < PACE_OPENS ? "Contracts open on day 2." : "No contracts for you today."}</p>` : offers.map(key => {
     const k = contractParse(key), pay = contractPay(key, tw), took = S.contract === key;
     return `<button class="cxcard${took ? " on" : ""} t${k.c.tier}" data-act="cxpick" data-v="${took ? "" : esc(key)}" ${lk ? "disabled" : ""} aria-pressed="${took}">${artImg(ART.cx[k.id], "cxart")}<span class="cx-tx"><span class="cxh"><small>${TIER_NAME[k.c.tier]}</small><b>${esc(k.c.name)}</b></span><span>${esc(contractText(key, cxName))}</span></span>
       <span class="cxpay"><b>+${pay.pts}</b><small>pts</small><b>+${pay.gold}</b><small>gold</small></span><span class="cxtick">${took ? "✓" : ""}</span></button>`; }).join("");
