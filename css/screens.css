@@ -119,16 +119,14 @@
 .gkeys li::before { content: counter(gk); flex: none; width: 20px; height: 20px; border-radius: 50%; background: #ffd34d; border: 2px solid #2b1b0c; color: #2b1b0c; font-weight: 800; font-size: 12px; display: grid; place-items: center; }
 .wiz-msg h3 { margin: 0 0 4px; font-size: 17px; font-weight: 800; color: #5e1f14; } .wiz-msg p { font-size: 14.5px; } .wiz-row small { white-space: nowrap; }
 .ibody { align-items: start; }
-.mslot { grid-column: 1 / -1; display: flex; justify-content: center; height: 0; overflow: hidden; border-radius: 8px; background: rgba(60,30,15,.12); transition: height .35s ease; }
-.mblock { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; padding-top: 4px; }
-.mblock.hid { opacity: 0; }
-.mtag { background: #3b130f; color: #f6e7c1; border: 1px solid var(--gold); border-radius: 9px; padding: 1px 8px; font-size: 11px; font-weight: 700; white-space: nowrap; }
-.mform { position: relative; } .mform img { position: absolute; image-rendering: pixelated; }
-.mmarch { position: absolute; z-index: 9; pointer-events: none; filter: drop-shadow(0 0 7px rgba(255,190,70,.75)); }
-.mmarch.flip .mform img { transform: scaleX(-1); } .mmarch .mform { animation: mbob .26s steps(2) infinite; }
-.mblock.idle .mform img { animation: mbreath 1.8s var(--d) ease-in-out infinite; }
+.icard { transition: margin-bottom .35s ease; } .icard.hasm { margin-bottom: 34px; }
+.mpal { position: absolute; right: 6px; bottom: -34px; z-index: 2; display: flex; align-items: flex-end; gap: 4px; pointer-events: none; }
+.mpal.hid { opacity: 0; } .mpal img { image-rendering: pixelated; flex: none; animation: mbreath 1.8s ease-in-out infinite; }
+.mtag { margin-bottom: 3px; max-width: 112px; overflow: hidden; text-overflow: ellipsis; background: #3b130f; color: #f6e7c1; border: 1px solid var(--gold); border-radius: 8px; padding: 0 6px; font-size: 10px; font-weight: 700; line-height: 15px; white-space: nowrap; }
+.mmarch { position: absolute; z-index: 9; bottom: auto; right: auto; filter: drop-shadow(0 0 7px rgba(255,190,70,.75)); }
+.mmarch.flip img { transform: scaleX(-1); } .mmarch img { animation: mbob .26s steps(2) infinite; }
 .icard.hired::after { content: ""; position: absolute; inset: -3px; border-radius: 10px; pointer-events: none; animation: mhired 1s ease-out; }
-@keyframes mbob { 50% { transform: translateY(-2px); } } @keyframes mbreath { 50% { transform: translateY(-1px); } }
+@keyframes mbob { 50% { margin-top: -2px; } } @keyframes mbreath { 50% { transform: translateY(-1px); } }
 @keyframes mhired { 0% { box-shadow: 0 0 0 0 rgba(255,210,74,.95); } 100% { box-shadow: 0 0 0 12px rgba(255,210,74,0); } }
 .icard .tx b { display: inline-flex; align-items: center; gap: 4px; }
 .rap { width: 16px; height: 16px; flex: none; filter: drop-shadow(0 0 3px rgba(255,210,74,.9)); animation: rapGlow 1.6s ease-in-out infinite; }

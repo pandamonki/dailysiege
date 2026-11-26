@@ -98,35 +98,27 @@ function showIntro(it, done) {
     it.broken.forEach(x => { const [a, b] = x.k.split("|"), ra = rect(a), rb = rect(b); if (ra && rb) grid.insertAdjacentHTML("beforeend", `<span class="badge broke" style="left:${(ra.l + ra.r + rb.l + rb.r) / 4}px;top:${(ra.t + ra.b + rb.t + rb.b) / 4}px">✕</span>`); });
   });
 }
-// a won mercenary group marches out of the auction panel and takes its place in its new lord's card, name tag overhead
-// the formation: units stand in one or two ranks, back rank first, each 2 screen pixels per sprite pixel
-function mercFormation(types, S = 2) {
-  const us = types.map(t => { const sp = spr(t); return { t, w: sp.width * S, h: sp.height * S }; }), n = us.length, per = n <= 3 ? n : Math.ceil(n / 2), front = Math.min(per, n), back = n - front;
-  const maxW = Math.max(...us.map(u => u.w)), maxH = Math.max(...us.map(u => u.h)), stepX = Math.round(maxW * .85), stepY = 14, rows = back ? [us.slice(0, back), us.slice(back)] : [us];
-  const off = ri => (rows.length > 1 && ri === 0 ? Math.round(stepX / 2) : 0), rowW = (r, ri) => off(ri) + (r.length - 1) * stepX + maxW, W = Math.max(...rows.map(rowW)), H = (rows.length - 1) * stepY + maxH, out = [];
-  rows.forEach((r, ri) => r.forEach((u, i) => out.push({ t: u.t, w: u.w, h: u.h, x: off(ri) + i * stepX, y: ri * stepY + (maxH - u.h) })));
-  return { W, H, units: out };
-}
-function mercBlock(mm, color, fm, idle) {
-  return `<div class="mblock${idle ? " idle" : ""}"><span class="mtag">⚔ ${esc(mm.name)}</span><div class="mform" style="width:${fm.W}px;height:${fm.H}px">${fm.units.map((u, i) => `<img alt="" data-t="${u.t}" data-i="${i}" src="${mercPoseURL(u.t, color, "")}" style="left:${u.x}px;top:${u.y}px;width:${u.w}px;height:${u.h}px;--d:${(i * .23).toFixed(2)}s">`).join("")}</div></div>`;
+// a won mercenary group sends its lead sprite marching out of the auction panel to stand at the corner of its new lord's card, name tag beside it
+function mercPal(mm, color) {
+  const lead = mm.units[0], sp = spr(lead), n = mm.units.length;
+  return `<div class="mpal"><span class="mtag">⚔ ${esc(mm.name)}${n > 1 ? " ×" + n : ""}</span><img alt="" data-t="${lead}" src="${mercPoseURL(lead, color, "")}" style="width:${sp.width * 2}px;height:${sp.height * 2}px"></div>`;
 }
 function marchMercs(el, grid, m) {
   const cardEl = el.querySelector(`.icard[data-pid="${m.pid}"]`), mm = MERCS[m.id]; if (!cardEl || !mm) return 0;
-  const color = cardEl.style.getPropertyValue("--c") || MY_COLOR, fm = mercFormation(mm.units), calm = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
-  // reserve a ground strip for the group at the foot of the lord's card; measure where the group will stand, then let the strip grow
-  cardEl.insertAdjacentHTML("beforeend", `<div class="mslot">${mercBlock(mm, color, fm, true)}</div>`);
-  const slot = cardEl.lastElementChild, blk = slot.firstElementChild, full = fm.H + 28; slot.style.height = full + "px"; blk.classList.add("hid");
-  const g = grid.getBoundingClientRect(), br = blk.getBoundingClientRect(), tx = br.left - g.left, ty = br.top - g.top;
-  const done = () => { blk.classList.remove("hid"); cardEl.classList.remove("hired"); void cardEl.offsetWidth; cardEl.classList.add("hired"); };
+  const color = cardEl.style.getPropertyValue("--c") || MY_COLOR, calm = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // make room under the card, measure where the sprite will stand, then let the room open up gently
+  cardEl.style.transition = "none"; cardEl.classList.add("hasm"); cardEl.insertAdjacentHTML("beforeend", mercPal(mm, color));
+  const pal = cardEl.lastElementChild, g = grid.getBoundingClientRect(), pr = pal.getBoundingClientRect(), tx = pr.left - g.left, ty = pr.top - g.top;
+  const done = () => { pal.classList.remove("hid"); cardEl.classList.remove("hired"); void cardEl.offsetWidth; cardEl.classList.add("hired"); };
+  pal.classList.add("hid"); cardEl.style.transition = "";
   if (calm) { done(); return 0; }
-  slot.style.height = "0px"; void slot.offsetWidth; slot.style.height = full + "px";
-  const from = el.querySelector("#auc .asp"), fr = from ? from.getBoundingClientRect() : null, sx = fr ? fr.left - g.left : g.width / 2 - fm.W / 2, sy = fr ? fr.top - g.top : ty - 80;
-  grid.insertAdjacentHTML("beforeend", mercBlock(mm, color, fm, false).replace('class="mblock"', 'class="mblock mmarch"').replace('<div class="mmarch"', '<div class="mmarch"'));
-  const ov = grid.lastElementChild; ov.style.left = sx + "px"; ov.style.top = sy + "px"; ov.classList.toggle("flip", tx < sx - 4);
-  const imgs = [...ov.querySelectorAll("img")], dist = Math.hypot(tx - sx, ty - sy), ms = Math.max(1300, Math.min(2600, dist * 7.5)); let tick = 0;
-  const step = setInterval(() => { if (!ov.isConnected) return clearInterval(step); tick++; imgs.forEach((im, i) => { im.src = mercPoseURL(im.dataset.t, color, "w" + ((tick + (i % 2) * 2) & 3)); }); }, 130);
+  cardEl.classList.remove("hasm"); void cardEl.offsetWidth; cardEl.classList.add("hasm");
+  const from = el.querySelector("#auc .asp"), fr = from ? from.getBoundingClientRect() : null, sx = fr ? fr.left - g.left : g.width / 2, sy = fr ? fr.top - g.top : ty - 80;
+  grid.insertAdjacentHTML("beforeend", mercPal(mm, color)); const ov = grid.lastElementChild; ov.classList.add("mmarch"); ov.style.left = sx + "px"; ov.style.top = sy + "px"; ov.classList.toggle("flip", tx < sx - 4);
+  const im = ov.querySelector("img"), dist = Math.hypot(tx - sx, ty - sy), ms = Math.max(1200, Math.min(2400, dist * 7)); let tick = 0;
+  const step = setInterval(() => { if (!ov.isConnected) return clearInterval(step); im.src = mercPoseURL(im.dataset.t, color, "w" + (++tick & 3)); }, 130);
   const run = ov.animate([{ transform: "translate(0,0) scale(.6)", opacity: 0 }, { transform: "translate(0,0) scale(1)", opacity: 1, offset: .08 }, { transform: `translate(${tx - sx}px, ${ty - sy}px) scale(1)`, opacity: 1 }], { duration: ms, delay: 650, easing: "linear", fill: "both" });
-  const end = () => { clearInterval(step); ov.remove(); if (slot.isConnected) done(); };
+  const end = () => { clearInterval(step); ov.remove(); if (pal.isConnected) done(); };
   run.onfinish = end; run.oncancel = end;
   return 650 + ms;
 }
