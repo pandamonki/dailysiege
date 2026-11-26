@@ -100,24 +100,24 @@ function showIntro(it, done) {
 }
 // a won mercenary group sends its lead sprite marching out of the auction panel to stand at the corner of its new lord's card, name tag beside it
 const mercTagText = mm => `⚔ ${esc(mm.name)}${mm.units.length > 1 ? " ×" + mm.units.length : ""}`;
-function mercPal(mm, color, cls, noTag) {
+function mercStack(mm, color, cls) { // the group's lead sprite with its name directly under it
   const lead = mm.units[0], sp = spr(lead);
-  return `<div class="mpal ${cls || ""}">${noTag ? "" : `<span class="mtag">${mercTagText(mm)}</span>`}<img alt="" data-t="${lead}" src="${mercPoseURL(lead, color, "")}" style="width:${sp.width * 1.5}px;height:${sp.height * 1.5}px"></div>`;
+  return `<div class="mstk ${cls || ""}"><img alt="" data-t="${lead}" src="${mercPoseURL(lead, color, "")}" style="width:${sp.width * 1.5}px;height:${sp.height * 1.5}px"><span class="mtag">${mercTagText(mm)}</span></div>`;
 }
 function marchMercs(el, grid, m) {
   const cardEl = el.querySelector(`.icard[data-pid="${m.pid}"]`), mm = MERCS[m.id]; if (!cardEl || !mm) return 0;
   const color = cardEl.style.getPropertyValue("--c") || MY_COLOR, calm = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
-  // the sprite stands on the card's lower edge under the hero, its name tag on the top edge; cards never change size, so the target is known at once
-  cardEl.insertAdjacentHTML("beforeend", mercPal(mm, color, "hid", true) + `<span class="mtag fin hid">${mercTagText(mm)}</span>`); const tag = cardEl.lastElementChild, pal = tag.previousElementSibling, img = pal.querySelector("img");
-  const g = grid.getBoundingClientRect(), pr = img.getBoundingClientRect(), tx = pr.left - g.left, ty = pr.top - g.top;
-  const done = () => { cardEl.classList.add("hm"); pal.classList.remove("hid"); tag.classList.remove("hid"); cardEl.classList.remove("hired"); void cardEl.offsetWidth; cardEl.classList.add("hired"); };
+  // every card has room for it in its lower-right corner, so no card changes size: the target is known at once
+  cardEl.insertAdjacentHTML("beforeend", mercStack(mm, color, "hid")); const stack = cardEl.lastElementChild;
+  const g = grid.getBoundingClientRect(), pr = stack.getBoundingClientRect(), tx = pr.left - g.left, ty = pr.top - g.top;
+  const done = () => { stack.classList.remove("hid"); cardEl.classList.remove("hired"); void cardEl.offsetWidth; cardEl.classList.add("hired"); };
   if (calm) { done(); return 0; }
   const from = el.querySelector("#auc .asp"), fr = from ? from.getBoundingClientRect() : null, sx = fr ? fr.left - g.left : g.width / 2, sy = fr ? fr.top - g.top : ty - 80;
-  grid.insertAdjacentHTML("beforeend", mercPal(mm, color, "mmarch")); const ov = grid.lastElementChild; ov.style.left = sx + "px"; ov.style.top = sy + "px"; ov.classList.toggle("flip", tx < sx - 4);
+  grid.insertAdjacentHTML("beforeend", mercStack(mm, color, "mmarch")); const ov = grid.lastElementChild; ov.style.left = sx + "px"; ov.style.top = sy + "px"; ov.classList.toggle("flip", tx < sx - 4);
   const im = ov.querySelector("img"), dist = Math.hypot(tx - sx, ty - sy), ms = Math.max(1200, Math.min(2400, dist * 7)); let tick = 0;
   const step = setInterval(() => { if (!ov.isConnected) return clearInterval(step); im.src = mercPoseURL(im.dataset.t, color, "w" + (++tick & 3)); }, 130);
   const run = ov.animate([{ transform: "translate(0,0) scale(.6)", opacity: 0 }, { transform: "translate(0,0) scale(1)", opacity: 1, offset: .08 }, { transform: `translate(${tx - sx}px, ${ty - sy}px) scale(1)`, opacity: 1 }], { duration: ms, delay: 650, easing: "linear", fill: "both" });
-  const end = () => { clearInterval(step); ov.remove(); if (pal.isConnected) done(); };
+  const end = () => { clearInterval(step); ov.remove(); if (stack.isConnected) done(); };
   run.onfinish = end; run.oncancel = end;
   return 650 + ms;
 }

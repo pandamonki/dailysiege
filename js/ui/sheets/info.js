@@ -209,6 +209,9 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "v1.30: hired mercenaries march in", date: "26 Nov", fixes: [], balance: [], changes: [
+    "In the pre-battle auction, a hired group's lead sprite now walks from the auction panel to its lord's card and stands there with its name underneath. All lord cards are the same size.",
+  ] },
   { v: "v1.29: mercenaries look like monsters", date: "26 Nov", fixes: [], balance: [], changes: [
     "Mercenaries have new creature sprites (troll, orc, ogre, centaur, dark elf, necromancer, skeleton) and a floating gold coin over their heads in replays instead of the MERC label.",
   ] },
