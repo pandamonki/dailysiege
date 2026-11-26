@@ -61,7 +61,6 @@ function replayPairs(R, time) {
   return all.filter(k => !gone.has(k));
 }
 function replayTeams(R) { return R.teamGroups || (R.teamGroups = allianceGroups(R.pacts0 || [], R.order, R.me)); }
-const FEED_SHOWN = 2; // news lines shown before "+ N more", so the whole screen fits a phone
 function showIntro(it, done) {
   const old = document.getElementById("intro"); if (old) old.remove();
   const el = document.createElement("div"); el.id = "intro";
@@ -69,9 +68,9 @@ function showIntro(it, done) {
   const traitors = new Set(it.bets.map(b => b.pid));
   const feed = []; let d = 2.4;
   if (it.rapier) feed.push(`<li class="fresh" style="--d:${(d += .35).toFixed(2)}">⚔ <b>${nm(it.rapier)}</b> carries the Divine Rapier. Slay them and it can be yours.</li>`);
-  it.bets.forEach(b => feed.push(`<li class="bet" style="--d:${(d += .35).toFixed(2)}">🗡 Last battle, <b>${nm(b.pid)}</b> betrayed <b>${nm(b.other)}</b> and blew up their keep.</li>`));
-  it.broken.forEach(x => { const [a, b] = x.k.split("|"); feed.push(`<li class="broke" style="--d:${(d += .35).toFixed(2)}">✕ ${x.final ? `The alliance between <b>${nm(a)}</b> and <b>${nm(b)}</b> ended with the final day.` : x.by ? `<b>${nm(x.by)}</b> ended the pact with <b>${nm(x.by === a ? b : a)}</b>.` : `<b>${nm(a)}</b> and <b>${nm(b)}</b> are no longer allies.`}</li>`); });
   it.fresh.forEach(k => { const [a, b] = k.split("|"); feed.push(`<li class="fresh" style="--d:${(d += .35).toFixed(2)}">✦ <b>${nm(a)}</b> and <b>${nm(b)}</b> have formed an alliance.</li>`); });
+  it.broken.forEach(x => { const [a, b] = x.k.split("|"); feed.push(`<li class="broke" style="--d:${(d += .35).toFixed(2)}">✕ ${x.final ? `The alliance between <b>${nm(a)}</b> and <b>${nm(b)}</b> ended with the final day.` : x.by ? `<b>${nm(x.by)}</b> ended the pact with <b>${nm(x.by === a ? b : a)}</b>.` : `<b>${nm(a)}</b> and <b>${nm(b)}</b> are no longer allies.`}</li>`); });
+  it.bets.forEach(b => feed.push(`<li class="bet" style="--d:${(d += .35).toFixed(2)}">🗡 Last battle, <b>${nm(b.pid)}</b> betrayed <b>${nm(b.other)}</b> and blew up their keep.</li>`));
   if (it.kept.length) feed.push(`<li style="--d:${(d += .35).toFixed(2)}">${it.kept.length === 1 ? "One pact" : it.kept.length + " pacts"} held from yesterday.</li>`);
   // design C: each alliance is a side with its own colour and header, then the lone lords
   const pids = it.cards.map(c => c.pid), meId = (it.cards.find(c => c.me) || {}).pid, pairsNow = [...it.kept, ...it.fresh], groups = allianceGroups(pairsNow, pids, meId), inGroup = new Set(groups.flatMap(g => g.ids));
@@ -83,14 +82,14 @@ function showIntro(it, done) {
   if (lone.length) sideHTML.push(side(wolf ? "Lone wolf" : "Lone lords", wolf ? `alone against ${inGroup.size} allied lords` : `${lone.length} lord${lone.length === 1 ? "" : "s"} · every one for themselves`, "#7a6338", lone));
   const sides = sideHTML.join(`<div class="ivs">VS</div>`), mine = groups.find(g => g.ids.includes(meId));
   const sumLine = mine ? `You are allied with ${mine.ids.filter(x => x !== meId).map(nm).join(" and ")}.` : groups.length ? "You have no allies today." : "No alliances stand today.";
-  el.innerHTML = `<div class="iwrap"><h2>The houses gather</h2><p class="isub">${it.fin2 ? "The final day. Alliances hold until only one is left standing, then it breaks: only one banner will win the war." : it.final ? "The final day. Every alliance is void and only one banner will stand." : "Day " + DAY_FOR_INTRO + " of the war."} <span class="isum">${sumLine}</span></p>
+  el.innerHTML = `<div class="iwrap"><h2>The houses gather</h2><p class="isub">${it.fin2 ? "The final day. Alliances hold until only one is left standing, then it breaks: only one banner will win the war." : it.final ? "The final day. Every alliance is void and only one banner will stand." : "Day " + DAY_FOR_INTRO + " of the war. Here is who stands where."}</p>
+    <p class="isum">${sumLine}</p>
     <div class="igrid" id="igrid"><svg class="ilines" id="ilines"></svg>${sides}</div>
     ${(it.auction || []).length ? `<div class="auc" id="auc"></div>` : ""}
-    ${feed.length ? `<ul class="feed">${feed.slice(0, FEED_SHOWN).join("")}${feed.length > FEED_SHOWN ? `<li class="more" style="--d:${(2.4 + .35 * (FEED_SHOWN + 1)).toFixed(2)}"><button type="button" id="imore">+ ${feed.length - FEED_SHOWN} more</button></li>` : ""}</ul>` : `<p class="none">No alliances stand this round. It's every lord for themselves.</p>`}
+    ${feed.length ? `<ul class="feed">${feed.join("")}</ul>` : `<p class="none">No alliances stand this round. It's every lord for themselves.</p>`}
     <button class="btn wax go" id="igo">To battle →</button></div>`;
   document.body.appendChild(el);
   const finish = () => { el.remove(); done(); }; el.querySelector("#igo").addEventListener("click", finish);
-  const more = el.querySelector("#imore"); if (more) more.addEventListener("click", () => { const li = more.parentElement; li.insertAdjacentHTML("beforebegin", feed.slice(FEED_SHOWN).map(h => h.replace(/--d:[\d.]+/, "--d:0")).join("")); li.remove(); });
   requestAnimationFrame(() => {
     const grid = el.querySelector("#igrid"), g = grid.getBoundingClientRect();
     const rect = id => { const c = el.querySelector(`.icard[data-pid="${id}"]`); if (!c) return null; const r = c.getBoundingClientRect(); return { l: r.left - g.left, t: r.top - g.top, r: r.right - g.left, b: r.bottom - g.top }; };
