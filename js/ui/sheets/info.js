@@ -209,6 +209,11 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "v1.26: practice changes", date: "26 Nov", fixes: ["Practice no longer favours some seats with the new battle timing."], balance: [], changes: [
+    "Practice: up to three targets in order, kept from day to day and confirmed each day; roomier maps; talents 25% and item bonuses 15% stronger.",
+    "Practice: rivals answer yesterday's attacker; mercenaries arrive 10 seconds in with a MERC tag; the Rogue follows your Combat settings like every hero.",
+    "Real wars keep the current rules until a start date is chosen.",
+  ] },
   { v: "v1.25: army zones (practice)", date: "25 Nov", fixes: [], balance: [], changes: [
     "Practice only for now: where you place a soldier sets its job (Guard, Front, left or right flank); one #1 target; Front plans Assault, Siege, Hero hunt and Hold the hill; flanks Screen or Raid; an army temper replaces stance and fall-back.",
     "Practice battles no longer roll each soldier's opening timing, so the same orders give the same battle. Holding the hill longest scores 2 points.",

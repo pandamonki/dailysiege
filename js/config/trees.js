@@ -236,7 +236,7 @@ function treeCanLearn(tr, b, i, L) {
 // the value of a node at a rank: nodeVal(cls, treeIndex, nodeIndex, valueIndex, rank)
 const nodeVals = (n, v2) => (v2 === 5 && n.w5 ? n.w5 : v2 && n.w ? n.w : n.v); // v2: false (first values), true (TREE_V2) or 5 (TREE_V5 over TREE_V2)
 const nodeVal = (cls, bi, i, vi, rank, v2 = treeV2Now()) => ext(nodeVals(TREES[cls][bi].nodes[i], v2)[vi], rank);
-const nodeDesc = (cls, bi, i, rank, v2 = treeV2Now()) => { const n = TREES[cls][bi].nodes[i]; return (v2 === 5 && n.desc5 ? n.desc5 : n.desc).replace(/\{(\d)\}/g, (_, k) => { const a = nodeVals(n, v2)[+k]; if (!a) return "?"; const x = ext(a, Math.max(1, rank || 1)); return Number.isInteger(x) ? x : +x.toFixed(2); }); };
+const nodeDesc = (cls, bi, i, rank, v2 = treeV2Now()) => { const n = TREES[cls][bi].nodes[i], tx = typeof tuneV1Now === "function" && tuneV1Now() ? TALENT_X : 1; return (v2 === 5 && n.desc5 ? n.desc5 : n.desc).replace(/\{(\d)\}/g, (_, k) => { const a = nodeVals(n, v2)[+k]; if (!a) return "?"; const x = ext(a, Math.max(1, rank || 1)) * tx; return Number.isInteger(x) ? x : +x.toFixed(tx === 1 ? 2 : 1); }); }; // tx: the agency pass's stronger talents, shown as they fight
 // spell animations for every active skill: the sim plays "v3_<class>_<tree>_<node>" through the usual SPELL_ART effects
 const treeSp = (cls, bi, i) => `v3_${cls}_${TREE_BKEY[bi]}_${TREE_NODE[i]}`;
 Object.keys(TREES).forEach(cls => TREES[cls].forEach((tr, bi) => tr.nodes.forEach((n, i) => { if (n.art) SPELL_ART[treeSp(cls, bi, i)] = { n: n.name, c: n.art[0], sym: n.art[1], fx: n.art[2], r: n.art[3], ...(n.art[4] ? { at: n.art[4] } : {}) }; })));

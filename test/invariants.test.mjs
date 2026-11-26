@@ -394,3 +394,47 @@ test("zones v1: soldiers never stay stuck behind their own walls", () => {
   }
   assert.deepEqual(bad, [], "stuck soldiers");
 });
+
+test("agency pass (tuneV1): bots answer yesterday's attacker", () => {
+  const r = JSON.parse(sim.run(`(() => { const L = seatLayout(8, true), ids = [...Array(8)].map((_, k) => "a" + k);
+    // yesterday a1 (beside a0) sent a Siege Front at a0: today a0 takes the plan that beats Siege and screens a1's side
+    const prev = ids.map((pid, k) => ({ pid, front: k === 1 ? "siege" : "assault", targets: k === 1 ? ["a0"] : [] }));
+    const zone = zoneFor(L.castles[0], L.N, L.castles, L.v2), p = lordBotPlan({ uid: "a0", cls: "warrior", i: 0, ids, L, zone, dayNo: 4, lvl: 10, v2: true, v3: true, fair: true, pick: true, ranks: {}, sup: true, defV2: true, zv: true, prev });
+    const side = ["left", "right"].find(s => flankNeighbour(L.castles, 0, s, L.N) === 1);
+    const q = lordBotPlan({ uid: "a2", cls: "warrior", i: 2, ids, L, zone: zoneFor(L.castles[2], L.N, L.castles, L.v2), dayNo: 4, lvl: 10, v2: true, v3: true, fair: true, pick: true, ranks: {}, sup: true, defV2: true, zv: true, prev });
+    return JSON.stringify({ front: p.front, beatsSiege: FRONT_BEATS[p.front] === "siege", side, flank: side && p.flanks[side], react: p.react, untouched: q.react || null, qfront: q.front, qbuild: BOT_ZONES[q.build].front }); })()`));
+  assert.ok(r.beatsSiege, `a bot hit by a Siege Front took ${r.front}, which doesn't beat Siege`);
+  assert.equal(r.react, "a1");
+  assert.ok(r.side && r.flank === "screen", "the bot screens the side its attacker came from");
+  assert.equal(r.untouched, null, "a bot nobody attacked keeps its own plan");
+  assert.equal(r.qfront, r.qbuild);
+});
+
+test("agency pass (tuneV1): battles with it end, place every lord once and play the same fast and full", () => {
+  const r = JSON.parse(sim.run(`(() => { const { full, fast, plans } = ${ZWAR(30, 5, "plans.forEach(p => { p.tuneV1 = true; p.timeV1 = true; });")}; return JSON.stringify({ places: full.results.map(x => x.place).sort((a, b) => a - b), same: battleHash(full) === battleHash(fast) }); })()`));
+  assert.deepEqual(r.places, [1, 2, 3, 4, 5, 6, 7, 8]);
+  assert.ok(r.same, "fast and full runs disagree");
+});
+
+test("roomier prototype fields (map v3): 4 tiles bigger, every lord's field the same size, and battles on them run cleanly", () => {
+  const r = JSON.parse(sim.run(`(() => { const a = seatLayout(8, true), b = seatLayout(8, true, true), sizes = new Set(b.castles.map(c => [...zoneFor(c, b.N, b.castles, true)].length));
+    const near = L => Math.min(...L.castles.slice(1).map(c => Math.hypot(c[0] - L.castles[0][0], c[1] - L.castles[0][1])));
+    return JSON.stringify({ grow: b.N - a.N, sizes: sizes.size, gap: [near(a), near(b)] }); })()`));
+  assert.equal(r.grow, 4);
+  assert.equal(r.sizes, 1, "every lord's deploy field has the same number of tiles");
+  assert.ok(r.gap[1] > r.gap[0] + 1.5, `neighbours only ${r.gap[1].toFixed(1)} tiles apart (was ${r.gap[0].toFixed(1)})`);
+  const z = JSON.parse(sim.run(`(() => { const { full, fast } = ${ZWAR(40, 4).replace("seatLayout(8, true)", "seatLayout(8, true, true)")}; return JSON.stringify({ places: full.results.map(x => x.place).sort((a, b) => a - b), same: battleHash(full) === battleHash(fast) }); })()`));
+  assert.deepEqual(z.places, [1, 2, 3, 4, 5, 6, 7, 8]);
+  assert.ok(z.same, "fast and full runs disagree");
+});
+
+test("agency pass (tuneV1): hired mercenaries march out 10 seconds into the battle, not at the start", () => {
+  const tweak = `{ const p = plans[0], [cr, cc] = p.castle, free = [...p.zoneSet].map(k => k.split(",").map(Number)).filter(([r, c]) => !p.pieces.some(q => q.r === r && q.c === c) && !(r === cr && c === cc)).slice(0, 2);
+    free.forEach(([r, c]) => p.pieces.push({ kind: "unit", type: "delf", lvl: 1, hp: 1, r, c, merc: "elves" })); plans.forEach(q => { q.tuneV1 = true; q.timeV1 = true; }); }`;
+  const r = JSON.parse(sim.run(`(() => { const { full, fast, plans } = ${ZWAR(50, 4, tweak)}; const p = plans[0]; let first = null, n = 0;
+    full.meta.forEach((m, j) => { if (m.pid !== p.pid || !m.merc) return; n++; const f = full.frames.find(f => f.d.length > j * 4 + 3 && !(f.d[j * 4 + 3] & 1)); if (f && (first == null || f.t < first)) first = f.t; });
+    return JSON.stringify({ n, first, same: battleHash(full) === battleHash(fast) }); })()`));
+  assert.equal(r.n, 2, "both mercenaries take the field");
+  assert.ok(r.first >= sim.get("MERC_ARRIVE") - .01, `a mercenary was on the field at ${r.first}s`);
+  assert.ok(r.same, "fast and full runs disagree");
+});

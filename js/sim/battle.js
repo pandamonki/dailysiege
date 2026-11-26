@@ -263,9 +263,10 @@ function runBattle(plans, seed, opts = {}) {
         const its = new Set(pl.items || []); e.itemSet = its; if (its.has("rapier")) { e.rapier = true; rapierOwner = rapierHolder = pl.pid; }
         e.itemV5 = !!pl.itemV5; e.shellV2 = !!pl.shellV2; e.itemV6 = !!pl.itemV6; e.auraV2 = !!pl.auraV2;
         if (e.itemV5) { // flat items
-          its.forEach(k => { const st = e.itemV6 && k === "hpring" ? { hp: ITEM_V6.hpringHp } : e.itemV6 && k === "boots" ? { spd: ITEM_V6.bootsSpd } : ITEM_FLAT[k]; if (!st) return; if (st.atk) { e.atk += st.atk; e.flatAtk = (e.flatAtk || 0) + st.atk; } if (st.hp) { e.maxhp += st.hp; e.flatHp = (e.flatHp || 0) + st.hp; } if (st.spd) e.spd += st.spd; if (st.block) e.block = (e.block || 0) + st.block; });
-          e.hp = e.maxhp; if (its.has("vanguard")) e.block = (e.block || 0) + 12;
-          if (its.has("fang")) e.lifesteal = (e.lifesteal || 0) + .12; if (its.has("thornmail")) e.thorns = .15; if (its.has("talisman")) e.will = true;
+          const IX = pl.tuneV1 ? ITEM_X : 1; // agency pass: items' stats ITEM_X stronger
+          its.forEach(k => { const st0 = e.itemV6 && k === "hpring" ? { hp: ITEM_V6.hpringHp } : e.itemV6 && k === "boots" ? { spd: ITEM_V6.bootsSpd } : ITEM_FLAT[k]; if (!st0) return; const st = IX === 1 ? st0 : Object.fromEntries(Object.entries(st0).map(([q, v]) => [q, v * IX])); if (st.atk) { e.atk += st.atk; e.flatAtk = (e.flatAtk || 0) + st.atk; } if (st.hp) { e.maxhp += st.hp; e.flatHp = (e.flatHp || 0) + st.hp; } if (st.spd) e.spd += st.spd; if (st.block) e.block = (e.block || 0) + st.block; });
+          e.hp = e.maxhp; if (its.has("vanguard")) e.block = (e.block || 0) + 12 * IX;
+          if (its.has("fang")) e.lifesteal = (e.lifesteal || 0) + .12 * IX; if (its.has("thornmail")) e.thorns = .15 * IX; if (its.has("talisman")) e.will = true;
           if (its.has("antimagic")) e.shellAt = Math.max(1, Math.min(10, Math.round(+pl.shellAt || 2)));
           { const oc = ["frostdagger", "fireorb", "venomorb", "corruptorb"].filter(k => its.has(k)); if (oc.length) e.orbCols = oc.map(k => ITEMS[k].col); }
           if (its.has("crystalys")) e.itemCrit = e.itemV6 ? ITEM_V6.crys.slice() : [.2, 1.6]; if (its.has("daedalus")) e.itemCrit = [.25, 2.4];
@@ -292,6 +293,7 @@ function runBattle(plans, seed, opts = {}) {
         if (HV3) { kit.setup(e, pl); e.hp = e.maxhp; }
         p.champ = e;
       } else if (pc.kind === "unit") {
+        if (pl.tuneV1 && pc.merc && UNITS[pc.type] && UNITS[pc.type].merc) { (p.mercLater = p.mercLater || []).push(pc); return; } // agency pass: mercenaries arrive MERC_ARRIVE seconds in
         makeUnit(pl, pc, pc.c + .5, pc.r + .5);
       } else if (pc.kind === "wall") {
         const tier = Math.max(1, Math.min(3, pl.castleTier || 1));
@@ -485,7 +487,7 @@ function runBattle(plans, seed, opts = {}) {
     if (ZV) { const ps = src && P[src.pid], pt = P[tgt.pid]; // zones v1: the army temper, and the Front plan that beats the other's
       if (ps && ps.zv && src.kind !== "castle") m *= TEMPER_DMG[ps.temper];
       if (pt && pt.zv && tgt.kind !== "castle") m *= TEMPER_TAKEN[pt.temper];
-      if (ps && pt && ps.zv && pt.zv && src.job === "front" && tgt.job === "front" && FRONT_BEATS[ps.front] === pt.front) m *= FRONT_BEAT_X; }
+      if (ps && pt && ps.zv && pt.zv && src.job === "front" && tgt.job === "front" && FRONT_BEATS[ps.front] === pt.front) m *= FRONT_BEAT_X;} 
     // attack type against armour type (the only matchup rule)
     { let at = o.atype || (src && src.atype) || "pure", ar = tgt.armour || "medium"; if (BV5) { if (src && src.kind === "champ" && !o.atype) at = "hero"; if (tgt.kind === "champ") ar = "hero"; } m *= V4 && at === "magic" && ar === "fortified" ? MAGIC_VS_FORT : TYPE_TABLE[at][ar]; }
     if (src && src.vsEngine && (tgt.cart || tgt.ram || tgt.cat)) m *= src.vsEngine; // a Fire Tower's burning arrows against siege engines
@@ -939,6 +941,9 @@ function runBattle(plans, seed, opts = {}) {
           : fb === "heroback" ? !!hero && !hero.dead && !!hero.retreating : false;
         if (hit) { if (!(p.fallbackUntil > t) && pid === mePid) log("Your army falls back to the castle.", "you"); p.fallbackUntil = t + FALLBACK_LINGER; } // it stays home a few seconds after the danger passes, so it doesn't bounce
       }
+      if (p.mercLater && t >= MERC_ARRIVE) { const L0 = p.mercLater; p.mercLater = null; if (p.castle && !p.castle.dead) { // agency pass: the hired mercenaries march out now
+          L0.forEach(pc => { const e = makeUnit(p, pc, pc.c + .5, pc.r + .5); e.hx = e.x; e.hy = e.y; e.spd *= BAL.move; e.as *= BAL.swing; if (p.noRetreat) e.noRetreat = true; if (p.zv) setJob(e, zoneOfTile(Math.floor(p.castle.y), Math.floor(p.castle.x), pc.r, pc.c, NN)); });
+          if (pid === mePid) log("Your mercenaries arrive.", "you"); } }
       if (p.zv) ["left", "right"].forEach(side => { if (p.flanks[side] !== "screen" || p.pushed[side] || !p.nb[side]) return; // a quiet screen pushes on to its neighbour
         if (t >= SCREEN_MIN && t - p.screenSeen[side] >= SCREEN_QUIET) { p.pushed[side] = true; if (pid === mePid && ents.some(e => !e.dead && e.pid === pid && e.job === side)) log(`Your ${side} flank has been quiet: it pushes on toward ${nm(p.nb[side])}.`, "you"); } });
       if (!p.ordV2) p.rules.forEach((r, i) => {
@@ -1115,7 +1120,7 @@ function runBattle(plans, seed, opts = {}) {
       if (bt) { moveToward(e, P[bt].castle.x, P[bt].castle.y + .8, 1.4); tryAbilities(e); return; }
     }
     e.rt -= DT;
-    if (!live(e.tgt) || e.rt <= 0 || !vis(e.tgt, e) || !hostile(e.pid, e.tgt.pid)) { e.tgt = (e.cls === "rogue" && ((HV3 && kit.stealthTarget(e)) || rogueTarget(e))) || pickTarget(e); e.rt = .6; }
+    if (!live(e.tgt) || e.rt <= 0 || !vis(e.tgt, e) || !hostile(e.pid, e.tgt.pid)) { e.tgt = (e.cls === "rogue" && !P[e.pid].tuneV1 && ((HV3 && kit.stealthTarget(e)) || rogueTarget(e))) || pickTarget(e); /* agency pass: the Rogue picks targets by its lord's Combat settings, like every hero */ e.rt = .6; }
     if (e.kind === "champ") tryAbilities(e);
     const o = e.tgt;
     if (!live(o)) { if (e.order === "escort" && live(p.champ)) moveToward(e, p.champ.x, p.champ.y + .3, 1.1); else if (ZV && screening(e)) { const sp = p.screenAt[e.job], a = e.id * 2.399, rr = .3 + (e.id % 3) * .4; moveToward(e, sp.x + dcos(a) * rr, sp.y + dsin(a) * rr, .2); } else if (holdsHill(e) && t < HOLD_END && e.order !== "guard" && !e.militia && (e.kind === "champ" || e.kind === "unit")) { const a = e.id * 2.399, rr = .4 + (e.id % 4) * .35; moveToward(e, ctrX + dcos(a) * rr, ctrY + dsin(a) * rr, .15); } else moveToward(e, e.hx, e.hy, .2); return; }

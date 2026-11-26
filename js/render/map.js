@@ -310,9 +310,9 @@ function arrow(x1, y1, x2, y2, color, w, alpha, t) {
   ctx.restore();
 }
 // zones v1: a dashed, moving line along a route (tile coordinates [x, y]), with an arrowhead at the end, or a ring where it holds
-function routeLine(pts, color, t, hold) {
-  if (pts.length < 2) return; const P2 = pts.map(([x, y]) => [x * ts, y * ts]), w = ts * .09;
-  ctx.save(); ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.globalAlpha = .9;
+function routeLine(pts, color, t, hold, alpha = .9, thin = 1) {
+  if (pts.length < 2) return; const P2 = pts.map(([x, y]) => [x * ts, y * ts]), w = ts * .09 * thin;
+  ctx.save(); ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.globalAlpha = alpha;
   // a rounded path: straight to the first corner's midpoint, a curve round each corner, straight on to the end
   const path = () => { ctx.beginPath(); ctx.moveTo(...P2[0]); for (let i = 1; i < P2.length - 1; i++) { const [x, y] = P2[i], [nx, ny] = P2[i + 1]; ctx.quadraticCurveTo(x, y, (x + nx) / 2, (y + ny) / 2); } ctx.lineTo(...P2[P2.length - 1]); };
   ctx.strokeStyle = "rgba(20,12,6,.75)"; ctx.lineWidth = w * 2; path(); ctx.stroke(); // a dark backing so the route reads on grass
@@ -334,7 +334,9 @@ function drawZoneRoutes(t) {
   if (used("front")) { const from = zc("front"), me = gate(CASTLE);
     if ((FRONT_PLANS.includes(st.front) ? st.front : "assault") === "hill") routeLine([from, me, [mid, mid]], ZONE_COL.front, t, true);
     else { const r = RIVALS.find(x => x.id === (S.lists.hostile || [])[0]); if (r) { const c = cpt(r.pos), g = gate(r.pos);
-      routeLine(Math.hypot(me[0] - g[0], me[1] - g[1]) < 1 ? [from, me, c] : [from, me, g, c], ZONE_COL.front, t); } } }
+      routeLine(Math.hypot(me[0] - g[0], me[1] - g[1]) < 1 ? [from, me, c] : [from, me, g, c], ZONE_COL.front, t);
+      // the targets after the first: fainter, thinner, from castle to castle through their gates, in the order the Front takes them
+      let prev = r; (S.lists.hostile || []).slice(1).map(id => RIVALS.find(x => x.id === id)).filter(Boolean).forEach(nx => { routeLine([cpt(prev.pos), gate(prev.pos), gate(nx.pos), cpt(nx.pos)], ZONE_COL.front, t, false, .45, .7); prev = nx; }); } } }
   ["left", "right"].forEach(side => { const r = myNeighbour(side); if (!r || !used(side)) return; const from = zc(side), c = cpt(r.pos);
     if (fl[side] === "raid") routeLine([from, c], ZONE_COL[side], t);
     else { const [x0, y0] = cpt(CASTLE), dx = c[0] - x0, dy = c[1] - y0, L = Math.hypot(dx, dy) || 1, k = Math.min(SCREEN_OUT, L / 2); routeLine([from, [x0 + dx / L * k, y0 + dy / L * k]], ZONE_COL[side], t, true); } });

@@ -7,7 +7,8 @@ const heroV3Flag = () => { try { return !(/[?&]herov2\b/.test(location.search) |
 const pickV1Now = () => (typeof isLive === "function" && isLive() ? pickV1For(liveClock().planDay) : true);
 const shellV2Now = () => (typeof isLive === "function" && isLive() ? shellV2For(liveClock().planDay) : true);
 // a new day: nobody is a target until the lord picks again
-const pickReset = () => { if (!pickV1Now() || !S || !S.lists) return; S.lists.neutral = S.lists.neutral.concat(S.lists.hostile.filter(k => !PICK_ROLES[k] && !S.lists.neutral.includes(k))); S.lists.hostile = []; if (S.strategy) S.strategy.mode = "list"; };
+const pickReset = () => { if (!pickV1Now() || !S || !S.lists) return;
+  if (zoneV1Now()) { S.tgtOk = !S.lists.hostile.length; return; } /* zones v1: the targets carry over to the new day, but the lord must confirm (or change) them before sealing */ S.lists.neutral = S.lists.neutral.concat(S.lists.hostile.filter(k => !PICK_ROLES[k] && !S.lists.neutral.includes(k))); S.lists.hostile = []; if (S.strategy) S.strategy.mode = "list"; };
 const heroV3Now = () => (typeof isLive === "function" && isLive() ? heroV3For(liveClock().planDay) : heroV3Flag());
 let MY_COLOR = YOU_COLOR;
 // Example lobby for practice battles (castles are placed by the seat layout)
@@ -24,7 +25,7 @@ let RIVALS = BOTS, RWALLS = [];
 const BOT_BANNERS = [{ pat: "halves", c1: null, c2: "#ecdcb4", em: "crown" }, { pat: "stripe", c1: null, c2: "#1e140c", em: "skull" }, { pat: "cross", c1: null, c2: "#ecdcb4", em: "star" }, { pat: "chevron", c1: null, c2: "#e2b33c", em: "sun" }, { pat: "quarters", c1: null, c2: "#ecdcb4", em: "none" }, { pat: "solid", c1: null, c2: "#ecdcb4", em: "moon" }, { pat: "stripe", c1: null, c2: "#e2b33c", em: "tower" }];
 
 function setupPractice() {
-  const L = seatLayout(8, true); // practice always uses the bigger fields
+  const L = seatLayout(8, true, zoneV1Now()); // practice always uses the bigger fields, and the roomier prototype fields with the zones
   BOTS.forEach((b, i) => { b.pos = L.castles[i + 1]; });
   RIVALS = BOTS; RARMY = []; RWALLS = [];
   BOTS.forEach((b, i) => { b.banner = BOT_BANNERS[i % BOT_BANNERS.length]; b.ctier = 1 + (hash(i, 7, 41) > .6 ? 1 : 0); });

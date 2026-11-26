@@ -33,6 +33,8 @@ practice games always stamp all of them (`js/sim/plans.js`).
 | 27 Nov | `auraV2` | Aura items v2: no aura is stronger than 30% (Pipe of Insight 60% to 30%), and Mender's Charms from several heroes do not stack |
 | 23 Nov | `lvlV2` | Faster levelling: 3 to 4 levels a battle, up to level 25, smaller steps per level |
 | Prototype (practice only) | `timeV1` | Fixed timing: opening swings and hero skill cooldowns by place in the line-up, not the battle's dice (see The battle) |
+| Prototype (practice only) | `mapV3` | Roomier fields: maps 4 tiles bigger again, so neighbours stand about 8.5 tiles apart instead of 6.7 (8 lords); wars from `MAP_V3_FROM` in `js/core/layout.js` |
+| Prototype (practice only) | `tuneV1` | Agency pass: talents 25% and item stats 15% stronger, bots answer yesterday's attacker, mercenaries arrive 10s in, the Rogue follows Combat settings (see Agency pass) |
 | Prototype (practice only) | `zoneV1` | Zones: placement sets each soldier's job, one #1 target, Front plans, flank plans, army temper, hill points, sudden-death damage tiebreak (see Zones) |
 
 ## The war
@@ -170,7 +172,10 @@ until a start date is chosen. They replace the army plan, the fall-back list, th
   30° either side) marches on the #1 target; the **left** and **right flanks** face the nearest lord on that side
   (`flankNeighbour`). A flank with no lord on its side fights with the Front. The hero takes the job of the zone it stands in.
   The map tints each zone and labels it, and the Strategy tab counts what each zone holds and warns about an empty Front or an open side.
-- **One #1 target.** The Front marches on it; when it falls, the lord just above you on the board.
+- **Up to three targets, in order.** The Front marches on the first still standing and, when its castle falls, on to the next; after
+  them, the lord just above you on the board. The targets carry over to the next day (`pickReset` keeps them), but each day they
+  must be confirmed before sealing: the Strategy tab says they were kept from yesterday with a Keep these targets button, and any
+  change to them counts as confirming. The map draws the route to the first target, then fainter lines on to the second and third.
 - **The Front's plan:** Assault (fights what it meets), Siege (slips past armies to the castle), Hero hunt (heroes first) or Hold
   the hill (takes the hill and holds it until 2:00, then marches on the target). They form a loop: Hold the hill beats Assault,
   Assault beats Hero hunt, Hero hunt beats Siege, Siege beats Hold the hill. A Front hitting a Front whose plan it beats does 25%
@@ -204,6 +209,22 @@ until a start date is chosen. They replace the army plan, the fall-back list, th
 - **Sudden death time-out:** the winner is the side with the best health left plus damage dealt all battle (each as a share of
   the sides still standing), not health alone.
 - Bots: each build has a Front plan (the shape, above, sets where soldiers stand and may set the flanks); their temper follows their old stance.
+
+## Agency pass (prototype, `tuneV1`)
+
+Practice always uses it; real wars from `TUNE_V1_FROM` in `js/config/orders.js`, set far in the future.
+
+- **Talents:** every skill-tree value is 25% stronger (`TALENT_X`), and the hero screen shows the stronger values.
+- **Items:** the health, attack, block, speed, lifesteal and thorns that items add are 15% stronger (`ITEM_X`).
+- **Mercenaries arrive 10 seconds in:** hired mercenaries march out of their lord's castle 10 seconds into the battle (`MERC_ARRIVE`),
+  not at the start. In replays every mercenary carries a gold MERC tag, and their looks no longer copy a hero's (the Dark Elves wear
+  purple headbands, the Necromancers green with horns).
+- **The Rogue fights like every hero:** it no longer has its own 7-tile hunt for Mages and Archers (or the backline hunt while hidden);
+  like every hero it picks targets by its lord's Combat settings: the hero's target order (heroes, melee, ranged, lowest health and
+  so on) and the Combat reach, 1 to 5 tiles, 2 to start with. Its finishing blows on weakened enemies stay.
+- **Bots answer their attacker:** a bot whose castle was some lord's #1 target in the last battle takes the Front plan that beats that
+  lord's Front plan, and, if that lord is its neighbour, screens that side and moves a soldier there (`botReact` in `js/sim/bots.js`).
+  Practice rivals do the same with the player's orders from the last practice battle.
 
 ## The battle
 
