@@ -118,9 +118,8 @@
 .gkeys li { counter-increment: gk; display: flex; gap: 8px; align-items: flex-start; font-size: 14px; line-height: 1.3; color: #2b1b0c; }
 .gkeys li::before { content: counter(gk); flex: none; width: 20px; height: 20px; border-radius: 50%; background: #ffd34d; border: 2px solid #2b1b0c; color: #2b1b0c; font-weight: 800; font-size: 12px; display: grid; place-items: center; }
 .wiz-msg h3 { margin: 0 0 4px; font-size: 17px; font-weight: 800; color: #5e1f14; } .wiz-msg p { font-size: 14.5px; } .wiz-row small { white-space: nowrap; }
-.ibody { align-items: start; }
-.icard { transition: margin-bottom .35s ease; } .icard.hasm { margin-bottom: 34px; }
-.mpal { position: absolute; right: 6px; bottom: -34px; z-index: 2; display: flex; align-items: flex-end; gap: 4px; pointer-events: none; }
+.icard { transition: padding-bottom .35s ease; } .icard.hasm { padding-bottom: 46px; }
+.mpal { position: absolute; right: 6px; bottom: 4px; z-index: 2; display: flex; align-items: flex-end; gap: 4px; pointer-events: none; }
 .mpal.hid { opacity: 0; } .mpal img { image-rendering: pixelated; flex: none; animation: mbreath 1.8s ease-in-out infinite; }
 .mtag { margin-bottom: 3px; max-width: 112px; overflow: hidden; text-overflow: ellipsis; background: #3b130f; color: #f6e7c1; border: 1px solid var(--gold); border-radius: 8px; padding: 0 6px; font-size: 10px; font-weight: 700; line-height: 15px; white-space: nowrap; }
 .mmarch { position: absolute; z-index: 9; bottom: auto; right: auto; filter: drop-shadow(0 0 7px rgba(255,190,70,.75)); }
