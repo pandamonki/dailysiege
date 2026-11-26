@@ -642,8 +642,8 @@ details.fg-host[open] > summary { margin-bottom: 8px; }
 .wl .pips { display: flex; gap: 3px; flex: none; }
 /* the class's base skill is the trunk under the three trees: a node with a line running up into the first skill of each tree */
 .tcols.trunked { --lc: #8a7a62; } .tcols.trunked.tr-on { --lc: var(--verdant); }
-.tcols.trunked .tn.base .ti::after { content: ""; position: absolute; left: 50%; top: 100%; width: 5px; height: 59px; margin: 0 0 0 -2.5px; background: var(--lc); border-radius: 0; z-index: -1; }
-.trunk { --lc: #8a7a62; position: relative; isolation: isolate; padding-top: 36px; margin-bottom: 4px; min-height: 90px; }
+.tcols.trunked .tn.base .ti::after { content: ""; position: absolute; left: 50%; top: 100%; width: 5px; height: 60px; margin: 0 0 0 -2.5px; background: var(--lc); border-radius: 0; z-index: -1; }
+.trunk { --lc: #8a7a62; position: relative; isolation: isolate; padding-top: 36px; margin: -14px 0 4px; min-height: 90px; } /* -14px takes back the sheet's grid gap, so the trunk starts exactly where the trees end */
 .trunk.on { --lc: var(--verdant); }
 .trunk .tbar { position: absolute; top: 9px; left: calc((100% - 8px) / 12); right: calc(25% - 2px); height: 5px; background: var(--lc); z-index: -1; }
 .trunk .tn { margin-left: calc((100% - 8px) * 5 / 12 + 4px - 55px); width: 110px; }
@@ -653,3 +653,7 @@ details.fg-host[open] > summary { margin-bottom: 8px; }
 .trunk .tn.st-avail .ti img { border-color: var(--gold); box-shadow: 0 0 8px 1px rgba(201,150,47,.9); }
 .trunk .tn.st-learned .ti img, .trunk .tn.st-maxed .ti img { border-color: var(--verdant); }
 .trunk .tn.st-wait .ti img { border-color: #a58a55; }
+/* the hero screen's tab bar: icon beside the label, so it takes less height */
+.tabs.compact button { flex-direction: row; gap: 6px; padding: 3px 4px; font-size: 15px; line-height: 1.1; }
+.tabs.compact .tabi { width: 20px; height: 20px; }
+.tabs.compact .dot { margin-left: 0; position: static; transform: none; }
