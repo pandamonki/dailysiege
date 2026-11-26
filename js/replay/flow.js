@@ -74,10 +74,10 @@ function showIntro(it, done) {
   if (it.kept.length) feed.push(`<li style="--d:${(d += .35).toFixed(2)}">${it.kept.length === 1 ? "One pact" : it.kept.length + " pacts"} held from yesterday.</li>`);
   // design C: each alliance is a side with its own colour and header, then the lone lords
   const pids = it.cards.map(c => c.pid), meId = (it.cards.find(c => c.me) || {}).pid, pairsNow = [...it.kept, ...it.fresh], groups = allianceGroups(pairsNow, pids, meId), inGroup = new Set(groups.flatMap(g => g.ids));
-  let ci = 0; const cardHTML = c => `<div class="icard${c.me ? " me" : ""}" data-pid="${c.pid}" style="--c:${c.color};--i:${ci++}"><img class="bn" alt="" src="${bannerURL(c.banner, c.color, 34, 46)}"><div class="tx"><b>${esc(c.name)}${it.rapier === c.pid ? RAPIER_ICON : ""}</b><small>${esc(clsName(c.cls))}</small><small>Lv ${c.level} · ${esc(CASTLE_TIERS[Math.max(0, Math.min(2, c.tier - 1))].name)}</small></div><img class="hr" alt="" src="${spriteURL("c-" + c.cls, c.color)}">${traitors.has(c.pid) ? `<span class="tag">TRAITOR</span>` : ""}</div>`;
-  const side = (title, note, col, list, crest) => `<div class="iside" style="--sc:${col}"><div class="ihd">${crest || ""}<b>${title}</b><small>${note}</small></div><div class="ibody">${list.map(cardHTML).join("")}</div></div>`;
+  let ci = 0; const cardHTML = c => `<div class="icard${c.me ? " me" : ""}" data-pid="${c.pid}" style="--c:${c.color};--i:${ci++}"><img class="bn" alt="" src="${bannerURL(c.banner, c.color, 34, 46)}"><div class="tx"><b><span class="nmx">${esc(c.name)}</span>${it.rapier === c.pid ? RAPIER_ICON : ""}</b><small>${esc(clsName(c.cls))} · Lv ${c.level}</small></div><div class="hw"><img class="hr" alt="" src="${spriteURL("c-" + c.cls, c.color)}"></div>${traitors.has(c.pid) ? `<span class="tag">TRAITOR</span>` : ""}</div>`;
+  const side = (title, note, col, list, crest) => `<div class="iside" style="--sc:${col}"><div class="ihd">${crest || ""}<b>${title}</b><small>${note}</small></div><div class="ibody">${list.map(cardHTML).join("")}${list.length % 2 ? `<div class="iempty" aria-hidden="true"></div>` : ""}</div></div>`;
   const sideHTML = groups.map(g => { const own = pairsNow.filter(k => k.split("|").every(x => g.ids.includes(x))), nf = own.filter(k => it.fresh.includes(k)).length, age = nf === own.length ? "new today" : nf ? "grew today" : "held from yesterday", first = card(g.ids[0]);
-    return side(g.ids.includes(meId) ? "Your alliance" : `Alliance of ${esc(first ? first.name : "a lord")}`, `${g.ids.length} lords · ${age}`, g.col, g.ids.map(card).filter(Boolean), crestSVG(g.ids.map(x => (card(x) || {}).color || "#888"), g.animal, 34, null, true)); });
+    return side(g.ids.includes(meId) ? "Your alliance" : `Alliance of ${esc(first ? first.name : "a lord")}`, `${g.ids.length} lords · ${age}`, g.col, g.ids.map(card).filter(Boolean), crestSVG(g.ids.map(x => (card(x) || {}).color || "#888"), g.animal, 26, null, true)); });
   const lone = it.cards.filter(c => !inGroup.has(c.pid)), wolf = groups.length && lone.length === 1;
   if (lone.length) sideHTML.push(side(wolf ? "Lone wolf" : "Lone lords", wolf ? `alone against ${inGroup.size} allied lords` : `${lone.length} lord${lone.length === 1 ? "" : "s"} · every one for themselves`, "#7a6338", lone));
   const sides = sideHTML.join(`<div class="ivs">VS</div>`), mine = groups.find(g => g.ids.includes(meId));
@@ -98,7 +98,7 @@ function showIntro(it, done) {
     it.broken.forEach(x => { const [a, b] = x.k.split("|"), ra = rect(a), rb = rect(b); if (ra && rb) grid.insertAdjacentHTML("beforeend", `<span class="badge broke" style="left:${(ra.l + ra.r + rb.l + rb.r) / 4}px;top:${(ra.t + ra.b + rb.t + rb.b) / 4}px">✕</span>`); });
   });
 }
-// a won mercenary group sends its lead sprite marching out of the auction panel to stand at the corner of its new lord's card, name tag beside it
+// a won mercenary group sends its lead sprite marching out of the auction panel, name tag beside it, to become a small icon on its new lord's hero
 const mercTagText = mm => `⚔ ${esc(mm.name)}${mm.units.length > 1 ? " ×" + mm.units.length : ""}`;
 function mercStack(mm, color, cls) { // the group's lead sprite with its name directly under it
   const lead = mm.units[0], sp = spr(lead);
@@ -107,8 +107,8 @@ function mercStack(mm, color, cls) { // the group's lead sprite with its name di
 function marchMercs(el, grid, m) {
   const cardEl = el.querySelector(`.icard[data-pid="${m.pid}"]`), mm = MERCS[m.id]; if (!cardEl || !mm) return 0;
   const color = cardEl.style.getPropertyValue("--c") || MY_COLOR, calm = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
-  // every card has room for it in its lower-right corner, so no card changes size: the target is known at once
-  cardEl.insertAdjacentHTML("beforeend", mercStack(mm, color, "hid")); const stack = cardEl.lastElementChild;
+  // it lands as a small icon on the hero's corner, so no card changes size: the target is known at once
+  const hw = cardEl.querySelector(".hw") || cardEl; hw.insertAdjacentHTML("beforeend", `<img class="mbadge hid" alt="${esc(mm.name)}" title="${esc(mm.name)}" src="${mercPoseURL(mm.units[0], color, "")}">`); const stack = hw.lastElementChild;
   const g = grid.getBoundingClientRect(), pr = stack.getBoundingClientRect(), tx = pr.left - g.left, ty = pr.top - g.top;
   const done = () => { stack.classList.remove("hid"); cardEl.classList.remove("hired"); void cardEl.offsetWidth; cardEl.classList.add("hired"); };
   if (calm) { done(); return 0; }
