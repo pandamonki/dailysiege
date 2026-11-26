@@ -557,7 +557,7 @@ function makeTreeKit(X) {
     [1, 2, 3].forEach(k => aoe(e.x + ux * k, e.y + uy * k, .8, "#e2a33c", .5));
     hit.forEach(q => { deal(e, q, dm, { aoe: 1, big: 1 }); if (live(q) && !siege(q)) setFx(q, "slow", 2, .25); }); return { x: e.x + ux * 1.5, y: e.y + uy * 1.5 };
   };
-  FN["rogue.3.0"] = e => { // Shadow Step
+  FN["rogue.3.0"] = e => { // Flicker Strike
     const c = ents.filter(o => !o.dead && o.kind !== "castle" && o.kind !== "totem" && !siege(o) && hostile(e.pid, o.pid) && X.fighting(o.pid) && X.vis(o, e) && d(o, e) > 2 && d(o, e) <= 5 && (o.kind === "champ" || backline(o)));
     const hs = c.filter(o => o.kind === "champ"), t = minBy(hs.length ? hs : c, o => d(o, e)); if (!t) return false;
     const L = d(e, t) || 1, nx = t.x + (t.x - e.x) / L * .5, ny = t.y + (t.y - e.y) / L * .5; if (X.wallAt(e, nx, ny)) return false;

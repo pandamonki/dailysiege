@@ -54,7 +54,7 @@ function treeDetailHTML(bi, i) {
 }
 // the two tabs at the top of a hero screen (yours or a rival's), styled like the Army and Base tabs
 function heroTabs(tab, free) {
-  return `<div class="tabs scrolltabs three">${[["abilities", "Abilities", "ultimate"], ["items", "Items", "armoury"], ["stats", "Stats", "roster"]].map(([k, l, ic]) => `<button class="${tab === k ? "on" : ""}" data-act="ctab" data-v="${k}"><img class="tabi" alt="" src="icons/ui/${ic}.webp">${l}${k === "abilities" && free ? `<sup class="dot" title="Skill points to spend">${free}</sup>` : ""}</button>`).join("")}</div>`;
+  return `<div class="tabs scrolltabs three compact">${[["abilities", "Abilities", "ultimate"], ["items", "Items", "armoury"], ["stats", "Stats", "roster"]].map(([k, l, ic]) => `<button class="${tab === k ? "on" : ""}" data-act="ctab" data-v="${k}"><img class="tabi" alt="" src="icons/ui/${ic}.webp">${l}${k === "abilities" && free ? `<sup class="dot" title="Skill points to spend">${free}</sup>` : ""}</button>`).join("")}</div>`;
 }
 const gearLines = g => GEAR_SLOTS.map(([gk, gl]) => { const lv = (g || {})[gk], x = lv ? GEAR[gk][lv - 1] : null; return `<div class="gline${x ? "" : " none"}"><span>${gl}</span><b>${x ? esc(x.name) : "None"}</b>${x ? `<small>${esc(x.desc)}</small>` : ""}</div>`; }).join("");
 function champSheetV3() {

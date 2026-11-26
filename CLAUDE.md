@@ -52,7 +52,8 @@ Every push to `main` deploys the game to Firebase (`.github/workflows/deploy.yml
 merge a pull request into `main`, don't stop at "merged":
 
 1. Find the Deploy workflow run for the merge commit and wait for it to finish. It takes about
-   4 minutes. Use the GitHub tools to check its status rather than guessing.
+   3 minutes when the tests are skipped (the merged code is exactly what CI already passed on the pull request) and about
+   10 minutes when they run again (for example when main moved on after CI ran). Use the GitHub tools to check its status rather than guessing.
    - Exception: if the merge changed only `.md` files, no deploy runs (Markdown is never served).
      Tell the user straight away that nothing needed deploying, and skip steps 2 and 3.
 2. Then tell the user the result, with a link to the run:

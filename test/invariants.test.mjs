@@ -445,6 +445,6 @@ test("base skills: a hero casts its base skill only once it has learned it, and 
   const withBase = {}, without = {};
   for (let g = 0; g < 4; g++) { Object.entries(run(g, 2)).forEach(([k, v]) => { withBase[k] = (withBase[k] || 0) + v; }); Object.entries(run(g, 0)).forEach(([k, v]) => { without[k] = (without[k] || 0) + v; }); }
   assert.deepEqual(without, {}, "no hero without the base skill casts one");
-  const want = ["warrior:Ground Slam", "shaman:Healing Wave", "rogue:Shadow Step", "mage:Teleport", "archer:Piercing Shot"];
+  const want = ["warrior:Ground Slam", "shaman:Healing Wave", "rogue:Flicker Strike", "mage:Teleport", "archer:Piercing Shot"];
   assert.deepEqual(want.filter(k => !withBase[k]), [], "every class's base skill fires: " + JSON.stringify(withBase));
 });
