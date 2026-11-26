@@ -82,10 +82,10 @@
 .icard .tag { position: absolute; top: -9px; right: 6px; background: var(--wax); color: var(--parchment); font-weight: 700; font-size: 10px; letter-spacing: .08em; padding: 1px 6px; border-radius: 4px; }
 .badge { position: absolute; z-index: 3; transform: translate(-50%, -50%); width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; font-weight: 700; opacity: 0; animation: fadein .3s 2.1s forwards; }
 .badge.fresh { background: var(--gold); color: var(--ink); } .badge.broke { background: var(--wax); color: var(--parchment); }
-.feed { list-style: none; margin: 0; padding: 12px 14px; display: grid; gap: 6px; border: 3px solid var(--wood-dark); border-radius: 10px; background: var(--parchment); color: var(--ink); }
+.feed { list-style: none; margin: 0; padding: 8px 12px; display: grid; gap: 3px; font-size: 15px; border: 3px solid var(--wood-dark); border-radius: 10px; background: var(--parchment); color: var(--ink); }
 .feed li { opacity: 0; animation: fadein .35s calc(var(--d) * 1s) forwards; } .feed li.fresh { color: #7a5a10; } .feed li.broke { color: var(--ink-soft); } .feed li.bet { color: var(--wax); font-weight: 700; }
 #intro .iwrap { gap: 6px; } #intro .iwrap h2 { font-size: 26px; } #intro .igrid { gap: 2px; } #intro .ivs { font-size: 11px; line-height: 12px; } #intro .isub { margin: 0; } #intro .isum { margin: 0; }
-.feed { padding: 8px 12px; gap: 3px; font-size: 15px; } .feed .more button { all: unset; cursor: pointer; color: var(--ink-soft); font-style: italic; text-decoration: underline; } .feed .more button:focus-visible { outline: 2px solid var(--gold); }
+.feed .more button { all: unset; cursor: pointer; color: var(--ink-soft); font-style: italic; text-decoration: underline; } .feed .more button:focus-visible { outline: 2px solid var(--gold); }
 .iwrap .none { text-align: center; font-style: italic; color: var(--parchment-2); margin: 0; }
 @media (prefers-reduced-motion: reduce) { .icard, .feed li, .badge, .ln, .ln.broke { animation: none; opacity: 1; stroke-dashoffset: 0; } }
 .notes { margin: 4px 0 8px 18px; padding: 0; } .notes li { margin: 4px 0; line-height: 1.35; }
