@@ -40,11 +40,11 @@ const ITEMS = {
   vanguard:    { name: "Vanguard",           g: "⛊", col: "#6f8fa8", cost: 120, tier: 2, kind: "passive", desc: "+15% health, and blocks 12 damage from every normal hit you take. Soldiers' blows barely scratch you." },
   antimagic:   { name: "Anti-Magic Shell",   g: "◉", col: "#7ad6c4", cost: 200, tier: 2, kind: "use", cd: 30, desc: "When you engage an enemy hero, after a delay you choose (1 to 10s): 5s of 70% magic resistance against hero abilities and ultimates. Time it to catch their ultimate.", descV2: "The moment you engage an enemy hero, if it is off cooldown: 5s of 70% magic resistance against hero abilities and ultimates." },
   crystalys:   { name: "Crystalys",          g: "◆", col: "#e0705a", cost: 120, tier: 2, kind: "passive", desc: "Your attacks have a 20% chance to crit for 1.6x damage." },
-  banner:      { name: "Banner of Might",   g: "⚑", col: "#e2b33c", cost: 140, tier: 2, kind: "aura", desc: "Aura: allies within 3 tiles deal 12% more damage." },
-  standard:    { name: "Iron Standard",      g: "⛨", col: "#7fb2ff", cost: 140, tier: 2, kind: "aura", desc: "Aura: allies within 3 tiles take 12% less damage." },
+  banner:      { name: "Banner of Might",   g: "⚑", col: "#e2b33c", cost: 250, tier: 3, kind: "aura", desc: "Aura: allies within 3 tiles deal 12% more damage." },
+  standard:    { name: "Iron Standard",      g: "⛨", col: "#7fb2ff", cost: 250, tier: 3, kind: "aura", desc: "Aura: allies within 3 tiles take 12% less damage." },
   rapier:      { name: "Divine Rapier",     g: "⚔", col: "#ffd34d", cost: 1000, fixed: true, tier: 3, kind: "passive", unique: true, desc: "Doubles your hero's damage. Drops where you fall: any hero can grab it and keep it." },
   mender:      { name: "Mender's Charm",     g: "❀", col: "#9cf09c", cost: 150, tier: 3, kind: "aura", desc: "Aura: heals allies within 3 tiles for 4 health per second." },
-  pipe:        { name: "Pipe of Insight",    g: "⌘", col: "#6aa8ff", cost: 170, tier: 3, kind: "aura", desc: "Aura: you and allies within 3 tiles take 25% less damage from enemy hero abilities and ultimates." },
+  pipe:        { name: "Pipe of Insight",    g: "⌘", col: "#6aa8ff", cost: 250, tier: 3, kind: "aura", desc: "Aura: you and allies within 3 tiles take 25% less damage from enemy hero abilities and ultimates." },
   shiva:       { name: "Shiva's Guard",      g: "❅", col: "#9fe4ff", cost: 190, tier: 3, kind: "use", cd: 40, desc: "Take 6% less damage. When 2 or more foes are within 3 tiles: a freezing blast hits them for 140 damage and slows them 40% for 4s." },
   daedalus:    { name: "Daedalus",           g: "✠", col: "#ff7a3a", cost: 200, tier: 3, kind: "passive", desc: "+15% attack damage. Your attacks have a 25% chance to crit for 2.4x damage." },
 };
@@ -94,7 +94,11 @@ const ITEM_ATK = { whetstone: 6, gauntlets: 12, daedalus: 12, rapier: 100 };
 const itemAtk = items => (items || []).reduce((a, k) => a + (ITEM_ATK[k] || 0), 0);
 const atkSplit = (base, extra) => `<span class="batk">${Math.round(base)}</span>${extra ? `<span class="iatk">+${Math.round(extra)}</span>` : ""}`;
 // day: a replayed battle is described as it was fought
+// Aura items v2 (plans stamped auraV2, battles from AURA_V2_FROM; AURA_V2 in sim/battle.js): no aura is stronger than 30%, and Mender's Charms from several heroes do not stack
+let AURA_V2_FROM = "2026-11-27"; const auraV2For = d => String(d) >= AURA_V2_FROM;
+const ITEM_DESC_AURA2 = { pipe: "Aura: you and allies within 4 tiles take 30% less damage from enemy hero abilities and ultimates.", mender: "Aura: heals allies within 3 tiles for 5 health per second. Several Mender's Charms in range do not stack." };
 const itemDesc = (k, day) => { const it = ITEMS[k]; if (!it) return ""; const d = day || (typeof isLive === "function" && isLive() ? liveClock().planDay : null);
+  if ((!d || auraV2For(d)) && ITEM_DESC_AURA2[k]) return ITEM_DESC_AURA2[k];
   if ((!d || balV5For(d)) && ITEM_DESC_V7[k]) return ITEM_DESC_V7[k];
   if ((!d || itemsV6For(d)) && ITEM_DESC_V6[k]) return ITEM_DESC_V6[k];
   if (k === "antimagic" && (!d || shellV2For(d))) return it.descV2;

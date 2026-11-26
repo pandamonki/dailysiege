@@ -30,6 +30,7 @@ practice games always stamp all of them (`js/sim/plans.js`).
 | 26 Nov | `betrayV2` | Betray the whole alliance (every allied keep bombed at the same moment) and betrayal times picked from slots |
 | 25 Nov | `breakV2` | Disbanding an alliance takes effect from the next battle (see Alliances) |
 | 23 Nov | `finV2` | Final-day alliances: day 7 pacts hold until one alliance is all that is left, then break and the allies fight on |
+| 27 Nov | `auraV2` | Aura items v2: no aura is stronger than 30% (Pipe of Insight 60% to 30%), and Mender's Charms from several heroes do not stack |
 | 23 Nov | `lvlV2` | Faster levelling: 3 to 4 levels a battle, up to level 25, smaller steps per level |
 | Prototype (practice only) | `timeV1` | Fixed timing: opening swings and hero skill cooldowns by place in the line-up, not the battle's dice (see The battle) |
 | Prototype (practice only) | `zoneV1` | Zones: placement sets each soldier's job, one #1 target, Front plans, flank plans, army temper, hill points, sudden-death damage tiebreak (see Zones) |
@@ -114,6 +115,12 @@ practice games always stamp all of them (`js/sim/plans.js`).
   (was double all hero damage).
 - Regeneration items from 22 Nov (`balV5`, `ITEM_V7`): Mending Herbs 3 a second and costs 50 (was 5, 40 gold); Ring of Health
   +120 health and 5 a second and costs 125 (was 8, 100 gold); Mender's Charm heals allies 5 a second (was 8).
+- Aura items (Banner of Might, Iron Standard, Pipe of Insight, Mender's Charm) reach the holder, their soldiers and summons, and
+  the units of any lord they have a pact with, both ways; castles are left out. They are late-game items (tier 3) costing 450
+  gold each (the Mender 270). From 27 Nov (`auraV2`, `AURA_V2` in `js/sim/battle.js`) no aura effect is stronger than 30%: Banner
+  24% more damage, Iron Standard 18% less damage, Pipe of Insight 30% less damage from hero abilities (was 60%). Two auras of
+  the same kind never add up (the strongest wins), and a unit takes at most one Mender's Charm heal a pulse. Different auras do
+  combine. Prices are not dated: they changed with the pull request.
 
 ## Defences (from 17 Nov)
 

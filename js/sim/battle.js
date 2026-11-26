@@ -53,6 +53,8 @@ const ITEM_REGEN_V5 = { hpring: 10, herbs: 5 }, SALVE_V5 = 300, ELIXIR_V5 = .2, 
 // Items v6 (plans stamped itemV6, battles from ITEMS_V6_FROM): Salve and Ring of Health toned down; Shell, Rune, Will, Fire orb, Crystalys, Pipe and Boots boosted
 // Items v7 (plans stamped balV5): the cheap regeneration items were too strong for their price
 const ITEM_V7 = { herbs: 3, hpringRegen: 5, mender: 5 };
+// Aura items v2 (plans stamped auraV2): no aura effect is stronger than AURA_V2.cap, so the Pipe of Insight drops to 30%; a unit takes at most one Mender's Charm heal a pulse
+const AURA_V2 = { cap: .3 };
 // Home healing (plans stamped balV5): a hero within HOME_HEAL_R tiles of its own castle that has neither hit nor been hit for HOME_HEAL_WAIT seconds
 // heals HOME_HEAL of its health a second. Any hit, given or taken, stops it and starts the wait again.
 const HOME_HEAL_R = 2.5, HOME_HEAL_WAIT = 2, HOME_HEAL = .08;
@@ -259,7 +261,7 @@ function runBattle(plans, seed, opts = {}) {
         e.hp = e.maxhp; if (!HV3) { ["a1", "a2", "a3"].forEach((k, j) => e.cds[k] = 2 + (TV1 ? fixedFrac(e.slot * 4 + j) : rng()) * 3); e.cds.ult = 10 + (TV1 ? fixedFrac(e.slot * 4 + 3) : rng()) * 8; }
         e.ultArm = pl.ultArm !== false; e.heroLvl = lvl; e.lvl0 = lvl; e.xp = pl.xp0 || 0; e.xp0 = e.xp; e.gains = 0;
         const its = new Set(pl.items || []); e.itemSet = its; if (its.has("rapier")) { e.rapier = true; rapierOwner = rapierHolder = pl.pid; }
-        e.itemV5 = !!pl.itemV5; e.shellV2 = !!pl.shellV2; e.itemV6 = !!pl.itemV6;
+        e.itemV5 = !!pl.itemV5; e.shellV2 = !!pl.shellV2; e.itemV6 = !!pl.itemV6; e.auraV2 = !!pl.auraV2;
         if (e.itemV5) { // flat items
           its.forEach(k => { const st = e.itemV6 && k === "hpring" ? { hp: ITEM_V6.hpringHp } : e.itemV6 && k === "boots" ? { spd: ITEM_V6.bootsSpd } : ITEM_FLAT[k]; if (!st) return; if (st.atk) { e.atk += st.atk; e.flatAtk = (e.flatAtk || 0) + st.atk; } if (st.hp) { e.maxhp += st.hp; e.flatHp = (e.flatHp || 0) + st.hp; } if (st.spd) e.spd += st.spd; if (st.block) e.block = (e.block || 0) + st.block; });
           e.hp = e.maxhp; if (its.has("vanguard")) e.block = (e.block || 0) + 12;
@@ -378,13 +380,13 @@ function runBattle(plans, seed, opts = {}) {
   function itemTick(e) {
     const s = e.itemSet; if (!s || !s.size) return; const p = P[e.pid];
     if (tick % 10 === 0) {
-      const AB = V4 ? AURA_BOOST : 1;
-      if (s.has("banner")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => setFx(o, "atkbuf", 1.3, .12 * AB));
-      if (s.has("standard")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => setFx(o, "guard", 1.3, e.itemV5 ? STANDARD_V5 : Math.min(.6, .12 * AB)));
+      const AB = V4 ? AURA_BOOST : 1, ac = v => (e.auraV2 ? Math.min(AURA_V2.cap, v) : v);
+      if (s.has("banner")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => setFx(o, "atkbuf", 1.3, ac(.12 * AB)));
+      if (s.has("standard")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => setFx(o, "guard", 1.3, ac(e.itemV5 ? STANDARD_V5 : Math.min(.6, .12 * AB))));
       if (s.has("hpring") && e.hp < e.maxhp) heal(e, BV5 ? ITEM_V7.hpringRegen : e.itemV6 ? ITEM_V6.hpringRegen : e.itemV5 ? ITEM_REGEN_V5.hpring : e.maxhp * .012, true, e, "Ring of Health");
       if (s.has("herbs") && e.hp < e.maxhp) heal(e, BV5 ? ITEM_V7.herbs : e.itemV5 ? ITEM_REGEN_V5.herbs : e.maxhp * .006, true, e, "Mending Herbs");
-      if (s.has("pipe")) friendsNear(e.pid, e.x, e.y, e.itemV6 ? ITEM_V6.pipeR : 3).forEach(o => setFx(o, "spellward", 1.3, e.itemV6 ? ITEM_V6.pipe : Math.min(.6, .25 * AB)));
-      if (s.has("mender")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => { if (o.hp < o.maxhp) heal(o, BV5 ? ITEM_V7.mender : 4 * AB, true, e, "Mender's Charm"); });
+      if (s.has("pipe")) friendsNear(e.pid, e.x, e.y, e.itemV6 ? ITEM_V6.pipeR : 3).forEach(o => setFx(o, "spellward", 1.3, ac(e.itemV6 ? ITEM_V6.pipe : Math.min(.6, .25 * AB))));
+      if (s.has("mender")) friendsNear(e.pid, e.x, e.y, 3).forEach(o => { if (e.auraV2) { if (o.mendTick === tick) return; o.mendTick = tick; } if (o.hp < o.maxhp) heal(o, BV5 ? ITEM_V7.mender : 4 * AB, true, e, "Mender's Charm"); });
     }
     if (s.has("antimagic") && e.shellV2) e.engT = shellEngaged(e) ? t : null; // shell v2: it fires the moment you engage an enemy hero, whenever it is off cooldown
     else if (s.has("antimagic")) { if (enemiesNear(e, e.x, e.y, 7).some(x => x.kind === "champ")) { if (e.engT == null) e.engT = t; } else e.engT = null; } // the clock on the Shell starts when an enemy hero comes into view
