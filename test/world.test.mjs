@@ -11,6 +11,7 @@ const D1 = "2026-11-16", ids = ["a", "b", "c", "d"];
 // These scenarios were written for the old hero abilities (their seeds pick fights between old-style heroes), so the file pins the
 // switch-over date out of reach. The skill-tree rules have their own tests: test/heroTrees.test.mjs and the last test here.
 sim.run('HERO_V3_FROM = "2099-01-01"');
+sim.run('MAP_V3_FROM = "2099-01-01"'); // these scenarios (and their checks of each piece's tile) were written for the fields before the roomier map
 
 function world(sealedBy) { // four lords; orders for day 1 from a golden battle with four lords
   const g = sim.run("goldenCase(2)").plans, W = { config: { tz: "UTC", lockHour: 20, startDate: D1, maxPlayers: 8 }, players: {}, battles: {} };

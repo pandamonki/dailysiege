@@ -4,6 +4,11 @@
 // the id is remembered on their device, so changing the id is all it takes to show it again.
 // Only major changes players will notice, in two to five items. Fixes, tidy-ups and small balance tweaks don't belong here.
 const RELEASES = [
+  { id: "1.27", title: "What's new in v1.27", sub: "Army zones and the new rules reach every war", items: [
+    ["Zones in every war", "Where you place soldiers sets their job (Guard, Front, left and right flanks), now in real wars as well as practice."],
+    ["Fair, readable battles", "The same orders give the same battle, maps are roomier, talents and items count more, and rivals answer their attackers."],
+    ["Three targets that stay", "Pick up to three targets in order; they carry over to the next day, ready to confirm."],
+  ] },
   { id: "1.26", title: "What's new in v1.26", sub: "Practice: roomier maps, stronger talents, three targets", items: [
     ["Three targets that stay", "In practice, pick up to three targets in order. They carry over to the next day: just confirm them before you seal."],
     ["Roomier map", "Practice castles stand further apart, so heroes no longer meet at each other's gates in the first seconds."],

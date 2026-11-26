@@ -32,10 +32,10 @@ practice games always stamp all of them (`js/sim/plans.js`).
 | 23 Nov | `finV2` | Final-day alliances: day 7 pacts hold until one alliance is all that is left, then break and the allies fight on |
 | 27 Nov | `auraV2` | Aura items v2: no aura is stronger than 30% (Pipe of Insight 60% to 30%), and Mender's Charms from several heroes do not stack |
 | 23 Nov | `lvlV2` | Faster levelling: 3 to 4 levels a battle, up to level 25, smaller steps per level |
-| Prototype (practice only) | `timeV1` | Fixed timing: opening swings and hero skill cooldowns by place in the line-up, not the battle's dice (see The battle) |
-| Prototype (practice only) | `mapV3` | Roomier fields: maps 4 tiles bigger again, so neighbours stand about 8.5 tiles apart instead of 6.7 (8 lords); wars from `MAP_V3_FROM` in `js/core/layout.js` |
-| Prototype (practice only) | `tuneV1` | Agency pass: talents 25% and item stats 15% stronger, bots answer yesterday's attacker, mercenaries arrive 10s in, the Rogue follows Combat settings (see Agency pass) |
-| Prototype (practice only) | `zoneV1` | Zones: placement sets each soldier's job, one #1 target, Front plans, flank plans, army temper, hill points, sudden-death damage tiebreak (see Zones) |
+| 26 Nov | `timeV1` | Fixed timing: opening swings and hero skill cooldowns by place in the line-up, not the battle's dice (see The battle) |
+| Wars from 1 Nov | `mapV3` | Roomier fields: maps 4 tiles bigger again, so neighbours stand about 8.5 tiles apart instead of 6.7 (8 lords); `MAP_V3_FROM` in `js/core/layout.js` |
+| 26 Nov | `tuneV1` | Agency pass: talents 25% and item stats 15% stronger, bots answer yesterday's attacker, mercenaries arrive 10s in, the Rogue follows Combat settings (see Agency pass) |
+| 26 Nov | `zoneV1` | Zones: placement sets each soldier's job, one #1 target, Front plans, flank plans, army temper, hill points, sudden-death damage tiebreak (see Zones) |
 
 ## The war
 
@@ -162,10 +162,9 @@ practice games always stamp all of them (`js/sim/plans.js`).
 - Before 20 Nov: a "heading", up to 5 if-then battle commands, and per-soldier orders (escort, attack a lord). These
   only apply to replays of older battles.
 
-## Zones (prototype, `zoneV1`)
+## Zones (`zoneV1`)
 
-Practice always uses these rules. Real wars use them from `ZONE_V1_FROM` in `js/config/orders.js`, set far in the future
-until a start date is chosen. They replace the army plan, the fall-back list, the hero stance and the three target slots.
+Practice and real wars use these rules from the 26 Nov battle (`ZONE_V1_FROM` in `js/config/orders.js`). They replace the army plan, the fall-back list, the hero stance and the three target slots.
 
 - **Placement sets the job.** The deploy field splits into four zones, seen from the castle looking at the hill
   (`zoneOfTile`): **Guard** (tiles within 1.5 of the castle) stays home and defends; the **Front** (straight ahead, within about
@@ -210,9 +209,9 @@ until a start date is chosen. They replace the army plan, the fall-back list, th
   the sides still standing), not health alone.
 - Bots: each build has a Front plan (the shape, above, sets where soldiers stand and may set the flanks); their temper follows their old stance.
 
-## Agency pass (prototype, `tuneV1`)
+## Agency pass (`tuneV1`)
 
-Practice always uses it; real wars from `TUNE_V1_FROM` in `js/config/orders.js`, set far in the future.
+Practice and real wars from the 26 Nov battle (`TUNE_V1_FROM` in `js/config/orders.js`).
 
 - **Talents:** every skill-tree value is 25% stronger (`TALENT_X`), and the hero screen shows the stronger values.
 - **Items:** the health, attack, block, speed, lifesteal and thorns that items add are 15% stronger (`ITEM_X`).
@@ -230,7 +229,7 @@ Practice always uses it; real wars from `TUNE_V1_FROM` in `js/config/orders.js`,
 
 - **Opening timing.** Every fighter waits up to 0.8 seconds before its first swing, and each hero skill starts on a 2 to 5 second
   cooldown (the ultimate 10 to 18). Until now these come from the battle's dice (the battle date in real wars), and in tests they
-  caused most of the luck in a battle. With fixed timing (prototype `timeV1`, `TIME_V1_FROM` in `js/config/orders.js`; practice always)
+  caused most of the luck in a battle. With fixed timing (`timeV1`, battles from 26 Nov, `TIME_V1_FROM` in `js/config/orders.js`; practice always)
   they are spread by each fighter's place in its own lord's line-up (`fixedFrac` of its slot), so the same orders against the same
   rivals give nearly the same battle, and no seat gets better timing than another (the first version counted fighters across the whole
   battle, seat by seat, which favoured some seats). Real percentage chances (dodges, crits, misses, skill procs) stay random.

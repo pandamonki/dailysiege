@@ -129,7 +129,7 @@ test("every battle is saved with results for the ten seated lords, in war order"
     const b = battles[day];
     assert.equal(b.day, i + 1); assert.equal(b.week, D1); assert.equal(b.war, 1);
     assert.deepEqual(b.results.map(r => r.pid).sort(), uids.slice(0, SEATS), "lords 11 and 12 wait for a seat");
-    assert.equal(b.inputs.N, D1 >= "2026-11-18" ? 25 : 21, "ten lords fight on the field for the war's start date (25x25 from 18 Nov, MAP_V2_FROM)");
+    assert.equal(b.inputs.N, (D1 >= "2026-11-18" ? 25 : 21) + (D1 >= "2026-11-01" ? 4 : 0), "ten lords fight on the field for the war's start date (25x25 from 18 Nov, MAP_V2_FROM; 4 more from 1 Nov, MAP_V3_FROM)");
     assert.equal(new Set(b.inputs.plans.map(p => p.color)).size, SEATS, "every lord has their own colour");
     assert.match(b.resultHash, /^[0-9a-f]{16}$/);
     assert.equal(b.inputs.plans.length, SEATS);
