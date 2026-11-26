@@ -93,13 +93,33 @@ function showIntro(it, done) {
   requestAnimationFrame(() => {
     const grid = el.querySelector("#igrid"), g = grid.getBoundingClientRect();
     const rect = id => { const c = el.querySelector(`.icard[data-pid="${id}"]`); if (!c) return null; const r = c.getBoundingClientRect(); return { l: r.left - g.left, t: r.top - g.top, r: r.right - g.left, b: r.bottom - g.top }; };
-    const fly = (m, dl) => { const r = rect(m.pid), mm = MERCS[m.id]; if (!r || !mm) return;
-      const sprites = [...new Set(mm.units)].map(t => `<img alt="" src="${spriteURL(t)}">`).join(""), x = (r.l + r.r) / 2, y = r.t;
-      grid.insertAdjacentHTML("beforeend", `<div class="mfly" style="left:${x}px;top:${y}px;--sx:${Math.round(g.width / 2 - x)}px;--sy:${Math.round(-g.top - y - 40)}px;--dl:${dl}s">${sprites}<span>${esc(mm.name)}</span></div>`);
-      const hw = el.querySelector(`.icard[data-pid="${m.pid}"] .hw`); if (hw) hw.insertAdjacentHTML("beforeend", `<img class="mbadge" alt="${esc(mm.name)}" title="${esc(mm.name)}" src="${spriteURL(mm.units[0])}" style="--dl:${(dl + .9).toFixed(2)}s">`); };
+    const fly = m => marchMercs(el, grid, m); // returns how long the march takes, in ms
     runAuction(el, it, nm, card, fly);
     it.broken.forEach(x => { const [a, b] = x.k.split("|"), ra = rect(a), rb = rect(b); if (ra && rb) grid.insertAdjacentHTML("beforeend", `<span class="badge broke" style="left:${(ra.l + ra.r + rb.l + rb.r) / 4}px;top:${(ra.t + ra.b + rb.t + rb.b) / 4}px">✕</span>`); });
   });
+}
+// a won mercenary group sends its lead sprite marching out of the auction panel, name tag beside it, to become a small icon on its new lord's hero
+const mercTagText = mm => `⚔ ${esc(mm.name)}${mm.units.length > 1 ? " ×" + mm.units.length : ""}`;
+function mercStack(mm, color, cls) { // the group's lead sprite with its name directly under it
+  const lead = mm.units[0], sp = spr(lead);
+  return `<div class="mstk ${cls || ""}"><img alt="" data-t="${lead}" src="${mercPoseURL(lead, color, "")}" style="width:${sp.width * 1.5}px;height:${sp.height * 1.5}px"><span class="mtag">${mercTagText(mm)}</span></div>`;
+}
+function marchMercs(el, grid, m) {
+  const cardEl = el.querySelector(`.icard[data-pid="${m.pid}"]`), mm = MERCS[m.id]; if (!cardEl || !mm) return 0;
+  const color = cardEl.style.getPropertyValue("--c") || MY_COLOR, calm = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // it lands as a small icon on the hero's corner, so no card changes size: the target is known at once
+  const hw = cardEl.querySelector(".hw") || cardEl; hw.insertAdjacentHTML("beforeend", `<img class="mbadge hid" alt="${esc(mm.name)}" title="${esc(mm.name)}" src="${mercPoseURL(mm.units[0], color, "")}">`); const stack = hw.lastElementChild;
+  const g = grid.getBoundingClientRect(), pr = stack.getBoundingClientRect(), tx = pr.left - g.left, ty = pr.top - g.top;
+  const done = () => { stack.classList.remove("hid"); cardEl.classList.remove("hired"); void cardEl.offsetWidth; cardEl.classList.add("hired"); };
+  if (calm) { done(); return 0; }
+  const from = el.querySelector("#auc .asp"), fr = from ? from.getBoundingClientRect() : null, sx = fr ? fr.left - g.left : g.width / 2, sy = fr ? fr.top - g.top : ty - 80;
+  grid.insertAdjacentHTML("beforeend", mercStack(mm, color, "mmarch")); const ov = grid.lastElementChild; ov.style.left = sx + "px"; ov.style.top = sy + "px"; ov.classList.toggle("flip", tx < sx - 4);
+  const im = ov.querySelector("img"), dist = Math.hypot(tx - sx, ty - sy), ms = Math.max(1200, Math.min(2400, dist * 7)); let tick = 0;
+  const step = setInterval(() => { if (!ov.isConnected) return clearInterval(step); im.src = mercPoseURL(im.dataset.t, color, "w" + (++tick & 3)); }, 130);
+  const run = ov.animate([{ transform: "translate(0,0) scale(.6)", opacity: 0 }, { transform: "translate(0,0) scale(1)", opacity: 1, offset: .08 }, { transform: `translate(${tx - sx}px, ${ty - sy}px) scale(1)`, opacity: 1 }], { duration: ms, delay: 650, easing: "linear", fill: "both" });
+  const end = () => { clearInterval(step); ov.remove(); if (stack.isConnected) done(); };
+  run.onfinish = end; run.oncancel = end;
+  return 650 + ms;
 }
 // the mercenary auction: each camp group in turn, every sealed bid revealed lowest to highest, then awarded to the winner
 function runAuction(el, it, nm, card, fly) {
@@ -113,7 +133,7 @@ function runAuction(el, it, nm, card, fly) {
       for (let i = 0; i < a.bids.length; i++) { if (!live()) return; const b = a.bids[i], top = i === a.bids.length - 1;
         ul.insertAdjacentHTML("beforeend", `<li class="${top ? "top" : ""}">${chip(b.pid)}<span>${nm(b.pid)}</span><em>${b.gold}g</em></li>`); await wait(top ? 900 : 650); }
       if (!live()) return; box.querySelector(".asold").innerHTML = `⚔ <b>${nm(a.winner)}</b> wins the ${esc(mm.name)} for ${a.gold} gold`; box.classList.add("sold");
-      ul.querySelector("li.top").classList.add("won"); fly({ pid: a.winner, id: a.id }, 0); await wait(1500); box.classList.add("out"); await wait(450); box.classList.remove("sold", "show"); }
+      ul.querySelector("li.top").classList.add("won"); const march = fly({ pid: a.winner, id: a.id }) || 0; await wait(1000); box.classList.add("out"); await wait(450); box.classList.remove("sold", "show"); await wait(Math.max(0, march - 1450) + 300); }
     box.remove();
   })();
 }

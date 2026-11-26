@@ -119,11 +119,16 @@
 .gkeys li { counter-increment: gk; display: flex; gap: 8px; align-items: flex-start; font-size: 14px; line-height: 1.3; color: #2b1b0c; }
 .gkeys li::before { content: counter(gk); flex: none; width: 20px; height: 20px; border-radius: 50%; background: #ffd34d; border: 2px solid #2b1b0c; color: #2b1b0c; font-weight: 800; font-size: 12px; display: grid; place-items: center; }
 .wiz-msg h3 { margin: 0 0 4px; font-size: 17px; font-weight: 800; color: #5e1f14; } .wiz-msg p { font-size: 14.5px; } .wiz-row small { white-space: nowrap; }
-.mfly { position: absolute; z-index: 9; transform: translate(-50%, -50%) translate(var(--sx), var(--sy)) scale(1.4); display: flex; align-items: center; gap: 2px; padding: 3px 8px; border-radius: 12px; background: #3b130f; color: #f6e7c1; font-size: 12px; font-weight: 700; white-space: nowrap; opacity: 0; box-shadow: 0 0 14px 3px rgba(255,190,70,.6); animation: mfly .9s var(--dl) cubic-bezier(.3,.7,.3,1) forwards; pointer-events: none; }
-.mfly img { width: 26px; height: 26px; image-rendering: pixelated; }
-@keyframes mfly { 0% { opacity: 0; } 15% { opacity: 1; } 80% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(.7); } }
-.mbadge { position: absolute; left: -7px; bottom: -4px; z-index: 3; width: 20px; height: 20px; padding: 1px; border-radius: 50%; background: #3b130f; border: 1.5px solid var(--gold); image-rendering: pixelated; opacity: 0; animation: fadein .3s var(--dl) forwards; }
-@media (prefers-reduced-motion: reduce) { .mfly { display: none; } .mbadge { animation: none; opacity: 1; } }
+/* a hired group's lead sprite marches out of the auction panel and becomes a small round icon on the corner of its lord's hero */
+.mstk { position: absolute; right: 8px; bottom: -7px; z-index: 2; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; pointer-events: none; }
+.mstk.hid { opacity: 0; } .mstk img { display: block; image-rendering: pixelated; animation: mbreath 1.8s ease-in-out infinite; }
+.mtag { max-width: 112px; overflow: hidden; text-overflow: ellipsis; background: #3b130f; color: #f6e7c1; border: 1px solid var(--gold); border-radius: 8px; padding: 0 6px; font-size: 9.5px; font-weight: 700; line-height: 12px; white-space: nowrap; }
+.mmarch { right: auto; bottom: auto; z-index: 9; filter: drop-shadow(0 0 7px rgba(255,190,70,.75)); }
+.mmarch.flip img { transform: scaleX(-1); } .mmarch img { animation: mbob .26s steps(2) infinite; }
+.icard.hired::after { content: ""; position: absolute; inset: -3px; border-radius: 10px; pointer-events: none; animation: mhired 1s ease-out; }
+@keyframes mbob { 50% { margin-top: -2px; } } @keyframes mbreath { 50% { transform: translateY(-1px); } }
+@keyframes mhired { 0% { box-shadow: 0 0 0 0 rgba(255,210,74,.95); } 100% { box-shadow: 0 0 0 12px rgba(255,210,74,0); } }
+.mbadge { position: absolute; left: -7px; bottom: -4px; z-index: 3; width: 20px; height: 20px; padding: 1px; border-radius: 50%; background: #3b130f; border: 1.5px solid var(--gold); image-rendering: pixelated; } .mbadge.hid { opacity: 0; }
 .icard .tx b { display: flex; align-items: center; gap: 4px; min-width: 0; } .icard .tx .nmx { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rap { width: 16px; height: 16px; flex: none; filter: drop-shadow(0 0 3px rgba(255,210,74,.9)); animation: rapGlow 1.6s ease-in-out infinite; }
 @keyframes rapGlow { 50% { filter: drop-shadow(0 0 6px rgba(255,230,120,1)); } }
