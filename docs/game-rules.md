@@ -164,7 +164,10 @@ until a start date is chosen. They replace the army plan, the fall-back list, th
   30° either side) marches on the #1 target; the **left** and **right flanks** face the nearest lord on that side
   (`flankNeighbour`). A flank with no lord on its side fights with the Front. The hero takes the job of the zone it stands in.
   The map tints each zone and labels it, and the Strategy tab counts what each zone holds and warns about an empty Front or an open side.
-- **One #1 target.** The Front marches on it; when it falls, the lord just above you on the board.
+- **Up to three targets, in order.** The Front marches on the first still standing and, when its castle falls, on to the next; after
+  them, the lord just above you on the board. The targets carry over to the next day (`pickReset` keeps them), but each day they
+  must be confirmed before sealing: the Strategy tab says they were kept from yesterday with a Keep these targets button, and any
+  change to them counts as confirming. The map draws the route to the first target, then fainter lines on to the second and third.
 - **The Front's plan:** Assault (fights what it meets), Siege (slips past armies to the castle), Hero hunt (heroes first) or Hold
   the hill (takes the hill and holds it until 2:00, then marches on the target). They form a loop: Hold the hill beats Assault,
   Assault beats Hero hunt, Hero hunt beats Siege, Siege beats Hold the hill. A Front hitting a Front whose plan it beats does 25%

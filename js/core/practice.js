@@ -7,7 +7,8 @@ const heroV3Flag = () => { try { return !(/[?&]herov2\b/.test(location.search) |
 const pickV1Now = () => (typeof isLive === "function" && isLive() ? pickV1For(liveClock().planDay) : true);
 const shellV2Now = () => (typeof isLive === "function" && isLive() ? shellV2For(liveClock().planDay) : true);
 // a new day: nobody is a target until the lord picks again
-const pickReset = () => { if (!pickV1Now() || !S || !S.lists) return; S.lists.neutral = S.lists.neutral.concat(S.lists.hostile.filter(k => !PICK_ROLES[k] && !S.lists.neutral.includes(k))); S.lists.hostile = []; if (S.strategy) S.strategy.mode = "list"; };
+const pickReset = () => { if (!pickV1Now() || !S || !S.lists) return;
+  if (zoneV1Now()) { S.tgtOk = !S.lists.hostile.length; return; } /* zones v1: the targets carry over to the new day, but the lord must confirm (or change) them before sealing */ S.lists.neutral = S.lists.neutral.concat(S.lists.hostile.filter(k => !PICK_ROLES[k] && !S.lists.neutral.includes(k))); S.lists.hostile = []; if (S.strategy) S.strategy.mode = "list"; };
 const heroV3Now = () => (typeof isLive === "function" && isLive() ? heroV3For(liveClock().planDay) : heroV3Flag());
 let MY_COLOR = YOU_COLOR;
 // Example lobby for practice battles (castles are placed by the seat layout)

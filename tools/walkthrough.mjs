@@ -112,6 +112,11 @@ for (const name of engines) {
     if (!lines.includes(await js(() => ZONE_COL.front))) throw new Error("the map draws no route for the Front: " + JSON.stringify(lines));
     const wz = page.locator('#sheet [data-act="wzone"][data-v="guard"]'); if (await wz.count()) { await wz.first().click(); if (!(await js(() => buildPlans()[0].waves.some(w => w.zone === "guard")))) throw new Error("a wave's zone did not reach the plan"); }
     await closeAll(); });
+  await step("zones: targets carry over to the next day and must be confirmed before sealing", async () => { await closeAll(); if (!(await js(() => zoneV1Now()))) return;
+    const r = await js(() => { const ids = RIVALS.slice(0, 3).map(r => r.id); S.lists.hostile = ids.slice(); S.tgtOk = true; pickReset(); const kept = S.lists.hostile.join() === ids.join(), needs = !targetsReady(); return { kept, needs, n: pickMax() }; });
+    if (!r.kept) throw new Error("the targets did not carry over"); if (!r.needs) throw new Error("carried-over targets did not ask to be confirmed"); if (r.n !== 3) throw new Error("only " + r.n + " target slots");
+    await tap('#cmdbar [data-act="openorders"]'); await tap('#sheet .tabs button:has-text("Strategy")'); await tap('#sheet [data-act="tgtkeep"]');
+    if (!(await js(() => targetsReady()))) throw new Error("Keep these targets did not confirm them"); await closeAll(); });
   await step("pick today's targets", async () => { await tap('#cmdbar [data-act="openorders"]'); await tap('#sheet .tabs button:has-text("Strategy")');
     for (let i = 0; i < 6 && !(await js(() => targetsReady())); i++) { const add = page.locator('#sheet [data-act="lmove"][data-v="hostile"]:visible'); if (!(await add.count())) break; await add.first().click(); await page.waitForTimeout(150); }
     if (!(await js(() => targetsReady()))) throw new Error("could not pick enough targets"); await closeAll(); });

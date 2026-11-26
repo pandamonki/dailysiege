@@ -200,8 +200,8 @@ function previewOrder() {
 // Pick your targets (PICK_V1): one to three targets a day (at least TARGETS_NEED), in order. Once they have fallen, the army goes for the lord just above on the board.
 // how many targets a lord must pick before sealing: three, or every option there is if fewer
 const TARGETS_NEED = () => 1; // at least one target before sealing; up to pickMax()
-const pickMax = () => (zoneV1Now() ? 1 : PICK_MAX); // zones v1: one #1 target, which the Front marches on
-const targetsReady = () => !pickV1Now() || S.lists.hostile.length >= TARGETS_NEED();
+const pickMax = () => PICK_MAX; // up to three targets, in order (with zones, the Front goes for the first still standing, then the next)
+const targetsReady = () => !pickV1Now() || (S.lists.hostile.length >= TARGETS_NEED() && (!zoneV1Now() || S.tgtOk !== false)); // zones v1: carried-over targets need today's confirm
 const ROLE_ICON = { "@weakcastle": "castle1", "@leader": "board", "@above": "roster", "@nearcastle": "base", "@neararmy": "army" }; // pictures in icons/ui
 const roleIco = k => (ROLE_ICON[k] ? `<img alt="" src="icons/ui/${ROLE_ICON[k]}.webp">` : "◎");
 const tgtName = id => { const r = RIVALS.find(x => x.id === id); return r ? r.name : PICK_ROLES[id] || ""; };
@@ -223,8 +223,9 @@ function targetBoardHTML(compact) {
 function pickTab() {
   const hostile = S.lists.hostile, roles = Object.keys(PICK_ROLES).filter(k => !hostile.includes(k)), full = hostile.length >= pickMax();
   const chip = k => `<button class="chip" data-act="lmove" data-v="hostile" data-k="${k}" ${full ? "disabled" : dis()}><i class="rico">${roleIco(k)}</i>${esc(PICK_ROLES[k])}</button>`;
-  return `<div class="sec tight"><h3>1 · ${zoneV1Now() ? "#1 target" : "Today's targets"} <span class="cnt${hostile.length >= TARGETS_NEED() ? " ok" : ""}">${hostile.length}/${pickMax()}</span></h3>
-      <p class="muted">${zoneV1Now() ? `Pick one lord or role. Your <b style="color:${ZONE_INK.front}">Front</b> marches on them. After them: ${fallbackLabel()}.` : `Pick 1 to ${PICK_MAX}, in order. After them: ${fallbackLabel()}.`}</p>
+  return `<div class="sec tight"><h3>1 · Today's targets <span class="cnt${hostile.length >= TARGETS_NEED() ? " ok" : ""}">${hostile.length}/${pickMax()}</span></h3>
+      <p class="muted">${zoneV1Now() ? `Pick 1 to ${PICK_MAX}, in order. Your <b style="color:${ZONE_INK.front}">Front</b> marches on the first still standing, and when its castle falls, on to the next. After them: ${fallbackLabel()}. They carry over to tomorrow.` : `Pick 1 to ${PICK_MAX}, in order. After them: ${fallbackLabel()}.`}</p>
+      ${zoneV1Now() && S.tgtOk === false && hostile.length ? `<div class="tkeep"><span>Kept from yesterday. Keep them, or change them below.</span><button class="btn small wax" data-act="tgtkeep" ${dis()}>Keep these targets</button></div>` : ""}
       ${targetSlotsHTML()}
       ${roles.length ? `<h4 class="minih">Or a role</h4><div class="chips">${roles.map(chip).join("")}</div>` : ""}
       <h4 class="minih">Lords${Object.keys(bountyMap()).length ? " · ♛ bounty gold" : ""}</h4>${targetBoardHTML()}</div>
@@ -428,7 +429,7 @@ function sealChecks() {
   if ((S.walls || []).length || S.traps.length) ck(wt ? "warn" : "ok", wt ? `<b>${wt} wall${wt > 1 ? "s or traps" : " or trap"} not set</b> on the field` : "Walls and traps are set", "map");
   { const at = S.lists.hostile.filter(allyShielded); if (at.length) ck("need", `<b>${at.map(id => esc(tgtName(id))).join(", ")} ${at.length > 1 ? "are allies" : "is an ally"}</b>: take them off your targets, or set the pact to Betray`, "strategy"); }
   const fp = freePts(); ck(fp ? "warn" : "ok", fp ? `<b>${fp} skill point${fp > 1 ? "s" : ""} unspent</b>` : "All skill points spent", "hero");
-  if (pickV1Now()) ck(targetsReady() ? "ok" : "need", targetsReady() ? `Targets: ${S.lists.hostile.map(id => esc(tgtName(id))).join(" → ")}` : `<b>Pick a target</b> (${pickMax() === 1 ? "your #1 target" : `1 to ${PICK_MAX} a day`})`, "strategy");
+  if (pickV1Now()) ck(targetsReady() ? "ok" : "need", targetsReady() ? `Targets: ${S.lists.hostile.map(id => esc(tgtName(id))).join(" → ")}` : (zoneV1Now() && S.tgtOk === false && S.lists.hostile.length ? `<b>Confirm today's targets</b> (kept from yesterday: ${S.lists.hostile.map(id => esc(tgtName(id))).join(" → ")})` : `<b>Pick a target</b> (1 to ${PICK_MAX} a day)`), "strategy");
   if (contractsOn() && myOffers().length) { const c = contractParse(S.contract); ck(c ? "ok" : "warn", c ? `Contract: ${esc(c.c.name)}` : "<b>No contract taken</b>", "contracts"); }
   if (day >= 2 && ct < 2) ck("warn", "Castle is still tier 1. A Fortress pays for itself in two days", "castle");
   else if (day >= 4 && ct < 3) ck("warn", "Castle is a Fortress. A Citadel opens tier 3 soldiers and gear", "castle");
