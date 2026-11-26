@@ -64,20 +64,21 @@
 .igrid { position: relative; display: grid; gap: 6px; }
 .isum { margin: -6px 0 0; text-align: center; color: var(--parchment); font-size: 17px; }
 .iside { position: relative; z-index: 1; border: 3px solid var(--sc); border-radius: 12px; background: rgba(0,0,0,.22); overflow: hidden; }
-.ihd { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; padding: 5px 12px; background: var(--sc); color: #fff; font-family: var(--f-display); }
+.ihd { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; padding: 3px 10px; background: var(--sc); color: #fff; font-family: var(--f-display); }
 .ihd .crest { flex: none; margin: -2px 2px -4px 0; filter: drop-shadow(0 1px 2px rgba(0,0,0,.5)); }
-.ihd b { flex: 1; min-width: 0; font-size: 18px; letter-spacing: .03em; text-shadow: 0 1px 2px rgba(0,0,0,.5); } .ihd small { font-size: 13px; opacity: .95; }
-.ibody { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; padding: 8px; }
-.ivs { text-align: center; font: 700 14px var(--f-display); letter-spacing: .35em; color: var(--gold); }
+.ihd b { flex: 1; min-width: 0; font-size: 16px; letter-spacing: .03em; text-shadow: 0 1px 2px rgba(0,0,0,.5); } .ihd small { font-size: 12px; opacity: .95; }
+.ibody { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; padding: 6px; }
+.iempty { border: 2px dashed rgba(236,220,180,.15); border-radius: 10px; }
+.ivs { text-align: center; font: 700 12px/1 var(--f-display); letter-spacing: .35em; color: var(--gold); }
 .ilines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 2; }
 .ln { stroke-width: 3; stroke-linecap: round; stroke-dasharray: var(--len); stroke-dashoffset: var(--len); animation: draw .6s 1.6s ease-out forwards; }
 .ln.kept { stroke: var(--azure); opacity: .7; } .ln.fresh { stroke: var(--gold); } .ln.broke { stroke: var(--wax); stroke-dasharray: 6 6; stroke-dashoffset: 0; opacity: 0; animation: fadein .4s 1.8s forwards; }
 @keyframes draw { to { stroke-dashoffset: 0; } } @keyframes fadein { to { opacity: 1; } }
-.icard { position: relative; z-index: 1; display: grid; grid-template-columns: 30px minmax(0, 1fr) 40px; gap: 8px; align-items: center; padding: 8px; border: 3px solid var(--c, var(--wood-dark)); border-radius: 10px; background: var(--parchment); color: var(--ink); opacity: 0; animation: cardin .35s calc(var(--i) * .15s) ease-out forwards; }
+.icard { position: relative; z-index: 1; display: grid; grid-template-columns: 16px minmax(0, 1fr) 36px; gap: 6px; align-items: center; padding: 5px 5px 5px 6px; border: 3px solid var(--c, var(--wood-dark)); border-radius: 10px; background: var(--parchment); color: var(--ink); opacity: 0; animation: cardin .35s calc(var(--i) * .15s) ease-out forwards; }
 .icard.me { box-shadow: 0 0 0 2px var(--gold); }
 @keyframes cardin { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
-.icard .bn { width: 30px; height: 40px; image-rendering: pixelated; } .icard .hr { width: 40px; height: 40px; image-rendering: pixelated; }
-.icard .tx { display: grid; min-width: 0; } .icard .tx b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .icard .tx small { font-size: 12px; color: var(--ink-soft); }
+.icard .bn { width: 16px; height: 22px; image-rendering: pixelated; } .icard .hw { position: relative; width: 36px; height: 36px; } .icard .hr { width: 36px; height: 36px; image-rendering: pixelated; }
+.icard .tx { display: grid; min-width: 0; } .icard .tx b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .icard .tx small { font-size: 12px; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .icard .tag { position: absolute; top: -9px; right: 6px; background: var(--wax); color: var(--parchment); font-weight: 700; font-size: 10px; letter-spacing: .08em; padding: 1px 6px; border-radius: 4px; }
 .badge { position: absolute; z-index: 3; transform: translate(-50%, -50%); width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; font-weight: 700; opacity: 0; animation: fadein .3s 2.1s forwards; }
 .badge.fresh { background: var(--gold); color: var(--ink); } .badge.broke { background: var(--wax); color: var(--parchment); }
@@ -121,9 +122,9 @@
 .mfly { position: absolute; z-index: 9; transform: translate(-50%, -50%) translate(var(--sx), var(--sy)) scale(1.4); display: flex; align-items: center; gap: 2px; padding: 3px 8px; border-radius: 12px; background: #3b130f; color: #f6e7c1; font-size: 12px; font-weight: 700; white-space: nowrap; opacity: 0; box-shadow: 0 0 14px 3px rgba(255,190,70,.6); animation: mfly .9s var(--dl) cubic-bezier(.3,.7,.3,1) forwards; pointer-events: none; }
 .mfly img { width: 26px; height: 26px; image-rendering: pixelated; }
 @keyframes mfly { 0% { opacity: 0; } 15% { opacity: 1; } 80% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(.7); } }
-.mbadge { position: absolute; z-index: 3; transform: translate(-100%, 0); background: #3b130f; color: #f6e7c1; border: 1px solid var(--gold); border-radius: 8px; padding: 1px 7px; font-size: 11px; font-weight: 700; white-space: nowrap; opacity: 0; animation: fadein .3s var(--dl) forwards; }
+.mbadge { position: absolute; left: -7px; bottom: -4px; z-index: 3; width: 20px; height: 20px; padding: 1px; border-radius: 50%; background: #3b130f; border: 1.5px solid var(--gold); image-rendering: pixelated; opacity: 0; animation: fadein .3s var(--dl) forwards; }
 @media (prefers-reduced-motion: reduce) { .mfly { display: none; } .mbadge { animation: none; opacity: 1; } }
-.icard .tx b { display: inline-flex; align-items: center; gap: 4px; }
+.icard .tx b { display: flex; align-items: center; gap: 4px; min-width: 0; } .icard .tx .nmx { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rap { width: 16px; height: 16px; flex: none; filter: drop-shadow(0 0 3px rgba(255,210,74,.9)); animation: rapGlow 1.6s ease-in-out infinite; }
 @keyframes rapGlow { 50% { filter: drop-shadow(0 0 6px rgba(255,230,120,1)); } }
 

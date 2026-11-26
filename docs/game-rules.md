@@ -306,7 +306,8 @@ Practice and real wars from the 26 Nov battle (`TUNE_V1_FROM` in `js/config/orde
 
 - Pre-battle screen ("The houses gather"): a line says whether you have allies; then each alliance is a coloured side with a header
   ("Your alliance" or "Alliance of X", lord count, new today / held from yesterday / grew today), separated by VS, then the lone lords
-  ("Lone wolf" when exactly one stands alone). Team colours come from `allianceGroups` in `js/replay/flow.js`.
+  ("Lone wolf" when exactly one stands alone). Lords sit two to a row in same-size tiles: banner, name, class and level, and the hero;
+  a lord who wins a mercenary band at the auction gets a small icon of it on the corner of their hero. Team colours come from `allianceGroups` in `js/replay/flow.js`.
 - In the replay, allied castles sit together in the side strip, outlined in the team colour (no lines across the map).
 - Team crests (`js/render/crests.js`): each alliance has a shield cut into one slice per lord in that lord's colour, with a white animal head
   (wolf, eagle, lion, bear, stag or boar, picked from the members so it is the same on every phone and different between alliances), an
