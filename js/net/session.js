@@ -4,7 +4,7 @@
 function refreshLiveWorld() {
   const ck = liveClock(), roster = rosterFor(ck.week), me = roster.findIndex(p => p.uid === LIVE.uid);
   DAY = ck.dayNo;
-  const L = seatLayout(roster.length, mapV2For(ck.week));
+  const L = seatLayout(roster.length, mapV2For(ck.week), mapV3For(ck.week));
   const TC = teamColours(); MY_COLOR = TC[LIVE.uid] || SEAT_COLORS[me]; MY_NAME = (LIVE.names[LIVE.uid] && LIVE.names[LIVE.uid].name) || "You";
   const prev = ck.dayNo > 1 ? addDays(ck.planDay, -1) : null, pts = standings(ck.week);
   RIVALS = roster.map((p, i) => ({ p, i })).filter(x => x.i !== me).map(({ p, i }) => {

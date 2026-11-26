@@ -117,7 +117,7 @@ function wBotDiplomacy(uid, dayKey, ids, rkm, feuds) {
 // opts (phones only): uid = whose device this is; nameOf, colours = how this device shows names and colours;
 // test = { mine } builds a practice fight from my unsaved orders against what is publicly known of my rivals.
 function buildBattleInputs(W, dayKey, opts = {}) {
-  const week = wWeekOf(W, dayKey), roster = wRoster(W, week), L = seatLayout(roster.length, mapV2For(week)), dayNo = wWeekdayOf(dayKey, W.config), final = dayNo === 7;
+  const week = wWeekOf(W, dayKey), roster = wRoster(W, week), L = seatLayout(roster.length, mapV2For(week), mapV3For(week)), dayNo = wWeekdayOf(dayKey, W.config), final = dayNo === 7;
   const pts = wStandings(W, week, addDays(dayKey, -1)), lead = Object.entries(pts).sort((a, b) => b[1] - a[1])[0];
   const TC = opts.colours || wTeamColours(roster.map(p => [p.uid, p]), (uid, p) => p.state && p.state.banner);
   const nameOf = opts.nameOf || (uid => lordLabel(W.players[uid]) || "A lord");

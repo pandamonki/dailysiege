@@ -7,10 +7,13 @@ const T = 48;
 // Bigger fields (wars starting on or after MAP_V2_FROM): the map is 4 tiles wider and taller, and each lord's field reaches further round the
 // castle and forward toward the centre (see zoneFor). Walls are capped at 5 and traps at 4 a battle from then too.
 let MAP_V2_FROM = "2026-11-18"; const mapV2For = week => String(week) >= MAP_V2_FROM;
+// Roomier fields (prototype, wars starting on or after MAP_V3_FROM; practice always): 4 tiles more again, so neighbouring castles stand about
+// 8.5 tiles apart instead of 6.7 (8 lords) and heroes no longer start inside each other's hunting range. Far off until a date is chosen.
+let MAP_V3_FROM = "2099-01-01"; const mapV3For = week => String(week) >= MAP_V3_FROM;
 let ZONE_V2 = false; // the layout this device shows uses the bigger fields
 function mapSizeFor(n) { return n <= 2 ? 11 : n <= 4 ? 13 : n <= 6 ? 15 : n <= 8 ? 17 : n <= 9 ? 19 : n <= 10 ? 21 : n <= 11 ? 23 : 25; }
-function seatLayout(n, v2) {
-  const size = mapSizeFor(n) + (v2 ? 4 : 0), c = (size - 1) / 2, R = c - 1, castles = [];
+function seatLayout(n, v2, v3) { // v3: the roomier prototype fields
+  const size = mapSizeFor(n) + (v2 ? 4 : 0) + (v3 ? 4 : 0), c = (size - 1) / 2, R = c - 1, castles = [];
   for (let i = 0; i < n; i++) { const a = Math.PI / 2 + 2 * Math.PI * i / n; castles.push([Math.round(c + R * dsin(a)), Math.round(c + R * dcos(a))]); }
   return { N: size, castles, ...(v2 ? { v2: true } : {}) };
 }
