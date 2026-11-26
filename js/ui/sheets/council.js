@@ -366,7 +366,7 @@ function ultPlanHTML() {
   const img = u && u.ic ? spellURL(u.ic, 64) : spellURL(S.cls + "_ult", 64);
   return `<div class="ritcard${armed ? " on" : ""}${!learned || cd ? " off" : ""}">${artImg(img, "ritart")}<div class="ritx"><small>${ultBolt()}Ultimate</small><b>${esc(learned ? u.name : "Not learned yet")}</b>
       <span class="muted">${!learned ? "Spend a skill point on an ultimate in the Hero screen first." : cd ? "Recharging: it was cast in the last battle and is ready again tomorrow." : "Once per battle, only on nights you plan it. It rests the next day."}</span></div></div>
-    ${learned && !cd ? `<button class="btn ${armed ? "wax" : "wood"}" data-act="ultarm" ${dis()}>${ultBolt()}${armed ? "Using it tonight ✓ (tap to cancel)" : "Use the ultimate tonight"}</button>${armed ? castWhenHTML(ultKey()) : ""}` : ""}`;
+    ${learned && !cd ? `<button class="btn ${armed ? "wax" : "wood"}" data-act="ultarm" ${dis()}>${ultBolt()}${armed ? "Using it tonight ✓ (tap to cancel)" : "Use the ultimate tonight"}</button>` : ""}`;
 }
 // the weekly ritual: one per war week, for a single battle
 function blessPlanHTML() {

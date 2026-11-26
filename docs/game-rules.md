@@ -86,8 +86,16 @@ practice games always stamp all of them (`js/sim/plans.js`).
 - Faster levelling (from 23 Nov, `lvlV2`): a hero starts at level 1 and gains at least 3 and at most 4 levels a battle (`MIN_GAIN_V2`,
   `XP_CAP_V2`), up to level 25 (`MAX_HERO_LVL_V4`), so after six battles it is level 19 to 25. Each level needs a flat 130 experience
   (`XP_V2`); about a third of heroes reach 4 in a battle. Each level adds 7% of base health and 5.25% of base attack (`HP_STEP_V4`,
-  `ATK_STEP_V4`; before it 12% and 9%), so a level 25 hero matches the old level 15. The ultimate still needs level 9.
-- Active skills cast themselves at their own best moment; a "Cast when" condition can be added on top.
+  `ATK_STEP_V4`; before it 12% and 9%), so a level 25 hero matches the old level 15. The ultimate needs level 12 (see Base skill and ultimate below).
+- **Base skill:** every class has one, shown above its three trees (`BASE_NODE` in `js/config/trees.js`): Warrior Ground Slam (a shockwave in a
+  line toward the nearest enemy: damage and a short slow), Shaman Healing Wave (a chain of light that heals the most wounded ally, then bounces to more), Rogue Shadow Step (steps behind a backline
+  target and strikes, keeping stealth), Mage Teleport (3 tiles toward the castle with a short shield when a melee enemy closes in) and
+  Ranger Piercing Shot (an arrow through a line of enemies). It has 3 ranks and a short recharge (8 to 14 seconds). **One point in it is
+  needed before any tree node can be learned.** Its points count as spent points but not towards a tree's gates.
+- **Ultimate:** needs hero level 12 and ten points in its own tree (the base skill does not count), so it is the 12th point at the
+  earliest: day 4 for a hero that levels fast (13 on day 4 needs four levels every battle), day 5 for everyone. A hero can learn only
+  one ultimate. The Mage's Arcane tree has Disrupt (a silence pulse) in place of the old Blink & Disrupt.
+- Active skills and ultimates cast themselves as soon as their own condition (written in each skill's description) holds and they have recharged. There is no "Cast when" choice for skill-tree heroes (removed 26 Nov). The ultimate is still planned for a night with "Plan the ultimate for tonight".
 - A fallen hero respawns at its castle (up to twice a battle, waiting longer at higher levels), except in sudden death.
 - From 20 Nov (`skV2`) every skill rank adds an even step worth at least about two thirds of rank 1 (`TREE_V2` in
   `js/config/trees.js`); older battles keep the old values.

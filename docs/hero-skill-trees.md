@@ -4,7 +4,7 @@ This spec replaces the current hero abilities (three abilities with four ranks, 
 each, an ultimate with three ranks, and Vigour) with three skill trees per hero. It is written for
 the model that implements it. Read all of it before you change any code.
 
-**Status: built and live from 12 Nov 2026 (see §10).** For the rules as they are now (level cap, gains per day,
+**Status: built and live from 12 Nov 2026 (see §10). Base skills and the later ultimate (§11) replace the 7-point, level 9 ultimate rule below.** For the rules as they are now (level cap, gains per day,
 how skills cast), `docs/game-rules.md` is the reference; the code in `js/config/trees.js` has the exact numbers.
 
 ---
@@ -721,3 +721,19 @@ hash exactly as before, and 10 new golden battles (62 to 71) cover skill-tree he
   Rallying Charge, Fortress Wall and Shadow Dance fire in under 70% of armed battles. The balance pass
   in §7 (first knobs: per-level growth, then T2 cooldowns, then ultimate damage) is still to do.
 - **Not done yet:** the in-game help text and the Spell book still describe the old abilities.
+
+## 11. Base skills (added 26 Nov 2026, while the game is in testing)
+
+Every class has one **base skill** above its three trees (`BASE_NODE` in `js/config/trees.js`, cast from `FN["<class>.3.0"]` in
+`js/sim/heroTrees.js`). The tree object carries it as `tree.base` (0 to 3) and the sim as a fourth row of `e.tr`, so `rk(e, 3, 0)` is its rank.
+
+- Warrior: Ground Slam (a line shockwave; first built as Battle Charge, changed to give the Warrior an area-damage skill). Rogue: Shadow Step. Mage: Teleport. Shaman: Healing Wave (a bouncing chain of light that heals). Ranger: Piercing Shot (the old first Ranger ability, back as the base skill).
+- One point opens every branch (each tree node now needs `base >= 1`). Base points count as spent points but not towards any gate.
+- The ultimate now needs **10 points in its tree** and **hero level 12** (`TREE_NEED[5]`, `TREE_ULT_LVL`), so with the base point it is the 12th point:
+  day 4 for a hero that levels fast, day 5 otherwise. This replaces the 7-point and level 9 rule in §1.2 and §1.3. One ultimate per hero.
+- The Mage's Arcane T2 Blink & Disrupt became **Disrupt** (silence pulse, no blink), because Teleport is now the base skill.
+- Casting: base skills are last in the cast order, after the ultimate and the branch triggers. They obey the "Cast when" choice (key `3.0`).
+- The game is not live, so none of this is date-gated: old saves and golden battles were regenerated.
+- Icons: `icons/skills/<class>_base.webp` (stand-ins until the painted art is added; see the prompt pack).
+
+**Update (26 Nov 2026):** Healing Wave is now a bouncing chain of light (like Chain Lightning, but it heals) that also heals the Shaman. The per-skill "Cast when" choice was removed from the hero and orders screens: every skill casts as soon as its own condition holds and it has recharged.

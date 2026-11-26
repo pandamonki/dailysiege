@@ -4,9 +4,14 @@
 // the id is remembered on their device, so changing the id is all it takes to show it again.
 // Only major changes players will notice, in two to five items. Fixes, tidy-ups and small balance tweaks don't belong here.
 const RELEASES = [
-  { id: "1.28", title: "What's new in v1.28", sub: "Mercenaries look like monsters now", items: [
+  { id: "1.29", title: "What's new in v1.29", sub: "Mercenaries look like monsters now", items: [
     ["New mercenary looks", "Trolls, orcs, ogres, centaurs, dark elves, necromancers and skeletons are drawn as creatures, so you can tell them from heroes and soldiers at a glance."],
     ["Gold coin over their heads", "Every mercenary in a battle replay carries a floating gold coin, replacing the old MERC label."],
+  ] },
+  { id: "1.28", title: "What's new in v1.28", sub: "A base skill for every hero, and later ultimates", items: [
+    ["A skill from level 1", "Every hero now has a base skill: Ground Slam, Healing Wave, Shadow Step, Teleport or Piercing Shot. One point opens the three trees."],
+    ["Later ultimates", "The ultimate now needs hero level 12 and ten points in its tree, so it arrives on day 4 for a fast-levelling hero and day 5 for the rest."],
+    ["Mage change", "The Arcane tree's Blink skill became Disrupt, since the Mage now teleports from the base skill."],
   ] },
   { id: "1.27", title: "What's new in v1.27", sub: "Army zones and the new rules reach every war", items: [
     ["Zones in every war", "Where you place soldiers sets their job (Guard, Front, left and right flanks), now in real wars as well as practice."],
