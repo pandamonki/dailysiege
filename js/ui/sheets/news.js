@@ -5,7 +5,7 @@
 // Only major changes players will notice, in two to five items. Fixes, tidy-ups and small balance tweaks don't belong here.
 const RELEASES = [
   { id: "1.27", title: "What's new in v1.27", sub: "A base skill for every hero, and later ultimates", items: [
-    ["A skill from level 1", "Every hero now has a base skill: Battle Charge, Healing Wave, Shadow Step, Teleport or Piercing Shot. One point opens the three trees."],
+    ["A skill from level 1", "Every hero now has a base skill: Ground Slam, Healing Wave, Shadow Step, Teleport or Piercing Shot. One point opens the three trees."],
     ["Later ultimates", "The ultimate now needs hero level 12 and ten points in its tree, so it arrives on day 4 for a fast-levelling hero and day 5 for the rest."],
     ["Mage change", "The Arcane tree's Blink skill became Disrupt, since the Mage now teleports from the base skill."],
   ] },

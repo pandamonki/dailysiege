@@ -210,7 +210,7 @@ function abilLines(k, r) {
 
 const PATCHES = [
   { v: "v1.27: base skills", date: "26 Nov", fixes: [], balance: [], changes: [
-    "Every hero has a base skill (Battle Charge, Healing Wave, Shadow Step, Teleport, Piercing Shot): 3 ranks, and one point opens the three trees.",
+    "Every hero has a base skill (Ground Slam, Healing Wave, Shadow Step, Teleport, Piercing Shot): 3 ranks, and one point opens the three trees.",
     "The ultimate needs hero level 12 and ten points in its tree. One ultimate per hero, as before.",
     "Mage: Blink & Disrupt is now Disrupt (silence only); the teleport is the base skill.",
   ] },

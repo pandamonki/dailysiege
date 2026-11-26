@@ -160,7 +160,7 @@ const TREES = {
 // The base skill: one per class, the same whichever branch you grow. Three ranks, one point opens the branches. It is a short, small skill
 // (a few seconds' recharge that does not shrink with rank) so it never replaces what the branches are for. Casts itself like a trigger skill.
 const BASE_NODE = {
-  warrior: TN("Battle Charge", "trigger", "", "Dashes to the nearest enemy hero or ranged attacker within 6 tiles for {0} + attack x.4 damage and a {1}s stun (half on heroes). Casts itself when one is more than 2.5 tiles away.", [[20, 32, 45], [.4, .6, .8]], ["#e2a33c", "slash", "arc", 1.2, "t"], 12),
+  warrior: TN("Ground Slam", "trigger", "", "Slams the ground and sends a shockwave 3.5 tiles toward the nearest enemy, hitting everything in the line for {0} + attack x.6 and slowing it 25% for 2s. Casts itself when 2+ enemies line up within 3.5 tiles, or an enemy hero is that close.", [[30, 48, 66]], ["#e2a33c", "slash", "arc", 1.6], 10),
   shaman: TN("Healing Wave", "trigger", "", "Heals the most wounded ally within 4 tiles for {0} + attack x.6. Casts itself when an ally nearby is below 70% health.", [[45, 70, 95]], ["#7fe08a", "totem", "heal", 2, "t"], 9),
   rogue: TN("Shadow Step", "trigger", "", "Steps behind the nearest enemy hero or backline unit within 5 tiles and strikes it for attack x{0}. Stealth is kept. Casts itself when one is more than 2 tiles away.", [[.8, 1.1, 1.4]], ["#9a6bd6", "dagger", "arc", 1, "t"], 10),
   mage: TN("Teleport", "trigger", "", "Teleports 3 tiles toward your castle and shields you for {0}% max health for 3s. Casts itself when a melee enemy gets within 1.5 tiles.", [[6, 10, 14]], ["#b48cff", "blink", "burst", 1.2], 14),

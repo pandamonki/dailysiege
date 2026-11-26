@@ -549,11 +549,14 @@ function makeTreeKit(X) {
     return { x, y };
   };
   // ---- base skills: one per class, whichever branch you grow (bi 3). Small and quick: the branches decide what the hero is for. ----
-  FN["warrior.3.0"] = e => { // Battle Charge
-    const t = minBy(foes(e, e.x, e.y, 6).filter(o => (o.kind === "champ" || backline(o)) && o.kind !== "castle" && !siege(o) && d(o, e) > 2.5), o => d(o, e)); if (!t) return false;
-    const L = d(e, t) || 1, nx = e.x + (t.x - e.x) / L * (L - .9), ny = e.y + (t.y - e.y) / L * (L - .9); if (X.wallAt(e, nx, ny)) return false;
-    aoe(e.x, e.y, .6, "#e2a33c", .4); e.x = nx; e.y = ny; slash(t, "#e2a33c");
-    deal(e, t, V(e, 3, 0, 0) + e.atk * .4, { aoe: 1, big: 1 }); if (live(t)) cc(t, "stun", V(e, 3, 0, 1)); return { x: t.x, y: t.y };
+  FN["warrior.3.0"] = e => { // Ground Slam: a shockwave in a line toward the nearest enemy
+    const rg = 3.5, fs = foes(e, e.x, e.y, rg + .5).filter(o => o.kind !== "castle");
+    const line = o => { const L = d(o, e) || 1, ux = (o.x - e.x) / L, uy = (o.y - e.y) / L; return { ux, uy, hit: fs.filter(q => { const px = q.x - e.x, py = q.y - e.y, pr = px * ux + py * uy; return pr > 0 && pr <= rg + .4 && Math.abs(px * uy - py * ux) <= .8; }) }; };
+    let best = null; fs.forEach(o => { if (d(o, e) > rg) return; const l = line(o), sc = l.hit.length * 10 + (o.kind === "champ" ? 5 : 0) - d(o, e) / 10; if (!best || sc > best.sc) best = { o, l, sc }; });
+    if (!best || (best.l.hit.length < 2 && best.o.kind !== "champ")) return false;
+    const { ux, uy, hit } = best.l, dm = V(e, 3, 0, 0) + e.atk * .6;
+    [1, 2, 3].forEach(k => aoe(e.x + ux * k, e.y + uy * k, .8, "#e2a33c", .5));
+    hit.forEach(q => { deal(e, q, dm, { aoe: 1, big: 1 }); if (live(q) && !siege(q)) setFx(q, "slow", 2, .25); }); return { x: e.x + ux * 1.5, y: e.y + uy * 1.5 };
   };
   FN["rogue.3.0"] = e => { // Shadow Step
     const c = ents.filter(o => !o.dead && o.kind !== "castle" && o.kind !== "totem" && !siege(o) && hostile(e.pid, o.pid) && X.fighting(o.pid) && X.vis(o, e) && d(o, e) > 2 && d(o, e) <= 5 && (o.kind === "champ" || backline(o)));

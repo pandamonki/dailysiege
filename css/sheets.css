@@ -640,15 +640,15 @@ details.fg-host[open] > summary { margin-bottom: 8px; }
 .wl .wnote { font-size: 11.5px; margin: 6px 0 2px; }
 .wl .irow { font-size: 13px; }
 .wl .pips { display: flex; gap: 3px; flex: none; }
-/* the class's base skill: a card above the three trees */
-.tbase { display: flex; align-items: center; gap: 12px; width: 100%; margin-bottom: 8px; padding: 8px 12px; background: rgba(62,39,20,.08); border: 2px solid rgba(62,39,20,.3); border-radius: 10px; color: var(--ink); cursor: pointer; text-align: left; font: inherit; }
-.tbase .ti { position: relative; width: 46px; height: 46px; flex: none; }
-.tbase .ti img { width: 100%; height: 100%; border-radius: 10px; border: 3px solid var(--wood); background: #caa66b; object-fit: cover; display: block; }
-.tbase .ti .rk { position: absolute; right: -5px; bottom: -5px; background: #4a4038; color: #f1e6cc; font: 700 10px/1 var(--f-body, serif); font-style: normal; padding: 3px 4px; border-radius: 3px; border: 1px solid rgba(255,255,255,.55); }
-.tbase .ti .cdt { position: absolute; left: -6px; top: -6px; display: inline-flex; align-items: center; gap: 1px; padding: 1px 3px 1px 2px; border-radius: 7px; background: rgba(20,12,6,.85); color: #ffe7b0; font: 700 9px/1 var(--f-body); font-style: normal; border: 1px solid rgba(255,231,176,.5); }
-.tbase .ti .cdt .clk { width: 9px; height: 9px; }
-.tbase .tbt b { display: block; font-size: 16px; font-variant: small-caps; }
-.tbase .tbt small { color: #6b5a3e; font-size: 12px; }
-.tbase.st-learned .ti img, .tbase.st-maxed .ti img { border-color: var(--verdant); }
-.tbase.st-avail .ti img { border-color: var(--gold); box-shadow: 0 0 8px 1px rgba(201,150,47,.9); }
-.tbase.sel { border-color: var(--wax); }
+/* the class's base skill is the trunk under the three trees: a node with a line up into each tree */
+.tcols.trunked .tn.base .ti::after { display: none; }
+.trunk { --lc: #8a7a62; position: relative; isolation: isolate; display: flex; justify-content: center; padding-top: 36px; margin-bottom: 4px; }
+.trunk.on { --lc: var(--verdant); }
+.trunk .tbar { position: absolute; top: 0; left: calc(100% / 6); right: calc(100% / 6); height: 14px; border: 5px solid var(--lc); border-top: 0; border-radius: 0 0 8px 8px; z-index: -1; }
+.trunk .tbar::before { content: ""; position: absolute; left: 50%; bottom: 0; width: 5px; height: 14px; margin-left: -2.5px; background: var(--lc); }
+.trunk .tn .ti { width: 50px; height: 50px; }
+.trunk .tn .ti::before { height: 22px; background: var(--lc); }
+.trunk .tn .tl { font-size: 11px; max-width: 110px; }
+.trunk .tn.st-avail .ti img { border-color: var(--gold); box-shadow: 0 0 8px 1px rgba(201,150,47,.9); }
+.trunk .tn.st-learned .ti img, .trunk .tn.st-maxed .ti img { border-color: var(--verdant); }
+.trunk .tn.st-wait .ti img { border-color: #a58a55; }

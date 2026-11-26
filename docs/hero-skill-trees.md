@@ -727,7 +727,7 @@ hash exactly as before, and 10 new golden battles (62 to 71) cover skill-tree he
 Every class has one **base skill** above its three trees (`BASE_NODE` in `js/config/trees.js`, cast from `FN["<class>.3.0"]` in
 `js/sim/heroTrees.js`). The tree object carries it as `tree.base` (0 to 3) and the sim as a fourth row of `e.tr`, so `rk(e, 3, 0)` is its rank.
 
-- Warrior: Battle Charge. Rogue: Shadow Step. Mage: Teleport. Shaman: Healing Wave. Ranger: Piercing Shot (the old first Ranger ability, back as the base skill).
+- Warrior: Ground Slam (a line shockwave; first built as Battle Charge, changed to give the Warrior an area-damage skill). Rogue: Shadow Step. Mage: Teleport. Shaman: Healing Wave. Ranger: Piercing Shot (the old first Ranger ability, back as the base skill).
 - One point opens every branch (each tree node now needs `base >= 1`). Base points count as spent points but not towards any gate.
 - The ultimate now needs **10 points in its tree** and **hero level 12** (`TREE_NEED[5]`, `TREE_ULT_LVL`), so with the base point it is the 12th point:
   day 4 for a hero that levels fast, day 5 otherwise. This replaces the 7-point and level 9 rule in §1.2 and §1.3. One ultimate per hero.

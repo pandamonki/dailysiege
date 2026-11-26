@@ -125,10 +125,10 @@ for (const name of engines) {
     await tap("#twistbtn"); await tap('#twistpop [data-act="opentoday"]'); if (!(await page.locator('#sheet [data-act="cxpick"]').count())) throw new Error("the contracts tab didn't open"); await closeAll();
     await tap("#twistbtn"); await tap('#twistpop [data-act="sealgo"][data-v="strategy"]'); if (!(await page.locator("#sheet #tgtlist").count())) throw new Error("the targets didn't open"); await closeAll(); });
   await step("the base skill opens the trees: learn it, then a first tree skill", async () => { await tap('#cmdbar [data-act="openhero"]');
-    if (!(await page.locator("#sheet .tbase").count())) throw new Error("no base skill card on the hero screen");
+    if (!(await page.locator("#sheet .trunkn").count())) throw new Error("no base skill node on the hero screen");
     const before = await js(() => freePts());
     if (before > 1) {
-      await tap("#sheet .tbase"); const l = page.locator('#sheet [data-act="tlearn"]:not([disabled])'); if (!(await l.count())) throw new Error("the base skill cannot be learned");
+      await tap("#sheet .trunkn"); const l = page.locator('#sheet [data-act="tlearn"]:not([disabled])'); if (!(await l.count())) throw new Error("the base skill cannot be learned");
       await l.first().click(); await page.waitForTimeout(150); if (!(await js(() => S.tree.base === 1))) throw new Error("the base skill was not learned"); if ((await js(() => freePts())) >= before) throw new Error("no point was spent");
       await tap('#sheet [data-act="tnode"][data-v="0.0"]'); if (!(await page.locator('#sheet [data-act="tlearn"]:not([disabled])').count())) throw new Error("a tree's first skill should open once the base skill is learned");
     }

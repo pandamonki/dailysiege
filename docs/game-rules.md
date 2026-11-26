@@ -87,8 +87,8 @@ practice games always stamp all of them (`js/sim/plans.js`).
   `XP_CAP_V2`), up to level 25 (`MAX_HERO_LVL_V4`), so after six battles it is level 19 to 25. Each level needs a flat 130 experience
   (`XP_V2`); about a third of heroes reach 4 in a battle. Each level adds 7% of base health and 5.25% of base attack (`HP_STEP_V4`,
   `ATK_STEP_V4`; before it 12% and 9%), so a level 25 hero matches the old level 15. The ultimate needs level 12 (see Base skill and ultimate below).
-- **Base skill:** every class has one, shown above its three trees (`BASE_NODE` in `js/config/trees.js`): Warrior Battle Charge (dash to an
-  enemy hero or ranged unit, brief stun), Shaman Healing Wave (heals the most wounded ally), Rogue Shadow Step (steps behind a backline
+- **Base skill:** every class has one, shown above its three trees (`BASE_NODE` in `js/config/trees.js`): Warrior Ground Slam (a shockwave in a
+  line toward the nearest enemy: damage and a short slow), Shaman Healing Wave (heals the most wounded ally), Rogue Shadow Step (steps behind a backline
   target and strikes, keeping stealth), Mage Teleport (3 tiles toward the castle with a short shield when a melee enemy closes in) and
   Ranger Piercing Shot (an arrow through a line of enemies). It has 3 ranks and a short recharge (8 to 14 seconds). **One point in it is
   needed before any tree node can be learned.** Its points count as spent points but not towards a tree's gates.
