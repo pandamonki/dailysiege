@@ -88,6 +88,9 @@ for (const name of engines) {
     await tap('#sheet [data-act="mstep"][data-v="1"]'); if (await js(k => !!(S.bids || {})[k], k)) throw new Error("+ placed a bid on its own");
     await tap('#sheet [data-act="msubmit"]'); if ((await js(k => (S.bids[k] || {}).gold, k)) !== lo + 10) throw new Error("Place bid did not bid the shown amount");
     if (!(await js(b => document.querySelector("#sheet .mhead").innerText.includes(String(b)), lo + 10))) throw new Error("the group's card does not show your bid"); await js(k => { delete S.bids[k]; }, k); await closeAll(); });
+  await step("every mercenary has its own creature sprite in every pose, and the gold coin tag exists", async () => {
+    const bad = await js(() => { const out = []; for (const k of Object.keys(MERC_UNITS)) for (const pose of ["", "w0", "w1", "w2", "w3", "a1", "a2"]) { const cv = spr(k, "#3a7bd5", pose); if (!MERC_ART[k] || !cv.width || !cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data.some((v, i) => i % 4 === 3 && v)) out.push(k + " " + pose); } if (!mercCoin().width) out.push("coin"); return out; });
+    if (bad.length) throw new Error("mercenary sprites missing: " + bad.join(", ")); });
   await step("compare and buy a tower upgrade", async () => { await closeAll(); await js(() => { S.castle = 3; const t = S.traps.find(x => x.type === "tower"); t.tk = "tower2"; render(); });
     await tap('#cmdbar [data-v="keep"]'); await tap('#sheet .tabs button:has-text("Defences")'); await tap('#sheet [data-act="dsel"][data-v="tw1"]');
     if (!(await page.locator("#sheet .cmp").count())) throw new Error("no stats comparison"); await tap('#sheet [data-act="tpick"][data-v="towerS"]');

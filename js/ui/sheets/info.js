@@ -209,6 +209,9 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "v1.28: mercenaries look like monsters", date: "26 Nov", fixes: [], balance: [], changes: [
+    "Mercenaries have new creature sprites (troll, orc, ogre, centaur, dark elf, necromancer, skeleton) and a floating gold coin over their heads in replays instead of the MERC label.",
+  ] },
   { v: "v1.27: the new rules in every war", date: "26 Nov", fixes: [], balance: [], changes: [
     "From the 26 Nov battle, real wars use the practice rules: army zones, Front plans and flanks, army temper, three carried-over targets, fixed battle timing, stronger talents and items, rivals that answer their attackers, and mercenaries that arrive 10 seconds in.",
     "Wars use the roomier map.",
