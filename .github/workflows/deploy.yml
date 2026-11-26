@@ -1,7 +1,10 @@
 name: Deploy
 
 # Every push to main goes live: the game (Hosting), the security rules and the server functions.
-# It runs the same tests as CI first and deploys only if they pass.
+# It runs the same tests as CI first and deploys only if they pass, with one exception: when the code being deployed is
+# byte for byte the code CI already passed on the pull request (the pull request had every change from main in it), the
+# tests are skipped, since they would only repeat. Anything doubtful (a manual run, no pull request found, main moved on
+# since CI ran, CI not green) runs the tests as before.
 # A push that changes only Markdown files (notes and docs, none of which are served) does not deploy.
 on:
   push:
@@ -11,6 +14,8 @@ on:
 
 permissions:
   contents: read
+  actions: read
+  pull-requests: read
 
 concurrency:
   group: deploy-production
@@ -22,7 +27,40 @@ env:
   SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DAILY_SIEGE || secrets.FIREBASE_SERVICE_ACCOUNT || secrets.GCP_SA_KEY }}
 
 jobs:
+  # Was this exact code already tested by CI on its pull request? Any failure here just means "run the tests".
+  precheck:
+    runs-on: ubuntu-latest
+    outputs:
+      skip: ${{ steps.same.outputs.skip }}
+    steps:
+      - id: same
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          skip=false
+          if [ "$EVENT" = "push" ]; then
+            head=$(gh api "repos/$REPO/commits/$SHA/pulls" --jq '[.[] | select(.merged_at != null)] | first | .head.sha // empty')
+            if [ -n "$head" ]; then
+              deployed=$(gh api "repos/$REPO/git/commits/$SHA" --jq .tree.sha)
+              tested=$(gh api "repos/$REPO/git/commits/$head" --jq .tree.sha)
+              ci=$(gh api "repos/$REPO/actions/workflows/ci.yml/runs?head_sha=$head&event=pull_request&per_page=1" --jq '.workflow_runs[0].conclusion // "none"')
+              echo "pull request head $head: code $tested, deploying code $deployed, CI $ci"
+              if [ "$deployed" = "$tested" ] && [ "$ci" = "success" ]; then skip=true; fi
+            else
+              echo "no merged pull request found for this commit"
+            fi
+          fi
+          echo "skip=$skip" >> "$GITHUB_OUTPUT"
+          echo "skip the tests: $skip"
+
   test:
+    needs: precheck
+    # always(): if the precheck itself broke, run the tests rather than skip them
+    if: ${{ always() && needs.precheck.outputs.skip != 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -37,7 +75,9 @@ jobs:
       - run: npm run test:rules
 
   deploy:
-    needs: test
+    needs: [precheck, test]
+    # ship when the tests passed, or were skipped on purpose because CI already passed on this exact code
+    if: ${{ !cancelled() && (needs.test.result == 'success' || (needs.test.result == 'skipped' && needs.precheck.outputs.skip == 'true')) }}
     runs-on: ubuntu-latest
     steps:
       - name: Check the deploy key is present
