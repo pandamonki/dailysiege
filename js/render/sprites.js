@@ -206,7 +206,7 @@ function spr(key, color = YOU_COLOR, pose = "") {
       const dark = mixHex(color, "#000000", key === "c-rogue" ? .78 : .68), darker = mixHex(color, "#000000", key === "c-rogue" ? .86 : .78), bright = mixHex(color, "#ffffff", .12);
       sp.b = bright; sp.a = dark; if ("sh" in sp) sp.sh = bright; if (sp.hc) sp.hc = darker;
       if (key === "c-shaman") { sp.hc = bright; sp.sash = 1; }
-      if (key === "c-mage") sp.g = bright; } // the wizard hat band matches the trim
+      if (key === "c-mage") { sp.g = bright; sp.f = bright; sp.a = bright; sp.b = dark; } } // the wizard wears the full trim colour on robe, hat band and staff tip, with a dark belt and hat
     else if (color !== YOU_COLOR) ["b", "sh"].forEach(k => { if (sp[k] === YOU_COLOR) sp[k] = color; });
     SPR[id] = buildSprite(sp, pose);
   }
