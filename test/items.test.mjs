@@ -45,3 +45,25 @@ test("bigger fields are equal: every lord in a war has the same number of tiles 
   const r = JSON.parse(sim.run(`JSON.stringify([...Array(11)].map((_, i) => { const n = i + 2, L = seatLayout(n, true); return new Set(L.castles.map(c => [...zoneFor(c, L.N, L.castles, true)].filter(k => { const [a, b] = k.split(",").map(Number); return !treeTile(a, b, n, L.N); }).length)).size; }))`));
   assert.ok(r.every(x => x === 1), JSON.stringify(r));
 });
+
+// Aura items v2 (plans stamped auraV2): late-game prices, no aura above 30%, Mender's Charms do not stack
+test("auraV2: the Banner, Iron Standard and Pipe are late-game items costing 400 to 500 gold", () => {
+  for (const k of ["banner", "standard", "pipe"]) {
+    const c = sim.run(`itemCost(${JSON.stringify(k)})`), tier = sim.run(`ITEMS.${k}.tier`);
+    assert.equal(tier, 3, `${k} tier`); assert.ok(c >= 400 && c <= 500, `${k} costs ${c}`);
+  }
+});
+test("auraV2: no aura item is stronger than 30%", () => {
+  const cap = sim.get("AURA_V2").cap; assert.equal(cap, .3);
+  assert.ok(sim.get("STANDARD_V5") <= cap, "Iron Standard"); assert.ok(.12 * sim.get("AURA_BOOST") <= cap, "Banner of Might");
+  assert.match(sim.run(`itemDesc("pipe", "2026-11-27")`), /30% less damage/);
+  assert.match(sim.run(`itemDesc("mender", "2026-11-27")`), /do not stack/);
+});
+test("auraV2 starts on its battle day, so earlier battles replay as fought", () => {
+  assert.equal(sim.run(`auraV2For("2026-11-26")`), false); assert.equal(sim.run(`auraV2For("2026-11-27")`), true);
+});
+test("auraV2: a battle where every hero carries all four aura items still runs", () => {
+  const r = sim.run(`(() => { const c = goldenCase(2), run = v => { const pl = JSON.parse(JSON.stringify(c.plans)); pl.forEach(p => { p.items = ["banner", "standard", "pipe", "mender"]; p.auraV2 = v; });
+    const b = runBattle(pl, c.seed, Object.assign({}, c.opts, { fast: true })); return b.meta.filter(m => m.kind === "champ").reduce((a, m) => a + (m.tel ? m.tel.healed : 0), 0); }; return { old: run(false), now: run(true) }; })()`);
+  assert.ok(Number.isFinite(r.now) && Number.isFinite(r.old), JSON.stringify(r));
+});
