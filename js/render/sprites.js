@@ -25,16 +25,6 @@ const SPECS = {
   catapult:    { cat: 1, a: "#5a3f24", b: YOU_COLOR },
   mage:        { a: "#5a3f8f", b: YOU_COLOR, hc: "#42306b", head: "wizard", weapon: "staff", f: "#9fd8ff", robe: 1 },
   sniper:      { a: "#7a5a32", b: YOU_COLOR, hc: "#8a4a22", head: "dwarf", weapon: "rifle" },
-  trollw:      { a: "#5f8a3a", b: YOU_COLOR, hc: "#3f6a2a", head: "horned", weapon: "axe" },
-  orc:         { a: "#4a7a3a", b: YOU_COLOR, hc: "#2f5a22", head: "band", weapon: "axe" },
-  centaur:     { a: "#8a5a2c", b: YOU_COLOR, hc: "#c9a46a", head: "band", weapon: "bow" }, // mercenaries: palettes and heads no hero uses
-  delf:        { a: "#6a2f86", b: YOU_COLOR, hc: "#d8d0f0", head: "band", weapon: "daggers" },
-  ogre:        { a: "#8a7a4a", b: YOU_COLOR, hc: "#6a5a30", head: "horned", weapon: "axe" },
-  necro:       { a: "#1f3d2c", b: YOU_COLOR, hc: "#3a2a4a", head: "horned", weapon: "staff", f: "#7fe08a", robe: 1 },
-  skel:        { a: "#d9d4c0", b: YOU_COLOR, hc: "#d9d4c0", head: "helmet", weapon: "swordshield" },
-  ogre2:       { a: "#8a7a4a", b: YOU_COLOR, hc: "#6a5a30", head: "horned", weapon: "axe" },
-  necro2:      { a: "#1f3d2c", b: YOU_COLOR, hc: "#3a2a4a", head: "horned", weapon: "staff", f: "#7fe08a", robe: 1 },
-  skel2:       { a: "#d9d4c0", b: YOU_COLOR, hc: "#d9d4c0", head: "helmet", weapon: "swordshield" },
   guard:       { a: "#5d6672", b: "#e2b33c", sh: "#e2b33c", head: "greathelm", weapon: "swordshield" },
   militia:     { a: "#8a7d66", b: YOU_COLOR, sh: YOU_COLOR, hc: "#6b5a40", head: "cap", weapon: "swordshield" },
 };
@@ -200,6 +190,7 @@ function towerSprite(key, color) {
 function spr(key, color = YOU_COLOR, pose = "") {
   const id = key + "|" + color + (pose ? "|" + pose : "");
   if (!SPR[id] && SPECS[key] && SPECS[key].tower) SPR[id] = towerSprite(key, color);
+  if (!SPR[id] && MERC_ART[key]) SPR[id] = mercSprite(key, color, pose); // mercenaries are creatures, not soldiers: their own art in mercSprites.js
   if (!SPR[id]) {
     const sp = { ...SPECS[key] };
     if (key.startsWith("c-")) { // heroes wear two tones of the lord's colour: the bright colour for trim, sashes and shields, a dark shade for the outfit
