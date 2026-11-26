@@ -209,10 +209,15 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
-  { v: "v1.27: base skills", date: "26 Nov", fixes: [], balance: [], changes: [
+  { v: "v1.28: base skills", date: "26 Nov", fixes: [], balance: [], changes: [
     "Every hero has a base skill (Ground Slam, Healing Wave, Shadow Step, Teleport, Piercing Shot): 3 ranks, and one point opens the three trees.",
     "The ultimate needs hero level 12 and ten points in its tree. One ultimate per hero, as before.",
     "Mage: Blink & Disrupt is now Disrupt (silence only); the teleport is the base skill.",
+    "The \"Cast when\" choice is gone: every skill casts as soon as its own condition holds and it has recharged.",
+  ] },
+  { v: "v1.27: the new rules in every war", date: "26 Nov", fixes: [], balance: [], changes: [
+    "From the 26 Nov battle, real wars use the practice rules: army zones, Front plans and flanks, army temper, three carried-over targets, fixed battle timing, stronger talents and items, rivals that answer their attackers, and mercenaries that arrive 10 seconds in.",
+    "Wars use the roomier map.",
   ] },
   { v: "v1.26: practice changes", date: "26 Nov", fixes: ["Practice no longer favours some seats with the new battle timing."], balance: [], changes: [
     "Practice: up to three targets in order, kept from day to day and confirmed each day; roomier maps; talents 25% and item bonuses 15% stronger.",
