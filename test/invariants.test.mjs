@@ -395,18 +395,14 @@ test("zones v1: soldiers never stay stuck behind their own walls", () => {
   assert.deepEqual(bad, [], "stuck soldiers");
 });
 
-test("agency pass (tuneV1): a hero's main tree suits one Front plan, and bots answer yesterday's attacker", () => {
+test("agency pass (tuneV1): bots answer yesterday's attacker", () => {
   const r = JSON.parse(sim.run(`(() => { const L = seatLayout(8, true), ids = [...Array(8)].map((_, k) => "a" + k);
-    const tr = emptyTree(); tr.b1 = [4, 1, 0, 0, 0, 0]; // 5 points in the Warrior's first tree (Vanguard)
-    const suits = treePlanOf("warrior", tr), none = treePlanOf("warrior", emptyTree());
     // yesterday a1 (beside a0) sent a Siege Front at a0: today a0 takes the plan that beats Siege and screens a1's side
     const prev = ids.map((pid, k) => ({ pid, front: k === 1 ? "siege" : "assault", targets: k === 1 ? ["a0"] : [] }));
     const zone = zoneFor(L.castles[0], L.N, L.castles, L.v2), p = lordBotPlan({ uid: "a0", cls: "warrior", i: 0, ids, L, zone, dayNo: 4, lvl: 10, v2: true, v3: true, fair: true, pick: true, ranks: {}, sup: true, defV2: true, zv: true, prev });
     const side = ["left", "right"].find(s => flankNeighbour(L.castles, 0, s, L.N) === 1);
     const q = lordBotPlan({ uid: "a2", cls: "warrior", i: 2, ids, L, zone: zoneFor(L.castles[2], L.N, L.castles, L.v2), dayNo: 4, lvl: 10, v2: true, v3: true, fair: true, pick: true, ranks: {}, sup: true, defV2: true, zv: true, prev });
-    return JSON.stringify({ suits, none, front: p.front, beatsSiege: FRONT_BEATS[p.front] === "siege", side, flank: side && p.flanks[side], react: p.react, untouched: q.react || null, qfront: q.front, qbuild: BOT_ZONES[q.build].front }); })()`));
-  assert.equal(r.suits, "hill", "5 points in Vanguard suit Hold the hill");
-  assert.equal(r.none, null, "no points, no plan");
+    return JSON.stringify({ front: p.front, beatsSiege: FRONT_BEATS[p.front] === "siege", side, flank: side && p.flanks[side], react: p.react, untouched: q.react || null, qfront: q.front, qbuild: BOT_ZONES[q.build].front }); })()`));
   assert.ok(r.beatsSiege, `a bot hit by a Siege Front took ${r.front}, which doesn't beat Siege`);
   assert.equal(r.react, "a1");
   assert.ok(r.side && r.flank === "screen", "the bot screens the side its attacker came from");

@@ -179,4 +179,3 @@
 .gr-zone button i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
 .gr-zone button.on { border: 2px solid var(--wax); background: rgba(142,42,32,.12); font-weight: 700; }
 .gr-zone button:disabled { opacity: .5; }
-.zok { color: var(--verdant); font-size: 14px; margin: 2px 0 6px; font-weight: 700; }

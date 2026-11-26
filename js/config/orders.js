@@ -103,16 +103,10 @@ const CASTLE_ALERT_N = 3, TERRITORY_R = 5, FALLBACK_LINGER = 4, SIEGE_REACH = 1.
 // the same rivals give (nearly) the same battle, and only the real percentage chances (dodges, crits, misses, procs) stay random.
 let TIME_V1_FROM = "2099-01-01"; const timeV1For = d => String(d) >= TIME_V1_FROM;
 const fixedFrac = k => { const x = k * .6180339887498949; return x - Math.floor(x); }; // an even spread in [0, 1) by place, the same on every device
-// Agency pass (plans stamped tuneV1, battles from TUNE_V1_FROM; practice always): talents and items count for more, a hero's main tree suits one
-// Front plan, and bots answer whoever attacked them the day before. Far off for now, so only practice uses it.
+// Agency pass (plans stamped tuneV1, battles from TUNE_V1_FROM; practice always): talents and items count for more, and bots answer whoever
+// attacked them the day before. Far off for now, so only practice uses it.
 let TUNE_V1_FROM = "2099-01-01"; const tuneV1For = d => String(d) >= TUNE_V1_FROM;
 const TALENT_X = 1.25, ITEM_X = 1.15; // every talent value, and the stats items add (health, attack, block, speed, lifesteal, thorns), are this much stronger
-// each class's three trees, in order, and the Front plan each suits. A hero leading the Front, whose main tree (the one with most points, at least
-// TREE_PLAN_MIN) suits the Front's plan, deals TREE_PLAN_HERO more damage, and the Front's soldiers TREE_PLAN_ARMY more
-const TREE_PLAN = { warrior: ["hill", "hunt", "assault"], shaman: ["siege", "hill", "assault"], rogue: ["hunt", "siege", "assault"], mage: ["siege", "hill", "assault"], archer: ["assault", "hill", "hunt"] };
-const TREE_PLAN_MIN = 5, TREE_PLAN_HERO = 1.12, TREE_PLAN_ARMY = 1.08;
-// the Front plan a hero's skill tree suits, or null (tree: { b1, b2, b3 } of ranks)
-function treePlanOf(cls, tree) { const t = TREE_PLAN[cls]; if (!t || !tree) return null; let best = -1, bp = 0; ["b1", "b2", "b3"].forEach((b, i) => { const pts = (tree[b] || []).reduce((s, x) => s + (x || 0), 0); if (pts > bp) { bp = pts; best = i; } }); return best >= 0 && bp >= TREE_PLAN_MIN ? t[best] : null; }
 let ZONE_V1_FROM = "2099-01-01"; const zoneV1For = d => String(d) >= ZONE_V1_FROM;
 const ZONES = ["guard", "left", "front", "right"], ZONE_INFO = { guard: ["Guard", "Stays at home and defends the castle"], left: ["Left flank", "Holds or raids your left side"], front: ["Front", "Marches on your #1 target"], right: ["Right flank", "Holds or raids your right side"] };
 const ZONE_COL = { guard: "#8a5cf0", left: "#e0453a", front: "#29c6e8", right: "#f2b632" }; // purple, red, cyan, amber: easy to tell apart, and none of them green like the grass

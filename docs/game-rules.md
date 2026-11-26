@@ -32,7 +32,7 @@ practice games always stamp all of them (`js/sim/plans.js`).
 | 23 Nov | `finV2` | Final-day alliances: day 7 pacts hold until one alliance is all that is left, then break and the allies fight on |
 | 23 Nov | `lvlV2` | Faster levelling: 3 to 4 levels a battle, up to level 25, smaller steps per level |
 | Prototype (practice only) | `timeV1` | Fixed timing: opening swings and hero skill cooldowns by place in the line-up, not the battle's dice (see The battle) |
-| Prototype (practice only) | `tuneV1` | Agency pass: talents 25% and item stats 15% stronger, a hero's main tree suits a Front plan, bots answer yesterday's attacker (see Agency pass) |
+| Prototype (practice only) | `tuneV1` | Agency pass: talents 25% and item stats 15% stronger, bots answer yesterday's attacker (see Agency pass) |
 | Prototype (practice only) | `zoneV1` | Zones: placement sets each soldier's job, one #1 target, Front plans, flank plans, army temper, hill points, sudden-death damage tiebreak (see Zones) |
 
 ## The war
@@ -201,11 +201,6 @@ Practice always uses it; real wars from `TUNE_V1_FROM` in `js/config/orders.js`,
 
 - **Talents:** every skill-tree value is 25% stronger (`TALENT_X`), and the hero screen shows the stronger values.
 - **Items:** the health, attack, block, speed, lifesteal and thorns that items add are 15% stronger (`ITEM_X`).
-- **A tree suits a Front plan:** each class's three trees each suit one Front plan (`TREE_PLAN`): Warrior Vanguard Hold the hill,
-  Berserker Hero hunt, Tactician Assault; Shaman Storm Siege, Totemic Hold the hill, Ancestral Assault; Rogue Shadow Hero hunt, Venom
-  Siege, Duelist Assault; Mage Pyromancy Siege, Frost Hold the hill, Arcane Assault; Archer Marksman Assault, Trapper Hold the hill,
-  Sniper Hero hunt. When the hero's main tree (the one with most points, at least 5) suits the Front's plan and the hero stands in the
-  Front, the hero deals 12% more damage and the Front's soldiers 8% more. The Strategy tab stars the plan that suits the build.
 - **Bots answer their attacker:** a bot whose castle was some lord's #1 target in the last battle takes the Front plan that beats that
   lord's Front plan, and, if that lord is its neighbour, screens that side and moves a soldier there (`botReact` in `js/sim/bots.js`).
   Practice rivals do the same with the player's orders from the last practice battle.

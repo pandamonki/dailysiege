@@ -189,7 +189,7 @@ function runBattle(plans, seed, opts = {}) {
       targets: (pl.targets || []).slice(), ordV2: !!pl.ordV2, armyPlan: ARMY_PLANS.includes(pl.armyPlan) ? pl.armyPlan : "conquest", fallback: FALL_BACKS.includes(pl.fallback) ? pl.fallback : "none", fallbackUntil: 0, hitT: -9, castleHitT: -9, castleHitBy: null, trapT: -9, pacts: new Set(), hostileTo: new Set(pl.hostile), revenge: new Set(), feud: new Set(), bell: false, retreatT: -99, elimT: null };
   });
   if (ZV) { const cs = plans.map(q => q.castle); plans.forEach((pl, i) => { if (!pl.zoneV1) return; const p = P[pl.pid];
-    p.zv = true; p.front = FRONT_PLANS.includes(pl.front) ? pl.front : "assault"; p.syn = !!pl.tuneV1 && HV3 && treePlanOf(pl.cls, pl.tree) === (FRONT_PLANS.includes(pl.front) ? pl.front : "assault"); // agency pass: the hero's main tree suits the Front's plan p.flanks = cleanFlanks(pl.flanks); p.temper = TEMPERS.includes(pl.temper) ? pl.temper : "steady";
+    p.zv = true; p.front = FRONT_PLANS.includes(pl.front) ? pl.front : "assault"; p.flanks = cleanFlanks(pl.flanks); p.temper = TEMPERS.includes(pl.temper) ? pl.temper : "steady";
     p.stance = TEMPER_STANCE[p.temper]; p.fallback = TEMPER_FALLBACK[p.temper]; p.armyPlan = FRONT_ARMY[p.front];
     p.nb = {}; p.screenAt = {}; p.screenSeen = { left: 0, right: 0 }; p.pushed = {};
     ["left", "right"].forEach(side => { const k = flankNeighbour(cs, i, side, NN); if (k < 0) return; const q = plans[k], [r0, c0] = pl.castle, [r1, c1] = q.castle, L = hyp(c1 - c0, r1 - r0) || 1;
@@ -484,8 +484,7 @@ function runBattle(plans, seed, opts = {}) {
     if (ZV) { const ps = src && P[src.pid], pt = P[tgt.pid]; // zones v1: the army temper, and the Front plan that beats the other's
       if (ps && ps.zv && src.kind !== "castle") m *= TEMPER_DMG[ps.temper];
       if (pt && pt.zv && tgt.kind !== "castle") m *= TEMPER_TAKEN[pt.temper];
-      if (ps && pt && ps.zv && pt.zv && src.job === "front" && tgt.job === "front" && FRONT_BEATS[ps.front] === pt.front) m *= FRONT_BEAT_X;
-      if (ps && ps.syn && src.job === "front" && ps.champ && ps.champ.job === "front") m *= src.kind === "champ" ? TREE_PLAN_HERO : TREE_PLAN_ARMY; } // a hero leading the Front it is built for
+      if (ps && pt && ps.zv && pt.zv && src.job === "front" && tgt.job === "front" && FRONT_BEATS[ps.front] === pt.front) m *= FRONT_BEAT_X;} 
     // attack type against armour type (the only matchup rule)
     { let at = o.atype || (src && src.atype) || "pure", ar = tgt.armour || "medium"; if (BV5) { if (src && src.kind === "champ" && !o.atype) at = "hero"; if (tgt.kind === "champ") ar = "hero"; } m *= V4 && at === "magic" && ar === "fortified" ? MAGIC_VS_FORT : TYPE_TABLE[at][ar]; }
     if (src && src.vsEngine && (tgt.cart || tgt.ram || tgt.cat)) m *= src.vsEngine; // a Fire Tower's burning arrows against siege engines
