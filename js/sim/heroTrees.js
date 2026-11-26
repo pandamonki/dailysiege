@@ -569,9 +569,15 @@ function makeTreeKit(X) {
     if (e.orphan || !foes(e, e.x, e.y, 1.5).some(o => (o.range || 1.1) < 1.5 && o.kind !== "castle" && !siege(o))) return false;
     const sx = e.x, sy = e.y, p = P[e.pid]; X.blink(e, p.castle.x, p.castle.y); addShield(e, e.maxhp * V(e, 3, 0, 0) / 100, 3); return { x: sx, y: sy };
   };
-  FN["shaman.3.0"] = e => { // Healing Wave
-    const t = minBy(friendsNear(e.pid, e.x, e.y, 4).filter(o => !o.dead && (o.kind === "unit" || o.kind === "summon" || o.kind === "champ") && o.hp / o.maxhp < .7), o => o.hp / o.maxhp); if (!t) return false;
-    shot(e, t, "#7fe08a", 2); heal(t, V(e, 3, 0, 0) + e.atk * .6, false, e, "Healing Wave"); return { x: t.x, y: t.y };
+  FN["shaman.3.0"] = e => { // Healing Wave: a chain of light that heals the most wounded ally, then bounces to more
+    const hurt = o => !o.dead && (o.kind === "unit" || o.kind === "summon" || o.kind === "champ") && o.hp / o.maxhp < 1;
+    let t = minBy(friendsNear(e.pid, e.x, e.y, 4).filter(o => hurt(o) && o.hp / o.maxhp < .7), o => o.hp / o.maxhp); if (!t) return false;
+    const first = t, bounces = nodeVal("shaman", 3, 0, 1, rk(e, 3, 0), V2(e)), used = [t]; let amt = V(e, 3, 0, 0) + e.atk * .6, from = e;
+    for (let k = 0; k <= bounces; k++) {
+      shot(from, t, "#fff2a0", 3); heal(t, amt, false, e, "Healing Wave"); from = t; amt *= .8;
+      const nx = minBy(friendsNear(e.pid, t.x, t.y, 2.5).filter(o => hurt(o) && !used.includes(o)), o => o.hp / o.maxhp); if (!nx) break; t = nx; used.push(t);
+    }
+    return { x: first.x, y: first.y };
   };
   FN["archer.3.0"] = e => { // Piercing Shot
     const rg = e.range + 1, fs = foes(e, e.x, e.y, rg).filter(o => o.kind !== "castle");

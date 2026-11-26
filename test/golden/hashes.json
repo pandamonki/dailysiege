@@ -1,7 +1,7 @@
 {
  "note": "Recorded by `npm run golden:update`. Do not edit by hand.",
  "detmath": "9b576720fe65b1b9",
- "code": "3c471fb1c6b3b089",
+ "code": "902c792ca6bfe3f0",
  "cases": [
   {
    "name": "#0: 2 lords, day 1",
@@ -279,21 +279,21 @@
   },
   {
    "name": "#62: 8 lords, day 1",
-   "outcome": "df16014f32538bce"
+   "outcome": "d7f5a5f0816699eb"
   },
   {
    "name": "#63: 2 lords, day 3",
-   "outcome": "30cde8d4a36a1711"
+   "outcome": "6ab20b873e411174"
   },
   {
    "name": "#64: 5 lords, day 4",
-   "outcome": "a9499326c8ce0aff"
+   "outcome": "3db06785615ca3f6"
   },
   {
    "name": "#65: 8 lords, day 5",
-   "outcome": "855d3e07b299449c",
-   "fullOutcome": "855d3e07b299449c",
-   "replay": "f634bd3e1546dbcc"
+   "outcome": "d14d9fbdf3e25fb8",
+   "fullOutcome": "d14d9fbdf3e25fb8",
+   "replay": "d61f4f92c53fc5ad"
   },
   {
    "name": "#66: 2 lords, day 6",
@@ -301,11 +301,11 @@
   },
   {
    "name": "#67: 5 lords, day 7",
-   "outcome": "2644d7e046cb575d"
+   "outcome": "9a2f605a082333ec"
   },
   {
    "name": "#68: 8 lords, day 1",
-   "outcome": "66be85cdc8465e04"
+   "outcome": "c520f3bdca07ce19"
   },
   {
    "name": "#69: 2 lords, day 2",
@@ -313,13 +313,13 @@
   },
   {
    "name": "#70: 5 lords, day 4",
-   "outcome": "6ff8f8921d607d3e",
-   "fullOutcome": "6ff8f8921d607d3e",
-   "replay": "ee634ec7a6d7dc7f"
+   "outcome": "3a3f9d952385138e",
+   "fullOutcome": "3a3f9d952385138e",
+   "replay": "efe4c181790e8aa7"
   },
   {
    "name": "#71: 8 lords, day 5",
-   "outcome": "092d365d6a180be9"
+   "outcome": "8dbf4be0238d608a"
   }
  ]
 }
