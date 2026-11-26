@@ -128,7 +128,8 @@ service cloud.firestore {
 
         function validProfile() {
           let d = request.resource.data;
-          return d.keys().hasOnly(['fromWeek', 'joinedAt', 'nick', 'real', 'pending', 'left', 'banner', 'hasRapier', 'sealedFor', 'week', 'war', 'allyReplies'])
+          return d.keys().hasOnly(['fromWeek', 'joinedAt', 'nick', 'real', 'pending', 'left', 'banner', 'hasRapier', 'sealedFor', 'week', 'war', 'allyReplies', 'cls'])
+            && d.get('cls', '') is string && d.get('cls', '').size() <= 12
             && (!('allyReplies' in d) || (d.allyReplies is map && d.allyReplies.keys().hasOnly(['day', 'r']) && d.allyReplies.get('r', {}) is map && d.allyReplies.get('r', {}).size() <= 16))
             && d.get('nick', '') is string && d.get('nick', '').size() <= 16
             && d.get('real', '') is string && d.get('real', '').size() <= 20

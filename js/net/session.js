@@ -10,7 +10,7 @@ function refreshLiveWorld() {
   RIVALS = roster.map((p, i) => ({ p, i })).filter(x => x.i !== me).map(({ p, i }) => {
     const seen = prev ? latestPlan(p, prev, true) : null;
     const trust = !seen ? "Unknown" : (seen.targets || [])[0] === LIVE.uid ? "Alarmed" : (seen.offers || {})[LIVE.uid] ? "Loyal" : (seen.targets || []).includes(LIVE.uid) ? "Wary" : "Uneasy";
-    return { id: p.uid, name: nameOf(p.uid), lvl: heroState(p.uid, ck.week, ck.planDay).lvl, cls: seen ? seen.cls : null, pos: L.castles[i], color: TC[p.uid] || SEAT_COLORS[i], trust, seen, points: pts[p.uid] || 0, live: p, banner: (seen && seen.banner) || (p.state && p.state.banner) || null, ctier: seen ? (seen.castleTier || 1) : 1 };
+    return { id: p.uid, name: nameOf(p.uid), lvl: heroState(p.uid, ck.week, ck.planDay).lvl, cls: seen ? seen.cls : ((p.state && CLASSES[p.state.cls] && p.state.cls) || null), pos: L.castles[i], color: TC[p.uid] || SEAT_COLORS[i], trust, seen, points: pts[p.uid] || 0, live: p, banner: (seen && seen.banner) || (p.state && p.state.banner) || null, ctier: seen ? (seen.castleTier || 1) : 1 };
   });
   RARMY = []; RWALLS = [];
   RIVALS.forEach(rv => { if (!rv.seen) return; const z = zoneFor(rv.pos, L.N, L.castles, L.v2);

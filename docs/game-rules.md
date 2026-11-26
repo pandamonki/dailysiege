@@ -76,6 +76,10 @@ practice games always stamp all of them (`js/sim/plans.js`).
   (`js/config/trees.js`, `docs/hero-skill-trees.md`). Every level gives one skill point; the cap is level 15 (25 from 23 Nov, `lvlV2`).
 - The class is chosen when registering and can be changed only while registration is open. Once the war begins it is
   fixed for the whole war; the next war's registration is the next chance to pick again.
+- Heroes are secret while registration is open. Once it closes, every lord's hero is public: the war-begins screen lists them all and
+  each hero stands beside its castle on the Day 1 map. A lord's hero is saved on their public profile (`cls`).
+- A hero's sprite wears two tones of its lord's colour: the bright colour for trim, sashes and shields and a dark shade for the outfit
+  (the Rogue's outfit is darker still).
 - A hero gains at least 2 and at most 3 levels a day (`MIN_GAIN`, `XP_CAP`).
 - Faster levelling (from 23 Nov, `lvlV2`): a hero starts at level 1 and gains at least 3 and at most 4 levels a battle (`MIN_GAIN_V2`,
   `XP_CAP_V2`), up to level 25 (`MAX_HERO_LVL_V4`), so after six battles it is level 19 to 25. Each level needs a flat 130 experience

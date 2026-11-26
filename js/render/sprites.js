@@ -202,7 +202,11 @@ function spr(key, color = YOU_COLOR, pose = "") {
   if (!SPR[id] && SPECS[key] && SPECS[key].tower) SPR[id] = towerSprite(key, color);
   if (!SPR[id]) {
     const sp = { ...SPECS[key] };
-    if (key.startsWith("c-")) { sp.b = color; if ("sh" in sp) sp.sh = color; if (key === "c-mage") { sp.a = color; if (sp.hc) sp.hc = mixHex(color, "#000000", .3); } if (key === "c-shaman") { sp.hc = color; sp.sash = 1; } }
+    if (key.startsWith("c-")) { // heroes wear two tones of the lord's colour: the bright colour for trim, sashes and shields, a dark shade for the outfit
+      const dark = mixHex(color, "#000000", key === "c-rogue" ? .78 : .45), darker = mixHex(color, "#000000", key === "c-rogue" ? .86 : .58), bright = mixHex(color, "#ffffff", .12);
+      sp.b = bright; sp.a = dark; if ("sh" in sp) sp.sh = bright; if (sp.hc) sp.hc = darker;
+      if (key === "c-shaman") { sp.hc = bright; sp.sash = 1; }
+      if (key === "c-mage") { sp.g = bright; sp.f = bright; sp.a = bright; sp.b = dark; } } // the wizard wears the full trim colour on robe, hat band and staff tip, with a dark belt and hat
     else if (color !== YOU_COLOR) ["b", "sh"].forEach(k => { if (sp[k] === YOU_COLOR) sp[k] = color; });
     SPR[id] = buildSprite(sp, pose);
   }
