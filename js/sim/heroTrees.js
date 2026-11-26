@@ -70,7 +70,7 @@ function makeTreeKit(X) {
     for (let bi = 0; bi < 3; bi++) if (rk(e, bi, 5)) e.kc.push([bi, 5]);
     for (let bi = 0; bi < 3; bi++) [1, 2].forEach(i => { if (rk(e, bi, i) && TREES[c][bi].nodes[i].kind === "trigger") e.kc.push([bi, i]); });
     if (rk(e, 3, 0)) e.kc.push([3, 0]); // the base skill, last: the branches' skills get the first chance each tick
-    e.kc.forEach(([bi, i], j) => { const r = X.fixT ? fixedFrac(e.slot * 7 + j + 1) : rng(); e.cds[bi + "." + i] = i === 5 ? 10 + r * 8 : 2 + r * 3; }); // fixed timing: by place, not by the dice
+    e.kc.forEach(([bi, i], j) => { const r = X.fixT ? fixedFrac(e.slot * 7 + j + 1) : rng(); e.cds[bi + "." + i] = i === 5 ? 5 + r * 4 : .5 + r * 1.5; }); // fixed timing: by place, not by the dice
     e.nextTotem = 6; e.v3as = 0; e.v3ms = 0;
     if (c === "rogue" && rk(e, 0, 0)) hide(e, 1e6, true);
   }
@@ -89,7 +89,6 @@ function makeTreeKit(X) {
     for (const [bi, i] of e.kc) {
       const key = bi + "." + i, node = treeNodeOf(e.cls, bi, i);
       if (e.cds[key] > now || (i === 5 && !e.ultArm)) continue;
-      if (X.trigOk && !X.trigOk(e, key)) continue; // the lord's own "cast when" condition, if they set one (none set: the skill picks its own moment)
       const fn = FN[e.cls + "." + bi + "." + i]; if (!fn) continue;
       X.setAb(node.name); const res = fn(e, rk(e, bi, i)); X.setAb(null);
       if (!res) continue;
@@ -569,14 +568,15 @@ function makeTreeKit(X) {
     if (e.orphan || !foes(e, e.x, e.y, 1.5).some(o => (o.range || 1.1) < 1.5 && o.kind !== "castle" && !siege(o))) return false;
     const sx = e.x, sy = e.y, p = P[e.pid]; X.blink(e, p.castle.x, p.castle.y); addShield(e, e.maxhp * V(e, 3, 0, 0) / 100, 3); return { x: sx, y: sy };
   };
-  FN["shaman.3.0"] = e => { // Healing Wave: a chain of light that heals the most wounded ally, then bounces to more
-    const hurt = o => !o.dead && (o.kind === "unit" || o.kind === "summon" || o.kind === "champ") && o.hp / o.maxhp < 1;
-    let t = minBy(friendsNear(e.pid, e.x, e.y, 4).filter(o => hurt(o) && o.hp / o.maxhp < .7), o => o.hp / o.maxhp); if (!t) return false;
+  FN["shaman.3.0"] = e => { // Healing Wave: a chain of light that heals the most wounded ally, then bounces to more, and ends on the Shaman
+    const hurt = o => !o.dead && (o.kind === "unit" || o.kind === "summon" || o.kind === "champ") && o.hp / o.maxhp < 1, near = (x, y, r) => friendsNear(e.pid, x, y, r).concat([e]).filter((o, k, a) => a.indexOf(o) === k);
+    let t = minBy(near(e.x, e.y, 4).filter(o => hurt(o) && o.hp / o.maxhp < .7), o => o.hp / o.maxhp); if (!t) return false;
     const first = t, bounces = nodeVal("shaman", 3, 0, 1, rk(e, 3, 0), V2(e)), used = [t]; let amt = V(e, 3, 0, 0) + e.atk * .6, from = e;
     for (let k = 0; k <= bounces; k++) {
-      shot(from, t, "#fff2a0", 3); heal(t, amt, false, e, "Healing Wave"); from = t; amt *= .8;
-      const nx = minBy(friendsNear(e.pid, t.x, t.y, 2.5).filter(o => hurt(o) && !used.includes(o)), o => o.hp / o.maxhp); if (!nx) break; t = nx; used.push(t);
+      if (t !== e) shot(from, t, "#fff2a0", 3); heal(t, amt, false, e, "Healing Wave"); from = t; amt *= .8;
+      const nx = minBy(near(t.x, t.y, 2.5).filter(o => hurt(o) && !used.includes(o)), o => o.hp / o.maxhp); if (!nx) break; t = nx; used.push(t);
     }
+    if (!used.includes(e) && hurt(e)) { shot(from, e, "#fff2a0", 3); heal(e, amt, false, e, "Healing Wave"); } // the chain always comes back to the Shaman
     return { x: first.x, y: first.y };
   };
   FN["archer.3.0"] = e => { // Piercing Shot

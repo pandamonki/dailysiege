@@ -44,12 +44,11 @@ function treeDetailHTML(bi, i) {
   const kindName = base ? "Base skill" : (i === 2 || i === 4) ? "Side talent" : i === 3 ? "Synergy" : kind;
   const now = nodeDesc(S.cls, bi, i, Math.max(1, rank)), nxt = rank >= 1 && rank < max && node.v.length ? nodeDesc(S.cls, bi, i, rank + 1) : null;
   const reqs = need.maxed ? [] : [...need.list, { ok: free > 0, text: free > 0 ? `A skill point to spend (${free} free)` : "A skill point to spend (none free yet: your hero gains them as it levels up)" }];
-  const unmet = reqs.filter(x => !x.ok), castable = node.kind === "trigger" || (!base && i === 5);
+  const unmet = reqs.filter(x => !x.ok);
   const cd = node.kind === "trigger" && node.cd ? `<div class="cdrow"><span class="cdt big">${CLOCK_SVG}${Math.round(node.cd * BAL.cd)}s</span><span class="muted">recharge between casts</span></div>` : !base && i === 5 ? `<div class="cdrow"><span class="cdt big u">1×</span><span class="muted">once per battle, only on nights you plan it. It rests the next day.</span></div>` : "";
   const label = need.maxed ? "Fully learned" : canL ? (rank ? "Level up (1 point)" : `Learn ${esc(node.name)} (1 point)`) : unmet.some(x => !/skill point/.test(x.text)) ? "Locked" : "No skill point to spend";
   return `<div class="det tdet"><img class="tdico" alt="" src="${spellURL(node.ic, 96)}"><h3><span>${esc(node.name)}</span><em>${kindName} · ${rank}/${max}</em></h3>
     <p>${esc(rank ? now : `Rank 1: ${now}`)}</p>${nxt ? `<p class="muted">Next rank: ${esc(nxt)}</p>` : ""}${cd}
-    ${castable && rank ? castWhenHTML(nodeKey(bi, i)) : ""}
     ${reqs.length ? `<div class="req">${reqs.map(x => `<div class="${x.ok ? "ok" : "no"}"><i>${x.ok ? "✓" : "✕"}</i>${esc(x.text)}</div>`).join("")}</div>` : ""}</div>
     <button class="btn ${canL ? "wax" : "wood"} tlearn${canL ? "" : " off"}" data-act="tlearn" data-v="${nodeKey(bi, i)}" ${canL && !S.locked ? "" : "disabled"}>${S.locked && canL ? "Orders are sealed" : label}</button>`;
 }
@@ -71,7 +70,7 @@ function champSheetV3() {
     ${typeInfo(ty, "hstats")}`;
   const abilities = `<div class="tcols trunked">${[0, 1, 2].map(bi => treeColumnHTML(bi, sel)).join("")}</div>${treeBaseHTML(sel)}
     ${treeDetailHTML(sel[0], sel[1])}
-    <div class="ultplan"><button class="btn ${S.ultArm && learned && !cool ? "wax" : "wood"}" data-act="ultarm" ${dis(!learned || cool)}>${ultBolt()}${!learned ? "Ultimate not learned yet" : cool ? "Ultimate recharging until tomorrow" : S.ultArm ? "Ultimate planned for tonight ✓ (tap to cancel)" : "Plan the ultimate for tonight"}</button>${learned && !cool && S.ultArm && sel[1] !== 5 ? castWhenHTML(ultKey()) : ""}</div>`;
+    <div class="ultplan"><button class="btn ${S.ultArm && learned && !cool ? "wax" : "wood"}" data-act="ultarm" ${dis(!learned || cool)}>${ultBolt()}${!learned ? "Ultimate not learned yet" : cool ? "Ultimate recharging until tomorrow" : S.ultArm ? "Ultimate planned for tonight ✓ (tap to cancel)" : "Plan the ultimate for tonight"}</button></div>`;
   const items = `
     ${heroItemsHTML(slots)}
     <p class="muted">Your hero fights with items, not the castle's forge: Armoury upgrades only arm your soldiers.</p>
@@ -131,13 +130,3 @@ const ultIconHTML = u => (u && u.ic ? `<img class="sico" alt="" src="${spellURL(
 const CLOCK_SVG = `<svg class="clk" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6.5" r="4.6" fill="#fff6dc" stroke="#3a2614" stroke-width="1.2"/><path d="M6 3.9V6.6l1.9 1.1" stroke="#3a2614" stroke-width="1.2" fill="none" stroke-linecap="round"/><path d="M4.6 1.2h2.8" stroke="#3a2614" stroke-width="1.2" stroke-linecap="round"/></svg>`;
 // icons for the hero stats grid
 const SI = { hp: "❤", atk: "⚔", atype: "🗡", armour: "🛡", block: "⛨", as: "⏱", range: "➶", spd: "👢" };
-// "cast when": a skill picks its own best moment unless the lord adds a condition (skill-tree heroes key it by "tree.node")
-const CAST_WHEN = [["", "Its own best moment (automatic)"], ["On my top-priority target", "On my top-priority target"], ["When 3+ enemies are near", "When 3 or more enemies are near"], ["When my HP is under 30%", "When my hero is below 30% health"], ["When an ally is attacked", "When an ally nearby is attacked"], ["When my castle is attacked", "When my castle is under attack"]];
-function ultKey() { if (!heroV3Now()) return "ult"; for (let bi = 0; bi < 3; bi++) if (S.tree && S.tree[TREE_BKEY[bi]][5] > 0) return nodeKey(bi, 5); return null; }
-function castWhenHTML(key) {
-  if (!key) return "";
-  S.triggers = S.triggers || {};
-  if (!heroV3Now()) return `<label class="inline castwhen"><span>Cast when</span><select data-act="trig" data-k="${key}" ${dis()}>${opts(TRIGGERS, S.triggers[key])}</select></label>`;
-  const cur = S.triggers[key] || "";
-  return `<label class="inline castwhen"><span>Cast when</span><select data-act="trig" data-k="${key}" ${dis()}>${CAST_WHEN.map(([v, l]) => `<option value="${esc(v)}"${cur === v ? " selected" : ""}>${esc(l)}</option>`).join("")}</select></label>${cur ? `<small class="muted cwnote">It still waits for its own moment too, and only casts once this is also true.</small>` : ""}`;
-}
