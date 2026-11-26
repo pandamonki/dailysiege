@@ -91,15 +91,15 @@ for (const name of engines) {
   await step("every mercenary has its own creature sprite in every pose, and the gold coin tag exists", async () => {
     const bad = await js(() => { const out = []; for (const k of Object.keys(MERC_UNITS)) for (const pose of ["", "w0", "w1", "w2", "w3", "a1", "a2"]) { const cv = spr(k, "#3a7bd5", pose); if (!MERC_ART[k] || !cv.width || !cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data.some((v, i) => i % 4 === 3 && v)) out.push(k + " " + pose); } if (!mercCoin().width) out.push("coin"); return out; });
     if (bad.length) throw new Error("mercenary sprites missing: " + bad.join(", ")); });
-  await step("the houses-gather screen: every lord card is the same size and a hired group marches in and stands in its card", async () => {
+  await step("the houses-gather screen: lords two to a row in same-size cards, and a hired group marches in and lands as an icon on its lord's hero", async () => {
     await closeAll();
     const r = await js(async () => { const names = { a: "You", b: "Brannoch", c: "Mira", d: "Tolliver", e: "Sable" }, cols = ["#3a7bd5", "#d53a3a", "#3ad56a", "#d5a03a", "#9a4ad5"], cls = ["warrior", "mage", "archer", "rogue", "shaman"];
       const cards = Object.keys(names).map((pid, i) => ({ pid, bloc: null, name: names[pid], color: cols[i], cls: cls[i], level: 3 + i, banner: defaultBanner(), tier: 1 + (i % 3), me: pid === "a" }));
       showIntro({ cards, fresh: [], kept: [], broken: [], mercs: [], bets: [], final: false, fin2: false, names, rapier: null, auction: [{ id: "troll", winner: "c", gold: 300, bids: [{ pid: "b", gold: 270 }, { pid: "c", gold: 300 }] }] }, () => {});
       await new Promise(res => setTimeout(res, 9500));
-      const hs = new Set([...document.querySelectorAll("#intro .icard")].map(c => Math.round(c.getBoundingClientRect().height))), st = document.querySelector('#intro .icard[data-pid="c"] .mstk'), out = { sizes: hs.size, stack: !!st && !st.classList.contains("hid"), name: st ? st.textContent : "" };
+      const hs = new Set([...document.querySelectorAll("#intro .icard")].map(c => Math.round(c.getBoundingClientRect().height))), st = document.querySelector('#intro .icard[data-pid="c"] .hw .mbadge'), lefts = new Set([...document.querySelectorAll("#intro .icard")].map(c => Math.round(c.getBoundingClientRect().left))), out = { sizes: hs.size, cols: lefts.size, stack: !!st && !st.classList.contains("hid"), name: st ? st.title : "" };
       document.getElementById("intro").remove(); return out; });
-    if (r.sizes !== 1) throw new Error("lord cards are not all the same size"); if (!r.stack || !/Troll/.test(r.name)) throw new Error("the hired group did not take its place in the winner's card"); });
+    if (r.sizes !== 1) throw new Error("lord cards are not all the same size"); if (r.cols !== 2) throw new Error("lords are not two to a row"); if (!r.stack || !/Troll/.test(r.name)) throw new Error("the hired group did not land as an icon on the winner's hero"); });
   await step("compare and buy a tower upgrade", async () => { await closeAll(); await js(() => { S.castle = 3; const t = S.traps.find(x => x.type === "tower"); t.tk = "tower2"; render(); });
     await tap('#cmdbar [data-v="keep"]'); await tap('#sheet .tabs button:has-text("Defences")'); await tap('#sheet [data-act="dsel"][data-v="tw1"]');
     if (!(await page.locator("#sheet .cmp").count())) throw new Error("no stats comparison"); await tap('#sheet [data-act="tpick"][data-v="towerS"]');
