@@ -654,6 +654,6 @@ details.fg-host[open] > summary { margin-bottom: 8px; }
 .trunk .tn.st-learned .ti img, .trunk .tn.st-maxed .ti img { border-color: var(--verdant); }
 .trunk .tn.st-wait .ti img { border-color: #a58a55; }
 /* the hero screen's tab bar: icon beside the label, so it takes less height */
-.tabs.compact button { flex-direction: row; gap: 6px; padding: 3px 4px; font-size: 15px; line-height: 1.1; }
+.tabs.compact button { flex-direction: row; gap: 6px; padding: 9px 4px; font-size: 15px; line-height: 1.1; }
 .tabs.compact .tabi { width: 20px; height: 20px; }
 .tabs.compact .dot { margin-left: 0; position: static; transform: none; }
