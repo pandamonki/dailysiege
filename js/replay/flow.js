@@ -74,7 +74,7 @@ function showIntro(it, done) {
   if (it.kept.length) feed.push(`<li style="--d:${(d += .35).toFixed(2)}">${it.kept.length === 1 ? "One pact" : it.kept.length + " pacts"} held from yesterday.</li>`);
   // design C: each alliance is a side with its own colour and header, then the lone lords
   const pids = it.cards.map(c => c.pid), meId = (it.cards.find(c => c.me) || {}).pid, pairsNow = [...it.kept, ...it.fresh], groups = allianceGroups(pairsNow, pids, meId), inGroup = new Set(groups.flatMap(g => g.ids));
-  let ci = 0; const cardHTML = c => `<div class="icard${c.me ? " me" : ""}" data-pid="${c.pid}" style="--c:${c.color};--i:${ci++}"><img class="bn" alt="" src="${bannerURL(c.banner, c.color, 34, 46)}"><div class="tx"><b>${esc(c.name)}${it.rapier === c.pid ? RAPIER_ICON : ""}</b><small>${esc(clsName(c.cls))} · Lv ${c.level} · ${esc(CASTLE_TIERS[Math.max(0, Math.min(2, c.tier - 1))].name)}</small></div><img class="hr" alt="" src="${spriteURL("c-" + c.cls, c.color)}">${traitors.has(c.pid) ? `<span class="tag">TRAITOR</span>` : ""}</div>`;
+  let ci = 0; const cardHTML = c => `<div class="icard${c.me ? " me" : ""}" data-pid="${c.pid}" style="--c:${c.color};--i:${ci++}"><img class="bn" alt="" src="${bannerURL(c.banner, c.color, 34, 46)}"><div class="tx"><b>${esc(c.name)}${it.rapier === c.pid ? RAPIER_ICON : ""}</b><small>${esc(clsName(c.cls))}</small><small>Lv ${c.level} · ${esc(CASTLE_TIERS[Math.max(0, Math.min(2, c.tier - 1))].name)}</small></div><img class="hr" alt="" src="${spriteURL("c-" + c.cls, c.color)}">${traitors.has(c.pid) ? `<span class="tag">TRAITOR</span>` : ""}</div>`;
   const side = (title, note, col, list, crest) => `<div class="iside" style="--sc:${col}"><div class="ihd">${crest || ""}<b>${title}</b><small>${note}</small></div><div class="ibody">${list.map(cardHTML).join("")}</div></div>`;
   const sideHTML = groups.map(g => { const own = pairsNow.filter(k => k.split("|").every(x => g.ids.includes(x))), nf = own.filter(k => it.fresh.includes(k)).length, age = nf === own.length ? "new today" : nf ? "grew today" : "held from yesterday", first = card(g.ids[0]);
     return side(g.ids.includes(meId) ? "Your alliance" : `Alliance of ${esc(first ? first.name : "a lord")}`, `${g.ids.length} lords · ${age}`, g.col, g.ids.map(card).filter(Boolean), crestSVG(g.ids.map(x => (card(x) || {}).color || "#888"), g.animal, 34, null, true)); });
@@ -99,17 +99,18 @@ function showIntro(it, done) {
   });
 }
 // a won mercenary group sends its lead sprite marching out of the auction panel to stand at the corner of its new lord's card, name tag beside it
-function mercPal(mm, color, cls) {
-  const lead = mm.units[0], sp = spr(lead), n = mm.units.length;
-  return `<div class="mpal ${cls || ""}"><span class="mtag">⚔ ${esc(mm.name)}${n > 1 ? " ×" + n : ""}</span><img alt="" data-t="${lead}" src="${mercPoseURL(lead, color, "")}" style="width:${sp.width * 1.5}px;height:${sp.height * 1.5}px"></div>`;
+const mercTagText = mm => `⚔ ${esc(mm.name)}${mm.units.length > 1 ? " ×" + mm.units.length : ""}`;
+function mercPal(mm, color, cls, noTag) {
+  const lead = mm.units[0], sp = spr(lead);
+  return `<div class="mpal ${cls || ""}">${noTag ? "" : `<span class="mtag">${mercTagText(mm)}</span>`}<img alt="" data-t="${lead}" src="${mercPoseURL(lead, color, "")}" style="width:${sp.width * 1.5}px;height:${sp.height * 1.5}px"></div>`;
 }
 function marchMercs(el, grid, m) {
   const cardEl = el.querySelector(`.icard[data-pid="${m.pid}"]`), mm = MERCS[m.id]; if (!cardEl || !mm) return 0;
   const color = cardEl.style.getPropertyValue("--c") || MY_COLOR, calm = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
-  // the sprite stands inside the card, left of the hero; cards never change size, so the target is known at once
-  cardEl.insertAdjacentHTML("beforeend", mercPal(mm, color, "hid")); const pal = cardEl.lastElementChild, img = pal.querySelector("img");
+  // the sprite stands on the card's lower edge under the hero, its name tag on the top edge; cards never change size, so the target is known at once
+  cardEl.insertAdjacentHTML("beforeend", mercPal(mm, color, "hid", true) + `<span class="mtag fin hid">${mercTagText(mm)}</span>`); const tag = cardEl.lastElementChild, pal = tag.previousElementSibling, img = pal.querySelector("img");
   const g = grid.getBoundingClientRect(), pr = img.getBoundingClientRect(), tx = pr.left - g.left, ty = pr.top - g.top;
-  const done = () => { pal.classList.remove("hid"); cardEl.classList.remove("hired"); void cardEl.offsetWidth; cardEl.classList.add("hired"); };
+  const done = () => { cardEl.classList.add("hm"); pal.classList.remove("hid"); tag.classList.remove("hid"); cardEl.classList.remove("hired"); void cardEl.offsetWidth; cardEl.classList.add("hired"); };
   if (calm) { done(); return 0; }
   const from = el.querySelector("#auc .asp"), fr = from ? from.getBoundingClientRect() : null, sx = fr ? fr.left - g.left : g.width / 2, sy = fr ? fr.top - g.top : ty - 80;
   grid.insertAdjacentHTML("beforeend", mercPal(mm, color, "mmarch")); const ov = grid.lastElementChild; ov.style.left = sx + "px"; ov.style.top = sy + "px"; ov.classList.toggle("flip", tx < sx - 4);
