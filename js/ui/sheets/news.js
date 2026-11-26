@@ -4,6 +4,12 @@
 // the id is remembered on their device, so changing the id is all it takes to show it again.
 // Only major changes players will notice, in two to five items. Fixes, tidy-ups and small balance tweaks don't belong here.
 const RELEASES = [
+  { id: "1.26", title: "What's new in v1.26", sub: "Practice: roomier maps, stronger talents, three targets", items: [
+    ["Three targets that stay", "In practice, pick up to three targets in order. They carry over to the next day: just confirm them before you seal."],
+    ["Roomier map", "Practice castles stand further apart, so heroes no longer meet at each other's gates in the first seconds."],
+    ["Talents and items count more", "Skill-tree values are a quarter stronger and item bonuses 15% stronger, in practice."],
+    ["Smarter rivals, clearer mercenaries", "Rivals answer whoever attacked them yesterday. Mercenaries arrive 10 seconds in, wear a MERC tag, and no longer look like heroes."],
+  ] },
   { id: "1.25", title: "What's new in v1.25", sub: "Practice: army zones, to try before they reach real wars", items: [
     ["Where you place soldiers sets their job", "In practice, your field splits into Guard, Front, and left and right flanks. The Front marches on your #1 target; each flank screens its side or raids that neighbour."],
     ["Four Front plans", "Assault, Siege, Hero hunt or Hold the hill, each beating one other. Holding the hill longest scores 2 points."],
