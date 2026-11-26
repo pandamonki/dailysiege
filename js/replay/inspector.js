@@ -52,8 +52,8 @@ function dockTarget() {
 function heroSkills(m, ranks) {
   const act = [], pas = [];
   if (m.tree) {
-    m.tree.forEach((row, bi) => row.forEach((r, i) => { if (!r) return; const n = TREES[m.cls][bi].nodes[i], o = { key: bi + "." + i, name: n.name, ic: n.ic, rank: r, max: TREE_MAX[i], desc: nodeDesc(m.cls, bi, i, r), cd: n.cd, ult: i === 5 };
-      ((i === 5 || n.kind === "trigger") ? act : pas).push(o); }));
+    m.tree.forEach((row, bi) => row.forEach((r, i) => { if (!r) return; const n = treeNodeOf(m.cls, bi, i), o = { key: bi + "." + i, name: n.name, ic: n.ic, rank: r, max: treeMaxOf(bi, i), desc: nodeDesc(m.cls, bi, i, r), cd: n.cd, ult: bi < 3 && i === 5 };
+      ((o.ult || n.kind === "trigger") ? act : pas).push(o); }));
     act.sort((a, b) => (a.ult - b.ult));
   } else {
     const c = CLASSES[m.cls], list = [...c.abilities.map(a => [a.key, a.name, a.desc]), ["ult", c.ult.name, c.ult.desc]];

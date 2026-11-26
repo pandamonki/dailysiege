@@ -52,14 +52,14 @@ function makeTreeKit(X) {
     const dx = x - o.x, dy = y - o.y, L = hyp(dx, dy); if (L < .05) return; const s = Math.min(dist, L - .05);
     for (let k = 4; k >= 1; k--) { const nx = o.x + dx / L * s * k / 4, ny = o.y + dy / L * s * k / 4; if (!X.wallAt(o, nx, ny)) { o.x = nx; o.y = ny; return; } }
   }
-  const cdOf = (e, bi, i) => { const r = rk(e, bi, i); let cd = TREES[e.cls][bi].nodes[i].cd;
+  const cdOf = (e, bi, i) => { const r = rk(e, bi, i); let cd = treeNodeOf(e.cls, bi, i).cd;
     if (e.cls === "mage" && bi === 2 && i === 1) cd = ext([16, 14, 12], r);
     if (e.cls === "archer" && bi === 1 && i === 1 && rk(e, 1, 4)) cd *= .7;
     return cd * BAL.cd * e.cdMul * (e.cdScale || 1); };
   // ----- setting a hero up -----
   function setup(e, pl) {
     e.tunX = pl.tuneV1 ? TALENT_X : 1;
-    e.tr = TREE_BKEY.map((b, bi) => cleanTree(pl.tree)[b]); e.tr0 = e.tr.map(a => a.slice()); e.cds = {}; e.icd = {};
+    const ct = cleanTree(pl.tree); e.tr = [...TREE_BKEY.map(b => ct[b]), [ct.base]]; e.tr0 = e.tr.map(a => a.slice()); e.cds = {}; e.icd = {};
     e.mres = CHAMP_V3[e.cls].mres || 0; e.dodge = { all: 0, melee: 0 };
     const c = e.cls;
     if (c === "warrior") { if (rk(e, 0, 0)) { const f = 1 + V(e, 0, 0, 0) / 100; e.maxhp *= f; e.physRed = V(e, 0, 0, 1) / 100; } if (rk(e, 1, 4)) e.ccShort = .4; }
@@ -69,6 +69,7 @@ function makeTreeKit(X) {
     e.kc = [];
     for (let bi = 0; bi < 3; bi++) if (rk(e, bi, 5)) e.kc.push([bi, 5]);
     for (let bi = 0; bi < 3; bi++) [1, 2].forEach(i => { if (rk(e, bi, i) && TREES[c][bi].nodes[i].kind === "trigger") e.kc.push([bi, i]); });
+    if (rk(e, 3, 0)) e.kc.push([3, 0]); // the base skill, last: the branches' skills get the first chance each tick
     e.kc.forEach(([bi, i], j) => { const r = X.fixT ? fixedFrac(e.slot * 7 + j + 1) : rng(); e.cds[bi + "." + i] = i === 5 ? 10 + r * 8 : 2 + r * 3; }); // fixed timing: by place, not by the dice
     e.nextTotem = 6; e.v3as = 0; e.v3ms = 0;
     if (c === "rogue" && rk(e, 0, 0)) hide(e, 1e6, true);
@@ -86,7 +87,7 @@ function makeTreeKit(X) {
   function cast(e) {
     const now = T(); if (fxv(e, "silence") || (e.castLock || 0) > now || !e.kc) return;
     for (const [bi, i] of e.kc) {
-      const key = bi + "." + i, node = TREES[e.cls][bi].nodes[i];
+      const key = bi + "." + i, node = treeNodeOf(e.cls, bi, i);
       if (e.cds[key] > now || (i === 5 && !e.ultArm)) continue;
       if (X.trigOk && !X.trigOk(e, key)) continue; // the lord's own "cast when" condition, if they set one (none set: the skill picks its own moment)
       const fn = FN[e.cls + "." + bi + "." + i]; if (!fn) continue;
@@ -484,11 +485,11 @@ function makeTreeKit(X) {
     addZone(e, { x: p.x, y: p.y, r: 4, dur: 8, every: .5, c: "#8fd8ff", k: "blizzard", fn: z => { foes(e, z.x, z.y, z.r).forEach(o => { deal(e, o, dps, { aoe: 1 }); setFx(o, "slow", .6, .5); setFx(o, "asdown", .6, .3); }); forts(e, z.x, z.y, z.r).forEach(c => deal(e, c, dps, { aoe: 1 })); } });
     return { x: p.x, y: p.y };
   };
-  FN["mage.2.1"] = (e, r) => {
+  FN["mage.2.1"] = (e, r) => { // Disrupt
     const lh = e.lastHurt; if (!lh || T() - lh.t > .6 || e.hp / e.maxhp >= .7) return false;
     if (!(lh.ab || (lh.src && (lh.src.range || 1.1) < 1.5))) return false;
-    const p = P[e.pid]; if (e.orphan) return false; const sx = e.x, sy = e.y, sil = V(e, 2, 1, 0);
-    X.blink(e, p.castle.x, p.castle.y); foes(e, sx, sy, 1.5).forEach(o => setFx(o, "silence", sil)); e.lastHurt = null; return { x: sx, y: sy };
+    const near = foes(e, e.x, e.y, 2); if (!near.length) return false;
+    aoe(e.x, e.y, 2, "#b48cff", .6); near.forEach(o => setFx(o, "silence", V(e, 2, 1, 0))); e.lastHurt = null; return { x: e.x, y: e.y };
   };
   FN["mage.2.2"] = (e, r) => { if (e.hp / e.maxhp >= .5) return false; addShield(e, e.maxhp * V(e, 2, 2, 0) / 100, 6); return true; };
   FN["mage.2.5"] = e => {
@@ -546,6 +547,36 @@ function makeTreeKit(X) {
       foes(e, h.x, h.y, 3.2).forEach(o => { if (o === h) return; const px = o.x - e.x, py = o.y - e.y, proj = px * ux + py * uy; if (proj < 0) return; if (Math.abs(px * uy - py * ux) <= .7) deal(e, o, 150, { aoe: 1, big: 1 }); });
       deal(e, h, (500 + e.atk * 6) * (h.hp / h.maxhp < .4 ? 1.5 : 1), { aoe: 1, big: 1, crit: 1, capAbs: h.maxhp * .5 }); } });
     return { x, y };
+  };
+  // ---- base skills: one per class, whichever branch you grow (bi 3). Small and quick: the branches decide what the hero is for. ----
+  FN["warrior.3.0"] = e => { // Battle Charge
+    const t = minBy(foes(e, e.x, e.y, 6).filter(o => (o.kind === "champ" || backline(o)) && o.kind !== "castle" && !siege(o) && d(o, e) > 2.5), o => d(o, e)); if (!t) return false;
+    const L = d(e, t) || 1, nx = e.x + (t.x - e.x) / L * (L - .9), ny = e.y + (t.y - e.y) / L * (L - .9); if (X.wallAt(e, nx, ny)) return false;
+    aoe(e.x, e.y, .6, "#e2a33c", .4); e.x = nx; e.y = ny; slash(t, "#e2a33c");
+    deal(e, t, V(e, 3, 0, 0) + e.atk * .4, { aoe: 1, big: 1 }); if (live(t)) cc(t, "stun", V(e, 3, 0, 1)); return { x: t.x, y: t.y };
+  };
+  FN["rogue.3.0"] = e => { // Shadow Step
+    const c = ents.filter(o => !o.dead && o.kind !== "castle" && o.kind !== "totem" && !siege(o) && hostile(e.pid, o.pid) && X.fighting(o.pid) && X.vis(o, e) && d(o, e) > 2 && d(o, e) <= 5 && (o.kind === "champ" || backline(o)));
+    const hs = c.filter(o => o.kind === "champ"), t = minBy(hs.length ? hs : c, o => d(o, e)); if (!t) return false;
+    const L = d(e, t) || 1, nx = t.x + (t.x - e.x) / L * .5, ny = t.y + (t.y - e.y) / L * .5; if (X.wallAt(e, nx, ny)) return false;
+    ev({ ty: "ultfx", k: "assassin", x0: e.x, y0: e.y, x: t.x, y: t.y, r: 1, dur: .5 }); e.x = nx; e.y = ny; slash(t, "#9a6bd6");
+    deal(e, t, e.atk * V(e, 3, 0, 0), { aoe: 1, big: 1, noFinish: 1, keepStealth: 1 }); return { x: t.x, y: t.y };
+  };
+  FN["mage.3.0"] = e => { // Teleport
+    if (e.orphan || !foes(e, e.x, e.y, 1.5).some(o => (o.range || 1.1) < 1.5 && o.kind !== "castle" && !siege(o))) return false;
+    const sx = e.x, sy = e.y, p = P[e.pid]; X.blink(e, p.castle.x, p.castle.y); addShield(e, e.maxhp * V(e, 3, 0, 0) / 100, 3); return { x: sx, y: sy };
+  };
+  FN["shaman.3.0"] = e => { // Healing Wave
+    const t = minBy(friendsNear(e.pid, e.x, e.y, 4).filter(o => !o.dead && (o.kind === "unit" || o.kind === "summon" || o.kind === "champ") && o.hp / o.maxhp < .7), o => o.hp / o.maxhp); if (!t) return false;
+    shot(e, t, "#7fe08a", 2); heal(t, V(e, 3, 0, 0) + e.atk * .6, false, e, "Healing Wave"); return { x: t.x, y: t.y };
+  };
+  FN["archer.3.0"] = e => { // Piercing Shot
+    const rg = e.range + 1, fs = foes(e, e.x, e.y, rg).filter(o => o.kind !== "castle");
+    const line = o => { const L = d(o, e) || 1, ux = (o.x - e.x) / L, uy = (o.y - e.y) / L; return { ux, uy, hit: fs.filter(q => { const px = q.x - e.x, py = q.y - e.y, pr = px * ux + py * uy; return pr > 0 && pr <= rg + .3 && Math.abs(px * uy - py * ux) <= .6; }) }; };
+    let best = null; fs.forEach(o => { const l = line(o), sc = l.hit.length * 10 + (o.kind === "champ" ? 5 : 0) - d(o, e) / 10; if (!best || sc > best.sc) best = { o, l, sc }; });
+    if (!best || (best.l.hit.length < 2 && best.o.kind !== "champ")) return false;
+    const { ux, uy, hit } = best.l, dm = V(e, 3, 0, 0) + e.atk * .5;
+    ev({ ty: "shot", x1: e.x, y1: e.y - .35, x2: e.x + ux * rg, y2: e.y + uy * rg - .35, c: "#e6e6c8", w: 3 }); hit.forEach(q => deal(e, q, dm, { aoe: 1, big: 1 })); return { x: best.o.x, y: best.o.y };
   };
   return { setup, postSetup, onRespawn, cast, react, tick, world, basic, stealthTarget, mul, blocked, absorb, redirect, dodgeChance, onDodge, onDamaged, onDealt, onKill, goldMul, wallMul, totemTick, trapFire, shieldAmt, zones, totems, banners, addShield };
 }

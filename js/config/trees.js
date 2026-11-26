@@ -4,7 +4,7 @@
 
 // The first day heroes use skill trees (battles on or after this day; earlier saved battles replay with the old abilities).
 let HERO_V3_FROM = "2026-11-12"; const heroV3For = d => String(d) >= HERO_V3_FROM;
-const MAX_HERO_LVL_V3 = 15, MAX_HERO_LVL_V4 = 25, TREE_ULT_LVL = 9;
+const MAX_HERO_LVL_V3 = 15, MAX_HERO_LVL_V4 = 25, TREE_ULT_LVL = 12; // the ultimate needs hero level 12 (day 4 for a hero that levels fast, day 5 for the rest)
 const heroMaxLvl = (v3, v4) => (v3 ? (v4 ? MAX_HERO_LVL_V4 : MAX_HERO_LVL_V3) : MAX_HERO_LVL); // v4: faster levelling (lvlV2), up to level 25
 // per-level growth: level 15 is about the old level 21 with partial Vigour
 // faster levelling (lvlV2, v4 = true): 25 levels instead of 15, so each level adds less and level 25 matches the old level 15
@@ -14,9 +14,10 @@ const hpLvV3 = (L, v4) => v4 ? 1 + HP_STEP_V4 * (L - 1) : 1 + .12 * (L - 1), atk
 // node order inside a tree: T1 passive, T2 trigger, T2b side talent, T3 synergy, T3b side talent, T4 ultimate
 const TREE_NODE = ["t1", "t2", "t2b", "t3", "t3b", "t4"];
 const TREE_MAX = [4, 4, 2, 2, 1, 1];   // ranks
-const TREE_NEED = [0, 2, 2, 5, 5, 7];  // points already spent in this tree (side talents count)
+const TREE_NEED = [0, 2, 2, 5, 5, 10]; // points already spent in this tree (side talents count; the base skill does not). With the base skill's one point, the ultimate is the 12th point overall
 const TREE_PRE = [-1, 0, 0, 1, 1, 3];  // index of the node that needs at least one rank first
 const TREE_BKEY = ["b1", "b2", "b3"];
+const BASE_BI = 3, BASE_MAX = 3; // the base skill is a fourth "row" of the tree: tree.base is its rank, and e.tr[3][0] in the sim. One point in it opens the three branches.
 
 // N(name, kind, icon, description, values, art, cooldown)
 //   description: {0}, {1} ... are replaced by the rank's value from values[0], values[1] ...
@@ -121,7 +122,7 @@ const TREES = {
     ] },
     { id: "arcane", name: "Arcane", role: "Utility", nodes: [
       TN("Arcane Mastery", "passive", "mage_a3", "+{0} tiles of attack and spell reach. Your units within 3 tiles gain +{1}% magic resist.", [[.3, .4, .5], [5, 8, 10]]),
-      TN("Blink & Disrupt", "trigger", "mage_a3", "Blinks 3 tiles toward your castle and silences enemies near the start for {0}s. Casts itself when hurt below 70% health by an enemy hero ability or a melee attacker.", [[1, 1.5, 2]], ["#c9a0ff", "blink", "swirl", 1.5], 16),
+      TN("Disrupt", "trigger", "mage_a3", "A pulse silences enemies within 2 tiles for {0}s. Casts itself when you take damage from an enemy hero ability or a melee attacker and are below 70% health.", [[.8, 1.4, 2]], ["#b48cff", "bolt", "nova", 2], 16),
       TN("Mana Shield", "trigger", "mage_a3", "Gains a shield of {0}% max health for 6s. Casts itself below 50% health.", [[15, 25]], ["#c9a0ff", "shield", "shield", 1], 30),
       TN("Empowered Synergies", "synergy", "mage_a3", "Your spells ignore {0}% of the target's magic resist and damage reduction. Your other abilities recharge {1}% faster.", [[20, 30], [10, 15]]),
       TN("Arcane Missiles", "passive", "mage_a3", "Every 4th basic attack also fires 2 bolts at other enemies within 3 tiles for 50% damage."),
@@ -156,6 +157,20 @@ const TREES = {
   ],
 };
 
+// The base skill: one per class, the same whichever branch you grow. Three ranks, one point opens the branches. It is a short, small skill
+// (a few seconds' recharge that does not shrink with rank) so it never replaces what the branches are for. Casts itself like a trigger skill.
+const BASE_NODE = {
+  warrior: TN("Battle Charge", "trigger", "", "Dashes to the nearest enemy hero or ranged attacker within 6 tiles for {0} + attack x.4 damage and a {1}s stun (half on heroes). Casts itself when one is more than 2.5 tiles away.", [[20, 32, 45], [.4, .6, .8]], ["#e2a33c", "slash", "arc", 1.2, "t"], 12),
+  shaman: TN("Healing Wave", "trigger", "", "Heals the most wounded ally within 4 tiles for {0} + attack x.6. Casts itself when an ally nearby is below 70% health.", [[45, 70, 95]], ["#7fe08a", "totem", "heal", 2, "t"], 9),
+  rogue: TN("Shadow Step", "trigger", "", "Steps behind the nearest enemy hero or backline unit within 5 tiles and strikes it for attack x{0}. Stealth is kept. Casts itself when one is more than 2 tiles away.", [[.8, 1.1, 1.4]], ["#9a6bd6", "dagger", "arc", 1, "t"], 10),
+  mage: TN("Teleport", "trigger", "", "Teleports 3 tiles toward your castle and shields you for {0}% max health for 3s. Casts itself when a melee enemy gets within 1.5 tiles.", [[6, 10, 14]], ["#b48cff", "blink", "burst", 1.2], 14),
+  archer: TN("Piercing Shot", "trigger", "", "Fires an arrow through every enemy in a line for {0} + attack x.5 pierce damage. Casts itself when 2+ enemies line up within range, or an enemy hero is in range.", [[20, 34, 48]], ["#e6e6c8", "arrow", "streak", 1, "t"], 8),
+};
+Object.keys(BASE_NODE).forEach(cls => { BASE_NODE[cls].ic = `${cls}_base`; });
+// a node of a tree; bi 3 is the class's base skill
+const treeNodeOf = (cls, bi, i) => (bi === BASE_BI ? BASE_NODE[cls] : TREES[cls][bi].nodes[i]);
+const treeMaxOf = (bi, i) => (bi === BASE_BI ? BASE_MAX : TREE_MAX[i]);
+
 // Skill scaling v2 (plans stamped skV2, battles from SKILLS_V2_FROM): every rank adds the same step, and each step is worth at
 // least about two thirds of the first rank, so a point spent on rank 2 is worth nearly as much as the point that bought rank 1.
 // Four-rank skills list all four ranks. Older battles keep the values in TREES above.
@@ -172,7 +187,7 @@ const TREE_V2 = {
     "Reflexes": [[8, 14, 20, 26]], "Riposte": [[.75, 1.25, 1.75, 2.25]], "Backstab": [[15, 25]], "Flurry": [[5, 9]] },
   mage: { "Ignite": [[6, 10, 14, 18]], "Fireball": [[70, 120, 170, 220]], "Combustion": [[30, 55]], "Melt Armour": [[10, 17]],
     "Chilling Touch": [[6, 10, 14, 18]], "Frost Nova": [[35, 60, 85, 110], [1.5, 2, 2.5, 3]], "Shatter": [[12, 20]], "Ice Barrier": [[12, 20], [6, 10]],
-    "Arcane Mastery": [[.2, .35, .5, .65], [4, 7, 10, 13]], "Blink & Disrupt": [[.8, 1.4, 2, 2.6]], "Mana Shield": [[15, 25]], "Empowered Synergies": [[20, 35], [10, 17]] },
+    "Arcane Mastery": [[.2, .35, .5, .65], [4, 7, 10, 13]], "Disrupt": [[.8, 1.4, 2, 2.6]], "Mana Shield": [[15, 25]], "Empowered Synergies": [[20, 35], [10, 17]] },
   archer: { "Eagle Eye": [[.2, .35, .5, .65], [4, 8, 12, 16]], "Arrow Volley": [[25, 45, 65, 85]], "Ricochet": [[15, 25]], "Pinning Shot": [[10, 17]],
     "Fleet Footed": [[5, 10, 15, 20], [6, 10, 14, 18]], "Spike Trap": [[30, 55, 80, 105], [1.5, 2, 2.5, 3]], "Net Shot": [[1, 1.7]], "Entangling Wire": [[1, 1.5], [30, 50]],
     "Focused Aim": [[4, 7, 10, 13]], "Headshot": [[60, 105, 150, 195]], "Hunter's Mark": [[8, 14]], "Armour Piercer": [[30, 50]] },
@@ -212,17 +227,18 @@ const champBase = (cls, v5) => (v5 && CHAMP_V5[cls] ? { ...CHAMP_V3[cls], ...CHA
 const AVATAR_V5 = { dur: 5, heal: .15, splash: .35 };
 
 // ----- learning rules -----
-const emptyTree = () => ({ b1: [0, 0, 0, 0, 0, 0], b2: [0, 0, 0, 0, 0, 0], b3: [0, 0, 0, 0, 0, 0] });
-const cleanTree = tr => { const o = emptyTree(); TREE_BKEY.forEach(b => { const a = tr && tr[b]; if (Array.isArray(a)) o[b] = TREE_MAX.map((m, i) => Math.max(0, Math.min(m, a[i] | 0))); }); return o; };
+const emptyTree = () => ({ b1: [0, 0, 0, 0, 0, 0], b2: [0, 0, 0, 0, 0, 0], b3: [0, 0, 0, 0, 0, 0], base: 0 });
+const cleanTree = tr => { const o = emptyTree(); TREE_BKEY.forEach(b => { const a = tr && tr[b]; if (Array.isArray(a)) o[b] = TREE_MAX.map((m, i) => Math.max(0, Math.min(m, a[i] | 0))); }); o.base = Math.max(0, Math.min(BASE_MAX, (tr && tr.base) | 0)); return o; };
 const treePts = (tr, b) => ((tr && tr[b]) || []).reduce((s, x) => s + (x || 0), 0);
-const treeSpentAll = tr => TREE_BKEY.reduce((s, b) => s + treePts(tr, b), 0);
+const treeSpentAll = tr => TREE_BKEY.reduce((s, b) => s + treePts(tr, b), 0) + Math.max(0, Math.min(BASE_MAX, (tr && tr.base) | 0));
 const treeFree = (tr, L) => Math.max(0, Math.min(L, MAX_HERO_LVL_V4) - treeSpentAll(tr)); // one point per level, starting with level 1 (15 in all before lvlV2, 25 from it; the level itself is capped elsewhere)
 const treeHasUlt = tr => TREE_BKEY.some(b => ((tr && tr[b]) || [])[5] > 0);
 // why a node can't be learned yet: the list of unmet requirements, each { ok, text }
 function treeNeeds(tr, b, i, L) {
   const row = (tr && tr[b]) || [0, 0, 0, 0, 0, 0], sp = treePts(tr, b), out = [];
   if (row[i] >= TREE_MAX[i]) return { maxed: true, list: [] };
-  if (TREE_NEED[i] > 0) out.push({ ok: sp >= TREE_NEED[i], text: `Spend ${TREE_NEED[i]} points in this tree (${Math.min(sp, TREE_NEED[i])} of ${TREE_NEED[i]})`, miss: Math.max(0, TREE_NEED[i] - sp) });
+  const bn = BASE_NODE[TREE_NAME_CLS], hasBase = ((tr && tr.base) | 0) > 0; out.push({ ok: hasBase, text: `Learn ${bn ? bn.name : "the base skill"} first`, miss: hasBase ? 0 : 1, base: 1 });
+  if (TREE_NEED[i] > 0) out.push({ ok: sp >= TREE_NEED[i], text: `Spend ${TREE_NEED[i]} points in this tree${i === 5 ? " (the base skill does not count)" : ""} (${Math.min(sp, TREE_NEED[i])} of ${TREE_NEED[i]})`, miss: Math.max(0, TREE_NEED[i] - sp) });
   if (TREE_PRE[i] >= 0) out.push({ ok: row[TREE_PRE[i]] > 0, text: `Learn ${TREE_NAME_OF(b, TREE_PRE[i])}`, miss: row[TREE_PRE[i]] > 0 ? 0 : 1 });
   if (i === 5) { out.push({ ok: L >= TREE_ULT_LVL, text: `Hero level ${TREE_ULT_LVL} (now ${L})`, miss: 0 }); out.push({ ok: !treeHasUlt(tr), text: "Only one ultimate per hero", miss: 0 }); }
   return { maxed: false, list: out };
@@ -233,10 +249,13 @@ function treeCanLearn(tr, b, i, L) {
   if (treeFree(tr, L) < 1) return false;
   const n = treeNeeds(tr, b, i, L); return !n.maxed && n.list.every(x => x.ok);
 }
+const treeRows = tr => [...TREE_BKEY.map(k => ((tr && tr[k]) || []).slice()), [(tr && tr.base) | 0]]; // the tree as rows for the replay and the screens: three branches, then the base skill
+const treeCanLearnBase = (tr, L) => treeFree(tr, L) >= 1 && ((tr && tr.base) | 0) < BASE_MAX;
 // the value of a node at a rank: nodeVal(cls, treeIndex, nodeIndex, valueIndex, rank)
 const nodeVals = (n, v2) => (v2 === 5 && n.w5 ? n.w5 : v2 && n.w ? n.w : n.v); // v2: false (first values), true (TREE_V2) or 5 (TREE_V5 over TREE_V2)
-const nodeVal = (cls, bi, i, vi, rank, v2 = treeV2Now()) => ext(nodeVals(TREES[cls][bi].nodes[i], v2)[vi], rank);
-const nodeDesc = (cls, bi, i, rank, v2 = treeV2Now()) => { const n = TREES[cls][bi].nodes[i], tx = typeof tuneV1Now === "function" && tuneV1Now() ? TALENT_X : 1; return (v2 === 5 && n.desc5 ? n.desc5 : n.desc).replace(/\{(\d)\}/g, (_, k) => { const a = nodeVals(n, v2)[+k]; if (!a) return "?"; const x = ext(a, Math.max(1, rank || 1)) * tx; return Number.isInteger(x) ? x : +x.toFixed(tx === 1 ? 2 : 1); }); }; // tx: the agency pass's stronger talents, shown as they fight
+const nodeVal = (cls, bi, i, vi, rank, v2 = treeV2Now()) => ext(nodeVals(treeNodeOf(cls, bi, i), v2)[vi], rank);
+const nodeDesc = (cls, bi, i, rank, v2 = treeV2Now()) => { const n = treeNodeOf(cls, bi, i), tx = typeof tuneV1Now === "function" && tuneV1Now() ? TALENT_X : 1; return (v2 === 5 && n.desc5 ? n.desc5 : n.desc).replace(/\{(\d)\}/g, (_, k) => { const a = nodeVals(n, v2)[+k]; if (!a) return "?"; const x = ext(a, Math.max(1, rank || 1)) * tx; return Number.isInteger(x) ? x : +x.toFixed(tx === 1 ? 2 : 1); }); }; // tx: the agency pass's stronger talents, shown as they fight
 // spell animations for every active skill: the sim plays "v3_<class>_<tree>_<node>" through the usual SPELL_ART effects
-const treeSp = (cls, bi, i) => `v3_${cls}_${TREE_BKEY[bi]}_${TREE_NODE[i]}`;
+const treeSp = (cls, bi, i) => (bi === BASE_BI ? `v3_${cls}_base` : `v3_${cls}_${TREE_BKEY[bi]}_${TREE_NODE[i]}`);
+Object.keys(BASE_NODE).forEach(cls => { const n = BASE_NODE[cls]; SPELL_ART[treeSp(cls, BASE_BI, 0)] = { n: n.name, c: n.art[0], sym: n.art[1], fx: n.art[2], r: n.art[3], ...(n.art[4] ? { at: n.art[4] } : {}) }; });
 Object.keys(TREES).forEach(cls => TREES[cls].forEach((tr, bi) => tr.nodes.forEach((n, i) => { if (n.art) SPELL_ART[treeSp(cls, bi, i)] = { n: n.name, c: n.art[0], sym: n.art[1], fx: n.art[2], r: n.art[3], ...(n.art[4] ? { at: n.art[4] } : {}) }; })));

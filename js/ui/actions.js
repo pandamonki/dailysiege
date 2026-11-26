@@ -209,7 +209,7 @@ const A = {
   tnode: v => { sheet.tn = v; },
   rtip: v => { sheet.rtip = sheet.rtip === v ? null : v; },
   tinfo: v => { sheet.tinfo = sheet.tinfo === v ? null : v; },
-  tlearn: v => { const [bi, i] = v.split(".").map(Number); TREE_NAME_CLS = S.cls; if (!S.locked && treeCanLearn(S.tree, TREE_BKEY[bi], i, level())) { S.tree[TREE_BKEY[bi]][i]++; sheet.tn = v; } },
+  tlearn: v => { const [bi, i] = v.split(".").map(Number); TREE_NAME_CLS = S.cls; if (bi === 3) { if (!S.locked && treeCanLearnBase(S.tree, level())) { S.tree.base = (S.tree.base | 0) + 1; sheet.tn = v; } return; } if (!S.locked && treeCanLearn(S.tree, TREE_BKEY[bi], i, level())) { S.tree[TREE_BKEY[bi]][i]++; sheet.tn = v; } },
   gsel: v => { sheet.gear = v; },
   rvopen: v => { sheet.rv = sheet.rv === v ? null : v; },
   rvset: (v, k) => { ensureDip(); if (v === "hostile" && S.lists.hostile.includes(k)) { S.lists.hostile = [k, ...S.lists.hostile.filter(x => x !== k)]; toast("Main target set."); return; } A.lmove(v, k); },

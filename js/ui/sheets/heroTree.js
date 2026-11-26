@@ -4,12 +4,15 @@
 const nodeKey = (bi, i) => `${bi}.${i}`;
 function treeSelection() { // the skill whose details show below: the one tapped, else the first one that can be learned, else the first
   const [bi, i] = (sheet.tn || "").split(".").map(Number);
+  if (bi === 3 && i === 0) return [3, 0];
   if (bi >= 0 && bi < 3 && i >= 0 && i < 6) return [bi, i];
   TREE_NAME_CLS = S.cls;
+  if (!(S.tree.base > 0) && freePts() > 0) return [3, 0]; // the base skill comes first: it opens the branches
   for (let b = 0; b < 3; b++) for (const n of [5, 3, 1, 0]) if (treeCanLearn(S.tree, TREE_BKEY[b], n, level())) return [b, n];
   return [0, 0];
 }
 function treeNodeState(bi, i) {
+  if (bi === 3) { const rank = S.tree.base | 0; return { st: rank >= BASE_MAX ? "maxed" : treeCanLearnBase(S.tree, level()) ? "avail" : rank > 0 ? "learned" : "wait", rank, miss: 0 }; }
   const tr = S.tree, b = TREE_BKEY[bi], rank = tr[b][i], L = level(); TREE_NAME_CLS = S.cls;
   const need = treeNeeds(tr, b, i, L), ready = need.list.every(x => x.ok);
   if (need.maxed) return { st: "maxed", rank, miss: 0 };
@@ -25,19 +28,24 @@ function treeNodeHTML(bi, i, sel) {
   const cdv = node.kind === "trigger" && node.cd ? Math.round(node.cd * BAL.cd) : 0, cdc = cdv ? `<i class="cdt" title="Recharge about ${cdv}s">${CLOCK_SVG}${cdv}s</i>` : ult ? `<i class="cdt u" title="Once per battle">1×</i>` : "";
   return `<button class="tn st-${s.st}${i === 0 ? " base" : ""}${side ? " side" : ""}${ult ? " ult" : ""}${sel ? " sel" : ""}" data-act="tnode" data-v="${nodeKey(bi, i)}" aria-label="${esc(node.name)}, ${s.rank} of ${TREE_MAX[i]}"><span class="ti"><img alt="" src="${spellURL(node.ic, 96)}">${badge}${cdc}</span><span class="tl">${esc(node.name)}</span></button>`;
 }
+// the class's base skill: one card above the three trees. One point in it opens every tree.
+function treeBaseHTML(sel) {
+  const node = BASE_NODE[S.cls], s = treeNodeState(3, 0), cdv = Math.round(node.cd * BAL.cd), on = sel[0] === 3;
+  return `<button class="tbase st-${s.st}${on ? " sel" : ""}" data-act="tnode" data-v="3.0" aria-label="${esc(node.name)}, ${s.rank} of ${BASE_MAX}"><span class="ti"><img alt="" src="${spellURL(node.ic, 96)}"><i class="rk">${s.rank}/${BASE_MAX}</i><i class="cdt" title="Recharge about ${cdv}s">${CLOCK_SVG}${cdv}s</i></span><span class="tbt"><b>${esc(node.name)}</b><small>Base skill · opens every tree</small></span></button>`;
+}
 function treeColumnHTML(bi, sel) {
   const tr = TREES[S.cls][bi], pts = treePts(S.tree, TREE_BKEY[bi]), N = (i) => treeNodeHTML(bi, i, sel[0] === bi && sel[1] === i);
   return `<div class="tcol${pts ? " on" : ""}"><div class="tch"><b>${esc(tr.name)}</b><span>${pts} pt${pts === 1 ? "" : "s"}</span></div>
     <div class="tbody"><div class="trow">${N(5)}<span></span></div><div class="trow">${N(3)}${N(4)}</div><div class="trow">${N(1)}${N(2)}</div><div class="trow">${N(0)}<span></span></div></div></div>`;
 }
 function treeDetailHTML(bi, i) {
-  const node = TREES[S.cls][bi].nodes[i], b = TREE_BKEY[bi], rank = S.tree[b][i], max = TREE_MAX[i], L = level(); TREE_NAME_CLS = S.cls;
-  const need = treeNeeds(S.tree, b, i, L), free = treeFree(S.tree, L), canL = treeCanLearn(S.tree, b, i, L), kind = { passive: "Passive", trigger: "Trigger", synergy: "Synergy", ultimate: ultBolt() + "Ultimate" }[node.kind] || "";
-  const kindName = (i === 2 || i === 4) ? "Side talent" : i === 3 ? "Synergy" : kind;
+  const base = bi === 3, node = treeNodeOf(S.cls, bi, i), b = TREE_BKEY[bi], rank = base ? S.tree.base | 0 : S.tree[b][i], max = treeMaxOf(bi, i), L = level(); TREE_NAME_CLS = S.cls;
+  const need = base ? { maxed: rank >= BASE_MAX, list: [] } : treeNeeds(S.tree, b, i, L), free = treeFree(S.tree, L), canL = base ? treeCanLearnBase(S.tree, L) : treeCanLearn(S.tree, b, i, L), kind = { passive: "Passive", trigger: "Trigger", synergy: "Synergy", ultimate: ultBolt() + "Ultimate" }[node.kind] || "";
+  const kindName = base ? "Base skill" : (i === 2 || i === 4) ? "Side talent" : i === 3 ? "Synergy" : kind;
   const now = nodeDesc(S.cls, bi, i, Math.max(1, rank)), nxt = rank >= 1 && rank < max && node.v.length ? nodeDesc(S.cls, bi, i, rank + 1) : null;
   const reqs = need.maxed ? [] : [...need.list, { ok: free > 0, text: free > 0 ? `A skill point to spend (${free} free)` : "A skill point to spend (none free yet: your hero gains them as it levels up)" }];
-  const unmet = reqs.filter(x => !x.ok), castable = node.kind === "trigger" || i === 5;
-  const cd = node.kind === "trigger" && node.cd ? `<div class="cdrow"><span class="cdt big">${CLOCK_SVG}${Math.round(node.cd * BAL.cd)}s</span><span class="muted">recharge between casts</span></div>` : i === 5 ? `<div class="cdrow"><span class="cdt big u">1×</span><span class="muted">once per battle, only on nights you plan it. It rests the next day.</span></div>` : "";
+  const unmet = reqs.filter(x => !x.ok), castable = node.kind === "trigger" || (!base && i === 5);
+  const cd = node.kind === "trigger" && node.cd ? `<div class="cdrow"><span class="cdt big">${CLOCK_SVG}${Math.round(node.cd * BAL.cd)}s</span><span class="muted">recharge between casts</span></div>` : !base && i === 5 ? `<div class="cdrow"><span class="cdt big u">1×</span><span class="muted">once per battle, only on nights you plan it. It rests the next day.</span></div>` : "";
   const label = need.maxed ? "Fully learned" : canL ? (rank ? "Level up (1 point)" : `Learn ${esc(node.name)} (1 point)`) : unmet.some(x => !/skill point/.test(x.text)) ? "Locked" : "No skill point to spend";
   return `<div class="det tdet"><img class="tdico" alt="" src="${spellURL(node.ic, 96)}"><h3><span>${esc(node.name)}</span><em>${kindName} · ${rank}/${max}</em></h3>
     <p>${esc(rank ? now : `Rank 1: ${now}`)}</p>${nxt ? `<p class="muted">Next rank: ${esc(nxt)}</p>` : ""}${cd}
@@ -61,7 +69,7 @@ function champSheetV3() {
     <p class="muted xpnote">Every level is one skill point, up to level ${heroMaxLvl(true, lvlV2Now())}.</p>
     <div class="sgrid sgi">${sr(SI.hp, "Health", now.hp)}${sr(SI.atk, "Attack", atkSplit(now.atk, itemAtk(S.items)))}${sr(SI.atype, "Attack type", esc(ATK_TYPES[ty[0]].name))}${sr(SI.armour, "Armour type", esc(ARMOUR_TYPES[ty[1]] || "–"))}${sr(SI.block, "Damage blocked", Math.round(b.armor * 100) + "%")}${sr(SI.as, "Attack every", b.as + "s")}${sr(SI.range, "Range", b.range + " tiles")}${sr(SI.spd, "Move speed", b.spd.toFixed(1) + " tiles/s")}</div>
     ${typeInfo(ty, "hstats")}`;
-  const abilities = `<div class="tcols">${[0, 1, 2].map(bi => treeColumnHTML(bi, sel)).join("")}</div>
+  const abilities = `${treeBaseHTML(sel)}<div class="tcols">${[0, 1, 2].map(bi => treeColumnHTML(bi, sel)).join("")}</div>
     ${treeDetailHTML(sel[0], sel[1])}
     <div class="ultplan"><button class="btn ${S.ultArm && learned && !cool ? "wax" : "wood"}" data-act="ultarm" ${dis(!learned || cool)}>${ultBolt()}${!learned ? "Ultimate not learned yet" : cool ? "Ultimate recharging until tomorrow" : S.ultArm ? "Ultimate planned for tonight ✓ (tap to cancel)" : "Plan the ultimate for tonight"}</button>${learned && !cool && S.ultArm && sel[1] !== 5 ? castWhenHTML(ultKey()) : ""}</div>`;
   const items = `
@@ -96,7 +104,8 @@ function rivalHeroSheet(id) {
     const col = bi => { const tr = TREES[h.cls][bi], pts = rows[bi].reduce((a, x) => a + (x || 0), 0), N = i => rTreeNode(h.cls, h.tree, bi, i, sb === bi && si === i);
       return `<div class="tcol${pts ? " on" : ""}"><div class="tch"><b>${esc(tr.name)}</b><span>${pts} pt${pts === 1 ? "" : "s"}</span></div><div class="tbody"><div class="trow">${N(5)}<span></span></div><div class="trow">${N(3)}${N(4)}</div><div class="trow">${N(1)}${N(2)}</div><div class="trow">${N(0)}<span></span></div></div></div>`; };
     const node = TREES[h.cls][sb].nodes[si], rank = rows[sb][si] || 0, kind = si === 2 || si === 4 ? "Side talent" : si === 3 ? "Synergy" : { passive: "Passive", trigger: "Trigger", synergy: "Synergy", ultimate: ultBolt() + "Ultimate" }[node.kind] || "";
-    abil = `<div class="tcols">${[0, 1, 2].map(col).join("")}</div>
+    const bs = h.tree.base | 0, bn = BASE_NODE[h.cls];
+    abil = `<div class="tbase st-${bs ? "learned" : "wait"}" style="cursor:default"><span class="ti"><img alt="" src="${spellURL(bn.ic, 96)}">${bs ? `<i class="rk">${bs}/${BASE_MAX}</i>` : ""}</span><span class="tbt"><b>${esc(bn.name)}</b><small>${bs ? esc(nodeDesc(h.cls, 3, 0, bs)) : "Base skill · not learned"}</small></span></div><div class="tcols">${[0, 1, 2].map(col).join("")}</div>
       <div class="det tdet"><img class="tdico" alt="" src="${spellURL(node.ic, 96)}"><h3><span>${esc(node.name)}</span><em>${kind} · ${rank}/${TREE_MAX[si]}</em></h3><p>${esc(nodeDesc(h.cls, sb, si, Math.max(1, rank)))}</p>${rank ? "" : `<p class="muted">Not learned.</p>`}${node.kind === "trigger" && node.cd ? `<div class="row muted">Recharge about ${Math.round(node.cd * BAL.cd)}s</div>` : ""}</div>`;
   } else {
     const list = [...c.abilities.map(a => [a.key, a.name, a.desc]), ["ult", c.ult.name, c.ult.desc]];

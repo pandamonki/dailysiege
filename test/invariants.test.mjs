@@ -438,3 +438,13 @@ test("agency pass (tuneV1): hired mercenaries march out 10 seconds into the batt
   assert.ok(r.first >= sim.get("MERC_ARRIVE") - .01, `a mercenary was on the field at ${r.first}s`);
   assert.ok(r.same, "fast and full runs disagree");
 });
+
+test("base skills: a hero casts its base skill only once it has learned it, and every class's base skill fires in a bot war", () => {
+  const run = (g, base) => JSON.parse(sim.run(`(() => { const { full, plans } = ${WAR(g, 5).replace("const opts =", `plans.forEach(p => { if (p.tree) p.tree.base = ${base}; }); const opts =`)}; const names = Object.values(BASE_NODE).map(n => n.name), out = {};
+    full.tel.ents.filter(e => e.kind === "champ").forEach(e => Object.entries(e.ab || {}).forEach(([k, v]) => { if (names.includes(k)) out[e.cls + ":" + k] = (out[e.cls + ":" + k] || 0) + v.casts; })); return JSON.stringify(out); })()`));
+  const withBase = {}, without = {};
+  for (let g = 0; g < 4; g++) { Object.entries(run(g, 2)).forEach(([k, v]) => { withBase[k] = (withBase[k] || 0) + v; }); Object.entries(run(g, 0)).forEach(([k, v]) => { without[k] = (without[k] || 0) + v; }); }
+  assert.deepEqual(without, {}, "no hero without the base skill casts one");
+  const want = ["warrior:Battle Charge", "shaman:Healing Wave", "rogue:Shadow Step", "mage:Teleport", "archer:Piercing Shot"];
+  assert.deepEqual(want.filter(k => !withBase[k]), [], "every class's base skill fires: " + JSON.stringify(withBase));
+});

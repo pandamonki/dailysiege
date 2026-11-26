@@ -105,6 +105,19 @@ const FR_OLD="subtle gold-bronze bevelled frame",FR_NEW="a 24px bevelled frame o
  const hs=ux.items.find(i=>i.name==="Hero sheet");
  if(hs)hs.prompt="Warcraft III style fantasy game UI mock-up, mobile portrait 9:19.5, parchment and dark wood panels with bronze trim, gold highlights, crisp readable placeholder text blocks. Screen: Hero sheet. Contains: XP bar and level, unspent skill points badge, three skill-tree columns side by side (tier 1 and tier 2 nodes with rank squares, two side talents, a synergy node and a glowing ultimate at the bottom), locked nodes greyed, a DETAILS panel with requirements and a pinned Learn button.";
 })();
+/* 26 Nov 2026: one base skill per class, shown above the three trees (icons/skills/<class>_base.webp) */
+(function(){
+ const S=DATA.style;
+ const B=[
+  ["Warrior","Battle Charge","warrior_base","#e2a33c","slash","An engage skill: the Warrior dashes across the ground into an enemy hero or archer, shoulder first, a streak of dust and a flash of steel where it lands. Show the charge itself, a blurred armoured shoulder and a swung blade, not a full character."],
+  ["Rogue","Shadow Step","rogue_base","#9a6bd6","dagger","An engage skill: the Rogue vanishes in a swirl of violet shadow and reappears behind a target, a dagger flashing at the end of a fading trail of afterimages. Show the shadow trail and the blade, not a full character."],
+  ["Mage","Teleport","mage_base","#b48cff","blink","A disengage skill: a column of purple-white light collapses into a ring of sparks while a second ring blooms a few steps away. Show the vanishing ring and the arrival ring joined by a short arc of light."],
+  ["Shaman","Healing Wave","shaman_base","#7fe08a","totem","A support skill: a rolling wave of soft green spirit-water with leaf and spirit motes, rising from a carved wooden totem and washing over a wounded ally. Show the wave and the glow, calm and restorative."],
+  ["Ranger","Piercing Shot","archer_base","#e6e6c8","arrow","A damage skill: one long pale arrow with a bright streak that passes straight through a row of three enemy shields, leaving a line of sparks at each. Show the arrow and the line it cuts, seen side-on."],
+ ];
+ const items=B.map(([cls,name,file,col,sym,desc])=>({name:cls+" base skill: "+name+" ("+file+".webp)",prompt:S+". Skill icon for \""+name+"\", the base skill of the "+cls+" (it sits above the three talent trees and is the first skill every "+cls+" learns). Meaning: "+desc+" Dominant colour "+col+". Motif: "+sym+". Show the effect itself, not a character. Save as icons/skills/"+file+".webp."}));
+ DATA.cats.unshift({c:"base_skills",t:"Base skills",sub:"One 512px icon per class. These sit above the three skill trees. Keep the same frame as every other skill icon; the five can share one colour feel or each take their class colour. The game is using stand-in icons until these are added.",items});
+})();
 DATA.style=DATA.style.split(FR_OLD).join(FR_NEW);DATA.cats.forEach(c=>c.items.forEach(i=>{i.prompt=i.prompt.split(FR_OLD).join(FR_NEW)}));
 const OLD=DATA.style;let tab=DATA.cats[0].c;
 const $=s=>document.querySelector(s);$("#style").value=OLD;
