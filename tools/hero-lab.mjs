@@ -73,7 +73,7 @@ if (mode === "duels") {
   }
 } else {
   const rows = [], from = +process.argv[4] || 0; // from: first battle, to split a long run across processes (JSON=1 prints the raw rows)
-  for (let g = from; g < from + count; g++) { const day = 3 + (g % 5); rows.push(...sim.run(`labWar(${g}, ${day})`)); if ((g - from + 1) % 25 === 0) process.stderr.write(`${g - from + 1}/${count}\n`); }
+  for (let g = from; g < from + (process.env.MERGE ? 0 : count); g++) { const day = 3 + (g % 5); rows.push(...sim.run(`labWar(${g}, ${day})`)); if ((g - from + 1) % 25 === 0) process.stderr.write(`${g - from + 1}/${count}\n`); }
   if (process.env.JSON) { console.log(JSON.stringify(rows)); process.exit(0); }
   if (process.env.MERGE) rows.push(...process.env.MERGE.split(",").flatMap(f => JSON.parse(require("node:fs").readFileSync(f, "utf8"))));
   const grp = (key) => { const o = {}; rows.forEach(r => { const k = key(r), q = o[k] = o[k] || { n: 0, w: 0, top3: 0, pts: 0, k: 0, d: 0, dealt: 0 }; q.n++; if (r.place === 1) q.w++; if (r.place <= 3) q.top3++; q.pts += r.points; q.k += r.kills; q.d += r.deaths; q.dealt += r.dealt; }); return o; };
