@@ -1,7 +1,7 @@
 {
  "note": "Recorded by `npm run golden:update`. Do not edit by hand.",
  "detmath": "9b576720fe65b1b9",
- "code": "ba4f45e33542196d",
+ "code": "4b6217e035143abb",
  "cases": [
   {
    "name": "#0: 2 lords, day 1",
@@ -301,7 +301,7 @@
   },
   {
    "name": "#67: 5 lords, day 7",
-   "outcome": "42d2f83326cbbeed"
+   "outcome": "221152cbd4aaa92c"
   },
   {
    "name": "#68: 8 lords, day 1",
