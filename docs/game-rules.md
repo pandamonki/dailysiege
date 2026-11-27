@@ -34,7 +34,7 @@ practice games always stamp all of them (`js/sim/plans.js`).
 | 23 Nov | `lvlV2` | Faster levelling: 3 to 4 levels a battle, up to level 25, smaller steps per level |
 | 26 Nov | `timeV1` | Fixed timing: opening swings and hero skill cooldowns by place in the line-up, not the battle's dice (see The battle) |
 | 26 Nov | `tuneV1` | Agency pass: talents 25% and item stats 15% stronger, bots answer yesterday's attacker, mercenaries arrive 10s in, the Rogue follows Combat settings (see Agency pass) |
-| 26 Nov | `zoneV1` | Zones: placement sets each soldier's job, one #1 target, Front plans, flank plans, army temper, hill points, sudden-death damage tiebreak (see Zones) |
+| 26 Nov | `zoneV1` | Zones: placement sets each soldier's job, one #1 target, Front plans, army temper, hill points, sudden-death damage tiebreak (see Zones) |
 
 ## The war
 
@@ -194,11 +194,10 @@ practice games always stamp all of them (`js/sim/plans.js`).
 
 Practice and real wars use these rules from the 26 Nov battle (`ZONE_V1_FROM` in `js/config/orders.js`). They replace the army plan, the fall-back list, the hero stance and the three target slots.
 
-- **Placement sets the job.** The deploy field splits into four zones, seen from the castle looking at the hill
-  (`zoneOfTile`): **Guard** (tiles within 1.5 of the castle) stays home and defends; the **Front** (straight ahead, within about
-  30° either side) marches on the #1 target; the **left** and **right flanks** face the nearest lord on that side
-  (`flankNeighbour`). A flank with no lord on its side fights with the Front. The hero takes the job of the zone it stands in.
-  The map tints each zone and labels it, and the Strategy tab counts what each zone holds and warns about an empty Front or an open side.
+- **Placement sets the job.** The deploy field splits into two zones (`zoneOfTile`): the **Guard** (tiles within 1.5 of the
+  castle) stays home and defends; the **Front** (the rest of the field) marches on the #1 target. There are no flanks, so every
+  lord's Front has the same size and shape. The hero takes the job of the zone it stands in. The map tints each zone and labels
+  it, and the Strategy tab counts what each zone holds and warns about an empty Front.
 - **Up to three targets, in order.** The Front marches on the first still standing and, when its castle falls, on to the next; after
   them, the lord just above you on the board. The targets carry over to the next day (`pickReset` keeps them), but each day they
   must be confirmed before sealing: the Strategy tab says they were kept from yesterday with a Keep these targets button, and any
@@ -207,38 +206,29 @@ Practice and real wars use these rules from the 26 Nov battle (`ZONE_V1_FROM` in
   the hill (takes the hill and holds it until 2:00, then marches on the target). They form a loop: Hold the hill beats Assault,
   Assault beats Hero hunt, Hero hunt beats Siege, Siege beats Hold the hill. A Front hitting a Front whose plan it beats does 25%
   more damage (`FRONT_BEATS`, `FRONT_BEAT_X`).
-- **Each flank:** Screen (holds a spot 4.5 tiles out toward that neighbour and fights what comes within 4 tiles of it; once nothing
-  has come for 20 seconds, and not before 1:00, it pushes on to that neighbour) or Raid (goes straight for that neighbour's castle).
-  Siege engines on a flank always go for that neighbour.
 - **Army temper** (whole army, hero included): Reckless (+15% damage, 15% more damage taken, never falls back, aggressive hero),
   Steady (falls back when 3 enemies reach the castle) or Wary (10% less damage, 20% less taken, falls back when 2 enemies reach the
   castle, cautious hero).
-- **Waves pick a zone** on the Deploy tab (Guard, Left, Front or Right) and take that zone's job once they have cleared the castle area.
+- **Waves pick a zone** on the Deploy tab (Guard or Front) and take that zone's job once they have cleared the castle area.
 - **On the march** ranged soldiers and clerics stay behind their zone's melee line until they are near the fight. Only the Front
   marches in formation.
 - **Routes follow the zone:** the Front marches out along its own road to its gate (where the road leaves its base, just inside the
-  small tree clumps between bases), on to the target castle's gate, then in along that castle's road, so a Front and a flank aimed at
-  the same neighbour hit it from the middle and from the side (cutting straight across from gate to castle ran into the tree clumps).
-  A flank goes straight along the side to its neighbour; heading anywhere else (once that neighbour has fallen, say) it takes the long
-  way round the outside, beyond the tree clumps (`gateRoute`, `ringRoute`; `GATE_*`, `RING_*` in `js/config/orders.js`).
-- **Route lines:** while planning orders the map draws each zone's route in its colour: the Front's through the gates to the #1
-  target (or to the hill when holding it), each raiding flank's to its neighbour, and each screening flank's to the spot it holds,
-  ending in a ring. A zone with nobody in it (soldiers, hero or waves) draws nothing; the Guard never does.
+  small tree clumps between bases), on to the target castle's gate, then in along that castle's road (cutting straight across from
+  gate to castle ran into the tree clumps) (`gateRoute`; `GATE_*`, `RING_GAP` in `js/config/orders.js`).
+- **Route lines:** while planning orders the map draws the Front's route through the gates to the #1 target (or to the hill when
+  holding it, ending in a ring). An empty Front (no soldiers, hero or waves) draws nothing; the Guard never does.
 - **Getting unstuck:** a soldier that has tried to walk for 2 seconds without getting anywhere takes a step to one side (the other side
   the next time) and, next to one of its own side's walls, may step through its own side's walls for a moment.
 - **Default placement:** a new player's soldiers all start in the Front with the hero (`zoneSpots`); newly bought soldiers join it too.
   Each player shapes their own army from there.
 - **Bot shapes:** each bot keeps one shape for the war, picked by its seed (`BOT_SHAPES` in `js/sim/bots.js`): spearhead (all Front),
-  pincer (both flanks raiding), left or right hook (heavy on one side), turtle (Guard and screening flanks) or balanced. The shape
-  sets where its soldiers stand, its flank plans and its waves' zones; its build still sets the Front's plan. Practice rivals stand
+  anchored (one soldier and one wave in the Guard) or turtle (two soldiers and one wave in the Guard). The shape sets where its
+  soldiers stand and its waves' zones; its build still sets the Front's plan. Bot heroes always lead the Front. Practice rivals stand
   their two soldiers by the same shapes.
-- **Bot heroes go with their army:** four bots in five put their hero in the zone (Front, left or right, never the Guard) with the most
-  of their soldiers, so a hook's hero leads the hook and a pincer's hero joins one of its flanks; a tie with the Front stays in the Front.
-  The rest lead from the Front (`botHeroZone`, `BOT_HERO_WITH_ARMY` in `js/sim/bots.js`). Practice rivals do the same.
 - **Hill points:** the lord who held the hill longest (at least 10 seconds) scores 2 points, times the day's weight; a tie shares them.
 - **Sudden death time-out:** the winner is the side with the best health left plus damage dealt all battle (each as a share of
   the sides still standing), not health alone.
-- Bots: each build has a Front plan (the shape, above, sets where soldiers stand and may set the flanks); their temper follows their old stance.
+- Bots: each build has a Front plan (the shape, above, sets where soldiers stand); their temper follows their old stance.
 
 ## Agency pass (`tuneV1`)
 
@@ -256,7 +246,7 @@ Practice and real wars from the 26 Nov battle (`TUNE_V1_FROM` in `js/config/orde
   like every hero it picks targets by its lord's Combat settings: the hero's target order (heroes, melee, ranged, lowest health and
   so on) and the fixed reach (2 tiles for melee). Its finishing blows on weakened enemies stay.
 - **Bots answer their attacker:** a bot whose castle was some lord's #1 target in the last battle takes the Front plan that beats that
-  lord's Front plan, and, if that lord is its neighbour, screens that side and moves a soldier there (`botReact` in `js/sim/bots.js`).
+  lord's Front plan (`botReact` in `js/sim/bots.js`).
   Practice rivals do the same with the player's orders from the last practice battle.
 
 ## The battle

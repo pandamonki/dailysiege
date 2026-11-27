@@ -168,12 +168,9 @@
 .zjobs { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 4px 0; font-size: 15px; }
 .zjobs .zj { display: inline-flex; align-items: center; gap: 5px; }
 .zjobs .zj i { width: 11px; height: 11px; border-radius: 2px; display: inline-block; }
-.zsw { width: 11px; height: 11px; border-radius: 2px; display: inline-block; margin-right: 6px; vertical-align: -1px; }
 .zwarn { color: var(--wax); font-size: 14px; margin: 4px 0 0; }
 .zvs { display: flex; gap: 12px; flex-wrap: wrap; font-size: 13px; margin: 6px 0 2px; }
 .zvs em { font-style: normal; } .zvs .g { color: var(--verdant); } .zvs .b { color: var(--wax); }
-.zfl + .zfl { margin-top: 10px; }
-.zfl .sw { width: 10px; height: 10px; display: inline-block; border-radius: 2px; margin: 0 3px 0 2px; }
 .gr-zone { display: flex; gap: 5px; flex-wrap: wrap; margin: 6px 0 4px; }
 .gr-zone button { display: inline-flex; align-items: center; gap: 5px; border: 1px solid rgba(62,39,20,.5); background: rgba(255,250,230,.55); border-radius: 999px; padding: 3px 11px; font: inherit; font-size: 14px; color: var(--ink); cursor: pointer; min-height: 30px; }
 .gr-zone button i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }

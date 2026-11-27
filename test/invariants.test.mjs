@@ -310,17 +310,17 @@ const ZWAR = (game, day, tweak = "") => `(() => { const L = seatLayout(8, true),
 
 test("zones v1: every battle ends, ranks every lord once, plays the same fast and full, and the hill points go to at most a tie", () => {
   for (const [g, d] of [[0, 2], [1, 4], [2, 6]]) {
-    const r = JSON.parse(sim.run(`(() => { const { full, fast, plans } = ${ZWAR(g, d)}; return JSON.stringify({ dur: full.duration, max: SD_AT + SD_COUNT + SD_LEN + 1, places: full.results.map(x => x.place).sort((a, b) => a - b), n: plans.length, same: battleHash(full) === battleHash(fast), jobs: plans.every(p => p.front && p.flanks && p.temper) }); })()`));
+    const r = JSON.parse(sim.run(`(() => { const { full, fast, plans } = ${ZWAR(g, d)}; return JSON.stringify({ dur: full.duration, max: SD_AT + SD_COUNT + SD_LEN + 1, places: full.results.map(x => x.place).sort((a, b) => a - b), n: plans.length, same: battleHash(full) === battleHash(fast), jobs: plans.every(p => p.front && p.temper && !p.flanks) }); })()`));
     assert.ok(r.dur > 0 && r.dur <= r.max, `game ${g}: battle length ${r.dur}`);
     assert.deepEqual(r.places, [...Array(r.n)].map((_, i) => i + 1), `game ${g}: places`);
     assert.ok(r.same, `game ${g}: fast and full runs disagree`);
-    assert.ok(r.jobs, `game ${g}: a bot has no Front plan, flank plans or temper`);
+    assert.ok(r.jobs, `game ${g}: a bot has no Front plan or temper, or still has flank plans`);
   }
 });
 
 test("zones v1: soldiers placed in the Guard zone, and waves sent there, stay at home until sudden death", () => {
   // lord 0 puts every soldier on the Guard tiles round its castle
-  const tweak = `{ const p = plans[0], [cr, cc] = p.castle, used = new Set(); const tiles = [...p.zoneSet].map(k => k.split(",").map(Number)).filter(([r, c]) => zoneOfTile(cr, cc, r, c, L.N) === "guard" && !(r === cr && c === cc));
+  const tweak = `{ const p = plans[0], [cr, cc] = p.castle, used = new Set(); const tiles = [...p.zoneSet].map(k => k.split(",").map(Number)).filter(([r, c]) => zoneOfTile(cr, cc, r, c) === "guard" && !(r === cr && c === cc));
     p.pieces = p.pieces.filter(pc => pc.kind === "champ" || pc.kind === "unit").filter(pc => { if (pc.kind === "champ") return true; const t = tiles.find(([r, c]) => !used.has(r + "," + c)); if (!t) return false; used.add(t.join(",")); pc.r = t[0]; pc.c = t[1]; return true; }); p.waves = [0, 1, 2].map(() => ({ zone: "guard" })); }`; // its waves (each brings a free Footman) go to the Guard too
   const r = JSON.parse(sim.run(`(() => { const { full, plans } = ${ZWAR(3, 4, tweak)}; const p = plans[0], cx = p.castle[1] + .5, cy = p.castle[0] + .5, sd = full.sudden ? full.sudden.t0 : 1e9; let far = 0, seen = 0;
     full.frames.forEach(f => { if (f.t >= sd) return; full.meta.forEach((m, j) => { if (m.pid !== p.pid || m.kind !== "unit" || m.militia || m.free) return; const i = j * 4; if (f.d.length <= i + 3 || (f.d[i + 3] & 1)) return; seen++; far = Math.max(far, Math.hypot(f.d[i] - cx, f.d[i + 1] - cy)); }); });
@@ -342,49 +342,30 @@ test("fixed timing (timeV1): with no percentage chances in play, the dice no lon
   assert.ok(new Set(off).size > 1, "before fixed timing the opening was random (the check would prove nothing)");
 });
 
-test("zones v1: the Front goes straight through the middle to a far target, while flanks keep to the sides", () => {
-  // every lord aims at the castle across the map; either every soldier stands in the Front (Assault), or every soldier stands on a flank (Raid)
-  // (the first 30 seconds, soldiers within 3 tiles of the middle)
-  const run = shape => JSON.parse(sim.run(`(() => { const { full, plans, L } = ${ZWAR(4, 3, `plans.forEach((p, i) => { p.targets = [plans[(i + 4) % 8].pid]; p.front = "assault"; p.flanks = { left: "raid", right: "raid" }; p.timeV1 = true;
-      const [cr, cc] = p.castle, want = "${shape}" === "front" ? ["front"] : ["left", "right"], used = new Set(), tiles = [...p.zoneSet].map(k => k.split(",").map(Number)).filter(([r, c]) => want.includes(zoneOfTile(cr, cc, r, c, L.N)) && !(r === cr && c === cc));
-      p.pieces = p.pieces.filter(q => q.kind === "champ" || q.kind === "unit").filter(q => { if (q.kind === "champ") return true; const t = tiles.filter(([r, c]) => !used.has(r + "," + c))[used.size % 2 ? tiles.length - 1 : 0] || tiles.find(([r, c]) => !used.has(r + "," + c)); if (!t) return false; used.add(t.join(",")); q.r = t[0]; q.c = t[1]; return true; }); p.waves = null; });`)};
-    const c = L.N / 2; let on = 0, all = 0; full.frames.forEach(f => { if (f.t > 30) return; full.meta.forEach((m, j) => { if (m.kind !== "unit" || m.militia || m.free) return; const i = j * 4; if (f.d.length <= i + 3 || (f.d[i + 3] & 1)) return; all++; if (Math.hypot(f.d[i] - c, f.d[i + 1] - c) <= 3) on++; }); });
-    return JSON.stringify({ share: on / all }); })()`));
-  const front = run("front"), flanks = run("flanks");
-  assert.ok(front.share > 0.02, `a Front aimed across the map spent only ${(front.share * 100).toFixed(1)}% of its time in the middle`);
-  assert.ok(flanks.share < front.share / 3, `flanks spent ${(flanks.share * 100).toFixed(1)}% of their time in the middle (the Front: ${(front.share * 100).toFixed(1)}%)`);
-});
-
-test("zones v1: a Front aimed at the neighbour beside it marches out through its own gate, while its flank goes straight along the side", () => {
-  // lord 0 targets its left neighbour, with footmen split between the Front and the left flank (Raid); the other lords field only their heroes
-  const tweak = `{ const p = plans[0], cs = plans.map(q => q.castle), k = flankNeighbour(cs, 0, "left", L.N), nb = plans[k], [cr, cc] = p.castle;
-    p.targets = [nb.pid]; p.front = "assault"; p.flanks = { left: "raid", right: "screen" }; p.waves = null; plans.forEach((q, i) => { q.timeV1 = true; if (i) { q.pieces = q.pieces.filter(x => x.kind === "champ"); q.waves = null; q.front = "hill"; } });
-    const tiles = z => [...p.zoneSet].map(t => t.split(",").map(Number)).filter(([r, c]) => zoneOfTile(cr, cc, r, c, L.N) === z), F = tiles("front"), Lf = tiles("left"); let n = 0;
-    p.pieces = p.pieces.filter(q => q.kind !== "wall" && !(q.kind === "trap")).map(q => { if (q.kind !== "unit") return q; const t = (n++ % 2 ? Lf : F).shift(); return t ? { ...q, type: "footman", r: t[0], c: t[1] } : q; }).filter(q => q.kind !== "unit" || q.type === "footman"); }`;
-  const r = JSON.parse(sim.run(`(() => { const { full, plans, L } = ${ZWAR(20, 4, tweak)}; const p = plans[0], cx = p.castle[1] + .5, cy = p.castle[0] + .5, mid = L.N / 2, toMid = Math.hypot(mid - cx, mid - cy);
-    const out = { front: [], flank: [] };
-    full.meta.forEach((m, j) => { if (m.pid !== p.pid || m.kind !== "unit" || m.key !== "footman") return; const i = j * 4; let s0 = null, best = 0;
-      full.frames.forEach(f => { if (f.t > 20 || f.d.length <= i + 3 || (f.d[i + 3] & 1)) return; const x = f.d[i], y = f.d[i + 1]; if (!s0) s0 = zoneOfTile(p.castle[0], p.castle[1], Math.floor(y), Math.floor(x), L.N); best = Math.max(best, ((x - cx) * (mid - cx) + (y - cy) * (mid - cy)) / toMid); });
-      if (s0 === "front" || s0 === "left") out[s0 === "front" ? "front" : "flank"].push(best); });
-    return JSON.stringify(out); })()`));
-  assert.ok(r.front.length && r.flank.length, "no Front or flank footmen to follow");
-  // how far toward the middle each got: the Front walks out past the tree line, the flank never needs to
-  assert.ok(Math.min(...r.front) > Math.max(...r.flank) + 1, `Front got ${r.front.map(v => v.toFixed(1)).join(", ")} tiles toward the middle, the flank ${r.flank.map(v => v.toFixed(1)).join(", ")}`);
+test("zones v1: the field is just the Guard (within 1.5 tiles of the castle) and the Front (the rest), the same size and shape for every lord", () => {
+  const r = JSON.parse(sim.run(`(() => { const L = seatLayout(8, true), out = [];
+    L.castles.forEach(([cr, cc]) => { const z = zoneFor([cr, cc], L.N, L.castles, true), n = { guard: 0, front: 0 }, off = new Set();
+      z.forEach(k => { const [r, c] = k.split(",").map(Number), j = zoneOfTile(cr, cc, r, c); n[j] = (n[j] || 0) + 1; if (j !== (Math.hypot(r - cr, c - cc) <= ZONE_GUARD_R ? "guard" : "front")) off.add(k); });
+      out.push({ ...n, off: off.size }); });
+    return JSON.stringify({ out, zones: ZONES }); })()`));
+  assert.deepEqual(r.zones, ["guard", "front"]);
+  r.out.forEach((z, i) => { assert.equal(z.off, 0, `lord ${i}: a tile in the wrong zone`); assert.deepEqual(Object.keys(z).sort(), ["front", "guard", "off"], `lord ${i}: a zone other than Guard and Front`); });
+  assert.equal(new Set(r.out.map(z => z.front)).size, 1, `Front sizes differ between lords: ${r.out.map(z => z.front).join(", ")}`);
 });
 
 test("zones v1: soldiers never stay stuck behind their own walls", () => {
-  // lord 0 drops 5 walls at random on its field, then sends everyone out (Front on Assault, both flanks Raid). In the first 60 seconds no
+  // lord 0 drops 5 walls at random on its field, then sends everyone out (Front on Assault). In the first 60 seconds no
   // soldier may stand within 0.3 tiles of the same spot for 8 seconds with no enemy (soldier, hero or castle) within 2.5 tiles at any point: that is stuck, not fighting
   const bad = [];
   for (let g = 0; g < 6; g++) {
     const tweak = `{ const p = plans[0], r = mulberry(${g} * 31 + 7), taken = new Set(p.pieces.map(q => q.r + "," + q.c)); taken.add(p.castle.join(","));
       const free = [...p.zoneSet].filter(k => !taken.has(k) && !treeTile(...k.split(",").map(Number), 8, L.N));
       p.pieces = p.pieces.filter(q => q.kind !== "wall" && !(q.kind === "trap" && q.type === "tower")); for (let k = 0; k < 5 && free.length; k++) { const i = Math.floor(r() * free.length), [a, b] = free.splice(i, 1)[0].split(",").map(Number); p.pieces.push({ kind: "wall", r: a, c: b, dir: r() < .5 ? "h" : "v" }); }
-      p.front = "assault"; p.flanks = { left: "raid", right: "raid" }; p.temper = "reckless"; plans.forEach(q => { q.timeV1 = true; }); }`;
+      p.front = "assault"; p.temper = "reckless"; plans.forEach(q => { q.timeV1 = true; }); }`;
     const r = JSON.parse(sim.run(`(() => { const { full, plans, L } = ${ZWAR(10 + g, 4, tweak)}; const p = plans[0], fr = full.frames.filter(f => f.t <= 60), out = [];
       const at = (f, j) => { const i = j * 4; return f.d.length > i + 3 && !(f.d[i + 3] & 1) ? [f.d[i], f.d[i + 1]] : null; };
       full.meta.forEach((m, j) => { if (m.pid !== p.pid || m.kind !== "unit" || m.militia || m.free || (UNITS[m.key] && (UNITS[m.key].tower || UNITS[m.key].engine))) return;
-        const f0 = fr.find(f => at(f, j)); if (!f0 || m.key === "guard") return; const p0 = at(f0, j); if (zoneOfTile(p.castle[0], p.castle[1], Math.floor(p0[1]), Math.floor(p0[0]), L.N) === "guard") return; // Guard soldiers are meant to stand at home
+        const f0 = fr.find(f => at(f, j)); if (!f0 || m.key === "guard") return; const p0 = at(f0, j); if (zoneOfTile(p.castle[0], p.castle[1], Math.floor(p0[1]), Math.floor(p0[0])) === "guard") return; // Guard soldiers are meant to stand at home
         for (let a = 0; a < fr.length; a++) { const s0 = at(fr[a], j); if (!s0) continue; let b = a, still = true;
           while (b + 1 < fr.length && fr[b + 1].t - fr[a].t <= 8) { b++; const q = at(fr[b], j); if (!q || Math.hypot(q[0] - s0[0], q[1] - s0[1]) > .3) { still = false; break; } }
           if (!still || fr[b].t - fr[a].t < 8) continue;
@@ -399,15 +380,13 @@ test("zones v1: soldiers never stay stuck behind their own walls", () => {
 
 test("agency pass (tuneV1): bots answer yesterday's attacker", () => {
   const r = JSON.parse(sim.run(`(() => { const L = seatLayout(8, true), ids = [...Array(8)].map((_, k) => "a" + k);
-    // yesterday a1 (beside a0) sent a Siege Front at a0: today a0 takes the plan that beats Siege and screens a1's side
+    // yesterday a1 sent a Siege Front at a0: today a0 takes the plan that beats Siege
     const prev = ids.map((pid, k) => ({ pid, front: k === 1 ? "siege" : "assault", targets: k === 1 ? ["a0"] : [] }));
     const zone = zoneFor(L.castles[0], L.N, L.castles, L.v2), p = lordBotPlan({ uid: "a0", cls: "warrior", i: 0, ids, L, zone, dayNo: 4, lvl: 10, v2: true, v3: true, fair: true, pick: true, ranks: {}, sup: true, defV2: true, zv: true, prev });
-    const side = ["left", "right"].find(s => flankNeighbour(L.castles, 0, s, L.N) === 1);
     const q = lordBotPlan({ uid: "a2", cls: "warrior", i: 2, ids, L, zone: zoneFor(L.castles[2], L.N, L.castles, L.v2), dayNo: 4, lvl: 10, v2: true, v3: true, fair: true, pick: true, ranks: {}, sup: true, defV2: true, zv: true, prev });
-    return JSON.stringify({ front: p.front, beatsSiege: FRONT_BEATS[p.front] === "siege", side, flank: side && p.flanks[side], react: p.react, untouched: q.react || null, qfront: q.front, qbuild: BOT_ZONES[q.build].front }); })()`));
+    return JSON.stringify({ front: p.front, beatsSiege: FRONT_BEATS[p.front] === "siege", react: p.react, untouched: q.react || null, qfront: q.front, qbuild: BOT_ZONES[q.build].front }); })()`));
   assert.ok(r.beatsSiege, `a bot hit by a Siege Front took ${r.front}, which doesn't beat Siege`);
   assert.equal(r.react, "a1");
-  assert.ok(r.side && r.flank === "screen", "the bot screens the side its attacker came from");
   assert.equal(r.untouched, null, "a bot nobody attacked keeps its own plan");
   assert.equal(r.qfront, r.qbuild);
 });
@@ -447,22 +426,19 @@ test("fixed reach: a plan cannot change how far its fighters reach (melee 2 tile
   assert.deepEqual(r.places, [1, 2, 3, 4, 5, 6, 7, 8]);
 });
 
-test("bot heroes: most march with the bulk of their army (same zone), never stand in the Guard, and never share a tile", () => {
-  const r = JSON.parse(sim.run(`(() => { const L = seatLayout(8, true), ids = [...Array(8)].map((_, k) => "hz" + k); let flankArmies = 0, withArmy = 0, guard = 0, clash = 0, all = 0;
+test("bot heroes: always lead the Front, never stand in the Guard, and never share a tile", () => {
+  const r = JSON.parse(sim.run(`(() => { const L = seatLayout(8, true), ids = [...Array(8)].map((_, k) => "hz" + k); let front = 0, clash = 0, all = 0, guardArmies = 0;
     for (let g = 0; g < 8; g++) { const gi = ids.map(x => x + "g" + g);
       gi.forEach((uid, i) => { const zone = zoneFor(L.castles[i], L.N, L.castles, true), [cr, cc] = L.castles[i];
         const p = lordBotPlan({ uid, cls: "warrior", i, ids: gi, L, zone, dayNo: 4, lvl: 10, v2: true, v3: true, fair: true, pick: true, ranks: {}, sup: true, defV2: true, zv: true });
-        const h = p.pieces.find(q => q.kind === "champ"), hz = zoneOfTile(cr, cc, h.r, h.c, L.N), n = {}; all++;
-        p.pieces.filter(q => q.kind === "unit").forEach(q => { const z = zoneOfTile(cr, cc, q.r, q.c, L.N); n[z] = (n[z] || 0) + 1; });
-        if (hz === "guard") guard++;
-        if (p.pieces.some(q => q !== h && q.r === h.r && q.c === h.c)) clash++;
-        const flank = ["left", "right"].find(s => (n[s] || 0) > (n.front || 0) && (n[s] || 0) >= (n[s === "left" ? "right" : "left"] || 0));
-        if (flank) { flankArmies++; if (hz === flank || ((n.left || 0) === (n.right || 0) && (hz === "left" || hz === "right"))) withArmy++; } }); }
-    return JSON.stringify({ flankArmies, withArmy, guard, clash, all }); })()`));
-  assert.equal(r.guard, 0, "a bot hero stood in the Guard");
+        const h = p.pieces.find(q => q.kind === "champ"); all++;
+        if (zoneOfTile(cr, cc, h.r, h.c) === "front") front++;
+        if (p.pieces.some(q => q.kind === "unit" && zoneOfTile(cr, cc, q.r, q.c) === "guard")) guardArmies++;
+        if (p.pieces.some(q => q !== h && q.r === h.r && q.c === h.c)) clash++; }); }
+    return JSON.stringify({ front, clash, all, guardArmies }); })()`));
+  assert.equal(r.front, r.all, "a bot hero stood outside the Front");
   assert.equal(r.clash, 0, "a bot hero shared a tile");
-  assert.ok(r.flankArmies >= 5, `too few flank-heavy bots to judge (${r.flankArmies} of ${r.all})`);
-  assert.ok(r.withArmy / r.flankArmies >= .6, `only ${r.withArmy} of ${r.flankArmies} flank-heavy bots' heroes went with their army`);
+  assert.ok(r.guardArmies >= 5, `too few bots keep soldiers in the Guard (${r.guardArmies} of ${r.all})`);
 });
 
 test("Rogue pace: 2 tiles a second (Archer 1.9), at most 10% faster while hidden, and Flicker Strike reaches 3.5 tiles", () => {

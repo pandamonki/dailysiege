@@ -147,13 +147,11 @@ const finalToday = () => (typeof isLive === "function" && isLive() ? liveClock()
 // zones v1 (prototype): where a soldier is placed sets its job. Practice always uses them; real wars from ZONE_V1_FROM
 const tuneV1Now = () => (typeof isLive === "function" && isLive() ? tuneV1For(liveClock().planDay) : true); // agency pass (practice always)
 const zoneV1Now = () => (typeof isLive === "function" && isLive() ? zoneV1For(liveClock().planDay) : true);
-const myZone = (r, q) => zoneOfTile(CASTLE[0], CASTLE[1], r, q, N);
-// the rival on my left or right (looking at the hill), or null; my flank with nobody there fights with the Front
-function myNeighbour(side) { const cs = [CASTLE, ...RIVALS.map(r => r.pos)], k = flankNeighbour(cs, 0, side, N); return k > 0 ? RIVALS[k - 1] : null; }
+const myZone = (r, q) => zoneOfTile(CASTLE[0], CASTLE[1], r, q);
 // what each zone holds today: soldiers on the map by zone, whether the hero is there, and each wave's zone
 function myJobs() {
-  const out = { guard: 0, left: 0, front: 0, right: 0, hero: "front" };
-  Object.keys(S.place || {}).forEach(k => { const ref = S.place[k], [r, q] = k.split(",").map(Number); let z = myZone(r, q); if ((z === "left" || z === "right") && !myNeighbour(z)) z = "front";
+  const out = { guard: 0, front: 0, hero: "front" };
+  Object.keys(S.place || {}).forEach(k => { const ref = S.place[k], [r, q] = k.split(",").map(Number), z = myZone(r, q);
     if (ref === "champ") out.hero = z; else if (findUnit(ref)) out[S.uorders && S.uorders[ref] === "guard" ? "guard" : z]++; });
   return out;
 }
