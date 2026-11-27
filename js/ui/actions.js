@@ -160,7 +160,7 @@ const A = {
   formation: () => { S.formation = S.formation === false; },
   heading: v => { S.strategy.heading = v; },
   zfront: v => { if (FRONT_PLANS.includes(v)) S.strategy.front = v; },
-  ztemper: v => { if (TEMPERS.includes(v)) S.strategy.temper = v; }, wzone: (v, k) => { ensureGarrison(); const w = S.garrison[+k]; if (w && ZONES.includes(v)) w.zone = v; },
+  ztemper: v => { if (TEMPERS.includes(v)) S.strategy.temper = v; },
   aplan: v => { if (ARMY_PLANS.includes(v)) S.strategy.plan = v; }, fback: v => { if (FALL_BACKS.includes(v)) S.strategy.fallback = v; },
   hillfirst: () => { S.strategy.heading = S.strategy.heading === "centre" ? "castle" : "centre"; },
   gtoggle: (_, k) => { sheet.gopen = sheet.gopen === k ? null : k; },

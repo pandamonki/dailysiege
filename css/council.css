@@ -171,9 +171,4 @@
 .zwarn { color: var(--wax); font-size: 14px; margin: 4px 0 0; }
 .zvs { display: flex; gap: 12px; flex-wrap: wrap; font-size: 13px; margin: 6px 0 2px; }
 .zvs em { font-style: normal; } .zvs .g { color: var(--verdant); } .zvs .b { color: var(--wax); }
-.gr-zone { display: flex; gap: 5px; flex-wrap: wrap; margin: 6px 0 4px; }
-.gr-zone button { display: inline-flex; align-items: center; gap: 5px; border: 1px solid rgba(62,39,20,.5); background: rgba(255,250,230,.55); border-radius: 999px; padding: 3px 11px; font: inherit; font-size: 14px; color: var(--ink); cursor: pointer; min-height: 30px; }
-.gr-zone button i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
-.gr-zone button.on { border: 2px solid var(--wax); background: rgba(142,42,32,.12); font-weight: 700; }
-.gr-zone button:disabled { opacity: .5; }
 .tkeep { display: flex; align-items: center; gap: 10px; justify-content: space-between; border: 1px dashed var(--wax); border-radius: 8px; padding: 6px 10px; margin: 6px 0; font-size: 14px; }

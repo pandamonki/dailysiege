@@ -323,20 +323,20 @@ function routeLine(pts, color, t, hold, alpha = .9, thin = 1) {
   else { ctx.moveTo(ex + bx * w * 2.2, ey + by * w * 2.2); ctx.lineTo(ex - by * w * 1.9, ey + bx * w * 1.9); ctx.lineTo(ex + by * w * 1.9, ey - bx * w * 1.9); ctx.fill(); }
   ctx.restore();
 }
-// zones v1: each zone's route from my deploy field, as the battle walks it: the Front out through my gate and in through the target's gate
-// (or to the hill). The Guard stays home.
+// zones v1: the Front's route from my deploy field, as the battle walks it: straight along the flank to a lord beside me, otherwise out
+// through my gate and in through the target's gate (or to the hill). The Guard stays home.
 function drawZoneRoutes(t) {
   const j = myJobs(), st = S.strategy || {}, mid = N / 2, cpt = rc => [rc[1] + .5, rc[0] + .5];
   const TG = treeGeom(RIVALS.length + 1, N), gr = TG.clumps.length ? Math.max(CTR_R + .8, Math.min(...TG.clumps.map(c => Math.hypot(c.x - TG.cc, c.y - TG.cc) - c.r)) - RING_GAP) : null;
   const gate = rc => { const [x, y] = cpt(rc), dx = mid - x, dy = mid - y, L = Math.hypot(dx, dy) || 1, k = gr != null ? Math.max(0, L - gr) : Math.min(GATE_OUT, L * .6); return [x + dx / L * k, y + dy / L * k]; };
   const zc = z => { const tl = [...zoneSet].map(k => k.split(",").map(Number)).filter(([r, q]) => myZone(r, q) === z); if (!tl.length) return null; return [tl.reduce((s, a) => s + a[1], 0) / tl.length + .5, tl.reduce((s, a) => s + a[0], 0) / tl.length + .5]; };
-  const used = z => j[z] > 0 || j.hero === z || (S.garrison || []).some((w, i) => waveOpen(i) && (ZONES.includes(w.zone) ? w.zone : "front") === z);
+  const used = z => j[z] > 0 || j.hero === z || (S.garrison || []).some((w, i) => waveOpen(i));
   if (used("front")) { const from = zc("front"), me = gate(CASTLE);
     if ((FRONT_PLANS.includes(st.front) ? st.front : "assault") === "hill") routeLine([from, me, [mid, mid]], ZONE_COL.front, t, true);
-    else { const r = RIVALS.find(x => x.id === (S.lists.hostile || [])[0]); if (r) { const c = cpt(r.pos), g = gate(r.pos);
-      routeLine(Math.hypot(me[0] - g[0], me[1] - g[1]) < 1 ? [from, me, c] : [from, me, g, c], ZONE_COL.front, t);
+    else { const r = RIVALS.find(x => x.id === (S.lists.hostile || [])[0]), bs = myBeside(); if (r) { const c = cpt(r.pos), g = gate(r.pos);
+      routeLine(bs.includes(r) ? [from, c] : Math.hypot(me[0] - g[0], me[1] - g[1]) < 1 ? [from, me, c] : [from, me, g, c], ZONE_COL.front, t);
       // the targets after the first: fainter, thinner, from castle to castle through their gates, in the order the Front takes them
-      let prev = r; (S.lists.hostile || []).slice(1).map(id => RIVALS.find(x => x.id === id)).filter(Boolean).forEach(nx => { routeLine([cpt(prev.pos), gate(prev.pos), gate(nx.pos), cpt(nx.pos)], ZONE_COL.front, t, false, .45, .7); prev = nx; }); } } }
+      let prev = r; (S.lists.hostile || []).slice(1).map(id => RIVALS.find(x => x.id === id)).filter(Boolean).forEach(nx => { routeLine(bs.includes(nx) ? [cpt(prev.pos), cpt(nx.pos)] : [cpt(prev.pos), gate(prev.pos), gate(nx.pos), cpt(nx.pos)], ZONE_COL.front, t, false, .45, .7); prev = nx; }); } } }
 }
 function drawOrderArrows(t) {
   if (zoneV1Now()) { drawZoneRoutes(t); return; }

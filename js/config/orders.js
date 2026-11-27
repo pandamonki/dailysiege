@@ -78,7 +78,7 @@ const WAVE_ORDERS = [["default", "Default orders", "Each soldier follows its gro
 const WAVE_DEFAULT = [{ when: "castle_hit", at: 45 }, { when: "hero_dies", at: 90 }, { when: "timer", at: 150 }];
 function cleanWaves(w) { // exactly WAVE_COUNT waves; unknown conditions fall back to the default; at most WAVE_SLOTS soldiers each (never a mercenary)
   return [...Array(WAVE_COUNT)].map((_, i) => { const x = Array.isArray(w) && w[i] || {}, d = WAVE_DEFAULT[i];
-    return { when: WAVE_WHEN.some(o => o[0] === x.when) ? x.when : d.when, at: WAVE_TIMES.includes(+x.at) ? +x.at : d.at, order: WAVE_ORDERS.some(o => o[0] === x.order) ? x.order : "default", rush: x.rush !== false, ...(ZONES.includes(x.zone) ? { zone: x.zone } : {}), // rush: may this wave rush out in an emergency (missing = yes)
+    return { when: WAVE_WHEN.some(o => o[0] === x.when) ? x.when : d.when, at: WAVE_TIMES.includes(+x.at) ? +x.at : d.at, order: WAVE_ORDERS.some(o => o[0] === x.order) ? x.order : "default", rush: x.rush !== false, // rush: may this wave rush out in an emergency (missing = yes)
       units: (Array.isArray(x.units) ? x.units : []).filter(u => u && UNITS[u.type] && !UNITS[u.type].merc).slice(0, WAVE_SLOTS).map(u => ({ type: u.type, lvl: Math.max(1, Math.min(3, Math.round(u.lvl) || 1)), id: u.id || null, hp: 1 })) }; });
 }
 
@@ -119,6 +119,14 @@ const GATE_OUT = 4.5, GATE_CONE = .6; // the Front marches out through its own g
 // without trees), on to the target castle's gate, and in along that castle's road. GATE_CONE: how far off straight ahead a goal must be before it leaves by its gate
 const GUARD_LEASH = 7; // a Guard soldier that has chased this far from its castle drops the chase and walks home
 const HILL_PTS = 2, HILL_MIN = 10; // the lord who held the hill longest (at least HILL_MIN seconds) scores this, times the day's weight
-// (hyp comes from core/util.js, so every device classifies the same way)
+// (hyp and datan2 come from core/util.js and core/detmath.js, so every device classifies the same way)
 // the zone of a deploy tile for a castle at [cr, cc]: the Guard round the castle, the Front everywhere else
 const zoneOfTile = (cr, cc, r, c) => hyp(r - cr, c - cc) <= ZONE_GUARD_R ? "guard" : "front";
+// the lords beside a castle: the nearest castle on each side, looking at the hill (castles: [[r, c], ...]). An attack on one of them goes
+// straight along the flank; any other lord is attacked through the Front (out through my gate, in through theirs)
+function sideNeighbours(castles, i, n) {
+  const [cr, cc] = castles[i], ctr = (n - 1) / 2, fwd = datan2(ctr - cr, ctr - cc), best = { left: [-1, 1e18], right: [-1, 1e18] };
+  castles.forEach(([r, c], k) => { if (k === i) return; let a = datan2(r - cr, c - cc) - fwd; while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI;
+    const s = a > 0 ? "right" : "left", dd = Math.round(hyp(r - cr, c - cc) * 1e6); if (dd < best[s][1]) best[s] = [k, dd]; });
+  return [best.left[0], best.right[0]].filter((k, j, a) => k >= 0 && a.indexOf(k) === j);
+}

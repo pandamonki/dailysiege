@@ -112,11 +112,11 @@ const botTier = dayNo => dayNo >= 4 ? 3 : dayNo >= 3 ? 2 : 1;
 const BOT_ZONES = { warband: { front: "assault" }, fortress: { front: "hill" }, champion: { front: "hunt" }, mixed: { front: "siege" } };
 const BOT_TEMPER = { aggressive: "reckless", skirmish: "steady", cautious: "wary" };
 // zones v1: how a bot shapes its army, fixed for the war by its seed, so a war mixes lords who send everything at their target with lords
-// who keep some at home. jobs: where each soldier stands, in order; waves: each wave's zone. The hero always leads the Front.
+// who keep some at home. jobs: where each soldier stands, in order. Waves always join the Front. The hero always leads the Front.
 const BOT_SHAPES = [
-  { name: "spearhead", jobs: ["front", "front", "front", "front", "front"], waves: ["front", "front", "front"] },
-  { name: "anchored", jobs: ["front", "front", "guard", "front", "front"], waves: ["front", "guard", "front"] },
-  { name: "turtle", jobs: ["front", "guard", "front", "guard", "front"], waves: ["guard", "front", "front"] },
+  { name: "spearhead", jobs: ["front", "front", "front", "front", "front"] },
+  { name: "anchored", jobs: ["front", "front", "guard", "front", "front"] },
+  { name: "turtle", jobs: ["front", "guard", "front", "guard", "front"] },
 ];
 // agency pass: a bot answers the lord whose army came for it in the last battle (prev: that battle's plans): it takes the Front plan that beats
 // theirs. Returns { front, from } or null.
@@ -156,6 +156,5 @@ function lordBotPlan({ uid, cls, i, ids, L, zone, dayNo, lvl, v2, v3, fair, pick
     items: defV2 ? botItemsN(seed, Math.max(0, Math.min(ITEM_SLOTS, Math.floor(dayNo / 2) + B.items))) : botItems(seed).slice(0, Math.floor(dayNo / 2)), build: defV2 ? build : undefined, armyPlan: BOT_ORDERS[build][0], fallback: BOT_ORDERS[build][1], castleTier: tier, stance: BOT_STANCES[seed % BOT_STANCES.length], prio: PRIORITIES.slice(rot).concat(PRIORITIES.slice(0, rot)), rules: [{ if: IFS[0], then: THENS[0] }],
     pieces, targets: pick ? botPicks(uid, seed, near, ranks) : near, tmode: "list", heading: "near", offers: {}, replies: {}, terms: {}, bids: {}, pacts: [], hostile: [], betray: {}, bot: true, ...(v2 ? { ...botCombat(seed), waves: botWaves(seed, kinds, dayNo, sup, AR.waves, AR.lvl) } : {}),
     ...(BZ ? { front: RE ? RE.front : BZ.front, ...(RE ? { react: RE.from } : {}), temper: BOT_TEMPER[BOT_STANCES[seed % BOT_STANCES.length]] || "steady" } : {}) };
-  if (SH && out.waves) out.waves.forEach((w, k) => { w.zone = SH.waves[k] || "front"; });
   return out;
 }

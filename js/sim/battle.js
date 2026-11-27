@@ -179,8 +179,8 @@ function runBattle(plans, seed, opts = {}) {
     w.done = true; p.lastWave = t; st(p.pid).waves.push(Math.round(t));
     w.units.forEach((u, j) => { const o = (j - (n - 1) / 2) * .45, e = makeUnit(p, { ...u, kind: "unit" }, c.x + dx / L * .9 + px * o, c.y + dy / L * .9 + py * o);
       e.hx = e.x; e.hy = e.y; e.spd *= BAL.move; e.as *= BAL.swing; e.retreats = 1; e.wave = i + 1; if (p.noRetreat) e.noRetreat = true;
-      if (p.zv) setJob(e, ZONES.includes(w.zone) ? w.zone : "front"); // zones v1: the wave takes the job of the zone it was sent to
-      if (p.waveV2 && !(p.zv && e.job === "guard")) { e.waveDef = true; e.waveSeen = t; } // waves v2 (a wave sent to the Guard is home already: it guards from the start): defend the castle area first, then the army plan
+      if (p.zv) setJob(e, "front"); // zones v1: a wave follows the army's plan with the Front
+      if (p.waveV2) { e.waveDef = true; e.waveSeen = t; } // waves v2: defend the castle area first, then the army plan
       else if (w.order === "castle") e.purpose = "castle"; else if (w.order === "hero") e.hunter = true; else if (w.order === "nearest") e.purpose = "nearest"; }); // the wave's purpose: raider-style march on a castle, hunt heroes, or fight the nearest enemy
     ev({ ty: "wave", pid: p.pid, i, n: p.waves.filter(x => x.done).length, ...(rush ? { rush: 1 } : {}) });
     log(rush ? `${poss(p.pid)} castle is losing ground: reinforcements rush out to defend it.` : `${poss(p.pid)} reinforcements march out of the castle.`, p.pid === mePid ? "you" : undefined);
@@ -190,8 +190,8 @@ function runBattle(plans, seed, opts = {}) {
     P[pl.pid] = { ...pl, stance: STANCE_FIX[pl.stance] || pl.stance, bombs: (pl.bombs || []).map(b => ({ ...b })), alive: true, place: 0, kills: 0, ukills: 0, castles: 0, gold: 0, fired: new Set(), retreat: false, defendAll: false, focusLeader: false, helpPid: null, helpUntil: 0,
       targets: (pl.targets || []).slice(), ordV2: !!pl.ordV2, armyPlan: ARMY_PLANS.includes(pl.armyPlan) ? pl.armyPlan : "conquest", fallback: FALL_BACKS.includes(pl.fallback) ? pl.fallback : "none", fallbackUntil: 0, hitT: -9, castleHitT: -9, castleHitBy: null, trapT: -9, pacts: new Set(), hostileTo: new Set(pl.hostile), revenge: new Set(), feud: new Set(), bell: false, retreatT: -99, elimT: null };
   });
-  if (ZV) plans.forEach(pl => { if (!pl.zoneV1) return; const p = P[pl.pid];
-    p.zv = true; p.front = FRONT_PLANS.includes(pl.front) ? pl.front : "assault"; p.temper = TEMPERS.includes(pl.temper) ? pl.temper : "steady";
+  if (ZV) plans.forEach((pl, i) => { if (!pl.zoneV1) return; const p = P[pl.pid];
+    p.zv = true; p.beside = new Set(sideNeighbours(plans.map(q => q.castle), i, NN).map(k => plans[k].pid)); p.front = FRONT_PLANS.includes(pl.front) ? pl.front : "assault"; p.temper = TEMPERS.includes(pl.temper) ? pl.temper : "steady";
     p.stance = TEMPER_STANCE[p.temper]; p.fallback = TEMPER_FALLBACK[p.temper]; p.armyPlan = FRONT_ARMY[p.front]; });
   // a fighter's job under zones v1: the Guard or the Front
   const setJob = (e, z) => { e.job = z === "guard" ? "guard" : "front"; if (e.job === "guard") e.order = "guard"; };
@@ -202,8 +202,9 @@ function runBattle(plans, seed, opts = {}) {
   const gateR = TG && TG.clumps.length ? Math.max(CTR_R + .8, Math.min(...TG.clumps.map(c => hyp(c.x - TG.cc, c.y - TG.cc) - c.r)) - RING_GAP) : null; // how far from the middle the gates stand: just inside the tree clumps
   const gateOf = c => { const dx = ctrX - c.x, dy = ctrY - c.y, L = hyp(dx, dy) || 1, k = gateR != null ? Math.max(0, L - gateR) : Math.min(GATE_OUT, L * .6); return { x: c.x + dx / L * k, y: c.y + dy / L * k, fx: dx / L, fy: dy / L }; };
   // the Front marches out through its own gate into the middle, then comes at a lord's base through that lord's gate (cutting straight
-  // across from gate to castle ran into the tree clumps). o: what it is walking to; returns a waypoint, or null to walk straight
-  const gateRoute = (e, x, y, o) => { const p = P[e.pid]; if (!p.zv || e.job !== "front" || sdOn() || !p.castle || p.castle.dead) return null;
+  // across from gate to castle ran into the tree clumps). A lord beside it is attacked straight along the flank instead.
+  // o: what it is walking to; returns a waypoint, or null to walk straight
+  const gateRoute = (e, x, y, o) => { const p = P[e.pid]; if (!p.zv || e.job !== "front" || sdOn() || !p.castle || p.castle.dead || (o && p.beside.has(o.pid))) return null;
     const my = gateOf(p.castle), out = (e.x - p.castle.x) * my.fx + (e.y - p.castle.y) * my.fy;
     const gd = hyp(my.x - p.castle.x, my.y - p.castle.y); if (out >= gd - .5) e.outGate = true; else if (hyp(e.x - p.castle.x, e.y - p.castle.y) < 2) e.outGate = false; // once through its gate it heads on (not back to it) until it is home again
     if (!e.outGate && out < gd - .5 && hyp(x - e.x, y - e.y) > 3 && hyp(x - p.castle.x, y - p.castle.y) > hyp(my.x - p.castle.x, my.y - p.castle.y) + 1 && ((x - p.castle.x) * my.fx + (y - p.castle.y) * my.fy) < hyp(x - p.castle.x, y - p.castle.y) * dcos(GATE_CONE)) { // still inside my base, the goal outside it and off to one side: out through my gate first,

@@ -251,10 +251,10 @@ const ordersV2Now = () => (isLive() ? ordersV2For(liveClock().planDay) : true); 
 const STANCE_V2 = { aggressive: "Heals at home below 12% health", skirmish: "Heals at home below 30% health", cautious: "Heals at home below 45% health" };
 // zones v1: the Front's plan, the army temper, and what each zone holds today
 function zoneJobsHTML() {
-  const j = myJobs(), waves = (S.garrison || []).map((w, i) => waveOpen(i) ? (ZONES.includes(w.zone) ? w.zone : "front") : null);
+  const j = myJobs();
   const cell = z => `<span class="zj"><i style="background:${ZONE_COL[z]}"></i>${ZONE_INFO[z][0]} <b>${j[z]}</b>${j.hero === z ? " + hero" : ""}</span>`;
-  const warn = j.front === 0 && j.hero !== "front" ? "Nobody is in your Front, so nothing marches on your target." : j.front === 0 ? "Your Front is just your hero. Place a soldier in front of the castle, or send a wave to the Front." : "";
-  return `<div class="zjobs">${ZONES.map(cell).join("")}</div>${waves.some(Boolean) ? `<p class="muted">Waves: ${waves.map((z, i) => z ? `${i + 1} → ${ZONE_INFO[z][0]}` : "").filter(Boolean).join(" · ")}</p>` : ""}${warn ? `<p class="zwarn">⚠ ${warn}</p>` : ""}`;
+  const warn = j.front === 0 && j.hero !== "front" ? "Nobody is in your Front, so nothing marches on your target." : j.front === 0 ? "Your Front is just your hero. Place a soldier away from the castle." : "";
+  return `<div class="zjobs">${ZONES.map(cell).join("")}</div>${warn ? `<p class="zwarn">⚠ ${warn}</p>` : ""}`;
 }
 function zoneOrdersHTML(st) {
   const fr = FRONT_PLANS.includes(st.front) ? st.front : "assault", tp = TEMPERS.includes(st.temper) ? st.temper : "steady";

@@ -40,7 +40,7 @@ const supplyFull = () => fieldCount() >= S.slots && garrisonCount() >= garrisonC
 function ensureGarrison() {
   const cw = cleanWaves(S.garrison), seen = new Set();
   S.garrison = cw.map((w, i) => { const old = (S.garrison && S.garrison[i] && S.garrison[i].slots) || [];
-    return { when: w.when, at: w.at, order: w.order, rush: w.rush, ...(w.zone ? { zone: w.zone } : {}), slots: [...Array(WAVE_SLOTS)].map((_, j) => { const id = old[j], u = id && S.owned.find(x => x.id === id); if (!u || seen.has(id)) return null; seen.add(id); return id; }) }; });
+    return { when: w.when, at: w.at, order: w.order, rush: w.rush, slots: [...Array(WAVE_SLOTS)].map((_, j) => { const id = old[j], u = id && S.owned.find(x => x.id === id); if (!u || seen.has(id)) return null; seen.add(id); return id; }) }; });
   if (supplyV2Now()) supplyV2Fix();
 }
 // the first time the new supply rules apply to a save: refund beds, fix the field at FIELD_MAX, and keep any waves already holding soldiers open for free
@@ -102,7 +102,7 @@ function reserveUnit(id) {
   if (!findUnit(id)) return "No such soldier."; if (inGarrison(id) && fieldCount() >= S.slots) return "Your field supply is full.";
   unGarrison(id); const k = placedAt(id); if (k) delete S.place[k]; return null;
 }
-const garrisonPlan = () => (S.garrison || []).map((w, i) => !waveOpen(i) ? { when: w.when, at: w.at, order: w.order, rush: w.rush, zone: w.zone, slots: [] } : w).map(w => ({ when: w.when, at: w.at, order: w.order, rush: w.rush !== false, ...(ZONES.includes(w.zone) ? { zone: w.zone } : {}), units: w.slots.map(id => id && S.owned.find(u => u.id === id)).filter(Boolean).map(u => ({ type: u.type, lvl: u.lvl, id: u.id, hp: u.hp ?? 1 })) }));
+const garrisonPlan = () => (S.garrison || []).map((w, i) => !waveOpen(i) ? { when: w.when, at: w.at, order: w.order, rush: w.rush, slots: [] } : w).map(w => ({ when: w.when, at: w.at, order: w.order, rush: w.rush !== false, units: w.slots.map(id => id && S.owned.find(u => u.id === id)).filter(Boolean).map(u => ({ type: u.type, lvl: u.lvl, id: u.id, hp: u.hp ?? 1 })) }));
 const pieces = () => ["champ", ...S.owned.filter(u => !inGarrison(u.id)).map(u => u.id), ...(S.walls || []).map(w => w.id), ...S.traps.map(t => t.id)];
 const unplaced = () => pieces().filter(p => !placedAt(p));
 const findUnit = id => S.owned.find(u => u.id === id);
@@ -148,6 +148,8 @@ const finalToday = () => (typeof isLive === "function" && isLive() ? liveClock()
 const tuneV1Now = () => (typeof isLive === "function" && isLive() ? tuneV1For(liveClock().planDay) : true); // agency pass (practice always)
 const zoneV1Now = () => (typeof isLive === "function" && isLive() ? zoneV1For(liveClock().planDay) : true);
 const myZone = (r, q) => zoneOfTile(CASTLE[0], CASTLE[1], r, q);
+// the rivals beside me (the nearest on each side): my army attacks them straight along the flank, not through the gates
+const myBeside = () => sideNeighbours([CASTLE, ...RIVALS.map(r => r.pos)], 0, N).map(k => RIVALS[k - 1]);
 // what each zone holds today: soldiers on the map by zone, whether the hero is there, and each wave's zone
 function myJobs() {
   const out = { guard: 0, front: 0, hero: "front" };

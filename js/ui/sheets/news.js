@@ -7,6 +7,8 @@ const RELEASES = [
   { id: "1.33", title: "What's new in v1.33", sub: "Two zones: Guard and Front", items: [
     ["No more flanks", "Your field now has just two zones: the Guard round your castle stays home, and everything else is the Front."],
     ["Same shape for everyone", "Every lord's Front is the same size and shape, wherever their castle stands."],
+    ["Routes by target", "An attack on a lord beside you goes straight along the side; anyone further away is attacked through the middle."],
+    ["Waves follow your plan", "Waves no longer pick a zone: they join the Front and follow your targets and plan."],
   ] },
   { id: "1.31", title: "What's new in v1.31", sub: "Heroes cast their skills freely", items: [
     ["Skills fire when ready", "Every hero skill now casts as soon as it has recharged and an enemy is in reach, instead of waiting for crowds or low health."],

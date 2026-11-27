@@ -211,7 +211,8 @@ function abilLines(k, r) {
 const PATCHES = [
   { v: "v1.33: Guard and Front only", date: "28 Nov", fixes: [], balance: [], changes: [
     "The left and right flanks are gone: the tiles round your castle are the Guard, and the rest of your field is the Front.",
-    "Flank plans (Screen and Raid) are gone, waves pick Guard or Front, and bot heroes always lead the Front.",
+    "Flank plans (Screen and Raid) are gone, and bot heroes always lead the Front.",
+    "Waves no longer pick a zone: they join the Front. A lord beside you is attacked straight along the side; anyone else through the middle.",
   ] },
   { v: "v1.32: smarter casting", date: "28 Nov", fixes: [], balance: [], changes: [
     "Area spells wait for 2+ enemies or a hero, Healing Wave for an ally below 70% health, and the Mage teleports only when overwhelmed.",

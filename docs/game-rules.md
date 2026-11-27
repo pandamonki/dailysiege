@@ -209,21 +209,25 @@ Practice and real wars use these rules from the 26 Nov battle (`ZONE_V1_FROM` in
 - **Army temper** (whole army, hero included): Reckless (+15% damage, 15% more damage taken, never falls back, aggressive hero),
   Steady (falls back when 3 enemies reach the castle) or Wary (10% less damage, 20% less taken, falls back when 2 enemies reach the
   castle, cautious hero).
-- **Waves pick a zone** on the Deploy tab (Guard or Front) and take that zone's job once they have cleared the castle area.
+- **Waves have no zone choice:** every wave joins the Front and follows the army's targets, Front plan and combat priorities once it
+  has cleared the castle area.
 - **On the march** ranged soldiers and clerics stay behind their zone's melee line until they are near the fight. Only the Front
   marches in formation.
-- **Routes follow the zone:** the Front marches out along its own road to its gate (where the road leaves its base, just inside the
-  small tree clumps between bases), on to the target castle's gate, then in along that castle's road (cutting straight across from
-  gate to castle ran into the tree clumps) (`gateRoute`; `GATE_*`, `RING_GAP` in `js/config/orders.js`).
-- **Route lines:** while planning orders the map draws the Front's route through the gates to the #1 target (or to the hill when
-  holding it, ending in a ring). An empty Front (no soldiers, hero or waves) draws nothing; the Guard never does.
+- **Routes follow the target:** a lord beside you (the nearest castle on your left or on your right, looking at the hill;
+  `sideNeighbours`) is attacked straight along the flank, castle to castle. Any other lord is attacked through the Front: out along
+  your own road to your gate (where the road leaves your base, just inside the small tree clumps between bases), on to the target
+  castle's gate, then in along that castle's road (cutting straight across from gate to castle ran into the tree clumps)
+  (`gateRoute`; `GATE_*`, `RING_GAP` in `js/config/orders.js`). The same goes for any fighter the army is walking to: one from a lord
+  beside you is walked to straight.
+- **Route lines:** while planning orders the map draws the Front's route to the #1 target: straight along the flank to a lord beside
+  you, otherwise through the gates (or to the hill when holding it, ending in a ring). Later targets are drawn the same way, fainter. An empty Front (no soldiers, hero or waves) draws nothing; the Guard never does.
 - **Getting unstuck:** a soldier that has tried to walk for 2 seconds without getting anywhere takes a step to one side (the other side
   the next time) and, next to one of its own side's walls, may step through its own side's walls for a moment.
 - **Default placement:** a new player's soldiers all start in the Front with the hero (`zoneSpots`); newly bought soldiers join it too.
   Each player shapes their own army from there.
 - **Bot shapes:** each bot keeps one shape for the war, picked by its seed (`BOT_SHAPES` in `js/sim/bots.js`): spearhead (all Front),
-  anchored (one soldier and one wave in the Guard) or turtle (two soldiers and one wave in the Guard). The shape sets where its
-  soldiers stand and its waves' zones; its build still sets the Front's plan. Bot heroes always lead the Front. Practice rivals stand
+  anchored (one soldier in the Guard) or turtle (two soldiers in the Guard). The shape sets where its
+  soldiers stand; its build still sets the Front's plan. Bot heroes always lead the Front. Practice rivals stand
   their two soldiers by the same shapes.
 - **Hill points:** the lord who held the hill longest (at least 10 seconds) scores 2 points, times the day's weight; a tie shares them.
 - **Sudden death time-out:** the winner is the side with the best health left plus damage dealt all battle (each as a share of
