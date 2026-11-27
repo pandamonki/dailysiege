@@ -217,9 +217,9 @@ TREE_ART_CLASSES.forEach(cls => TREES[cls].forEach((tr, bi) => tr.nodes.forEach(
 const CHAMP_V3 = {
   warrior: { hp: 760, atk: 28, armor: .28, mres: 0,   range: 1.1, as: 1.0, spd: 1.7 },
   shaman:  { hp: 540, atk: 22, armor: .18, mres: .10, range: 2.0, as: 1.1, spd: 1.6, shot: "#8fd3ff" },
-  archer:  { hp: 500, atk: 25, armor: .05, mres: 0,   range: 3.0, as: .9,  spd: 2.0, shot: "#f1e6c0" },
+  archer:  { hp: 500, atk: 25, armor: .05, mres: 0,   range: 3.0, as: .9,  spd: 1.9, shot: "#f1e6c0" },
   mage:    { hp: 420, atk: 28, armor: 0,   mres: .20, range: 2.5, as: 1.2, spd: 1.6, shot: "#ff8a2a" },
-  rogue:   { hp: 480, atk: 33, armor: .08, mres: .05, range: 1.1, as: .8,  spd: 2.2 }, // 0.2 faster than the Archer, the quickest of the rest
+  rogue:   { hp: 480, atk: 33, armor: .08, mres: .05, range: 1.1, as: .8,  spd: 2.0 }, // the quickest hero, a little ahead of the Archer (1.9)
 };
 
 // balance v5 (plans stamped balV5): base stats changed from CHAMP_V3. The warrior was ahead of every other class, the mage and rogue behind.

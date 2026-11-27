@@ -233,7 +233,7 @@ Practice and real wars from the 26 Nov battle (`TUNE_V1_FROM` in `js/config/orde
   not at the start. In replays every mercenary carries a floating gold coin with crossed blades (the old MERC label is gone), and every mercenary
   type has its own creature sprite, drawn in `js/render/mercSprites.js`: Swamp Troll, Skull Warlord orc, one-eyed Ogre, Centaur (a
   human archer on a horse), purple Dark Elf, hooded Necromancer and Skeleton Guard. Only a small accent shows the lord's colour.
-- **A slower Rogue:** the Rogue moves 2.2 tiles a second, 0.2 faster than the Archer (was 2.4); Shadowstep makes it at most 10% faster
+- **Slower Rogue and Archer:** the Rogue moves 2 tiles a second (was 2.4) and the Archer 1.9 (was 2); the Warrior moves 1.7, the Shaman and Mage 1.6; Shadowstep makes it at most 10% faster
   while hidden (4, 6, 8, 10% by rank, as it fights; was up to about 39%); Flicker Strike reaches 3.5 tiles (was 5).
 - **The Rogue fights like every hero:** it no longer has its own 7-tile hunt for Mages and Archers (or the backline hunt while hidden);
   like every hero it picks targets by its lord's Combat settings: the hero's target order (heroes, melee, ranged, lowest health and
