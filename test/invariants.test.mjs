@@ -444,3 +444,21 @@ test("fixed reach: a plan cannot change how far its fighters reach (melee 2 tile
   assert.ok(r.fast, "fast and full runs disagree");
   assert.deepEqual(r.places, [1, 2, 3, 4, 5, 6, 7, 8]);
 });
+
+test("bot heroes: most march with the bulk of their army (same zone), never stand in the Guard, and never share a tile", () => {
+  const r = JSON.parse(sim.run(`(() => { const L = seatLayout(8, true), ids = [...Array(8)].map((_, k) => "hz" + k); let flankArmies = 0, withArmy = 0, guard = 0, clash = 0, all = 0;
+    for (let g = 0; g < 8; g++) { const gi = ids.map(x => x + "g" + g);
+      gi.forEach((uid, i) => { const zone = zoneFor(L.castles[i], L.N, L.castles, true), [cr, cc] = L.castles[i];
+        const p = lordBotPlan({ uid, cls: "warrior", i, ids: gi, L, zone, dayNo: 4, lvl: 10, v2: true, v3: true, fair: true, pick: true, ranks: {}, sup: true, defV2: true, zv: true });
+        const h = p.pieces.find(q => q.kind === "champ"), hz = zoneOfTile(cr, cc, h.r, h.c, L.N), n = {}; all++;
+        p.pieces.filter(q => q.kind === "unit").forEach(q => { const z = zoneOfTile(cr, cc, q.r, q.c, L.N); n[z] = (n[z] || 0) + 1; });
+        if (hz === "guard") guard++;
+        if (p.pieces.some(q => q !== h && q.r === h.r && q.c === h.c)) clash++;
+        const flank = ["left", "right"].find(s => (n[s] || 0) > (n.front || 0) && (n[s] || 0) >= (n[s === "left" ? "right" : "left"] || 0));
+        if (flank) { flankArmies++; if (hz === flank || ((n.left || 0) === (n.right || 0) && (hz === "left" || hz === "right"))) withArmy++; } }); }
+    return JSON.stringify({ flankArmies, withArmy, guard, clash, all }); })()`));
+  assert.equal(r.guard, 0, "a bot hero stood in the Guard");
+  assert.equal(r.clash, 0, "a bot hero shared a tile");
+  assert.ok(r.flankArmies >= 5, `too few flank-heavy bots to judge (${r.flankArmies} of ${r.all})`);
+  assert.ok(r.withArmy / r.flankArmies >= .6, `only ${r.withArmy} of ${r.flankArmies} flank-heavy bots' heroes went with their army`);
+});

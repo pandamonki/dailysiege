@@ -215,6 +215,9 @@ Practice and real wars use these rules from the 26 Nov battle (`ZONE_V1_FROM` in
   pincer (both flanks raiding), left or right hook (heavy on one side), turtle (Guard and screening flanks) or balanced. The shape
   sets where its soldiers stand, its flank plans and its waves' zones; its build still sets the Front's plan. Practice rivals stand
   their two soldiers by the same shapes.
+- **Bot heroes go with their army:** four bots in five put their hero in the zone (Front, left or right, never the Guard) with the most
+  of their soldiers, so a hook's hero leads the hook and a pincer's hero joins one of its flanks; a tie with the Front stays in the Front.
+  The rest lead from the Front (`botHeroZone`, `BOT_HERO_WITH_ARMY` in `js/sim/bots.js`). Practice rivals do the same.
 - **Hill points:** the lord who held the hill longest (at least 10 seconds) scores 2 points, times the day's weight; a tie shares them.
 - **Sudden death time-out:** the winner is the side with the best health left plus damage dealt all battle (each as a share of
   the sides still standing), not health alone.

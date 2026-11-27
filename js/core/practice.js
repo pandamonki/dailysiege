@@ -36,6 +36,8 @@ function setupPractice() {
       (dir === "h" ? [[r, c - 1], [r, c], [r, c + 1]] : [[r - 1, c], [r, c], [r + 1, c]]).forEach(([a, bb]) => { if (z.has(`${a},${bb}`) && !held.has(`${a},${bb}`)) RWALLS.push({ rid: b.id, r: a, c: bb, dir }); }); }); }
   // zones v1: each rival stands its soldiers by its shape (BOT_SHAPES), like the bots in a real war
   RIVALS.forEach((rv, i) => { const sp = zoneV1Now() ? zoneSpots(rv.pos, L.N, new Set([...zoneFor(rv.pos, L.N, L.castles, true)].filter(k => !RWALLS.some(w => w.rid === rv.id && `${w.r},${w.c}` === k))), botShape(rv.id).jobs.slice(0, 2)) : armySpots(rv.pos, L.N);
+    if (zoneV1Now()) { const units = sp.units.slice(0, 2), hz = botHeroZone(rv.id, units.map(([r, c]) => zoneOfTile(rv.pos[0], rv.pos[1], r, c, L.N))); // the hero goes with its soldiers, like the bots in a real war
+      if (hz !== "front") { const busy = new Set([...units.map(p => p.join(",")), ...RWALLS.filter(w => w.rid === rv.id).map(w => `${w.r},${w.c}`)]), t = botHeroSpot(rv.pos, L.N, zoneFor(rv.pos, L.N, L.castles, true), hz, units, busy, 8); if (t) sp.champ = t; } }
     RARMY.push({ rid: rv.id, r: sp.champ[0], c: sp.champ[1], champ: true, key: "c-" + rv.cls, hp: .55 + hash(i, 1, 9) * .45 });
     sp.units.slice(0, 2).forEach((p, j) => RARMY.push({ rid: rv.id, r: p[0], c: p[1], champ: false, key: UTYPES[(i + j * 2) % UTYPES.length], lvl: 1 + (hash(p[0], p[1], 8) > .5 ? 1 : 0), hp: .35 + hash(i, j, 4) * .65 })); });
   applyLayout(L.N, L.castles[0], RIVALS.map(r => r.pos), true);
