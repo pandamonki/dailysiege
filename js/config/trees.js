@@ -48,7 +48,7 @@ const TREES = {
       TN("Fortify", "passive", "warrior_a2", "Your wall blocks and castle guard have +{0}% max health.", [[20, 40]]),
       TN("Sapper Coordination", "synergy", "warrior_a1", "Inside a Command Banner, units deal +{0}% damage to castles and walls.", [[15, 25]]),
       TN("Fear", "passive", "warrior_a3", "Planting a Command Banner stuns enemy soldiers within 2 tiles for 1s."),
-      TN("Rallying Charge", "ultimate", "warrior_ult", "For 8s your soldiers gain +60% speed, +20% damage and crowd-control immunity, and each first strike stuns for .8s. Casts itself with 2+ soldiers alive and an enemy castle or hero within 7 tiles, 4+ enemies that close, or any enemy in sudden death.", [], ["#e2a33c", "horn", "ring", 4]),
+      TN("Rallying Charge", "ultimate", "warrior_ult", "For 8s your soldiers gain +60% speed, +30% damage and crowd-control immunity, and each first strike stuns for .8s. Casts itself with 2+ soldiers alive and an enemy castle or hero within 7 tiles, 4+ enemies that close, or any enemy in sudden death.", [], ["#e2a33c", "horn", "ring", 4]),
     ] },
   ],
   shaman: [
@@ -61,7 +61,7 @@ const TREES = {
       TN("Chrono-Storm", "ultimate", "shaman_ult", "A storm of radius 3 for 6s that pulls enemies in, burns them and cuts their attack speed by 40%. Casts itself when an enemy hero is within 5 tiles, 4+ enemies are, or any enemy is in sudden death.", [], ["#9fd0ff", "bolt", "nova", 3, "t"]),
     ] },
     { id: "totemic", name: "Totemic", role: "Field control", nodes: [
-      TN("Grounding Totem", "passive", "shaman_a1", "Every 14s in combat, plants a totem for 7s. Allies within 2.5 tiles take {0}% less physical damage and heal {1} a second.", [[6, 9, 12], [5, 8, 11]], ["#7fe08a", "totem", "heal", 2.5]),
+      TN("Grounding Totem", "passive", "shaman_a1", "Every 10s in combat, plants a totem for 7s. Allies within 2.5 tiles take {0}% less physical damage and heal {1} a second.", [[6, 9, 12], [5, 8, 11]], ["#7fe08a", "totem", "heal", 2.5]),
       TN("Earthgrab Totem", "trigger", "shaman_a1", "Roots up to {0} nearby enemies for {1}s (half on heroes and siege). Casts itself when an enemy comes within 3 tiles.", [[2, 3, 3], [2, 2.5, 3]], ["#8a5a2b", "totem", "ring", 3], 16),
       TN("Ward Totem", "passive", "shaman_a1", "Each Grounding Totem blocks the first {0} enemy hero attacks aimed at allies inside it.", [[1, 2]]),
       TN("War Drum Pulse", "synergy", "shaman_a3", "While a Grounding Totem stands, every 4s your soldiers within 4 tiles gain +{0}% attack speed for 4s, and melee soldiers +{1}% damage to castles and walls.", [[12, 20], [10, 15]]),
@@ -84,7 +84,7 @@ const TREES = {
       TN("Smoke Bomb", "trigger", "rogue_a2", "Blinds nearby enemies (40% miss) for {0}s and makes them drop you as a target. Casts itself when an enemy is within 2 tiles.", [[2, 3]], ["#9a9aa8", "smoke", "smoke", 2], 16),
       TN("Vanish", "synergy", "rogue_a2", "A kill hides you for 3s and re-arms Ambush. Cooldown {0}s (hero kills ignore it).", [[12, 9]]),
       TN("Cheap Shot", "passive", "rogue_a1", "Ambush also silences its target for 1.5s."),
-      TN("Shadow Dance", "ultimate", "rogue_ult", "Untargetable for 4s while striking up to 5 enemies (backline first) for 60% of Ambush damage each. Casts itself when an enemy hero is within 6 tiles, 4+ enemies are, or any enemy is in sudden death.", [], ["#b02a5a", "skull", "streak", 1, "t"]),
+      TN("Shadow Dance", "ultimate", "rogue_ult", "Untargetable for 4s while striking up to 5 enemies (backline first) for 80% of Ambush damage each. Casts itself when an enemy hero is within 6 tiles, 4+ enemies are, or any enemy is in sudden death.", [], ["#b02a5a", "skull", "streak", 1, "t"]),
     ] },
     { id: "venom", name: "Venom", role: "Poison", nodes: [
       TN("Poisoned Blades", "passive", "rogue_a3", "Each hit adds a poison stack: {0} damage a second per stack for 6s, up to 5 stacks. Poisoned enemies are healed {1}% less.", [[3, 4, 5], [15, 22, 30]]),
@@ -141,7 +141,7 @@ const TREES = {
     { id: "trapper", name: "Trapper", role: "Kiting", nodes: [
       TN("Fleet Footed", "passive", "archer_a3", "+{0}% move speed and +{1}% dodge against melee. After a dodge, step away.", [[6, 10, 15], [8, 12, 15]]),
       TN("Spike Trap", "trigger", "archer_a1", "Drops a trap (8s) that deals {0} + attack and roots for {1}s (half on heroes). Casts itself when an enemy comes within 2.5 tiles.", [[40, 60, 80], [1.5, 2, 2.5]], ["#c7ccd1", "dagger", "burst", 1], 10),
-      TN("Net Shot", "trigger", "archer_a1", "Roots an enemy hero for {0}s. Casts itself when an enemy hero is in range.", [[1, 1.5]], ["#c9a46a", "feather", "ring", 1, "t"], 20),
+      TN("Net Shot", "trigger", "archer_a1", "Roots an enemy hero for {0}s. Casts itself when an enemy hero is in range.", [[1, 1.5]], ["#c9a46a", "feather", "ring", 1, "t"], 14),
       TN("Entangling Wire", "synergy", "archer_a3", "When a Spike Trap goes off, enemies within {0} tiles are slowed {1}% for 4s.", [[1, 1.4], [35, 50]]),
       TN("Quick Hands", "passive", "archer_a3", "Spike Trap recharges 30% faster."),
       TN("Barricade & Minefield", "ultimate", "archer_ult", "Raises 2 walls toward the enemy and lays 3 spike traps in front. Casts itself when an enemy hero is within 5 tiles, 4+ enemies are, or any enemy is in sudden death.", [], ["#c9a46a", "feather", "ring", 2.5]),
@@ -176,6 +176,7 @@ const treeMaxOf = (bi, i) => (bi === BASE_BI ? BASE_MAX : TREE_MAX[i]);
 // Four-rank skills list all four ranks. Older battles keep the values in TREES above.
 let SKILLS_V2_FROM = "2026-11-20"; const skillsV2For = d => String(d) >= SKILLS_V2_FROM;
 // Shadowstep (rogue): the values are 0.8 of what fights, because the agency pass makes every talent TALENT_X (1.25) stronger: 4, 6, 8 and 10% faster while hidden.
+const ROGUE_DODGE = .2, ROGUE_CASTLE = 1.6; // 27 Nov: the Rogue dodges 20% of soldiers' single-target blows (not heroes') and deals 60% more to castles
 const ULT_CROWD = 4; // free casting: an ultimate also fires with this many enemies in its reach (or any enemy hero, or any enemy in sudden death)
 const FLICKER_R = 3.5; // Flicker Strike reach in tiles (was 5)
 const TREE_V2 = {
@@ -199,11 +200,11 @@ Object.keys(TREE_V2).forEach(cls => TREES[cls].forEach(tr => tr.nodes.forEach(n 
 // Skill rebalance with balance v5 (plans stamped balV5, battles from BAL_V5_FROM): measured with 600 bot wars a round (win rate by main tree).
 // Berserker and the Sniper were ahead, Pyromancy, Arcane, Storm, Shadow, Venom and Tactician behind. Nodes not listed keep their TREE_V2 values.
 const TREE_V5 = {
-  warrior: { "Taunting Shout": [[5, 8, 11, 14]], "Cleave": [[8, 14, 20, 26]], "Executioner's Whirlwind": [[5, 9, 13, 17]], "Bloodthirst": [[2, 3]], "Blood Rage": [[3, 5]], "Marching Cadence": [[10, 17, 24, 31]], "Command Banner": [[16, 26, 36, 46]] },
-  archer: { "Eagle Eye": [[.2, .35, .5, .65], [3, 6, 9, 12]], "Headshot": [[60, 105, 150, 195]] },
-  rogue: { "Ambush": [[35, 62, 90, 118], [1, 1.25, 1.5, 1.75]], "Poisoned Blades": [[3, 5, 7, 9], [15, 25, 35, 45]], "Vanish": [[8, 5]] }, // 27 Nov: less duel burst, more health and armour (CHAMP_V5)
+  warrior: { "Taunting Shout": [[5, 8, 11, 14]], "Cleave": [[12, 20, 28, 36]], "Executioner's Whirlwind": [[5, 9, 13, 17]], "Bloodthirst": [[3, 5]], "Blood Rage": [[3, 5]], "Marching Cadence": [[10, 17, 24, 31]], "Command Banner": [[16, 26, 36, 46]], "Sapper Coordination": [[25, 40]] },
+  archer: { "Eagle Eye": [[.2, .35, .5, .65], [3, 6, 9, 12]], "Headshot": [[60, 105, 150, 195]], "Spike Trap": [[45, 75, 105, 135], [1.5, 2, 2.5, 3]] },
+  rogue: { "Ambush": [[35, 62, 90, 118], [1, 1.25, 1.5, 1.75]], "Poisoned Blades": [[3, 5, 7, 9], [15, 25, 35, 45]], "Vanish": [[8, 5]], "Smoke Bomb": [[3, 4.5]] }, // 27 Nov: less duel burst, more health and armour (CHAMP_V5)
   mage: { "Fireball": [[65, 105, 145, 185]], "Arcane Mastery": [[.4, .6, .8, 1], [8, 12, 16, 20], [5, 9, 13, 17]], "Disrupt": [[1, 1.6, 2.2, 2.8]], "Mana Shield": [[25, 40]], "Empowered Synergies": [[30, 45], [15, 25]] },
-  shaman: { "Grounding Totem": [[9, 15, 21, 27], [8, 14, 20, 26]], "Static Surge": [[5, 9, 13, 17], [30, 45, 60, 75]], "Chain Lightning": [[3, 4, 4, 5], [60, 100, 140, 180]] },
+  shaman: { "Grounding Totem": [[9, 15, 21, 27], [8, 14, 20, 26]], "War Drum Pulse": [[18, 28], [15, 24]], "Static Surge": [[5, 9, 13, 17], [30, 45, 60, 75]], "Chain Lightning": [[3, 4, 4, 5], [60, 100, 140, 180]] },
 };
 TREES.warrior[1].nodes[5].desc5 = "For 5s you cannot drop below 1 health, ignore crowd control, attack 50% faster, and your attacks splash and stun soldiers. Heals 15% on cast. Casts itself when an enemy hero is within 2.5 tiles, 4+ enemies are, or any enemy is in sudden death.";
 Object.keys(TREE_V5).forEach(cls => TREES[cls].forEach(tr => tr.nodes.forEach(n => { if (TREE_V5[cls][n.name]) n.w5 = TREE_V5[cls][n.name]; })));

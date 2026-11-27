@@ -42,7 +42,7 @@ globalThis.labWar = function (game, day) {
     return Object.assign(p, { pid: uid, name: uid, color: "#2f5fa8", castle: L.castles[i], level: lvl, ${FLAGS}, comp, main: labMain(p.tree, p.cls) }); });
   const res = runBattle(JSON.parse(JSON.stringify(plans)), 5100 + game * 37 + day, { N: L.N, fast: true, ${OPTS}, dayNo: day });
   return plans.map(p => { const r = res.results.find(x => x.pid === p.pid), h = (res.tel.ents || []).find(e => e.kind === "champ" && e.pid === p.pid) || {};
-    return { cls: p.cls, comp: p.comp, main: p.main, day, place: r.place, points: r.points, kills: h.kills || 0, deaths: h.deaths || 0, dealt: h.dealt || 0 }; });
+    return { cls: p.cls, comp: p.comp, main: p.main, day, place: r.place, points: r.points, kills: h.kills || 0, deaths: h.deaths || 0, dealt: h.dealt || 0, toChamp: h.toChamp || 0, toUnit: h.toUnit || 0, toCastle: h.toCastle || 0, diedAt: h.diedAt }; });
 };
 globalThis.CL_ORDER = rnd => { const base = ${JSON.stringify(CL)}, out = []; for (let i = 0; i < 8; i++) out.push(base[Math.floor(rnd() * 5)]); return out; };`);
 

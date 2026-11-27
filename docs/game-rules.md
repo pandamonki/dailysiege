@@ -114,7 +114,12 @@ practice games always stamp all of them (`js/sim/plans.js`).
 - Hero balance (27 Nov, tested with `tools/hero-lab.mjs`): Rogue 580 health and 14% armour (`CHAMP_V5`), Ambush and Poisoned Blades lower; Archer attack 25;
   Arcane Mastery also adds attack damage, Disrupt and Empowered Synergies stronger, Arcane Missiles every 3rd attack fires 3 bolts for 75% (falling
   back on the target); Fireball and Chain Lightning hit softer and recharge slower (8s, 10s); Taunting Shout lower; Headshot back to its `TREE_V2`
-  values; Grounding Totem, Command Banner and Vanish stronger (all in `TREE_V5`). 300 bot wars after the pass: every class wins 10 to 16%.
+  values; Grounding Totem, Command Banner and Vanish stronger (all in `TREE_V5`).
+- **The Rogue in battle (27 Nov):** it dodges 20% of soldiers' single-target blows on top of its own dodge (`ROGUE_DODGE`; never heroes', castles' or
+  area hits) and deals 60% more to castles (`ROGUE_CASTLE`). It used to win hero duels but die first in battles, worn down by soldiers.
+- **Weak trees buffed (27 Nov):** Totemic (a Grounding Totem every 10s, was 14; stronger War Drum Pulse), Shadow (Smoke Bomb longer, Shadow Dance
+  80% of Ambush, was 60%), Trapper (Spike Trap hits harder, Net Shot recharges in 14s, was 20), Berserker (Cleave and Bloodthirst stronger) and
+  Tactician (Sapper Coordination stronger, Rallying Charge +30% damage, was 20%).
 - Resting at home (from 22 Nov, `HOME_HEAL` in `js/sim/battle.js`): a hero within 2.5 tiles of its own castle that has neither hit nor
   been hit for 2 seconds heals 8% of its health a second, until full or until a hit stops it. Not in sudden death or once its castle
   has fallen. A hero that falls back to heal (its stance) still heals 10% a second at home as before, whatever the fighting.

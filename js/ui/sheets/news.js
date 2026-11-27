@@ -7,7 +7,7 @@ const RELEASES = [
   { id: "1.31", title: "What's new in v1.31", sub: "Heroes cast their skills freely", items: [
     ["Skills fire when ready", "Every hero skill now casts as soon as it has recharged and an enemy is in reach, instead of waiting for crowds or low health."],
     ["Ultimates pick their moment", "An ultimate fires when an enemy hero is in reach, four or more enemies are, or in sudden death."],
-    ["Hero balance", "The Rogue is tougher but hits less hard from stealth, the Arcane Mage is stronger, and Fireball hits a little softer."],
+    ["Hero balance", "The Rogue slips past soldiers' blows and hits castles harder, the Arcane Mage is stronger, and the weakest trees got a boost."],
   ] },
   { id: "1.29", title: "What's new in v1.29", sub: "Mercenaries look like monsters now", items: [
     ["New mercenary looks", "Trolls, orcs, ogres, centaurs, dark elves, necromancers and skeletons are drawn as creatures, so you can tell them from heroes and soldiers at a glance."],

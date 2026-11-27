@@ -125,7 +125,7 @@ function makeTreeKit(X) {
     }
     if (c === "shaman") {
       if (rk(e, 2, 3)) { const lowC = P[e.pid].castle.hp / P[e.pid].castle.maxhp < .35 || e.hp / e.maxhp < .35; e.offering = lowC; if (lowC) as += V(e, 2, 3, 1) / 100; }
-      if (rk(e, 1, 0) && now >= e.nextTotem && foes(e, e.x, e.y, 5).length) { plantTotem(e); e.nextTotem = now + 14; }
+      if (rk(e, 1, 0) && now >= e.nextTotem && foes(e, e.x, e.y, 5).length) { plantTotem(e); e.nextTotem = now + 10; }
       if (rk(e, 1, 3) && X.tickN(40)) { const up = totems.some(o => o.owner === e && o.gt && !o.dead); if (up) { const v = V(e, 1, 3, 0) / 100, w = V(e, 1, 3, 1) / 100; friendsNear(e.pid, e.x, e.y, 4).filter(o => o.pid === e.pid && soldier(o)).forEach(o => { setFx(o, "asbuf", 4, v); if (o.range < 1.5) setFx(o, "siegebuf", 4, w); }); } }
     }
     e.v3as = as; e.v3ms = ms;
@@ -183,6 +183,7 @@ function makeTreeKit(X) {
     let m = 1; const now = T(), ph = atype !== "magic", isAb = !!(o.ab || X.getAb()) && !o.dot;
     if (src) {
       if (src.dmgV3) m *= src.dmgV3;
+      if (src.cls === "rogue" && src.tr && tgt.kind === "castle") m *= ROGUE_CASTLE; // the Rogue picks the locks: more damage to castles
       if (src.cls === "warrior" && src.tr && rk(src, 1, 4) && src.hp / src.maxhp < .3) m *= 1.15;
       if (src.cls === "rogue" && src.tr && rk(src, 2, 2) && tgt.tgt && tgt.tgt !== src && live(tgt.tgt)) m *= 1 + V(src, 2, 2, 0) / 100;
       for (const b of banners) { if (!allied(src.pid, b.pid) || hyp(src.x - b.x, src.y - b.y) > b.r) continue;
@@ -213,7 +214,9 @@ function makeTreeKit(X) {
   // frost mages' Shatter works on the enemy, so it is kept on a lookup of who is rooted by whom
   function dodgeChance(tgt, src, o) {
     if (!src || !tgt.tr) return 0; if (fxv(tgt, "bladefury")) return 1;
-    let c = 0; if (phys(src, o)) c += tgt.dodge.all; if ((src.range || 1.1) < 1.5) c += tgt.dodge.melee; return Math.min(.3, c);
+    let c = 0; if (phys(src, o)) c += tgt.dodge.all; if ((src.range || 1.1) < 1.5) c += tgt.dodge.melee;
+    if (tgt.cls === "rogue" && src.kind !== "champ" && src.kind !== "castle" && !o.aoe) return Math.min(.3 + ROGUE_DODGE, c + ROGUE_DODGE); // the Rogue slips through soldiers' blows, not heroes'
+    return Math.min(.3, c);
   }
   function onDodge(tgt, src) {
     if (!tgt.tr || tgt.kind !== "champ") return;
@@ -370,7 +373,7 @@ function makeTreeKit(X) {
     const own = ents.filter(o => !o.dead && o.pid === e.pid && o.kind === "unit" && !siege(o) && !o.free);
     if (own.length < 2) return false;
     if (!ultGo(e, 7) && !forts(e, e.x, e.y, 7).length) return false;
-    own.forEach(o => { setFx(o, "msbuf", 8, .6); setFx(o, "atkbuf", 8, .2); setFx(o, "ccimm", 8); o.rallyUntil = T() + 8; o.rallyDone = false; });
+    own.forEach(o => { setFx(o, "msbuf", 8, .6); setFx(o, "atkbuf", 8, .3); setFx(o, "ccimm", 8); o.rallyUntil = T() + 8; o.rallyDone = false; });
     return true;
   };
   // ---- Shaman ----
@@ -425,7 +428,7 @@ function makeTreeKit(X) {
   };
   FN["rogue.0.5"] = e => {
     if (!ultGo(e, 6)) return false; const all = fighters(e, e.x, e.y, 6), bl = all.filter(backline).length ? all.filter(backline) : all; if (!bl.length) return false;
-    const order2 = bl.sort((a, b) => d(a, e) - d(b, e) || a.id - b.id).slice(0, 5), rankA = Math.max(1, rk(e, 0, 1)), dm = (nodeVal("rogue", 0, 1, 0, rankA, V2(e)) + e.atk) * 1.8 * .6;
+    const order2 = bl.sort((a, b) => d(a, e) - d(b, e) || a.id - b.id).slice(0, 5), rankA = Math.max(1, rk(e, 0, 1)), dm = (nodeVal("rogue", 0, 1, 0, rankA, V2(e)) + e.atk) * 1.8 * .8;
     hide(e, 4, false);
     order2.forEach((v, k) => pending.push({ ab: "Shadow Dance", at: +(T() + .8 * (k + 1)).toFixed(2), fn: () => {
       if (e.dead || v.dead) return; const ox = e.x, oy = e.y; e.x = v.x + .4; e.y = v.y + .1;

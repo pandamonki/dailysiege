@@ -213,6 +213,8 @@ const PATCHES = [
     "Rogue: 580 health and 14% armour (was 510 and 8%); Ambush and Poisoned Blades deal less.",
     "Arcane: longer reach and extra attack damage, stronger Disrupt, Arcane Missiles every 3rd attack. Fireball and Chain Lightning softer and slower to recharge.",
     "Taunting Shout weaker; Headshot, Grounding Totem, Command Banner, Vanish and the Archer's attack stronger.",
+    "The Rogue dodges 20% of soldiers' blows and deals 60% more to castles.",
+    "Buffs for Totemic (totem every 10s), Shadow (Smoke Bomb, Shadow Dance), Trapper (Spike Trap, Net Shot), Berserker (Cleave, Bloodthirst) and Tactician (Sapper Coordination, Rallying Charge).",
   ], changes: [
     "Hero skills cast whenever they are ready and an enemy is in reach. Ultimates cast when an enemy hero is in reach, 4+ enemies are, or in sudden death.",
   ] },
