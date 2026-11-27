@@ -95,10 +95,14 @@ practice games always stamp all of them (`js/sim/plans.js`).
   earliest: day 4 for a hero that levels fast (13 on day 4 needs four levels every battle), day 5 for everyone. A hero can learn only
   one ultimate. The Mage's Arcane tree has Disrupt (a silence pulse) in place of the old Blink & Disrupt.
 - **Free casting (27 Nov):** every active skill casts itself as soon as it has recharged and something is in its reach (an enemy within
-  the reach in its description; Healing Wave: an ally below 90% health; Mana Shield: an enemy within 4 tiles and no shield held). Hero-only skills
+  the reach in its description; Mana Shield: an enemy within 4 tiles and no shield held). Hero-only skills
   (Hex, Net Shot, Headshot, Dragon-Slayer Shot) still need an enemy hero. **Ultimates** wait for a moment that matters: an enemy hero
   within their reach, 4 or more enemies within it (`ULT_CROWD`), or any enemy within it in sudden death (`ultGo` in `js/sim/heroTrees.js`).
-  There are no health gates any more (Avatar of War, Blade Fury, Ancestral Grasp, Disrupt and Mana Shield used to wait for low health). There is no "Cast when" choice for skill-tree heroes (removed 26 Nov). The ultimate is still planned for a night with "Plan the ultimate for tonight".
+  There are no health gates any more (Avatar of War, Blade Fury, Ancestral Grasp, Disrupt and Mana Shield used to wait for low health).
+- **Graceful casting (28 Nov):** a few skills wait for the moment a player would pick. Area damage spells (Fireball, Chain Lightning, Thunderclap,
+  Arrow Volley, Caltrop Bomb, Frost Nova, Executioner's Whirlwind, Ground Slam, Piercing Shot) cast only on 2+ enemies or an enemy hero (`worth`),
+  or at a castle with no enemies about. Healing Wave waits for an ally below 70% health. Teleport waits until the Mage is overwhelmed: 3+ enemies
+  within 2 tiles, 20% of its health lost in 2 seconds, or below 40% health with an enemy close. There is no "Cast when" choice for skill-tree heroes (removed 26 Nov). The ultimate is still planned for a night with "Plan the ultimate for tonight".
 - A fallen hero respawns at its castle (up to twice a battle, waiting longer at higher levels), except in sudden death.
 - From 20 Nov (`skV2`) every skill rank adds an even step worth at least about two thirds of rank 1 (`TREE_V2` in
   `js/config/trees.js`); older battles keep the old values.

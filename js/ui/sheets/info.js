@@ -209,6 +209,9 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "v1.32: smarter casting", date: "28 Nov", fixes: [], balance: [], changes: [
+    "Area spells wait for 2+ enemies or a hero, Healing Wave for an ally below 70% health, and the Mage teleports only when overwhelmed.",
+  ] },
   { v: "v1.31: free casting", date: "27 Nov", fixes: [], balance: [
     "Rogue: 580 health and 14% armour (was 510 and 8%); Ambush and Poisoned Blades deal less.",
     "Arcane: longer reach and extra attack damage, stronger Disrupt, Arcane Missiles every 3rd attack. Fireball and Chain Lightning softer and slower to recharge.",
