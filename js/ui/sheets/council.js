@@ -249,23 +249,20 @@ function strategyTab() {
 }
 const ordersV2Now = () => (isLive() ? ordersV2For(liveClock().planDay) : true); // orders v2: army plan and fall-back replace the heading, battle commands and soldiers' own orders
 const STANCE_V2 = { aggressive: "Heals at home below 12% health", skirmish: "Heals at home below 30% health", cautious: "Heals at home below 45% health" };
-// zones v1: the Front's plan, each flank's plan, the army temper, and what each zone holds today
+// zones v1: the Front's plan, the army temper, and what each zone holds today
 function zoneJobsHTML() {
-  const j = myJobs(), nb = { left: myNeighbour("left"), right: myNeighbour("right") }, waves = (S.garrison || []).map((w, i) => waveOpen(i) ? (ZONES.includes(w.zone) ? w.zone : "front") : null);
-  const cell = z => `<span class="zj"><i style="background:${ZONE_COL[z]}"></i>${ZONE_INFO[z][0].replace(" flank", "")} <b>${j[z]}</b>${j.hero === z ? " + hero" : ""}</span>`;
-  const warn = j.front === 0 && j.hero !== "front" ? "Nobody is in your Front, so nothing marches on your target." : j.front === 0 ? "Your Front is just your hero. Place a soldier in front of the castle, or send a wave to the Front." : (["left", "right"].filter(z => nb[z] && !j[z] && j.hero !== z && !waves.includes(z)).map(z => `Your ${z} side is open: raids from ${esc(nb[z].name)} walk straight in.`)[0] || "");
-  return `<div class="zjobs">${ZONES.map(cell).join("")}</div>${waves.some(Boolean) ? `<p class="muted">Waves: ${waves.map((z, i) => z ? `${i + 1} → ${ZONE_INFO[z][0].replace(" flank", "")}` : "").filter(Boolean).join(" · ")}</p>` : ""}${warn ? `<p class="zwarn">⚠ ${warn}</p>` : ""}`;
+  const j = myJobs();
+  const cell = z => `<span class="zj"><i style="background:${ZONE_COL[z]}"></i>${ZONE_INFO[z][0]} <b>${j[z]}</b>${j.hero === z ? " + hero" : ""}</span>`;
+  const warn = j.front === 0 && j.hero !== "front" ? "Nobody is in your Front, so nothing marches on your target." : j.front === 0 ? "Your Front is just your hero. Place a soldier away from the castle." : "";
+  return `<div class="zjobs">${ZONES.map(cell).join("")}</div>${warn ? `<p class="zwarn">⚠ ${warn}</p>` : ""}`;
 }
 function zoneOrdersHTML(st) {
-  const fr = FRONT_PLANS.includes(st.front) ? st.front : "assault", fl = cleanFlanks(st.flanks), tp = TEMPERS.includes(st.temper) ? st.temper : "steady";
+  const fr = FRONT_PLANS.includes(st.front) ? st.front : "assault", tp = TEMPERS.includes(st.temper) ? st.temper : "steady";
   const opt = (act, k, cur, [n, d], extra = "") => `<button class="opt${cur === k ? " on" : ""}" data-act="${act}" data-v="${k}"${extra} ${dis()}><b>${esc(n)}</b><span>${esc(d)}</span></button>`;
   const beats = k => { const w = FRONT_BEATS[k], l = Object.keys(FRONT_BEATS).find(q => FRONT_BEATS[q] === k); return `<span class="zvs"><em class="g">▲ beats ${esc(FRONT_INFO[w][0])}</em> <em class="b">▼ loses to ${esc(FRONT_INFO[l][0])}</em></span>`; };
-  const flank = side => { const r = myNeighbour(side); return `<div class="zfl"><h4 class="minih"><i class="zsw" style="background:${ZONE_COL[side]}"></i>${side === "left" ? "Left" : "Right"} flank${r ? ` · <i class="sw" style="background:${r.color}"></i> ${esc(r.name)}` : ""}</h4>
-    ${r ? `<div class="seg3 two">${FLANK_PLANS.map(k => `<button class="btn small${fl[side] === k ? " on" : ""}" data-act="zflank" data-k="${side}" data-v="${k}" ${dis()}>${FLANK_INFO[k][0]}</button>`).join("")}</div><p class="muted">${esc(FLANK_INFO[fl[side]][1])}.</p>` : `<p class="muted">No lord on this side: soldiers placed here join the Front.</p>`}</div>`; };
-  return `<div class="sec tight"><h3>2 · Your army's jobs <small class="hnote">set by where you place them</small></h3><p class="muted">On the map, the tiles round your castle are the <b style="color:${ZONE_INK.guard}">Guard</b>, straight ahead is the <b style="color:${ZONE_INK.front}">Front</b>, and either side are your <b style="color:${ZONE_INK.left}">left</b> and <b style="color:${ZONE_INK.right}">right</b> flanks. Your hero takes the job of its zone too.</p>${zoneJobsHTML()}</div>
+  return `<div class="sec tight"><h3>2 · Your army's jobs <small class="hnote">set by where you place them</small></h3><p class="muted">On the map, the tiles round your castle are the <b style="color:${ZONE_INK.guard}">Guard</b> and the rest of your field is the <b style="color:${ZONE_INK.front}">Front</b>. Your hero takes the job of its zone too.</p>${zoneJobsHTML()}</div>
     <div class="sec tight"><h3>3 · The Front's plan</h3><div class="olist">${FRONT_PLANS.map(k => opt("zfront", k, fr, FRONT_INFO[k])).join("")}</div>${beats(fr)}<p class="muted">A Front fighting a Front whose plan it beats does ${Math.round((FRONT_BEAT_X - 1) * 100)}% more damage. Holding the hill longest in a battle scores ${HILL_PTS} points.</p></div>
-    <div class="sec tight"><h3>4 · The flanks</h3>${flank("left")}${flank("right")}</div>
-    <div class="sec tight"><h3>5 · Army temper</h3><div class="seg3">${TEMPERS.map(k => `<button class="btn small${tp === k ? " on" : ""}" data-act="ztemper" data-v="${k}" ${dis()}>${TEMPER_INFO[k][0]}</button>`).join("")}</div><p class="muted">${esc(TEMPER_INFO[tp][1])}. It covers the whole army, hero included.</p></div>`;
+    <div class="sec tight"><h3>4 · Army temper</h3><div class="seg3">${TEMPERS.map(k => `<button class="btn small${tp === k ? " on" : ""}" data-act="ztemper" data-v="${k}" ${dis()}>${TEMPER_INFO[k][0]}</button>`).join("")}</div><p class="muted">${esc(TEMPER_INFO[tp][1])}. It covers the whole army, hero included.</p></div>`;
 }
 function strategyTabRest(st) {
   if (zoneV1Now()) return zoneOrdersHTML(st);

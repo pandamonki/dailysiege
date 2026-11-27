@@ -108,44 +108,24 @@ function botDefencePieces({ seed, build, dayNo, me, N, zone, taken, tier, lords 
 }
 // A bot lord's castle tier by day: tier 1 for the first two days, tier 2 on day 3, and tier 3 from day 4, so it can field tier 3 soldiers (knights, snipers, siege engines) for the rest of the week.
 const botTier = dayNo => dayNo >= 4 ? 3 : dayNo >= 3 ? 2 : 1;
-// zones v1: each build's Front plan and flank plans (a bot's shape, below, decides where its soldiers stand and may set the flanks)
-const BOT_ZONES = { warband: { front: "assault", flanks: { left: "raid", right: "raid" } }, fortress: { front: "hill", flanks: { left: "screen", right: "screen" } },
-  champion: { front: "hunt", flanks: { left: "screen", right: "screen" } }, mixed: { front: "siege", flanks: { left: "screen", right: "raid" } } };
+// zones v1: each build's Front plan (a bot's shape, below, decides how many soldiers it keeps in the Guard)
+const BOT_ZONES = { warband: { front: "assault" }, fortress: { front: "hill" }, champion: { front: "hunt" }, mixed: { front: "siege" } };
 const BOT_TEMPER = { aggressive: "reckless", skirmish: "steady", cautious: "wary" };
-// zones v1: how a bot shapes its army, fixed for the war by its seed, so a war mixes lords who go solid down the middle, hit both flanks,
-// lean on one side, sit back, or spread evenly. jobs: where each soldier stands, in order; flanks: each flank's plan (null = the build's); waves: each wave's zone
+// zones v1: how a bot shapes its army, fixed for the war by its seed, so a war mixes lords who send everything at their target with lords
+// who keep some at home. jobs: where each soldier stands, in order. Waves always join the Front. The hero always leads the Front.
 const BOT_SHAPES = [
-  { name: "spearhead", jobs: ["front", "front", "front", "front", "front"], flanks: null, waves: ["front", "front", "front"] },
-  { name: "pincer", jobs: ["left", "right", "left", "right", "front"], flanks: { left: "raid", right: "raid" }, waves: ["left", "right", "front"] },
-  { name: "left hook", jobs: ["left", "left", "front", "left", "front"], flanks: { left: "raid", right: "screen" }, waves: ["left", "front", "left"] },
-  { name: "right hook", jobs: ["right", "right", "front", "right", "front"], flanks: { left: "screen", right: "raid" }, waves: ["right", "front", "right"] },
-  { name: "turtle", jobs: ["front", "guard", "left", "right", "guard"], flanks: { left: "screen", right: "screen" }, waves: ["guard", "front", "front"] },
-  { name: "balanced", jobs: ["front", "front", "left", "right", "front"], flanks: null, waves: ["front", "front", "front"] },
+  { name: "spearhead", jobs: ["front", "front", "front", "front", "front"] },
+  { name: "anchored", jobs: ["front", "front", "guard", "front", "front"] },
+  { name: "turtle", jobs: ["front", "guard", "front", "guard", "front"] },
 ];
 // agency pass: a bot answers the lord whose army came for it in the last battle (prev: that battle's plans): it takes the Front plan that beats
-// theirs, and if they are its neighbour, screens that side. Returns { front, side, from } or null. castles: every lord's castle, in roster order with ids.
-function botReact(uid, ids, castles, N, prev) {
+// theirs. Returns { front, from } or null.
+function botReact(uid, ids, prev) {
   if (!prev || !prev.length) return null; const foe = prev.find(q => q.pid !== uid && (q.targets || [])[0] === uid && ids.includes(q.pid)); if (!foe) return null;
-  const beat = Object.keys(FRONT_BEATS).find(k => FRONT_BEATS[k] === (FRONT_PLANS.includes(foe.front) ? foe.front : "assault")), i = ids.indexOf(uid), k = ids.indexOf(foe.pid);
-  const side = ["left", "right"].find(s => flankNeighbour(castles, i, s, N) === k) || null;
-  return { front: beat, side, from: foe.pid };
+  const beat = Object.keys(FRONT_BEATS).find(k => FRONT_BEATS[k] === (FRONT_PLANS.includes(foe.front) ? foe.front : "assault"));
+  return { front: beat, from: foe.pid };
 }
 const botShape = uid => BOT_SHAPES[Math.floor(hash(botSeed(uid), 9, 57) * BOT_SHAPES.length)];
-// Most bot heroes (BOT_HERO_WITH_ARMY) march with the bulk of their army: the hero stands in the zone (Front, left or right; never the Guard)
-// holding the most soldiers. A tie that includes the Front stays in the Front; a tie between the flanks is settled by the bot's seed. The rest lead from the Front.
-const BOT_HERO_WITH_ARMY = .8;
-function botHeroZone(uid, zones) {
-  const s = botSeed(uid), n = {}; zones.forEach(z => { if (z === "front" || z === "left" || z === "right") n[z] = (n[z] || 0) + 1; });
-  if (hash(s, 13, 61) >= BOT_HERO_WITH_ARMY || !Object.keys(n).length) return "front";
-  const best = Math.max(...Object.values(n)), tops = ["front", "left", "right"].filter(z => n[z] === best);
-  return tops.includes("front") ? "front" : tops[Math.floor(hash(s, 14, 62) * tops.length)];
-}
-// the free tile in zone z of a lord's field nearest the soldiers already standing there (else nearest the castle); null if there is none
-function botHeroSpot(me, N, field, z, units, taken, lords) {
-  const mine = units.filter(([r, c]) => zoneOfTile(me[0], me[1], r, c, N) === z), at = mine.length ? [mine.reduce((a, p) => a + p[0], 0) / mine.length, mine.reduce((a, p) => a + p[1], 0) / mine.length] : me;
-  const tiles = [...field].map(k => k.split(",").map(Number)).filter(([r, c]) => !taken.has(`${r},${c}`) && !(r === me[0] && c === me[1]) && zoneOfTile(me[0], me[1], r, c, N) === z && !(lords && treeTile(r, c, lords, N)));
-  return tiles.sort((p, q) => (hyp(p[0] - at[0], p[1] - at[1]) - hyp(q[0] - at[0], q[1] - at[1])) || (p[0] - q[0]) || (p[1] - q[1]))[0] || null;
-}
 function lordBotPlan({ uid, cls, i, ids, L, zone, dayNo, lvl, v2, v3, fair, pick, ranks, sup, defV2, zv, prev }) { // prev: the last battle's plans, for bots that answer their attacker (agency pass) // defV2: from TRAPS_V2_FROM bots buy traps, towers and walls by their build, at the cost of soldiers or items // sup: the supply rules from SUPPLY_V2_FROM (at most FIELD_MAX soldiers on the map)
   const seed = botSeed(uid), me = L.castles[i], c = CLASSES[cls] || CLASSES.warrior, sp = armySpots(me, L.N);
   const picks = {}; c.abilities.forEach((a, j) => { picks[a.key] = a.choice[hash(seed, j, 77) > .5 ? 1 : 0][0]; });
@@ -161,15 +141,11 @@ function lordBotPlan({ uid, cls, i, ids, L, zone, dayNo, lvl, v2, v3, fair, pick
   const pieces = [{ kind: "champ", r: sp.champ[0], c: sp.champ[1] }, ...defs];
   // siege engines are what bring castles down, so bots bring them on purpose: one from day 4, two from day 6 (they take the place of ordinary soldiers)
   const pool = ENGINES.filter(k => (UNIT_TIER[k] || 1) <= tier), engines = pool.length ? Math.min(n, dayNo >= 6 ? 2 : dayNo >= 4 ? 1 : 0) : 0; // engines follow the same tier rule as any soldier
-  const BZ = zv ? BOT_ZONES[build] || BOT_ZONES.mixed : null, SH = zv ? botShape(uid) : null, RE = zv ? botReact(uid, ids, L.castles, L.N, prev) : null, used = new Set(); // RE: answering yesterday's attacker
-  const JOBS = SH ? (RE && RE.side && !SH.jobs.slice(0, 3).includes(RE.side) ? [SH.jobs[0], RE.side, ...SH.jobs.slice(1)] : SH.jobs) : null; // a soldier moves to the side the attack came from
+  const BZ = zv ? BOT_ZONES[build] || BOT_ZONES.mixed : null, SH = zv ? botShape(uid) : null, RE = zv ? botReact(uid, ids, prev) : null, used = new Set(); // RE: answering yesterday's attacker
+  const JOBS = SH ? SH.jobs : null;
   const spotFor = k => { // zones v1: a spot in the zone this soldier is meant for (by the bot's shape), else the next free one
-    const want = JOBS ? JOBS[k % JOBS.length] : null, i2 = spotsLeft.findIndex(([r, q], j) => !used.has(j) && (!want || zoneOfTile(me[0], me[1], r, q, L.N) === want)), j = i2 >= 0 ? i2 : spotsLeft.findIndex((_, j2) => !used.has(j2)); used.add(j); return spotsLeft[j]; };
+    const want = JOBS ? JOBS[k % JOBS.length] : null, i2 = spotsLeft.findIndex(([r, q], j) => !used.has(j) && (!want || zoneOfTile(me[0], me[1], r, q) === want)), j = i2 >= 0 ? i2 : spotsLeft.findIndex((_, j2) => !used.has(j2)); used.add(j); return spotsLeft[j]; };
   for (let k = 0; k < n; k++) { const at = spotFor(k); pieces.push({ kind: "unit", type: k < engines ? pool[Math.floor(hash(seed, k, 31 + dayNo) * pool.length)] : kinds[Math.floor(hash(seed, k, 11 + dayNo) * kinds.length)], lvl: ulvl, hp: 1, r: at[0], c: at[1] }); }
-  if (zv) { // zones v1: the hero goes with the bulk of the army
-    const units = pieces.filter(p => p.kind === "unit").map(p => [p.r, p.c]), hz = botHeroZone(uid, units.map(([r, q]) => zoneOfTile(me[0], me[1], r, q, L.N)));
-    if (hz !== "front") { const busy = new Set(pieces.map(p => `${p.r},${p.c}`)), t = botHeroSpot(me, L.N, zone, hz, units, busy, ids.length); if (t) { pieces[0].r = t[0]; pieces[0].c = t[1]; } }
-  }
   if (!defV2 && dayNo >= 2 && seed % 3) { // a short barrier across the way to the middle, where it fits
     const ctr = (L.N - 1) / 2, dy = ctr - me[0], dx = ctr - me[1], len = hyp(dx, dy) || 1, r = Math.round(me[0] + dy / len * 3), q = Math.round(me[1] + dx / len * 3);
     if (zone.has(`${r},${q}`) && !pieces.some(p => p.r === r && p.c === q)) pieces.push({ kind: "wall", r, c: q, dir: Math.abs(dy) >= Math.abs(dx) ? "h" : "v" });
@@ -179,7 +155,6 @@ function lordBotPlan({ uid, cls, i, ids, L, zone, dayNo, lvl, v2, v3, fair, pick
     gear: { weapon: Math.min(2, Math.floor(dayNo / 3)), armour: Math.min(2, Math.floor((dayNo + 1) / 3)), charm: dayNo >= 5 ? 1 : 0 }, defences: { walls: dayNo >= 3 ? 1 : 0, tower: dayNo >= 5 && seed % 2 ? 1 : 0 },
     items: defV2 ? botItemsN(seed, Math.max(0, Math.min(ITEM_SLOTS, Math.floor(dayNo / 2) + B.items))) : botItems(seed).slice(0, Math.floor(dayNo / 2)), build: defV2 ? build : undefined, armyPlan: BOT_ORDERS[build][0], fallback: BOT_ORDERS[build][1], castleTier: tier, stance: BOT_STANCES[seed % BOT_STANCES.length], prio: PRIORITIES.slice(rot).concat(PRIORITIES.slice(0, rot)), rules: [{ if: IFS[0], then: THENS[0] }],
     pieces, targets: pick ? botPicks(uid, seed, near, ranks) : near, tmode: "list", heading: "near", offers: {}, replies: {}, terms: {}, bids: {}, pacts: [], hostile: [], betray: {}, bot: true, ...(v2 ? { ...botCombat(seed), waves: botWaves(seed, kinds, dayNo, sup, AR.waves, AR.lvl) } : {}),
-    ...(BZ ? { front: RE ? RE.front : BZ.front, flanks: { ...(SH.flanks || BZ.flanks), ...(RE && RE.side ? { [RE.side]: "screen" } : {}) }, ...(RE ? { react: RE.from } : {}), temper: BOT_TEMPER[BOT_STANCES[seed % BOT_STANCES.length]] || "steady" } : {}) };
-  if (SH && out.waves) out.waves.forEach((w, k) => { w.zone = SH.waves[k] || "front"; });
+    ...(BZ ? { front: RE ? RE.front : BZ.front, ...(RE ? { react: RE.from } : {}), temper: BOT_TEMPER[BOT_STANCES[seed % BOT_STANCES.length]] || "steady" } : {}) };
   return out;
 }

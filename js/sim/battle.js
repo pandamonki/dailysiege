@@ -97,7 +97,7 @@ function runBattle(plans, seed, opts = {}) {
   const RAPIER_V2 = plans.some(p => p.itemV6); // Divine Rapier v6: +100 on weapon hits instead of double damage
   const BV5 = plans.some(p => p.balV5); // balance v5: hero attack and armour class, out-of-combat healing at home, 20s waves, betrayal castle bonus, regen items toned down
   const TV1 = plans.some(p => p.timeV1); // fixed timing: opening swings and skill cooldowns by place, not by the dice
-  const ZV = plans.some(p => p.zoneV1 && p.ordV2); // zones v1: where a soldier is placed sets its job (Guard, Front, Left or Right flank), with a Front plan, two flank plans and an army temper
+  const ZV = plans.some(p => p.zoneV1 && p.ordV2); // zones v1: where a soldier is placed sets its job (Guard or Front), with a Front plan and an army temper
   const SD2 = plans.some(p => p.sdV2); // sudden death v2: a half-size arena nobody can leave, and no respawn timers inside it
   let sd = null; // sudden death: null until SD_AT, then { t0, go, skip, winners }
   const sdOn = () => !!sd && !sd.skip, tmax = () => (sdOn() ? SD_AT + SD_COUNT + SD_LEN : TMAX);
@@ -179,8 +179,8 @@ function runBattle(plans, seed, opts = {}) {
     w.done = true; p.lastWave = t; st(p.pid).waves.push(Math.round(t));
     w.units.forEach((u, j) => { const o = (j - (n - 1) / 2) * .45, e = makeUnit(p, { ...u, kind: "unit" }, c.x + dx / L * .9 + px * o, c.y + dy / L * .9 + py * o);
       e.hx = e.x; e.hy = e.y; e.spd *= BAL.move; e.as *= BAL.swing; e.retreats = 1; e.wave = i + 1; if (p.noRetreat) e.noRetreat = true;
-      if (p.zv) setJob(e, ZONES.includes(w.zone) ? w.zone : "front"); // zones v1: the wave takes the job of the zone it was sent to
-      if (p.waveV2 && !(p.zv && e.job === "guard")) { e.waveDef = true; e.waveSeen = t; } // waves v2 (a wave sent to the Guard is home already: it guards from the start): defend the castle area first, then the army plan
+      if (p.zv) setJob(e, "front"); // zones v1: a wave follows the army's plan with the Front
+      if (p.waveV2) { e.waveDef = true; e.waveSeen = t; } // waves v2: defend the castle area first, then the army plan
       else if (w.order === "castle") e.purpose = "castle"; else if (w.order === "hero") e.hunter = true; else if (w.order === "nearest") e.purpose = "nearest"; }); // the wave's purpose: raider-style march on a castle, hunt heroes, or fight the nearest enemy
     ev({ ty: "wave", pid: p.pid, i, n: p.waves.filter(x => x.done).length, ...(rush ? { rush: 1 } : {}) });
     log(rush ? `${poss(p.pid)} castle is losing ground: reinforcements rush out to defend it.` : `${poss(p.pid)} reinforcements march out of the castle.`, p.pid === mePid ? "you" : undefined);
@@ -190,32 +190,21 @@ function runBattle(plans, seed, opts = {}) {
     P[pl.pid] = { ...pl, stance: STANCE_FIX[pl.stance] || pl.stance, bombs: (pl.bombs || []).map(b => ({ ...b })), alive: true, place: 0, kills: 0, ukills: 0, castles: 0, gold: 0, fired: new Set(), retreat: false, defendAll: false, focusLeader: false, helpPid: null, helpUntil: 0,
       targets: (pl.targets || []).slice(), ordV2: !!pl.ordV2, armyPlan: ARMY_PLANS.includes(pl.armyPlan) ? pl.armyPlan : "conquest", fallback: FALL_BACKS.includes(pl.fallback) ? pl.fallback : "none", fallbackUntil: 0, hitT: -9, castleHitT: -9, castleHitBy: null, trapT: -9, pacts: new Set(), hostileTo: new Set(pl.hostile), revenge: new Set(), feud: new Set(), bell: false, retreatT: -99, elimT: null };
   });
-  if (ZV) { const cs = plans.map(q => q.castle); plans.forEach((pl, i) => { if (!pl.zoneV1) return; const p = P[pl.pid];
-    p.zv = true; p.front = FRONT_PLANS.includes(pl.front) ? pl.front : "assault"; p.flanks = cleanFlanks(pl.flanks); p.temper = TEMPERS.includes(pl.temper) ? pl.temper : "steady";
-    p.stance = TEMPER_STANCE[p.temper]; p.fallback = TEMPER_FALLBACK[p.temper]; p.armyPlan = FRONT_ARMY[p.front];
-    p.nb = {}; p.screenAt = {}; p.screenSeen = { left: 0, right: 0 }; p.pushed = {};
-    ["left", "right"].forEach(side => { const k = flankNeighbour(cs, i, side, NN); if (k < 0) return; const q = plans[k], [r0, c0] = pl.castle, [r1, c1] = q.castle, L = hyp(c1 - c0, r1 - r0) || 1;
-      p.nb[side] = q.pid; p.screenAt[side] = { x: c0 + .5 + (c1 - c0) / L * Math.min(SCREEN_OUT, L / 2), y: r0 + .5 + (r1 - r0) / L * Math.min(SCREEN_OUT, L / 2) }; }); }); }
-  // a fighter's job under zones v1. A flank with no neighbour on that side fights with the Front
-  const setJob = (e, z) => { const p = P[e.pid]; if ((z === "left" || z === "right") && !p.nb[z]) z = "front"; e.job = z; if (z === "guard") e.order = "guard"; };
-  // the army plan this fighter goes by: the Front's plan, a raiding flank marches like a siege, a screen that has pushed on fights like a conquest
-  const planOf = e => { const p = P[e.pid]; if (!p.zv || !e.job || e.job === "front" || e.job === "guard") return p.armyPlan; return p.flanks[e.job] === "raid" ? "siege" : "conquest"; };
-  // zones v1: the zone sets the route. The Front goes straight at its target, through the middle; a flank heading anywhere but its own
-  // neighbour takes the long way round the outside (beyond the tree clumps between bases)
-  const ringRoute = (e, x, y) => { const p = P[e.pid]; if (!p.zv || (e.job !== "left" && e.job !== "right") || sdOn()) return null;
-    const ex = e.x - ctrX, ey = e.y - ctrY, tx = x - ctrX, ty = y - ctrY, re = hyp(ex, ey), rt = hyp(tx, ty), dx = x - e.x, dy = y - e.y, L2 = dx * dx + dy * dy;
-    if (re < RING_FAR || rt < RING_FAR || L2 < 16) return null;
-    const u = Math.max(0, Math.min(1, -(ex * dx + ey * dy) / L2)); if (hyp(ex + dx * u, ey + dy * u) >= RING_CLEAR) return null;
-    let da = datan2(ty, tx) - datan2(ey, ex); while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI;
-    const a = datan2(ey, ex) + (da < 0 ? -1 : 1) * Math.min(Math.abs(da), RING_STEP), r = Math.max(ringR, Math.min(re, rt)); return [ctrX + dcos(a) * r, ctrY + dsin(a) * r]; };
-  const ringR = TG && TG.clumps.length ? Math.max(...TG.clumps.map(c => hyp(c.x - TG.cc, c.y - TG.cc) + c.r)) + RING_GAP : RING_R; // the way round the outside: beyond the tree clumps between bases
+  if (ZV) plans.forEach((pl, i) => { if (!pl.zoneV1) return; const p = P[pl.pid];
+    p.zv = true; p.beside = new Set(sideNeighbours(plans.map(q => q.castle), i, NN).map(k => plans[k].pid)); p.front = FRONT_PLANS.includes(pl.front) ? pl.front : "assault"; p.temper = TEMPERS.includes(pl.temper) ? pl.temper : "steady";
+    p.stance = TEMPER_STANCE[p.temper]; p.fallback = TEMPER_FALLBACK[p.temper]; p.armyPlan = FRONT_ARMY[p.front]; });
+  // a fighter's job under zones v1: the Guard or the Front
+  const setJob = (e, z) => { e.job = z === "guard" ? "guard" : "front"; if (e.job === "guard") e.order = "guard"; };
+  // the army plan this fighter goes by: the Front's plan
+  const planOf = e => P[e.pid].armyPlan;
   // zones v1: walk toward (x, y), round the hill if need be; a soldier that keeps trying and getting nowhere (pinned on its own fence, or between trees and a fence) may step through its own side's fences for a moment
   // zones v1: a castle's gate, GATE_OUT tiles out from it toward the hill, where the road leaves its base through the trees
   const gateR = TG && TG.clumps.length ? Math.max(CTR_R + .8, Math.min(...TG.clumps.map(c => hyp(c.x - TG.cc, c.y - TG.cc) - c.r)) - RING_GAP) : null; // how far from the middle the gates stand: just inside the tree clumps
   const gateOf = c => { const dx = ctrX - c.x, dy = ctrY - c.y, L = hyp(dx, dy) || 1, k = gateR != null ? Math.max(0, L - gateR) : Math.min(GATE_OUT, L * .6); return { x: c.x + dx / L * k, y: c.y + dy / L * k, fx: dx / L, fy: dy / L }; };
-  // the Front marches out through its own gate into the middle, then comes at a lord's base through that lord's gate (so a Front and a flank
-  // aimed at the same neighbour hit it from two sides). o: what it is walking to; returns a waypoint, or null to walk straight
-  const gateRoute = (e, x, y, o) => { const p = P[e.pid]; if (!p.zv || e.job !== "front" || sdOn() || !p.castle || p.castle.dead) return null;
+  // the Front marches out through its own gate into the middle, then comes at a lord's base through that lord's gate (cutting straight
+  // across from gate to castle ran into the tree clumps). A lord beside it is attacked straight along the flank instead.
+  // o: what it is walking to; returns a waypoint, or null to walk straight
+  const gateRoute = (e, x, y, o) => { const p = P[e.pid]; if (!p.zv || e.job !== "front" || sdOn() || !p.castle || p.castle.dead || (o && p.beside.has(o.pid))) return null;
     const my = gateOf(p.castle), out = (e.x - p.castle.x) * my.fx + (e.y - p.castle.y) * my.fy;
     const gd = hyp(my.x - p.castle.x, my.y - p.castle.y); if (out >= gd - .5) e.outGate = true; else if (hyp(e.x - p.castle.x, e.y - p.castle.y) < 2) e.outGate = false; // once through its gate it heads on (not back to it) until it is home again
     if (!e.outGate && out < gd - .5 && hyp(x - e.x, y - e.y) > 3 && hyp(x - p.castle.x, y - p.castle.y) > hyp(my.x - p.castle.x, my.y - p.castle.y) + 1 && ((x - p.castle.x) * my.fx + (y - p.castle.y) * my.fy) < hyp(x - p.castle.x, y - p.castle.y) * dcos(GATE_CONE)) { // still inside my base, the goal outside it and off to one side: out through my gate first,
@@ -225,7 +214,7 @@ function runBattle(plans, seed, opts = {}) {
     const g = gateOf(q), gq = hyp(g.x - q.x, g.y - q.y), rq = hyp(e.x - q.x, e.y - q.y); if (rq <= gq + .3) return null; // already inside their base
     // to their gate first (gate to gate stays inside the tree clumps between bases), then in along their road; a cut straight across ran into the clumps
     const on = (e.x - q.x) * g.fy - (e.y - q.y) * g.fx; return hyp(e.x - g.x, e.y - g.y) < 1 || (Math.abs(on) < .6 && ((e.x - q.x) * g.fx + (e.y - q.y) * g.fy) > 0) ? null : [g.x, g.y]; };
-  const goTo = (e, x, y, stop, o) => { if (!ZV) { moveToward(e, x, y, stop); return; } const w = ringRoute(e, x, y) || gateRoute(e, x, y, o);
+  const goTo = (e, x, y, stop, o) => { if (!ZV) { moveToward(e, x, y, stop); return; } const w = gateRoute(e, x, y, o);
     if (!e.mv || t - e.mv.t >= 1) { const moved = e.mv ? hyp(e.x - e.mv.x, e.y - e.mv.y) : 1; e.stuckN = moved < .15 && hyp(x - e.x, y - e.y) > stop + .5 ? (e.stuckN || 0) + 1 : 0; e.mv = { t, x: e.x, y: e.y };
       if (e.stuckN >= STUCK_SECS) { // pinned (between trees and a fence, say): through its own side's fences for a moment, and a step aside, each time the other way
         if (walls.some(q => q.hp > 0 && !hostile(e.pid, q.pid) && hyp(q.x0 + .5 - e.x, q.y0 + .5 - e.y) < 2.2)) e.ghostT = t + 1.5;
@@ -233,7 +222,6 @@ function runBattle(plans, seed, opts = {}) {
     if (e.detour && t < e.detour.until) { moveToward(e, e.detour.x, e.detour.y, .2); return; }
     if (w) moveToward(e, w[0], w[1], .2); else moveToward(e, x, y, stop); };
   const holdsHill = e => { const p = P[e.pid]; return p.zv ? e.job === "front" && p.front === "hill" : p.heading === "centre"; };
-  const screening = e => { const p = P[e.pid]; return !!p.zv && !sdOn() && (e.job === "left" || e.job === "right") && p.flanks[e.job] === "screen" && !p.pushed[e.job] && !!p.screenAt[e.job] && !e.cart && !e.ram && !e.cat; };
   plans.forEach(pl => pl.pacts.forEach(o => { if (P[o]) { P[pl.pid].pacts.add(o); P[o].pacts.add(pl.pid); } }));
   (plans.feuds || []).forEach(k => { const [a, b] = k.split("|"); if (P[a] && P[b]) { P[a].feud.add(b); P[b].feud.add(a); P[a].hostileTo.add(b); P[b].hostileTo.add(a); P[a].pacts.delete(b); P[b].pacts.delete(a); } }); // betrayers and their victims stay rivals for the rest of the war
   const pact0 = []; order.forEach(a => order.forEach(b => { if (a < b && P[a].pacts.has(b)) pact0.push(a + "|" + b); })); // the pacts the day starts with, after bad blood has dissolved any between feuding lords
@@ -305,7 +293,7 @@ function runBattle(plans, seed, opts = {}) {
         traps.push({ pid: pl.pid, type: pc.type, x: pc.c + .5, y: pc.r + .5, used: false, v2: !!pl.trapV2 });
       }
     });
-    if (p.zv) ents.filter(e => e.pid === pl.pid && (e.kind === "champ" || (e.kind === "unit" && !(UNITS[e.key] && UNITS[e.key].tower)))).forEach(e => setJob(e, e.order === "guard" ? "guard" : zoneOfTile(cr, cc, Math.floor(e.y), Math.floor(e.x), NN)));
+    if (p.zv) ents.filter(e => e.pid === pl.pid && (e.kind === "champ" || (e.kind === "unit" && !(UNITS[e.key] && UNITS[e.key].tower)))).forEach(e => setJob(e, e.order === "guard" ? "guard" : zoneOfTile(cr, cc, Math.floor(e.y), Math.floor(e.x))));
     // every castle keeps one free guard at home: it holds the gate and chases off raiders
     if (!opts.duel) {
       const gx = NN / 2 - p.castle.x, gy = NN / 2 - p.castle.y, GL = hyp(gx, gy) || 1, gm = 1 + .08 * (lvl - 1);
@@ -682,7 +670,6 @@ function runBattle(plans, seed, opts = {}) {
   function goalPid(e) {
     const p = P[e.pid], ok = q => !!q && !!P[q] && P[q].alive && q !== e.pid && hostile(e.pid, q);
     if (ok(e.order)) return e.order;
-    if (p.zv && (e.job === "left" || e.job === "right")) { const q = p.nb[e.job]; if (ok(q) && (p.flanks[e.job] === "raid" || p.pushed[e.job] || e.cart || e.ram || e.cat)) return q; } // a raiding (or pushed-on) flank goes for its neighbour
     const rev = [...p.revenge].find(ok); if (rev) return rev;
     if (p.helpPid && t < p.helpUntil && P[p.helpPid] && P[p.helpPid].alive && ok(P[p.helpPid].castleHitBy)) return P[p.helpPid].castleHitBy;
     if (!p.sorted) { p.sorted = true; sortTargets(p); }
@@ -733,11 +720,6 @@ function runBattle(plans, seed, opts = {}) {
       e.waveDef = false;
     }
     if (ZV && e.order === "guard" && P[e.pid].zv && P[e.pid].castle && !P[e.pid].castle.dead && d(e, P[e.pid].castle) > GUARD_LEASH) return null; // zones v1: the Guard's leash
-    if (ZV && screening(e)) { // zones v1: a screening flank holds its spot toward the neighbour and fights only what comes near it
-      const p = P[e.pid], sp = p.screenAt[e.job], foes = ents.filter(o => !o.dead && o.kind !== "castle" && o.kind !== "totem" && hostile(e.pid, o.pid) && fighting(o.pid) && vis(o, e) && (d(o, sp) <= SCREEN_R || d(o, e) <= e.range + .3));
-      if (foes.length) { p.screenSeen[e.job] = t; return byPrio(e, foes); }
-      return null;
-    }
     if (e.hunter) { const hs = ents.filter(x => !x.dead && x.kind === "champ" && hostile(e.pid, x.pid) && vis(x, e)); if (hs.length) return minBy(hs, x => d(x, e)); }
     const p = P[e.pid], guard = e.order === "guard", escort = e.order === "escort" && live(p.champ);
     if (!e.cart && !e.ram && ((UNIT_TYPES[e.key] || [])[0] !== "siege" || e.order === "guard")) { const carts = ents.filter(o => o.cart && !o.dead && hostile(e.pid, o.pid) && ents.some(c => c.kind === "castle" && !c.dead && !hostile(e.pid, c.pid) && d(c, o) <= 4) && d(o, e) <= 9); if (carts.length) return minBy(carts, o => d(o, e)); } // a powder cart within 4 tiles of a friendly castle: stop it
@@ -948,10 +930,8 @@ function runBattle(plans, seed, opts = {}) {
         if (hit) { if (!(p.fallbackUntil > t) && pid === mePid) log("Your army falls back to the castle.", "you"); p.fallbackUntil = t + FALLBACK_LINGER; } // it stays home a few seconds after the danger passes, so it doesn't bounce
       }
       if (p.mercLater && t >= MERC_ARRIVE) { const L0 = p.mercLater; p.mercLater = null; if (p.castle && !p.castle.dead) { // agency pass: the hired mercenaries march out now
-          L0.forEach(pc => { const e = makeUnit(p, pc, pc.c + .5, pc.r + .5); e.hx = e.x; e.hy = e.y; e.spd *= BAL.move; e.as *= BAL.swing; if (p.noRetreat) e.noRetreat = true; if (p.zv) setJob(e, zoneOfTile(Math.floor(p.castle.y), Math.floor(p.castle.x), pc.r, pc.c, NN)); });
+          L0.forEach(pc => { const e = makeUnit(p, pc, pc.c + .5, pc.r + .5); e.hx = e.x; e.hy = e.y; e.spd *= BAL.move; e.as *= BAL.swing; if (p.noRetreat) e.noRetreat = true; if (p.zv) setJob(e, zoneOfTile(Math.floor(p.castle.y), Math.floor(p.castle.x), pc.r, pc.c)); });
           if (pid === mePid) log("Your mercenaries arrive.", "you"); } }
-      if (p.zv) ["left", "right"].forEach(side => { if (p.flanks[side] !== "screen" || p.pushed[side] || !p.nb[side]) return; // a quiet screen pushes on to its neighbour
-        if (t >= SCREEN_MIN && t - p.screenSeen[side] >= SCREEN_QUIET) { p.pushed[side] = true; if (pid === mePid && ents.some(e => !e.dead && e.pid === pid && e.job === side)) log(`Your ${side} flank has been quiet: it pushes on toward ${nm(p.nb[side])}.`, "you"); } });
       if (!p.ordV2) p.rules.forEach((r, i) => {
         const repeat = r.then === "Retreat hero to castle";
         if (p.fired.has(i) && !repeat) return;
@@ -1129,7 +1109,7 @@ function runBattle(plans, seed, opts = {}) {
     if (!live(e.tgt) || e.rt <= 0 || !vis(e.tgt, e) || !hostile(e.pid, e.tgt.pid)) { e.tgt = (e.cls === "rogue" && !P[e.pid].tuneV1 && ((HV3 && kit.stealthTarget(e)) || rogueTarget(e))) || pickTarget(e); /* agency pass: the Rogue picks targets by its lord's Combat settings, like every hero */ e.rt = .6; }
     if (e.kind === "champ") tryAbilities(e);
     const o = e.tgt;
-    if (!live(o)) { if (e.order === "escort" && live(p.champ)) moveToward(e, p.champ.x, p.champ.y + .3, 1.1); else if (ZV && screening(e)) { const sp = p.screenAt[e.job], a = e.id * 2.399, rr = .3 + (e.id % 3) * .4; moveToward(e, sp.x + dcos(a) * rr, sp.y + dsin(a) * rr, .2); } else if (holdsHill(e) && t < HOLD_END && e.order !== "guard" && !e.militia && (e.kind === "champ" || e.kind === "unit")) { const a = e.id * 2.399, rr = .4 + (e.id % 4) * .35; moveToward(e, ctrX + dcos(a) * rr, ctrY + dsin(a) * rr, .15); } else moveToward(e, e.hx, e.hy, .2); return; }
+    if (!live(o)) { if (e.order === "escort" && live(p.champ)) moveToward(e, p.champ.x, p.champ.y + .3, 1.1); else if (holdsHill(e) && t < HOLD_END && e.order !== "guard" && !e.militia && (e.kind === "champ" || e.kind === "unit")) { const a = e.id * 2.399, rr = .4 + (e.id % 4) * .35; moveToward(e, ctrX + dcos(a) * rr, ctrY + dsin(a) * rr, .15); } else moveToward(e, e.hx, e.hy, .2); return; }
     const reach = e.range + (o.kind === "castle" ? .45 : 0);
     if (d(e, o) > reach) {
       if (e.range < 1.5 && o.kind !== "castle" && d(e, o) < 4) { // melee spread around the target to box it in

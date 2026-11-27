@@ -112,17 +112,16 @@ for (const name of engines) {
     if ((await js(() => S.walls.length)) - n0 < 2) throw new Error("walls were not built"); });
   await step("set the army plan and fall-back", async () => { await closeAll(); await tap('#cmdbar [data-act="openorders"]'); await tap('#sheet .tabs button:has-text("Strategy")');
     if (await page.locator('#sheet [data-act="aplan"]').count()) { await tap('#sheet [data-act="aplan"][data-v="hunt"]'); await tap('#sheet [data-act="fback"][data-v="castle"]'); if (!(await js(() => S.strategy.plan === "hunt" && S.strategy.fallback === "castle"))) throw new Error("orders did not stick"); } await closeAll(); });
-  await step("zones: the Front plan, both flanks and the temper reach the battle plan, and each wave picks a zone", async () => { await closeAll(); if (!(await js(() => zoneV1Now()))) return;
+  await step("zones: the Front plan and the temper reach the battle plan, there are no flanks, and waves have no zone choice", async () => { await closeAll(); if (!(await js(() => zoneV1Now()))) return;
     await tap('#cmdbar [data-act="openorders"]'); await tap('#sheet .tabs button:has-text("Strategy")');
     if (!(await page.locator("#sheet .zjobs").count())) throw new Error("the Strategy tab does not show the army's jobs");
     await tap('#sheet [data-act="zfront"][data-v="hill"]'); await tap('#sheet [data-act="ztemper"][data-v="wary"]');
-    const fl = page.locator('#sheet [data-act="zflank"][data-v="raid"]'); if (await fl.count()) await fl.first().click();
-    const p = await js(() => { const q = buildPlans()[0]; return { front: q.front, temper: q.temper, raid: Object.values(q.flanks).includes("raid"), flanks: document.querySelectorAll('#sheet [data-act="zflank"]').length }; });
-    if (p.front !== "hill" || p.temper !== "wary" || (p.flanks && !p.raid)) throw new Error("zone orders did not reach the plan: " + JSON.stringify(p));
+    const p = await js(() => { const q = buildPlans()[0]; return { front: q.front, temper: q.temper, flanks: q.flanks || null, flankBtns: document.querySelectorAll('#sheet [data-act="zflank"]').length, zones: ZONES }; });
+    if (p.front !== "hill" || p.temper !== "wary" || p.flanks || p.flankBtns || p.zones.join() !== "guard,front") throw new Error("zone orders did not reach the plan, or flanks are still there: " + JSON.stringify(p));
     await closeAll(); await tap('#cmdbar [data-v="recruit"]'); await tap('#sheet .tabs button:has-text("Deploy")');
-    const lines = await js(() => { const nb = myNeighbour("left"); if (nb) S.lists.hostile = [nb.id]; const keep = routeLine, out = []; routeLine = (pts, c) => out.push(c); try { drawZoneRoutes(0); } finally { routeLine = keep; } return out; });
+    const lines = await js(() => { S.lists.hostile = [RIVALS[0].id]; const keep = routeLine, out = []; routeLine = (pts, c) => out.push(c); try { drawZoneRoutes(0); } finally { routeLine = keep; } return out; });
     if (!lines.includes(await js(() => ZONE_COL.front))) throw new Error("the map draws no route for the Front: " + JSON.stringify(lines));
-    const wz = page.locator('#sheet [data-act="wzone"][data-v="guard"]'); if (await wz.count()) { await wz.first().click(); if (!(await js(() => buildPlans()[0].waves.some(w => w.zone === "guard")))) throw new Error("a wave's zone did not reach the plan"); }
+    if (await page.locator('#sheet [data-act="wzone"]').count()) throw new Error("waves still offer a zone choice");
     await closeAll(); });
   await step("zones: targets carry over to the next day and must be confirmed before sealing", async () => { await closeAll(); if (!(await js(() => zoneV1Now()))) return;
     const r = await js(() => { const ids = RIVALS.slice(0, 3).map(r => r.id); S.lists.hostile = ids.slice(); S.tgtOk = true; pickReset(); const kept = S.lists.hostile.join() === ids.join(), needs = !targetsReady(); return { kept, needs, n: pickMax() }; });
