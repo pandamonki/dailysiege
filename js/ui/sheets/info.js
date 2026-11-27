@@ -209,6 +209,11 @@ function abilLines(k, r) {
 }
 
 const PATCHES = [
+  { v: "v1.31: free casting", date: "27 Nov", fixes: [], balance: [
+    "Rogue: 580 health and 14% armour (was 510 and 8%); Ambush and Poisoned Blades deal less. Arcane: longer reach, stronger Disrupt and Empowered Synergies, Arcane Missiles every 3rd attack at 75%. Fireball, Taunting Shout weaker; Headshot, Grounding Totem and the Archer's attack stronger.",
+  ], changes: [
+    "Hero skills cast whenever they are ready and an enemy is in reach. Ultimates cast when an enemy hero is in reach, 4+ enemies are, or in sudden death.",
+  ] },
   { v: "v1.30: hired mercenaries march in", date: "26 Nov", fixes: [], balance: [], changes: [
     "In the pre-battle auction, a hired group's lead sprite now walks from the auction panel to its lord's card and stands there with its name underneath. All lord cards are the same size.",
   ] },

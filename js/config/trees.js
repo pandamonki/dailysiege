@@ -125,7 +125,7 @@ const TREES = {
       TN("Disrupt", "trigger", "mage_a3", "A pulse silences enemies within 2 tiles for {0}s. Casts itself when an enemy is within 2 tiles.", [[.8, 1.4, 2]], ["#b48cff", "bolt", "nova", 2], 16),
       TN("Mana Shield", "trigger", "mage_a3", "Gains a shield of {0}% max health for 6s. Casts itself when an enemy is within 4 tiles and you hold no shield.", [[15, 25]], ["#c9a0ff", "shield", "shield", 1], 30),
       TN("Empowered Synergies", "synergy", "mage_a3", "Your spells ignore {0}% of the target's magic resist and damage reduction. Your other abilities recharge {1}% faster.", [[20, 30], [10, 15]]),
-      TN("Arcane Missiles", "passive", "mage_a3", "Every 4th basic attack also fires 2 bolts at other enemies within 3 tiles for 50% damage."),
+      TN("Arcane Missiles", "passive", "mage_a3", "Every 3rd basic attack also fires 3 bolts at other enemies within 3 tiles (or the target again) for 75% damage."),
       TN("Time Warp", "ultimate", "mage_ult", "For 6s allies in radius 5 gain +50% speed and enemy heroes' cooldowns freeze. Casts itself when an enemy hero is within 5 tiles, 4+ enemies are, or any enemy is in sudden death.", [], ["#c9a0ff", "blink", "nova", 5]),
     ] },
   ],
@@ -199,11 +199,11 @@ Object.keys(TREE_V2).forEach(cls => TREES[cls].forEach(tr => tr.nodes.forEach(n 
 // Skill rebalance with balance v5 (plans stamped balV5, battles from BAL_V5_FROM): measured with 600 bot wars a round (win rate by main tree).
 // Berserker and the Sniper were ahead, Pyromancy, Arcane, Storm, Shadow, Venom and Tactician behind. Nodes not listed keep their TREE_V2 values.
 const TREE_V5 = {
-  warrior: { "Cleave": [[8, 14, 20, 26]], "Executioner's Whirlwind": [[5, 9, 13, 17]], "Bloodthirst": [[2, 3]], "Blood Rage": [[3, 5]], "Marching Cadence": [[10, 17, 24, 31]], "Command Banner": [[12, 20, 28, 36]] },
-  archer: { "Eagle Eye": [[.2, .35, .5, .65], [3, 6, 9, 12]], "Headshot": [[50, 90, 130, 170]] },
-  rogue: { "Ambush": [[40, 70, 100, 130], [1, 1.25, 1.5, 1.75]], "Poisoned Blades": [[4, 6, 8, 10], [15, 25, 35, 45]] },
-  mage: { "Fireball": [[85, 140, 195, 250]], "Arcane Mastery": [[.3, .45, .6, .75], [6, 9, 12, 15]], "Mana Shield": [[25, 40]], "Empowered Synergies": [[25, 40], [12, 20]] },
-  shaman: { "Static Surge": [[5, 9, 13, 17], [30, 45, 60, 75]], "Chain Lightning": [[3, 4, 4, 5], [75, 120, 165, 210]] },
+  warrior: { "Taunting Shout": [[5, 8, 11, 14]], "Cleave": [[8, 14, 20, 26]], "Executioner's Whirlwind": [[5, 9, 13, 17]], "Bloodthirst": [[2, 3]], "Blood Rage": [[3, 5]], "Marching Cadence": [[10, 17, 24, 31]], "Command Banner": [[16, 26, 36, 46]] },
+  archer: { "Eagle Eye": [[.2, .35, .5, .65], [3, 6, 9, 12]], "Headshot": [[60, 105, 150, 195]] },
+  rogue: { "Ambush": [[30, 55, 80, 105], [1, 1.25, 1.5, 1.75]], "Poisoned Blades": [[3, 5, 7, 9], [15, 25, 35, 45]], "Vanish": [[8, 5]] }, // 27 Nov: less duel burst, more health and armour (CHAMP_V5)
+  mage: { "Fireball": [[65, 105, 145, 185]], "Arcane Mastery": [[.4, .6, .8, 1], [8, 12, 16, 20]], "Disrupt": [[1, 1.6, 2.2, 2.8]], "Mana Shield": [[25, 40]], "Empowered Synergies": [[30, 45], [15, 25]] },
+  shaman: { "Grounding Totem": [[9, 15, 21, 27], [8, 14, 20, 26]], "Static Surge": [[5, 9, 13, 17], [30, 45, 60, 75]], "Chain Lightning": [[3, 4, 4, 5], [60, 100, 140, 180]] },
 };
 TREES.warrior[1].nodes[5].desc5 = "For 5s you cannot drop below 1 health, ignore crowd control, attack 50% faster, and your attacks splash and stun soldiers. Heals 15% on cast. Casts itself when an enemy hero is within 2.5 tiles, 4+ enemies are, or any enemy is in sudden death.";
 Object.keys(TREE_V5).forEach(cls => TREES[cls].forEach(tr => tr.nodes.forEach(n => { if (TREE_V5[cls][n.name]) n.w5 = TREE_V5[cls][n.name]; })));
@@ -224,7 +224,7 @@ const CHAMP_V3 = {
 };
 
 // balance v5 (plans stamped balV5): base stats changed from CHAMP_V3. The warrior was ahead of every other class, the mage and rogue behind.
-const CHAMP_V5 = { warrior: { hp: 700, armor: .25 }, archer: { atk: 24 }, mage: { atk: 30 }, rogue: { hp: 510 } };
+const CHAMP_V5 = { warrior: { hp: 700, armor: .25 }, archer: { atk: 25 }, mage: { atk: 30 }, rogue: { hp: 580, armor: .14 } }; // 27 Nov: the Rogue tougher (it died most), the Archer back to 25 attack
 const champBase = (cls, v5) => (v5 && CHAMP_V5[cls] ? { ...CHAMP_V3[cls], ...CHAMP_V5[cls] } : CHAMP_V3[cls]);
 // Avatar of War (Berserker ultimate) from balance v5: shorter, a smaller heal and a lighter splash. It won far more than any other build.
 const AVATAR_V5 = { dur: 5, heal: .15, splash: .35 };

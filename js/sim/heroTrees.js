@@ -289,7 +289,7 @@ function makeTreeKit(X) {
     if (c === "shaman" && rk(e, 0, 0)) { const x = minBy(foes(e, o.x, o.y, 2).filter(q => q !== o), q => d(q, o)); if (x) { shot(o, x, "#8fd3ff", 1); deal(e, x, e.atk * V(e, 0, 0, 1) / 100, { aoe: 1 }); } }
     if (c === "mage") {
       if (rk(e, 1, 0)) { const v = V(e, 1, 0, 0) / 100; setFx(o, "slow", 3, v); setFx(o, "asdown", 3, v); }
-      if (rk(e, 2, 4)) { e.msl = (e.msl || 0) + 1; if (e.msl % 4 === 0) foes(e, o.x, o.y, 3).filter(x => x !== o).sort((a, b) => d(a, o) - d(b, o) || a.id - b.id).slice(0, 2).forEach(x => { shot(e, x, "#c9a0ff", 1); deal(e, x, e.atk * .5, { aoe: 1 }); }); }
+      if (rk(e, 2, 4)) { e.msl = (e.msl || 0) + 1; if (e.msl % 3 === 0) { const xs = foes(e, o.x, o.y, 3).filter(x => x !== o && x.kind !== "castle").sort((a, b) => d(a, o) - d(b, o) || a.id - b.id).slice(0, 3); while (xs.length < 3 && live(o)) xs.push(o); xs.forEach(x => { shot(e, x, "#c9a0ff", 1); deal(e, x, e.atk * .75, { aoe: 1 }); }); } }
     }
     if (c === "rogue" && rk(e, 1, 0)) addPoison(e, o, 1);
     if (c === "archer" && rk(e, 0, 2) && rng() < V(e, 0, 2, 0) / 100) { const x = minBy(foes(e, o.x, o.y, 2).filter(q => q !== o), q => d(q, o)); if (x) { shot(o, x, "#f1e6c0", 2); deal(e, x, e.atk * .5, { aoe: 1 }); } }

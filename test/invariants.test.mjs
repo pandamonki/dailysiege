@@ -469,3 +469,20 @@ test("Rogue pace: 2 tiles a second (Archer 1.9), at most 10% faster while hidden
   assert.equal(r.flick, 3.5);
   assert.ok(Math.abs(r.shadow - 10) < 1e-9, `Shadowstep tops out at ${r.shadow}%`);
 });
+
+// free casting (27 Nov): skills fire whenever ready and something is in reach; ultimates wait for an enemy hero, 4+ enemies or sudden death
+const DUEL = (clsA, clsB, treeA, units) => `(() => { const L = seatLayout(8), m = Math.floor(L.N / 2), F = { skV2: true, balV5: true, lvlV2: true, tuneV1: true };
+  const side = (pid, cls, dir, tree, us) => ({ pid, name: pid, color: "#2f5fa8", cls, level: 15, castle: L.castles[pid === "a" ? 0 : 4], ranks: { a1: 0, a2: 0, a3: 0, ult: 0 }, tree, picks: {}, triggers: {},
+    gear: {}, defences: {}, stance: "aggressive", noRetreat: true, prio: ["Enemy heroes", ...PRIORITIES.filter(p => p !== "Enemy heroes")], rules: [], items: [], pacts: [], hostile: [], betray: {}, ...F,
+    pieces: [...(cls ? [{ kind: "champ", r: m, c: m + dir * 2 }] : []), ...us.map((t, k) => ({ kind: "unit", type: t, lvl: 1, hp: 1, r: m + k, c: m + dir * 2 }))] });
+  const d = {}, res = runBattle([side("a", "${clsA}", -1, ${treeA}, []), side("b", ${clsB ? `"${clsB}"` : "null"}, 1, emptyTree(), ${JSON.stringify(units)})], 77, { fast: true, duel: d, N: L.N, ultV2: true, balV2: true, balV3: true, fairV1: true, pickV1: true, balV4: true, suddenV1: true, treesV1: true, heroV3: true, dayNo: 4 });
+  const h = res.tel.ents.find(e => e.kind === "champ" && e.pid === "a"); return JSON.stringify(Object.fromEntries(Object.entries(h.ab).map(([k, v]) => [k, v.casts]))); })()`;
+test("free casting: Fireball fires at a single enemy; an ultimate fires on an enemy hero but not on one soldier", () => {
+  const pyro = `{ b1: [4, 4, 2, 0, 0, 1], b2: [0, 0, 0, 0, 0, 0], b3: [0, 0, 0, 0, 0, 0], base: 1 }`; // Fireball and Meteor Strike
+  const vsHero = JSON.parse(sim.run(DUEL("mage", "warrior", pyro, [])));
+  assert.ok(vsHero.Fireball >= 1, `Fireball never fired at a lone hero: ${JSON.stringify(vsHero)}`);
+  assert.equal(vsHero["Meteor Strike"], 1, `Meteor Strike should fire once with an enemy hero in reach: ${JSON.stringify(vsHero)}`);
+  const vsOne = JSON.parse(sim.run(DUEL("mage", null, pyro, ["knight"])));
+  assert.ok(vsOne.Fireball >= 1, `Fireball never fired at a lone soldier: ${JSON.stringify(vsOne)}`);
+  assert.ok(!vsOne["Meteor Strike"], `Meteor Strike fired at a single soldier: ${JSON.stringify(vsOne)}`);
+});
