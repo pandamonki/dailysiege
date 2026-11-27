@@ -33,7 +33,6 @@ practice games always stamp all of them (`js/sim/plans.js`).
 | 27 Nov | `auraV2` | Aura items v2: no aura is stronger than 30% (Pipe of Insight 60% to 30%), and Mender's Charms from several heroes do not stack |
 | 23 Nov | `lvlV2` | Faster levelling: 3 to 4 levels a battle, up to level 25, smaller steps per level |
 | 26 Nov | `timeV1` | Fixed timing: opening swings and hero skill cooldowns by place in the line-up, not the battle's dice (see The battle) |
-| Wars from 1 Nov | `mapV3` | Roomier fields: maps 4 tiles bigger again, so neighbours stand about 8.5 tiles apart instead of 6.7 (8 lords); `MAP_V3_FROM` in `js/core/layout.js` |
 | 26 Nov | `tuneV1` | Agency pass: talents 25% and item stats 15% stronger, bots answer yesterday's attacker, mercenaries arrive 10s in, the Rogue follows Combat settings (see Agency pass) |
 | 26 Nov | `zoneV1` | Zones: placement sets each soldier's job, one #1 target, Front plans, flank plans, army temper, hill points, sudden-death damage tiebreak (see Zones) |
 
@@ -88,8 +87,8 @@ practice games always stamp all of them (`js/sim/plans.js`).
   (`XP_V2`); about a third of heroes reach 4 in a battle. Each level adds 7% of base health and 5.25% of base attack (`HP_STEP_V4`,
   `ATK_STEP_V4`; before it 12% and 9%), so a level 25 hero matches the old level 15. The ultimate needs level 12 (see Base skill and ultimate below).
 - **Base skill:** every class has one, shown above its three trees (`BASE_NODE` in `js/config/trees.js`): Warrior Ground Slam (a shockwave in a
-  line toward the nearest enemy: damage and a short slow), Shaman Healing Wave (a chain of light that heals the most wounded ally, then bounces to more), Rogue Flicker Strike (steps behind a backline
-  target and strikes, keeping stealth), Mage Teleport (3 tiles toward the castle with a short shield when a melee enemy closes in) and
+  line toward the nearest enemy: damage and a short slow), Shaman Healing Wave (a chain of light that heals the most wounded ally, then bounces to more), Rogue Flicker Strike (steps behind a hero or backline
+  target 2 to 3.5 tiles away and strikes, keeping stealth; `FLICKER_R`), Mage Teleport (3 tiles toward the castle with a short shield when a melee enemy closes in) and
   Ranger Piercing Shot (an arrow through a line of enemies). It has 3 ranks and a short recharge (8 to 14 seconds). **One point in it is
   needed before any tree node can be learned.** Its points count as spent points but not towards a tree's gates.
 - **Ultimate:** needs hero level 12 and ten points in its own tree (the base skill does not count), so it is the 12th point at the
@@ -166,6 +165,10 @@ practice games always stamp all of them (`js/sim/plans.js`).
 - **Hero stance:** sets when the hero alone goes home to heal (aggressive 12%, skirmish 30%, cautious 45% health).
   Soldiers never retreat on their own. Mage and Archer heroes take a short step back when a melee fighter hits them.
 - **Combat groups:** what the hero, melee, ranged and healers go for first within their reach.
+- **Reach is fixed** (no setting): melee fighters, heroes included, stop for an enemy within 2 tiles, ranged fighters within 3
+  (`ENGAGE_MELEE`, `ENGAGE_RANGED` in `js/sim/battle.js`). Anyone who is struck answers the attacker (up to 4 tiles). Once a
+  fighter is fighting an army (its current target's lord, or whoever just struck it), it may pick any fighter of that army within
+  5 tiles (`ENGAGED_R`) by its combat group's priorities. Otherwise it follows its lord's targets and plans.
 - From 19 Nov an enemy siege engine within 3 tiles of a castle becomes the first target of that castle's defenders.
 - Before 20 Nov: a "heading", up to 5 if-then battle commands, and per-soldier orders (escort, attack a lord). These
   only apply to replays of older battles.
@@ -212,6 +215,9 @@ Practice and real wars use these rules from the 26 Nov battle (`ZONE_V1_FROM` in
   pincer (both flanks raiding), left or right hook (heavy on one side), turtle (Guard and screening flanks) or balanced. The shape
   sets where its soldiers stand, its flank plans and its waves' zones; its build still sets the Front's plan. Practice rivals stand
   their two soldiers by the same shapes.
+- **Bot heroes go with their army:** four bots in five put their hero in the zone (Front, left or right, never the Guard) with the most
+  of their soldiers, so a hook's hero leads the hook and a pincer's hero joins one of its flanks; a tie with the Front stays in the Front.
+  The rest lead from the Front (`botHeroZone`, `BOT_HERO_WITH_ARMY` in `js/sim/bots.js`). Practice rivals do the same.
 - **Hill points:** the lord who held the hill longest (at least 10 seconds) scores 2 points, times the day's weight; a tie shares them.
 - **Sudden death time-out:** the winner is the side with the best health left plus damage dealt all battle (each as a share of
   the sides still standing), not health alone.
@@ -227,9 +233,11 @@ Practice and real wars from the 26 Nov battle (`TUNE_V1_FROM` in `js/config/orde
   not at the start. In replays every mercenary carries a floating gold coin with crossed blades (the old MERC label is gone), and every mercenary
   type has its own creature sprite, drawn in `js/render/mercSprites.js`: Swamp Troll, Skull Warlord orc, one-eyed Ogre, Centaur (a
   human archer on a horse), purple Dark Elf, hooded Necromancer and Skeleton Guard. Only a small accent shows the lord's colour.
+- **Slower Rogue and Archer:** the Rogue moves 2 tiles a second (was 2.4) and the Archer 1.9 (was 2); the Warrior moves 1.7, the Shaman and Mage 1.6; Shadowstep makes it at most 10% faster
+  while hidden (4, 6, 8, 10% by rank, as it fights; was up to about 39%); Flicker Strike reaches 3.5 tiles (was 5).
 - **The Rogue fights like every hero:** it no longer has its own 7-tile hunt for Mages and Archers (or the backline hunt while hidden);
   like every hero it picks targets by its lord's Combat settings: the hero's target order (heroes, melee, ranged, lowest health and
-  so on) and the Combat reach, 1 to 5 tiles, 2 to start with. Its finishing blows on weakened enemies stay.
+  so on) and the fixed reach (2 tiles for melee). Its finishing blows on weakened enemies stay.
 - **Bots answer their attacker:** a bot whose castle was some lord's #1 target in the last battle takes the Front plan that beats that
   lord's Front plan, and, if that lord is its neighbour, screens that side and moves a soldier there (`botReact` in `js/sim/bots.js`).
   Practice rivals do the same with the player's orders from the last practice battle.

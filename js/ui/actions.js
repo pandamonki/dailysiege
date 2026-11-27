@@ -164,7 +164,6 @@ const A = {
   aplan: v => { if (ARMY_PLANS.includes(v)) S.strategy.plan = v; }, fback: v => { if (FALL_BACKS.includes(v)) S.strategy.fallback = v; },
   hillfirst: () => { S.strategy.heading = S.strategy.heading === "centre" ? "castle" : "centre"; },
   gtoggle: (_, k) => { sheet.gopen = sheet.gopen === k ? null : k; },
-  engage: v => { if (!S.locked) S.engage = cleanEngage(S.engage + +v); },
   heropick: () => { showHeroPick(null); },
   invite: (_, k) => { ensureDip(); if (S.offers[k]) return; if (carriedPartners().includes(k)) { toast("You are already allied."); return; }
     const me = allyLords().me, grp = allyV2Now() ? allyGroup(k).filter(x => x !== me && !S.offers[x]) : [k], mine = allyV2Now() ? allyGroup(me).filter(x => x !== me) : []; // v2: inviting one member of an alliance invites them all

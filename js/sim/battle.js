@@ -633,8 +633,14 @@ function runBattle(plans, seed, opts = {}) {
   }
 
   // ----- targeting -----
-  // targeting: fight whatever non-ally crosses your path, otherwise march on your chosen target
-  const ENGAGE = 3.2;
+  // targeting: fight whatever non-ally crosses your path, otherwise march on your chosen target.
+  // Reach is fixed: melee fighters (heroes too) stop for an enemy within 2 tiles, ranged ones within 3. Once a fighter is fighting an army
+  // (its target, or whoever just struck it), it may pick any of that army's fighters within 5 tiles by its lord's priorities.
+  const ENGAGE_MELEE = 2, ENGAGE_RANGED = 3, ENGAGED_R = 5;
+  const engageR = e => ((e.range || 1.1) > 1.5 ? ENGAGE_RANGED : ENGAGE_MELEE);
+  const engagedPid = e => { const c = e.tgt; if (live(c) && c.kind !== "castle" && hostile(e.pid, c.pid) && vis(c, e) && d(c, e) <= ENGAGED_R) return c.pid;
+    const a = e.aggro; return a && a.until > t && live(a.src) && hostile(e.pid, a.src.pid) ? a.src.pid : null; };
+  const reachFor = (e, o, eng) => (eng && o.pid === eng ? ENGAGED_R : engageR(e));
   function byPrio(e, c) {
     const p = P[e.pid], prio = p.focusLeader ? ["The leader (bounty)", ...p.prio] : p.prio;
     for (const rule of prio) {
@@ -691,7 +697,7 @@ function runBattle(plans, seed, opts = {}) {
     if (FV) return order.filter(ok).sort((a, b) => (Math.round(d(P[a].castle, p.castle) * 1e6) - Math.round(d(P[b].castle, p.castle) * 1e6)) || (fairTie(seed, p.pid, a) - fairTie(seed, p.pid, b)))[0] || null;
     return minBy(order.filter(ok), q => d(P[q].castle, p.castle));
   }
-  // Targeting priorities by kind of fighter (from 12 Nov 2026; the plan's gprio = { hero, melee, ranged, heal }, and engage = reach in tiles).
+  // Targeting priorities by kind of fighter (the plan's gprio = { hero, melee, ranged, heal }); reach is engageR, or ENGAGED_R for the army already being fought.
   // Each list is walked in order and picks the first kind with an enemy within reach: "hero", "melee", "ranged", "healer", "siege" (nearest of that kind),
   // "any" (nearest soldier), "lowhp" (the weakest soldier or hero in reach). "castle" marches on the castle of the lord the army is headed for (used by tests).
   const soldier = o => o.kind === "unit" || o.kind === "summon";
@@ -700,10 +706,10 @@ function runBattle(plans, seed, opts = {}) {
   // orders v2: how close an enemy must be before this soldier stops for it. A siege army only stops for what is in its way; a hero hunt still turns for heroes
   const planReach = (e, o, reach) => { const p = P[e.pid]; if (!p.ordV2 || e.order === "guard") return reach; const pl = planOf(e); return pl === "siege" || (pl === "hunt" && o.kind !== "champ") ? Math.min(reach, SIEGE_REACH) : reach; };
   function groupPick(e) {
-    const list = P[e.pid].gprio[grpOf(e)]; if (!list) return null;
+    const list = P[e.pid].gprio[grpOf(e)]; if (!list) return null; const eng = engagedPid(e);
     for (const cat of list) {
       if (cat === "castle") { const g = goalPid(e), c = g && ents.find(o => !o.dead && o.kind === "castle" && o.pid === g); if (c) return c; continue; }
-      const reach = P[e.pid].engage || ENGAGE, pool = ents.filter(o => !o.dead && hostile(e.pid, o.pid) && fighting(o.pid) && vis(o, e) && d(o, e) <= planReach(e, o, reach) && (cat === "any" ? soldier(o) : cat === "lowhp" ? (soldier(o) || o.kind === "champ") : catOf(o) === cat));
+      const pool = ents.filter(o => !o.dead && hostile(e.pid, o.pid) && fighting(o.pid) && vis(o, e) && d(o, e) <= planReach(e, o, reachFor(e, o, eng)) && (cat === "any" ? soldier(o) : cat === "lowhp" ? (soldier(o) || o.kind === "champ") : catOf(o) === cat));
       if (pool.length) return minBy(pool, cat === "lowhp" ? (o => o.hp / o.maxhp + d(o, e) * .03) : (o => d(o, e)));
     }
     return null;
@@ -750,11 +756,11 @@ function runBattle(plans, seed, opts = {}) {
     // pursuit: stay on a target that is fleeing or badly hurt, unless it has escaped far away
     const cur = e.tgt;
     if (live(cur) && cur.kind !== "castle" && hostile(e.pid, cur.pid) && vis(cur, e) && (cur.retreating || cur.hp / cur.maxhp < .35) && d(cur, e) <= (guard ? 4.5 : planReach(e, cur, 7))) return cur;
-    const runners = ents.filter(o => !o.dead && o.retreating && o.kind !== "castle" && hostile(e.pid, o.pid) && vis(o, e) && d(o, e) <= planReach(e, o, ENGAGE + 1.5));
+    const runners = ents.filter(o => !o.dead && o.retreating && o.kind !== "castle" && hostile(e.pid, o.pid) && vis(o, e) && d(o, e) <= planReach(e, o, engageR(e) + 1.5));
     if (runners.length && !guard) return minBy(runners, o => o.hp / o.maxhp + d(o, e) * .1);
     if (V3 && p.gprio && !guard && !escort) { const t2 = groupPick(e); if (t2) return t2; } // per-group priorities: the lord's order of what this kind of fighter goes for
-    const anchor = guard ? p.castle : escort ? p.champ : e, radius = guard ? (t - p.castleHitT < 6 ? 7 : 4) : (V3 && p.engage) || ENGAGE;
-    const near = ents.filter(o => !o.dead && o.kind !== "castle" && hostile(e.pid, o.pid) && fighting(o.pid) && vis(o, e) && d(o, anchor) <= (guard || escort ? radius : planReach(e, o, radius)));
+    const anchor = guard ? p.castle : escort ? p.champ : e, radius = guard ? (t - p.castleHitT < 6 ? 7 : 4) : engageR(e), eng = !guard && !escort && engagedPid(e);
+    const near = ents.filter(o => !o.dead && o.kind !== "castle" && hostile(e.pid, o.pid) && fighting(o.pid) && vis(o, e) && d(o, anchor) <= (guard || escort ? radius : planReach(e, o, reachFor(e, o, eng))));
     if (near.length) return byPrio(e, near);
     if (guard || escort) return null;
     if (PV && !(p.ordV2 && (planOf(e) === "hunt" || planOf(e) === "slayer"))) { const cs = ents.filter(o => !o.dead && o.kind === "castle" && hostile(e.pid, o.pid) && d(o, e) <= PASSING_CASTLE); if (cs.length) return minBy(cs, o => Math.round(d(o, e) * 1e3) + fairTie(seed, e.pid, o.pid)); } // a rival castle on the way

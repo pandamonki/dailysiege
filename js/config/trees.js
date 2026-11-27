@@ -79,7 +79,7 @@ const TREES = {
   ],
   rogue: [
     { id: "shadow", name: "Shadow", role: "Infiltration", nodes: [
-      TN("Shadowstep", "passive", "rogue_a2", "Begin the battle and every respawn in stealth, and move +{0}% faster while hidden. Stealth breaks when you strike, and enemies within 1 tile can still see you.", [[10, 18, 25]]),
+      TN("Shadowstep", "passive", "rogue_a2", "Begin the battle and every respawn in stealth, and move +{0}% faster while hidden. Stealth breaks when you strike, and enemies within 1 tile can still see you.", [[4, 7, 10]]),
       TN("Ambush", "trigger", "rogue_a1", "Your first strike from stealth hits for ({0} + attack) x1.8 and stuns for {1}s (half on heroes).", [[40, 60, 80], [1, 1.25, 1.5]], ["#d34a4a", "dagger", "arc", 1, "t"]),
       TN("Smoke Bomb", "trigger", "rogue_a2", "Blinds nearby enemies (40% miss) for {0}s and makes them drop you as a target. Casts itself when 3+ enemies are within 2 tiles.", [[2, 3]], ["#9a9aa8", "smoke", "smoke", 2], 16),
       TN("Vanish", "synergy", "rogue_a2", "A kill hides you for 3s and re-arms Ambush. Cooldown {0}s (hero kills ignore it).", [[12, 9]]),
@@ -162,7 +162,7 @@ const TREES = {
 const BASE_NODE = {
   warrior: TN("Ground Slam", "trigger", "", "Slams the ground and sends a shockwave 3.5 tiles toward the nearest enemy, hitting everything in the line for {0} + attack x.6 and slowing it 25% for 2s. Casts itself when 2+ enemies line up within 3.5 tiles, or an enemy hero is that close.", [[30, 48, 66]], ["#e2a33c", "slash", "arc", 1.6], 10),
   shaman: TN("Healing Wave", "trigger", "", "A chain of light heals the most wounded ally within 4 tiles for {0} + attack x.6, then bounces to up to {1} more wounded allies within 2.5 tiles, each healed 20% less than the last. The chain also heals you. Casts itself when you or an ally nearby is below 70% health.", [[45, 70, 95], [2, 3, 3]], ["#ffe96a", "bolt", "bolt", 1, "t"], 9),
-  rogue: TN("Flicker Strike", "trigger", "", "Steps behind the nearest enemy hero or backline unit within 5 tiles and strikes it for attack x{0}. Stealth is kept. Casts itself when one is more than 2 tiles away.", [[.8, 1.1, 1.4]], ["#9a6bd6", "dagger", "arc", 1, "t"], 10),
+  rogue: TN("Flicker Strike", "trigger", "", "Steps behind the nearest enemy hero or backline unit within 3.5 tiles and strikes it for attack x{0}. Stealth is kept. Casts itself when one is more than 2 tiles away.", [[.8, 1.1, 1.4]], ["#9a6bd6", "dagger", "arc", 1, "t"], 10),
   mage: TN("Teleport", "trigger", "", "Teleports 3 tiles toward your castle and shields you for {0}% max health for 3s. Casts itself when a melee enemy gets within 1.5 tiles.", [[6, 10, 14]], ["#b48cff", "blink", "burst", 1.2], 14),
   archer: TN("Piercing Shot", "trigger", "", "Fires an arrow through every enemy in a line for {0} + attack x.5 pierce damage. Casts itself when 2+ enemies line up within range, or an enemy hero is in range.", [[20, 34, 48]], ["#e6e6c8", "arrow", "streak", 1, "t"], 8),
 };
@@ -175,6 +175,8 @@ const treeMaxOf = (bi, i) => (bi === BASE_BI ? BASE_MAX : TREE_MAX[i]);
 // least about two thirds of the first rank, so a point spent on rank 2 is worth nearly as much as the point that bought rank 1.
 // Four-rank skills list all four ranks. Older battles keep the values in TREES above.
 let SKILLS_V2_FROM = "2026-11-20"; const skillsV2For = d => String(d) >= SKILLS_V2_FROM;
+// Shadowstep (rogue): the values are 0.8 of what fights, because the agency pass makes every talent TALENT_X (1.25) stronger: 4, 6, 8 and 10% faster while hidden.
+const FLICKER_R = 3.5; // Flicker Strike reach in tiles (was 5)
 const TREE_V2 = {
   warrior: { "Iron Clad": [[5, 10, 15, 20], [3, 6, 9, 12]], "Taunting Shout": [[6, 10, 14, 18]], "Shield Bash": [[30, 55]], "Unyielding Stance": [[7, 14], [10, 20]],
     "Cleave": [[15, 25, 35, 45]], "Executioner's Whirlwind": [[20, 30, 40, 50]], "Bloodthirst": [[3, 5]], "Blood Rage": [[4, 7]],
@@ -182,7 +184,7 @@ const TREE_V2 = {
   shaman: { "Static Surge": [[4, 7, 10, 13], [24, 40, 56, 72]], "Chain Lightning": [[3, 4, 4, 5], [60, 100, 140, 180]], "Thunderclap": [[30, 55]], "Conductive Discharge": [[12, 20]],
     "Grounding Totem": [[5, 9, 13, 17], [4, 8, 12, 16]], "Earthgrab Totem": [[2, 3, 4, 5], [2, 2.5, 3, 3.5]], "Ward Totem": [[1, 2]], "War Drum Pulse": [[12, 20], [10, 17]],
     "Spirit Leech": [[5, 10, 15, 20]], "Ancestral Grasp": [[40, 70, 100, 130]], "Hex": [[2, 3.5]], "Last Stand Offering": [[1.5, 2], [15, 25]] },
-  rogue: { "Shadowstep": [[10, 17, 24, 31]], "Ambush": [[30, 55, 80, 105], [1, 1.25, 1.5, 1.75]], "Smoke Bomb": [[2, 3.5]], "Vanish": [[12, 9]],
+  rogue: { "Shadowstep": [[3.2, 4.8, 6.4, 8]], "Ambush": [[30, 55, 80, 105], [1, 1.25, 1.5, 1.75]], "Smoke Bomb": [[2, 3.5]], "Vanish": [[12, 9]],
     "Poisoned Blades": [[3, 5, 7, 9], [15, 25, 35, 45]], "Caltrop Bomb": [[5, 9, 13, 17], [40, 50, 60, 70]], "Crippling Poison": [[10, 18]], "Corrosive Agent": [[8, 14]],
     "Reflexes": [[8, 14, 20, 26]], "Riposte": [[.75, 1.25, 1.75, 2.25]], "Backstab": [[15, 25]], "Flurry": [[5, 9]] },
   mage: { "Ignite": [[6, 10, 14, 18]], "Fireball": [[70, 120, 170, 220]], "Combustion": [[30, 55]], "Melt Armour": [[10, 17]],
@@ -215,9 +217,9 @@ TREE_ART_CLASSES.forEach(cls => TREES[cls].forEach((tr, bi) => tr.nodes.forEach(
 const CHAMP_V3 = {
   warrior: { hp: 760, atk: 28, armor: .28, mres: 0,   range: 1.1, as: 1.0, spd: 1.7 },
   shaman:  { hp: 540, atk: 22, armor: .18, mres: .10, range: 2.0, as: 1.1, spd: 1.6, shot: "#8fd3ff" },
-  archer:  { hp: 500, atk: 25, armor: .05, mres: 0,   range: 3.0, as: .9,  spd: 2.0, shot: "#f1e6c0" },
+  archer:  { hp: 500, atk: 25, armor: .05, mres: 0,   range: 3.0, as: .9,  spd: 1.9, shot: "#f1e6c0" },
   mage:    { hp: 420, atk: 28, armor: 0,   mres: .20, range: 2.5, as: 1.2, spd: 1.6, shot: "#ff8a2a" },
-  rogue:   { hp: 480, atk: 33, armor: .08, mres: .05, range: 1.1, as: .8,  spd: 2.4 },
+  rogue:   { hp: 480, atk: 33, armor: .08, mres: .05, range: 1.1, as: .8,  spd: 2.0 }, // the quickest hero, a little ahead of the Archer (1.9)
 };
 
 // balance v5 (plans stamped balV5): base stats changed from CHAMP_V3. The warrior was ahead of every other class, the mage and rogue behind.

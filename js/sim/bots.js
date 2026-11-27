@@ -64,7 +64,7 @@ const BOT_WAVES = { hunter: [["enemy_hero", 0, "hero"], ["hero_dies", 0, "defaul
 const botWavesOpen = dayNo => (dayNo >= 6 ? 3 : dayNo >= 4 ? 2 : dayNo >= 2 ? 1 : 0);
 const botWaves = (seed, kinds, dayNo, sup, extra = 0, lvlUp = 0) => { const st = BOT_STYLES[(seed >> 1) % BOT_STYLES.length].name, n = Math.max(0, Math.min(sup ? WAVE_SLOTS * botWavesOpen(dayNo) : GARRISON_SOLDIERS, Math.floor(dayNo * 1.5) + extra)), ulvl = Math.min(3, 1 + Math.floor((dayNo - 1) / 2) + lvlUp); // extra, lvlUp: a bot's build trades reinforcements and training against items and defences
   return BOT_WAVES[st].map(([when, at, order], i) => ({ when, at: at || 60, order, units: [...Array(Math.max(0, Math.min(WAVE_SLOTS, n - i * WAVE_SLOTS)))].map((_, k) => ({ type: kinds[Math.floor(hash(seed, i * 3 + k, 41 + dayNo) * kinds.length)], lvl: ulvl, id: null, hp: 1 })) })); };
-const botCombat = seed => { const st = BOT_STYLES[(seed >> 1) % BOT_STYLES.length]; return { gprio: cleanGprio(st.gprio), engage: 1 + (seed >> 3) % 3, heading: st.heading }; };
+const botCombat = seed => { const st = BOT_STYLES[(seed >> 1) % BOT_STYLES.length]; return { gprio: cleanGprio(st.gprio), heading: st.heading }; };
 
 // One bot lord's orders for one day. uid: its seat id; cls: its hero; i: its place in the roster (its castle is L.castles[i]);
 // ids: everyone in the roster, in order; L: the seat layout; zone: the tiles it may deploy on; dayNo: 1 to 7; lvl: its hero's level that day.
@@ -131,6 +131,21 @@ function botReact(uid, ids, castles, N, prev) {
   return { front: beat, side, from: foe.pid };
 }
 const botShape = uid => BOT_SHAPES[Math.floor(hash(botSeed(uid), 9, 57) * BOT_SHAPES.length)];
+// Most bot heroes (BOT_HERO_WITH_ARMY) march with the bulk of their army: the hero stands in the zone (Front, left or right; never the Guard)
+// holding the most soldiers. A tie that includes the Front stays in the Front; a tie between the flanks is settled by the bot's seed. The rest lead from the Front.
+const BOT_HERO_WITH_ARMY = .8;
+function botHeroZone(uid, zones) {
+  const s = botSeed(uid), n = {}; zones.forEach(z => { if (z === "front" || z === "left" || z === "right") n[z] = (n[z] || 0) + 1; });
+  if (hash(s, 13, 61) >= BOT_HERO_WITH_ARMY || !Object.keys(n).length) return "front";
+  const best = Math.max(...Object.values(n)), tops = ["front", "left", "right"].filter(z => n[z] === best);
+  return tops.includes("front") ? "front" : tops[Math.floor(hash(s, 14, 62) * tops.length)];
+}
+// the free tile in zone z of a lord's field nearest the soldiers already standing there (else nearest the castle); null if there is none
+function botHeroSpot(me, N, field, z, units, taken, lords) {
+  const mine = units.filter(([r, c]) => zoneOfTile(me[0], me[1], r, c, N) === z), at = mine.length ? [mine.reduce((a, p) => a + p[0], 0) / mine.length, mine.reduce((a, p) => a + p[1], 0) / mine.length] : me;
+  const tiles = [...field].map(k => k.split(",").map(Number)).filter(([r, c]) => !taken.has(`${r},${c}`) && !(r === me[0] && c === me[1]) && zoneOfTile(me[0], me[1], r, c, N) === z && !(lords && treeTile(r, c, lords, N)));
+  return tiles.sort((p, q) => (hyp(p[0] - at[0], p[1] - at[1]) - hyp(q[0] - at[0], q[1] - at[1])) || (p[0] - q[0]) || (p[1] - q[1]))[0] || null;
+}
 function lordBotPlan({ uid, cls, i, ids, L, zone, dayNo, lvl, v2, v3, fair, pick, ranks, sup, defV2, zv, prev }) { // prev: the last battle's plans, for bots that answer their attacker (agency pass) // defV2: from TRAPS_V2_FROM bots buy traps, towers and walls by their build, at the cost of soldiers or items // sup: the supply rules from SUPPLY_V2_FROM (at most FIELD_MAX soldiers on the map)
   const seed = botSeed(uid), me = L.castles[i], c = CLASSES[cls] || CLASSES.warrior, sp = armySpots(me, L.N);
   const picks = {}; c.abilities.forEach((a, j) => { picks[a.key] = a.choice[hash(seed, j, 77) > .5 ? 1 : 0][0]; });
@@ -151,6 +166,10 @@ function lordBotPlan({ uid, cls, i, ids, L, zone, dayNo, lvl, v2, v3, fair, pick
   const spotFor = k => { // zones v1: a spot in the zone this soldier is meant for (by the bot's shape), else the next free one
     const want = JOBS ? JOBS[k % JOBS.length] : null, i2 = spotsLeft.findIndex(([r, q], j) => !used.has(j) && (!want || zoneOfTile(me[0], me[1], r, q, L.N) === want)), j = i2 >= 0 ? i2 : spotsLeft.findIndex((_, j2) => !used.has(j2)); used.add(j); return spotsLeft[j]; };
   for (let k = 0; k < n; k++) { const at = spotFor(k); pieces.push({ kind: "unit", type: k < engines ? pool[Math.floor(hash(seed, k, 31 + dayNo) * pool.length)] : kinds[Math.floor(hash(seed, k, 11 + dayNo) * kinds.length)], lvl: ulvl, hp: 1, r: at[0], c: at[1] }); }
+  if (zv) { // zones v1: the hero goes with the bulk of the army
+    const units = pieces.filter(p => p.kind === "unit").map(p => [p.r, p.c]), hz = botHeroZone(uid, units.map(([r, q]) => zoneOfTile(me[0], me[1], r, q, L.N)));
+    if (hz !== "front") { const busy = new Set(pieces.map(p => `${p.r},${p.c}`)), t = botHeroSpot(me, L.N, zone, hz, units, busy, ids.length); if (t) { pieces[0].r = t[0]; pieces[0].c = t[1]; } }
+  }
   if (!defV2 && dayNo >= 2 && seed % 3) { // a short barrier across the way to the middle, where it fits
     const ctr = (L.N - 1) / 2, dy = ctr - me[0], dx = ctr - me[1], len = hyp(dx, dy) || 1, r = Math.round(me[0] + dy / len * 3), q = Math.round(me[1] + dx / len * 3);
     if (zone.has(`${r},${q}`) && !pieces.some(p => p.r === r && p.c === q)) pieces.push({ kind: "wall", r, c: q, dir: Math.abs(dy) >= Math.abs(dx) ? "h" : "v" });

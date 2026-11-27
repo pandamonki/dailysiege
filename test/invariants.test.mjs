@@ -416,18 +416,6 @@ test("agency pass (tuneV1): battles with it end, place every lord once and play 
   assert.ok(r.same, "fast and full runs disagree");
 });
 
-test("roomier prototype fields (map v3): 4 tiles bigger, every lord's field the same size, and battles on them run cleanly", () => {
-  const r = JSON.parse(sim.run(`(() => { const a = seatLayout(8, true), b = seatLayout(8, true, true), sizes = new Set(b.castles.map(c => [...zoneFor(c, b.N, b.castles, true)].length));
-    const near = L => Math.min(...L.castles.slice(1).map(c => Math.hypot(c[0] - L.castles[0][0], c[1] - L.castles[0][1])));
-    return JSON.stringify({ grow: b.N - a.N, sizes: sizes.size, gap: [near(a), near(b)] }); })()`));
-  assert.equal(r.grow, 4);
-  assert.equal(r.sizes, 1, "every lord's deploy field has the same number of tiles");
-  assert.ok(r.gap[1] > r.gap[0] + 1.5, `neighbours only ${r.gap[1].toFixed(1)} tiles apart (was ${r.gap[0].toFixed(1)})`);
-  const z = JSON.parse(sim.run(`(() => { const { full, fast } = ${ZWAR(40, 4).replace("seatLayout(8, true)", "seatLayout(8, true, true)")}; return JSON.stringify({ places: full.results.map(x => x.place).sort((a, b) => a - b), same: battleHash(full) === battleHash(fast) }); })()`));
-  assert.deepEqual(z.places, [1, 2, 3, 4, 5, 6, 7, 8]);
-  assert.ok(z.same, "fast and full runs disagree");
-});
-
 test("agency pass (tuneV1): hired mercenaries march out 10 seconds into the battle, not at the start", () => {
   const tweak = `{ const p = plans[0], [cr, cc] = p.castle, free = [...p.zoneSet].map(k => k.split(",").map(Number)).filter(([r, c]) => !p.pieces.some(q => q.r === r && q.c === c) && !(r === cr && c === cc)).slice(0, 2);
     free.forEach(([r, c]) => p.pieces.push({ kind: "unit", type: "delf", lvl: 1, hp: 1, r, c, merc: "elves" })); plans.forEach(q => { q.tuneV1 = true; q.timeV1 = true; }); }`;
@@ -447,4 +435,37 @@ test("base skills: a hero casts its base skill only once it has learned it, and 
   assert.deepEqual(without, {}, "no hero without the base skill casts one");
   const want = ["warrior:Ground Slam", "shaman:Healing Wave", "rogue:Flicker Strike", "mage:Teleport", "archer:Piercing Shot"];
   assert.deepEqual(want.filter(k => !withBase[k]), [], "every class's base skill fires: " + JSON.stringify(withBase));
+});
+
+test("fixed reach: a plan cannot change how far its fighters reach (melee 2 tiles, ranged 3, 5 within an army already being fought)", () => {
+  const r = JSON.parse(sim.run(`(() => { const a = ${ZWAR(41, 4)}, b = ${ZWAR(41, 4, "plans.forEach(p => { p.engage = 5; });")};
+    return JSON.stringify({ same: battleHash(a.full) === battleHash(b.full), fast: battleHash(a.full) === battleHash(a.fast), places: a.full.results.map(x => x.place).sort((x, y) => x - y) }); })()`));
+  assert.ok(r.same, "an old reach setting in a plan changed the battle");
+  assert.ok(r.fast, "fast and full runs disagree");
+  assert.deepEqual(r.places, [1, 2, 3, 4, 5, 6, 7, 8]);
+});
+
+test("bot heroes: most march with the bulk of their army (same zone), never stand in the Guard, and never share a tile", () => {
+  const r = JSON.parse(sim.run(`(() => { const L = seatLayout(8, true), ids = [...Array(8)].map((_, k) => "hz" + k); let flankArmies = 0, withArmy = 0, guard = 0, clash = 0, all = 0;
+    for (let g = 0; g < 8; g++) { const gi = ids.map(x => x + "g" + g);
+      gi.forEach((uid, i) => { const zone = zoneFor(L.castles[i], L.N, L.castles, true), [cr, cc] = L.castles[i];
+        const p = lordBotPlan({ uid, cls: "warrior", i, ids: gi, L, zone, dayNo: 4, lvl: 10, v2: true, v3: true, fair: true, pick: true, ranks: {}, sup: true, defV2: true, zv: true });
+        const h = p.pieces.find(q => q.kind === "champ"), hz = zoneOfTile(cr, cc, h.r, h.c, L.N), n = {}; all++;
+        p.pieces.filter(q => q.kind === "unit").forEach(q => { const z = zoneOfTile(cr, cc, q.r, q.c, L.N); n[z] = (n[z] || 0) + 1; });
+        if (hz === "guard") guard++;
+        if (p.pieces.some(q => q !== h && q.r === h.r && q.c === h.c)) clash++;
+        const flank = ["left", "right"].find(s => (n[s] || 0) > (n.front || 0) && (n[s] || 0) >= (n[s === "left" ? "right" : "left"] || 0));
+        if (flank) { flankArmies++; if (hz === flank || ((n.left || 0) === (n.right || 0) && (hz === "left" || hz === "right"))) withArmy++; } }); }
+    return JSON.stringify({ flankArmies, withArmy, guard, clash, all }); })()`));
+  assert.equal(r.guard, 0, "a bot hero stood in the Guard");
+  assert.equal(r.clash, 0, "a bot hero shared a tile");
+  assert.ok(r.flankArmies >= 5, `too few flank-heavy bots to judge (${r.flankArmies} of ${r.all})`);
+  assert.ok(r.withArmy / r.flankArmies >= .6, `only ${r.withArmy} of ${r.flankArmies} flank-heavy bots' heroes went with their army`);
+});
+
+test("Rogue pace: 2 tiles a second (Archer 1.9), at most 10% faster while hidden, and Flicker Strike reaches 3.5 tiles", () => {
+  const r = JSON.parse(sim.run(`JSON.stringify({ rogue: CHAMP_V3.rogue.spd, archer: CHAMP_V3.archer.spd, mage: CHAMP_V3.mage.spd, flick: FLICKER_R, shadow: Math.max(...TREE_V2.rogue.Shadowstep[0]) * TALENT_X })`));
+  assert.deepEqual([r.rogue, r.archer], [2, 1.9]);
+  assert.equal(r.flick, 3.5);
+  assert.ok(Math.abs(r.shadow - 10) < 1e-9, `Shadowstep tops out at ${r.shadow}%`);
 });

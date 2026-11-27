@@ -223,7 +223,9 @@ const PATCHES = [
   ] },
   { v: "v1.27: the new rules in every war", date: "26 Nov", fixes: [], balance: [], changes: [
     "From the 26 Nov battle, real wars use the practice rules: army zones, Front plans and flanks, army temper, three carried-over targets, fixed battle timing, stronger talents and items, rivals that answer their attackers, and mercenaries that arrive 10 seconds in.",
-    "Wars use the roomier map.",
+    "Maps are back to their earlier size in practice and wars.",
+    "The Rogue and Archer are slower (2 and 1.9 tiles a second); the Rogue is at most 10% faster while hidden, and Flicker Strike reaches 3.5 tiles.",
+    "Combat reach is no longer a setting: melee fighters join a fight within 2 tiles, ranged within 3, and once fighting an army they can pick any of its fighters within 5 tiles.",
   ] },
   { v: "v1.26: practice changes", date: "26 Nov", fixes: ["Practice no longer favours some seats with the new battle timing."], balance: [], changes: [
     "Practice: up to three targets in order, kept from day to day and confirmed each day; roomier maps; talents 25% and item bonuses 15% stronger.",

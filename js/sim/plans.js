@@ -13,7 +13,7 @@ function buildPlans() {
   const plans = [{
     pid: "you", me: true, name: "You", color: YOU_COLOR, cls: S.cls, castle: CASTLE, ranks: S.ranks, ...(heroV3Now() ? { tree: cleanTree(S.tree) } : {}), picks: S.picks, triggers: S.triggers, gear: S.gear, defences: S.defences,
     ultArm: planUlt(), shellAt: S.shellAt, blessing: planBless(), level: level(), xp0: S.xp || 0, items: (S.items || []).slice(), castleTier: S.castle || 1, banner: S.banner, ...pactPlan(),
-    formation: S.formation !== false, stance: S.stance, prio: S.prio, gprio: S.gprio, engage: S.engage, waves: garrisonPlan(), rules: S.rules, pieces: youPieces,
+    formation: S.formation !== false, stance: S.stance, prio: S.prio, gprio: S.gprio, waves: garrisonPlan(), rules: S.rules, pieces: youPieces,
     targets: S.lists.hostile.slice(), tmode: S.strategy.mode, heading: S.strategy.heading, armyPlan: S.strategy.plan || "conquest", fallback: S.strategy.fallback || "none", front: S.strategy.front || "assault", flanks: cleanFlanks(S.strategy.flanks), temper: S.strategy.temper || "steady", offers: Object.assign({}, S.offers), replies: Object.assign({}, S.replies), terms: S.terms, bids: Object.assign({}, S.bids),
   }];
   const board0 = rankMap(PRACTICE_BOARD, ["you", ...RIVALS.map(r => r.id)]);

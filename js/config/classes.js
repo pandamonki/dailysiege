@@ -34,7 +34,7 @@ const CHAMP = {
   mage:    { hp: 410, atk: 28, range: 2, as: 1.2, spd: 1.5, armor: 0, shot: "#ff8a2a" },
   archer:  { hp: 540, atk: 24, range: 2.5, as: .9, spd: 1.8, armor: .05, shot: "#f1e6c0" },
   shaman:  { hp: 500, atk: 22, range: 1.6, as: 1.1, spd: 1.6, armor: .18, shot: "#8fd3ff" },
-  rogue:   { hp: 490, atk: 33, range: 1.1, as: .8, spd: 2.4, armor: .05 },
+  rogue:   { hp: 490, atk: 33, range: 1.1, as: .8, spd: 2.0, armor: .05 },
 };
 
 const PASSIVE = { archer: "a3", rogue: "a3" };
