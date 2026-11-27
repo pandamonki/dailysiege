@@ -225,7 +225,7 @@ const CHAMP_V3 = {
 };
 
 // balance v5 (plans stamped balV5): base stats changed from CHAMP_V3. The warrior was ahead of every other class, the mage and rogue behind.
-const CHAMP_V5 = { warrior: { hp: 700, armor: .25 }, archer: { atk: 25 }, mage: { atk: 30 }, rogue: { hp: 580, armor: .14, atk: 28 } }; // 27 Nov: the Rogue tougher (it died most), the Archer back to 25 attack
+const CHAMP_V5 = { warrior: { hp: 700, armor: .25 }, archer: { atk: 25 }, mage: { atk: 30 }, rogue: { hp: 580, armor: .14 } }; // 27 Nov: the Rogue tougher (it died most), the Archer back to 25 attack
 const champBase = (cls, v5) => (v5 && CHAMP_V5[cls] ? { ...CHAMP_V3[cls], ...CHAMP_V5[cls] } : CHAMP_V3[cls]);
 // Avatar of War (Berserker ultimate) from balance v5: shorter, a smaller heal and a lighter splash. It won far more than any other build.
 const AVATAR_V5 = { dur: 5, heal: .15, splash: .35 };
