@@ -179,11 +179,13 @@ test("Placement v2: one point per place, last scores 1, and the winner gets 2 mo
 
 test("emergency waves: never closer than the gap, and a falling castle sends every wave it has time for", () => {
   for (const [g, d] of GAMES) {
-    const r = JSON.parse(sim.run(`(() => { const { full } = ${WAR(g, d)}; return JSON.stringify({ gap: full.waveGap || WAVE_EMERGENCY_GAP, lords: full.results.map(x => ({ fell: x.fellAt, w: full.stats[x.pid].waves })) }); })()`));
+    const r = JSON.parse(sim.run(`(() => { const { full } = ${WAR(g, d)}; const low = pid => { const ci = full.meta.findIndex(m => m.kind === "castle" && m.pid === pid); if (ci < 0) return null; const max = full.frames[0].d[ci * 4 + 2], f = full.frames.find(f => f.d.length > ci * 4 + 2 && f.d[ci * 4 + 2] > 0 && f.d[ci * 4 + 2] < max * WAVE_EMERGENCY[2]); return f ? f.t : null; };
+      return JSON.stringify({ gap: full.waveGap || WAVE_EMERGENCY_GAP, lords: full.results.map(x => ({ fell: x.fellAt, low: low(x.pid), w: full.stats[x.pid].waves })) }); })()`));
     r.lords.forEach((x, i) => {
       x.w.forEach((s, j) => { if (j) assert.ok(s - x.w[j - 1] >= r.gap, `game ${g} lord ${i}: waves at ${x.w.join(", ")}`); });
       const last = x.w.length ? x.w[x.w.length - 1] : -99; // a fallen castle has crossed every mark: once the gap after its last wave is over, the next must go
-      if (x.fell != null && x.fell > Math.max(last + r.gap, 0) + 1) assert.equal(x.w.length, 3, `game ${g} lord ${i}: fell at ${x.fell} with waves at ${x.w.join(", ")}`);
+      // a castle blown from above the last mark to nothing in one blow (a Meteor Strike, say) never crossed it, so it owes no third wave
+      if (x.fell != null && x.low != null && x.fell > Math.max(last + r.gap, x.low, 0) + 1) assert.equal(x.w.length, 3, `game ${g} lord ${i}: fell at ${x.fell} with waves at ${x.w.join(", ")}`);
     });
   }
 });
@@ -386,7 +388,7 @@ test("zones v1: soldiers never stay stuck behind their own walls", () => {
         for (let a = 0; a < fr.length; a++) { const s0 = at(fr[a], j); if (!s0) continue; let b = a, still = true;
           while (b + 1 < fr.length && fr[b + 1].t - fr[a].t <= 8) { b++; const q = at(fr[b], j); if (!q || Math.hypot(q[0] - s0[0], q[1] - s0[1]) > .3) { still = false; break; } }
           if (!still || fr[b].t - fr[a].t < 8) continue;
-          const foe = fr.slice(a, b + 1).some(f => full.meta.some((m2, j2) => m2.pid !== p.pid && (m2.kind === "unit" || m2.kind === "champ") && (() => { const q = at(f, j2); return q && Math.hypot(q[0] - s0[0], q[1] - s0[1]) <= 2.5; })())) // anyone it fought during those seconds
+          const foe = fr.slice(a, b + 1).some(f => full.meta.some((m2, j2) => m2.pid !== p.pid && (m2.kind === "unit" || m2.kind === "champ") && (() => { const q = at(f, j2); return q && Math.hypot(q[0] - s0[0], q[1] - s0[1]) <= Math.max(2.5, ((UNIT_SIM[m.key] || {}).range || 0) + .5); })())) // anyone it fought during those seconds (a sniper shoots from 4.5 tiles)
             || plans.some(q => q.pid !== p.pid && (() => { const f = full.results.find(x => x.pid === q.pid); return f.fellAt == null || f.fellAt > fr[b].t; })() && Math.hypot(q.castle[1] + .5 - s0[0], q.castle[0] + .5 - s0[1]) <= 2.5); // castles aren't in the frames: a standing enemy castle within reach counts
           if (!foe) { out.push(m.key + " at " + s0.map(v => v.toFixed(1)) + " from " + fr[a].t.toFixed(0) + "s"); break; } } });
       return JSON.stringify(out); })()`));
@@ -468,4 +470,31 @@ test("Rogue pace: 2 tiles a second (Archer 1.9), at most 10% faster while hidden
   assert.deepEqual([r.rogue, r.archer], [2, 1.9]);
   assert.equal(r.flick, 3.5);
   assert.ok(Math.abs(r.shadow - 10) < 1e-9, `Shadowstep tops out at ${r.shadow}%`);
+});
+
+// free casting (27 Nov): skills fire whenever ready and something is in reach; ultimates wait for an enemy hero, 4+ enemies or sudden death
+const DUEL = (clsA, clsB, treeA, units) => `(() => { const L = seatLayout(8), m = Math.floor(L.N / 2), F = { skV2: true, balV5: true, lvlV2: true, tuneV1: true };
+  const side = (pid, cls, dir, tree, us) => ({ pid, name: pid, color: "#2f5fa8", cls, level: 15, castle: L.castles[pid === "a" ? 0 : 4], ranks: { a1: 0, a2: 0, a3: 0, ult: 0 }, tree, picks: {}, triggers: {},
+    gear: {}, defences: {}, stance: "aggressive", noRetreat: true, prio: ["Enemy heroes", ...PRIORITIES.filter(p => p !== "Enemy heroes")], rules: [], items: [], pacts: [], hostile: [], betray: {}, ...F,
+    pieces: [...(cls ? [{ kind: "champ", r: m, c: m + dir * 2 }] : []), ...us.map((t, k) => ({ kind: "unit", type: t, lvl: 1, hp: 1, r: m + k, c: m + dir * 2 }))] });
+  const d = {}, res = runBattle([side("a", "${clsA}", -1, ${treeA}, []), side("b", ${clsB ? `"${clsB}"` : "null"}, 1, emptyTree(), ${JSON.stringify(units)})], 77, { fast: true, duel: d, N: L.N, ultV2: true, balV2: true, balV3: true, fairV1: true, pickV1: true, balV4: true, suddenV1: true, treesV1: true, heroV3: true, dayNo: 4 });
+  const h = res.tel.ents.find(e => e.kind === "champ" && e.pid === "a"); return JSON.stringify(Object.fromEntries(Object.entries(h.ab).map(([k, v]) => [k, v.casts]))); })()`;
+test("free casting: Fireball fires at a single enemy; an ultimate fires on an enemy hero but not on one soldier", () => {
+  const pyro = `{ b1: [4, 4, 2, 0, 0, 1], b2: [0, 0, 0, 0, 0, 0], b3: [0, 0, 0, 0, 0, 0], base: 1 }`; // Fireball and Meteor Strike
+  const vsHero = JSON.parse(sim.run(DUEL("mage", "warrior", pyro, [])));
+  assert.ok(vsHero.Fireball >= 1, `Fireball never fired at a lone hero: ${JSON.stringify(vsHero)}`);
+  assert.equal(vsHero["Meteor Strike"], 1, `Meteor Strike should fire once with an enemy hero in reach: ${JSON.stringify(vsHero)}`);
+  const vsOne = JSON.parse(sim.run(DUEL("mage", null, pyro, ["knight"])));
+  assert.ok(vsOne.Fireball >= 1, `Fireball never fired at a lone soldier: ${JSON.stringify(vsOne)}`);
+  assert.ok(!vsOne["Meteor Strike"], `Meteor Strike fired at a single soldier: ${JSON.stringify(vsOne)}`);
+});
+
+test("poison spreads: a Venom Rogue's Poisoned Blades pass a stack to a nearby enemy on every 2nd hit", () => {
+  const n = sim.run(`(() => { const L = seatLayout(8), m = Math.floor(L.N / 2), F = { skV2: true, balV5: true, lvlV2: true, tuneV1: true };
+    const side = (pid, cls, tree, pieces) => ({ pid, me: pid === "a", name: pid, color: "#2f5fa8", cls, level: 10, castle: L.castles[pid === "a" ? 0 : 4], ranks: { a1: 0, a2: 0, a3: 0, ult: 0 }, tree, picks: {}, triggers: {},
+      gear: {}, defences: {}, stance: "aggressive", noRetreat: true, prio: PRIORITIES.slice(), rules: [], items: [], pacts: [], hostile: [], betray: {}, ...F, ...botCombat(2), pieces });
+    const venom = { b1: [0, 0, 0, 0, 0, 0], b2: [2, 0, 0, 0, 0, 0], b3: [0, 0, 0, 0, 0, 0], base: 1 };
+    const res = runBattle([side("a", "rogue", venom, [{ kind: "champ", r: m, c: m - 1 }]), side("b", "warrior", emptyTree(), [{ kind: "champ", r: m, c: m + 4 }, ...[0, 1, 2].map(k => ({ kind: "unit", type: "knight", lvl: 3, hp: 1, r: m - 1 + k, c: m + 1 }))])], 5, { fast: false, duel: {}, N: L.N, ultV2: true, balV2: true, balV3: true, suddenV1: true, treesV1: true, heroV3: true, dayNo: 4 } /* no target-list rules: a lone duel */);
+    return res.events.filter(e => e.ty === "shot" && e.c === "#7ad84a").length; })()`);
+  assert.ok(n >= 2, `poison spread ${n} times against three knights side by side`);
 });

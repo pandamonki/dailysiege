@@ -94,7 +94,11 @@ practice games always stamp all of them (`js/sim/plans.js`).
 - **Ultimate:** needs hero level 12 and ten points in its own tree (the base skill does not count), so it is the 12th point at the
   earliest: day 4 for a hero that levels fast (13 on day 4 needs four levels every battle), day 5 for everyone. A hero can learn only
   one ultimate. The Mage's Arcane tree has Disrupt (a silence pulse) in place of the old Blink & Disrupt.
-- Active skills and ultimates cast themselves as soon as their own condition (written in each skill's description) holds and they have recharged. There is no "Cast when" choice for skill-tree heroes (removed 26 Nov). The ultimate is still planned for a night with "Plan the ultimate for tonight".
+- **Free casting (27 Nov):** every active skill casts itself as soon as it has recharged and something is in its reach (an enemy within
+  the reach in its description; Healing Wave: an ally below 90% health; Mana Shield: an enemy within 4 tiles and no shield held). Hero-only skills
+  (Hex, Net Shot, Headshot, Dragon-Slayer Shot) still need an enemy hero. **Ultimates** wait for a moment that matters: an enemy hero
+  within their reach, 4 or more enemies within it (`ULT_CROWD`), or any enemy within it in sudden death (`ultGo` in `js/sim/heroTrees.js`).
+  There are no health gates any more (Avatar of War, Blade Fury, Ancestral Grasp, Disrupt and Mana Shield used to wait for low health). There is no "Cast when" choice for skill-tree heroes (removed 26 Nov). The ultimate is still planned for a night with "Plan the ultimate for tonight".
 - A fallen hero respawns at its castle (up to twice a battle, waiting longer at higher levels), except in sudden death.
 - From 20 Nov (`skV2`) every skill rank adds an even step worth at least about two thirds of rank 1 (`TREE_V2` in
   `js/config/trees.js`); older battles keep the old values.
@@ -107,6 +111,15 @@ practice games always stamp all of them (`js/sim/plans.js`).
   mage attack 30, rogue 510 health), skill values `TREE_V5` over `TREE_V2` in `js/config/trees.js` (Berserker, Tactician, Sniper,
   Marksman, Rogue, Mage and Shaman nodes), and a shorter Avatar of War (`AVATAR_V5`: 5s, 15% heal, 35% splash). Tuned on 1,800
   bot battles of 8 lords: every class wins 11 to 14.5%.
+- Hero balance (27 Nov, tested with `tools/hero-lab.mjs`): Rogue 580 health and 14% armour (`CHAMP_V5`), Ambush and Poisoned Blades lower; Archer attack 25;
+  Arcane Mastery also adds attack damage, Disrupt and Empowered Synergies stronger, Arcane Missiles every 3rd attack fires 3 bolts for 75% (falling
+  back on the target); Fireball and Chain Lightning hit softer and recharge slower (8s, 10s); Taunting Shout lower; Headshot back to its `TREE_V2`
+  values; Grounding Totem, Command Banner and Vanish stronger (all in `TREE_V5`).
+- **Poison spreads (27 Nov):** the Rogue's Poisoned Blades also spread a stack to the nearest other enemy within 1.5 tiles on every 2nd hit,
+  so the Venom Rogue can wear down a crowd and not only one target.
+- **Weak trees buffed (27 Nov):** Totemic (a Grounding Totem every 10s, was 14; stronger War Drum Pulse), Shadow (Smoke Bomb longer, Shadow Dance
+  80% of Ambush, was 60%), Trapper (Spike Trap hits harder, Net Shot recharges in 14s, was 20), Berserker (Cleave and Bloodthirst stronger) and
+  Tactician (Sapper Coordination stronger, Rallying Charge +30% damage, was 20%).
 - Resting at home (from 22 Nov, `HOME_HEAL` in `js/sim/battle.js`): a hero within 2.5 tiles of its own castle that has neither hit nor
   been hit for 2 seconds heals 8% of its health a second, until full or until a hit stops it. Not in sudden death or once its castle
   has fallen. A hero that falls back to heal (its stance) still heals 10% a second at home as before, whatever the fighting.
