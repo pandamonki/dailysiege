@@ -4,13 +4,14 @@ let N = 17, CENTRE = 8, CASTLE = [15, 8], zoneSet = new Set();
 const T = 48;
 // map size and castle ring scale with the number of players
 // (9 to 12 lords get larger fields, sized so every castle keeps about the same deployment room and distance from its neighbours as with 8)
-// Bigger fields (wars starting on or after MAP_V2_FROM): the map is 4 tiles wider and taller, and each lord's field reaches further round the
+// Bigger fields (wars starting on or after MAP_V2_FROM): the map is 8 tiles wider and taller, and each lord's field reaches further round the
 // castle and forward toward the centre (see zoneFor). Walls are capped at 5 and traps at 4 a battle from then too.
 let MAP_V2_FROM = "2026-11-18"; const mapV2For = week => String(week) >= MAP_V2_FROM;
+const ZONE_SIDE = 3;
 let ZONE_V2 = false; // the layout this device shows uses the bigger fields
 function mapSizeFor(n) { return n <= 2 ? 11 : n <= 4 ? 13 : n <= 6 ? 15 : n <= 8 ? 17 : n <= 9 ? 19 : n <= 10 ? 21 : n <= 11 ? 23 : 25; }
 function seatLayout(n, v2) {
-  const size = mapSizeFor(n) + (v2 ? 4 : 0), c = (size - 1) / 2, R = c - 1, castles = [];
+  const size = mapSizeFor(n) + (v2 ? 8 : 0), c = (size - 1) / 2, R = c - 1, castles = [];
   for (let i = 0; i < n; i++) { const a = Math.PI / 2 + 2 * Math.PI * i / n; castles.push([Math.round(c + R * dsin(a)), Math.round(c + R * dcos(a))]); }
   return { N: size, castles, ...(v2 ? { v2: true } : {}) };
 }
@@ -32,18 +33,31 @@ function treeTile(r, c, n, size) {
   if (G.clumps.some(k => hyp(x - k.x, y - k.y) < k.r + .2)) return true; // only the tiles a trunk stands on
   const dx = x - G.cc, dy = y - G.cc, rr = hyp(dx, dy); return rr > G.half - 1.5 && rr > G.rim(datan2(dy, dx)) - .2;
 }
-// Equal fields (v2): every lord in a war gets the same number of tiles. Each field (minus tiles a tree trunk stands on) is trimmed to the size of
-// the smallest one, dropping first the tiles furthest from a point just in front of the castle, so the back corners go before the road.
-// Only where lords may build changes; the map, castles, roads and trees stay where they are.
-const ZONE_EQ = new Map();
+// Equal fields (v2): every lord gets the same template, measured from their own castle toward the middle (f = tiles forward, s = tiles to the
+// side, left is negative): a Guard ring of 8 round the castle, Front 2 deep by 3 wide just ahead, and Left and Right a column of 6 beside it.
+// Each spot goes to the free tile of the same zone nearest its ideal point, one spot per lord at a time so nobody is favoured. The map is sized
+// so neighbouring fields never squeeze each other (see seatLayout).
+const ZONE_TEMPLATE = (() => { const t = []; for (let f = -1; f <= 1; f++) for (let s = -1; s <= 1; s++) if (f || s) t.push([f, s, "guard"]);
+  for (let f = 2; f <= 3; f++) for (let s = -1; s <= 1; s++) t.push([f, s, "front"]);
+  for (let f = -1; f <= 4; f++) for (const s of [-ZONE_SIDE, ZONE_SIDE]) t.push([f, s, s < 0 ? "left" : "right"]); return t; })();
+const ZONE_FIELDS = new Map();
+function zoneFields(size, all) {
+  const key = size + "|" + all.map(x => x.join(",")).join(";"); let hit = ZONE_FIELDS.get(key); if (hit) return hit;
+  const n = all.length, ctr = (size - 1) / 2, taken = new Set(all.map(x => x.join(","))), fields = all.map(() => new Set());
+  const frames = all.map(([r, c]) => { const dy = ctr - r, dx = ctr - c, L = Math.sqrt(dx * dx + dy * dy) || 1; return { r, c, uy: dy / L, ux: dx / L, py: dx / L, px: -dy / L }; });
+  ZONE_TEMPLATE.forEach(([f, sd, z]) => frames.forEach((fr, i) => {
+    const ay = fr.r + fr.uy * f + fr.py * sd, ax = fr.c + fr.ux * f + fr.px * sd; let best = null, bd = 1e9;
+    for (let rr = Math.floor(ay) - 2; rr <= Math.ceil(ay) + 2; rr++) for (let cc = Math.floor(ax) - 2; cc <= Math.ceil(ax) + 2; cc++) {
+      if (rr < 0 || cc < 0 || rr >= size || cc >= size || taken.has(`${rr},${cc}`) || hyp(rr - ctr, cc - ctr) <= 1.3 || treeTile(rr, cc, n, size) || zoneOfTile(fr.r, fr.c, rr, cc, size) !== z) continue;
+      const d = hyp(rr - ay, cc - ax); if (d <= 1.5 && d < bd - 1e-9) { bd = d; best = `${rr},${cc}`; }
+    }
+    if (best) { taken.add(best); fields[i].add(best); }
+  }));
+  if (ZONE_FIELDS.size > 50) ZONE_FIELDS.clear(); ZONE_FIELDS.set(key, fields); return fields;
+}
 function zoneFor(castle, size, all, v2) {
-  const raw = zoneRaw(castle, size, all, v2); if (!v2 || !all || all.length < 2) return raw;
-  const n = all.length, usable = (cs) => [...zoneRaw(cs, size, all, true)].filter(k => { const [a, b] = k.split(",").map(Number); return !treeTile(a, b, n, size); });
-  const key = size + "|" + all.map(x => x.join(",")).join(";");
-  let min = ZONE_EQ.get(key); if (min == null) { min = Math.min(...all.map(cs => usable(cs).length)); ZONE_EQ.set(key, min); if (ZONE_EQ.size > 50) ZONE_EQ.clear(); }
-  const [r, c] = castle, ctr = (size - 1) / 2, dy = ctr - r, dx = ctr - c, L = Math.sqrt(dx * dx + dy * dy) || 1, fy = r + dy / L * 1.5, fx = c + dx / L * 1.5;
-  const keep = usable(castle).map(k => { const [a, b] = k.split(",").map(Number); return [k, hyp(a - fy, b - fx)]; }).sort((p, q) => p[1] - q[1] || (p[0] < q[0] ? -1 : 1)).slice(0, min);
-  return new Set(keep.map(x => x[0]));
+  if (!v2 || !all || all.length < 2) return zoneRaw(castle, size, all, v2);
+  const i = all.findIndex(x => x[0] === castle[0] && x[1] === castle[1]); return i < 0 ? zoneRaw(castle, size, all, v2) : new Set(zoneFields(size, all)[i]);
 }
 function zoneRaw([r, c], size, all, v2) {
   // the deployment field: a ring around the castle plus the old forward patch, shared fairly with neighbours, never the centre
