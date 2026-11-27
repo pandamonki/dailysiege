@@ -87,7 +87,7 @@ const TREES = {
       TN("Shadow Dance", "ultimate", "rogue_ult", "Untargetable for 4s while striking up to 5 enemies (backline first) for 80% of Ambush damage each. Casts itself when an enemy hero is within 6 tiles, 4+ enemies are, or any enemy is in sudden death.", [], ["#b02a5a", "skull", "streak", 1, "t"]),
     ] },
     { id: "venom", name: "Venom", role: "Poison", nodes: [
-      TN("Poisoned Blades", "passive", "rogue_a3", "Each hit adds a poison stack: {0} damage a second per stack for 6s, up to 5 stacks. Poisoned enemies are healed {1}% less.", [[3, 4, 5], [15, 22, 30]]),
+      TN("Poisoned Blades", "passive", "rogue_a3", "Each hit adds a poison stack: {0} damage a second per stack for 6s, up to 5 stacks. Every 2nd hit also spreads a stack to the nearest other enemy within 1.5 tiles. Poisoned enemies are healed {1}% less.", [[3, 4, 5], [15, 22, 30]]),
       TN("Caltrop Bomb", "trigger", "rogue_a3", "Throws a zone of radius 1.2 for 5s dealing {0} a second and slowing {1}%. Adds poison. Casts itself when an enemy is within 2.5 tiles.", [[6, 9, 12], [40, 50, 60]], ["#7ad84a", "drop", "swirl", 1.2], 14),
       TN("Crippling Poison", "passive", "rogue_a3", "Poisoned enemies move {0}% slower.", [[10, 15]]),
       TN("Corrosive Agent", "synergy", "rogue_a3", "Poisoned enemies take +{0}% physical damage from all sources.", [[8, 12]]),

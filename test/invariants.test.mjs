@@ -488,3 +488,13 @@ test("free casting: Fireball fires at a single enemy; an ultimate fires on an en
   assert.ok(vsOne.Fireball >= 1, `Fireball never fired at a lone soldier: ${JSON.stringify(vsOne)}`);
   assert.ok(!vsOne["Meteor Strike"], `Meteor Strike fired at a single soldier: ${JSON.stringify(vsOne)}`);
 });
+
+test("poison spreads: a Venom Rogue's Poisoned Blades pass a stack to a nearby enemy on every 2nd hit", () => {
+  const n = sim.run(`(() => { const L = seatLayout(8), m = Math.floor(L.N / 2), F = { skV2: true, balV5: true, lvlV2: true, tuneV1: true };
+    const side = (pid, cls, tree, pieces) => ({ pid, me: pid === "a", name: pid, color: "#2f5fa8", cls, level: 10, castle: L.castles[pid === "a" ? 0 : 4], ranks: { a1: 0, a2: 0, a3: 0, ult: 0 }, tree, picks: {}, triggers: {},
+      gear: {}, defences: {}, stance: "aggressive", noRetreat: true, prio: PRIORITIES.slice(), rules: [], items: [], pacts: [], hostile: [], betray: {}, ...F, ...botCombat(2), pieces });
+    const venom = { b1: [0, 0, 0, 0, 0, 0], b2: [2, 0, 0, 0, 0, 0], b3: [0, 0, 0, 0, 0, 0], base: 1 };
+    const res = runBattle([side("a", "rogue", venom, [{ kind: "champ", r: m, c: m - 1 }]), side("b", "warrior", emptyTree(), [{ kind: "champ", r: m, c: m + 4 }, ...[0, 1, 2].map(k => ({ kind: "unit", type: "knight", lvl: 3, hp: 1, r: m - 1 + k, c: m + 1 }))])], 5, { fast: false, duel: {}, N: L.N, ultV2: true, balV2: true, balV3: true, suddenV1: true, treesV1: true, heroV3: true, dayNo: 4 } /* no target-list rules: a lone duel */);
+    return res.events.filter(e => e.ty === "shot" && e.c === "#7ad84a").length; })()`);
+  assert.ok(n >= 2, `poison spread ${n} times against three knights side by side`);
+});

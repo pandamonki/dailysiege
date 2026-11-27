@@ -115,6 +115,8 @@ practice games always stamp all of them (`js/sim/plans.js`).
   Arcane Mastery also adds attack damage, Disrupt and Empowered Synergies stronger, Arcane Missiles every 3rd attack fires 3 bolts for 75% (falling
   back on the target); Fireball and Chain Lightning hit softer and recharge slower (8s, 10s); Taunting Shout lower; Headshot back to its `TREE_V2`
   values; Grounding Totem, Command Banner and Vanish stronger (all in `TREE_V5`).
+- **Poison spreads (27 Nov):** the Rogue's Poisoned Blades also spread a stack to the nearest other enemy within 1.5 tiles on every 2nd hit,
+  so the Venom Rogue can wear down a crowd and not only one target.
 - **Weak trees buffed (27 Nov):** Totemic (a Grounding Totem every 10s, was 14; stronger War Drum Pulse), Shadow (Smoke Bomb longer, Shadow Dance
   80% of Ambush, was 60%), Trapper (Spike Trap hits harder, Net Shot recharges in 14s, was 20), Berserker (Cleave and Bloodthirst stronger) and
   Tactician (Sapper Coordination stronger, Rallying Charge +30% damage, was 20%).
