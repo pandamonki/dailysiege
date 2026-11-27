@@ -183,7 +183,6 @@ function makeTreeKit(X) {
     let m = 1; const now = T(), ph = atype !== "magic", isAb = !!(o.ab || X.getAb()) && !o.dot;
     if (src) {
       if (src.dmgV3) m *= src.dmgV3;
-      if (src.cls === "rogue" && src.tr && tgt.kind === "castle") m *= ROGUE_CASTLE; // the Rogue picks the locks: more damage to castles
       if (src.cls === "warrior" && src.tr && rk(src, 1, 4) && src.hp / src.maxhp < .3) m *= 1.15;
       if (src.cls === "rogue" && src.tr && rk(src, 2, 2) && tgt.tgt && tgt.tgt !== src && live(tgt.tgt)) m *= 1 + V(src, 2, 2, 0) / 100;
       for (const b of banners) { if (!allied(src.pid, b.pid) || hyp(src.x - b.x, src.y - b.y) > b.r) continue;
@@ -214,9 +213,7 @@ function makeTreeKit(X) {
   // frost mages' Shatter works on the enemy, so it is kept on a lookup of who is rooted by whom
   function dodgeChance(tgt, src, o) {
     if (!src || !tgt.tr) return 0; if (fxv(tgt, "bladefury")) return 1;
-    let c = 0; if (phys(src, o)) c += tgt.dodge.all; if ((src.range || 1.1) < 1.5) c += tgt.dodge.melee;
-    if (tgt.cls === "rogue" && src.kind !== "champ" && src.kind !== "castle" && !o.aoe) return Math.min(.3 + ROGUE_DODGE, c + ROGUE_DODGE); // the Rogue slips through soldiers' blows, not heroes'
-    return Math.min(.3, c);
+    let c = 0; if (phys(src, o)) c += tgt.dodge.all; if ((src.range || 1.1) < 1.5) c += tgt.dodge.melee; return Math.min(.3, c);
   }
   function onDodge(tgt, src) {
     if (!tgt.tr || tgt.kind !== "champ") return;

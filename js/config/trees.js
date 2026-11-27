@@ -176,7 +176,6 @@ const treeMaxOf = (bi, i) => (bi === BASE_BI ? BASE_MAX : TREE_MAX[i]);
 // Four-rank skills list all four ranks. Older battles keep the values in TREES above.
 let SKILLS_V2_FROM = "2026-11-20"; const skillsV2For = d => String(d) >= SKILLS_V2_FROM;
 // Shadowstep (rogue): the values are 0.8 of what fights, because the agency pass makes every talent TALENT_X (1.25) stronger: 4, 6, 8 and 10% faster while hidden.
-const ROGUE_DODGE = .2, ROGUE_CASTLE = 1.6; // 27 Nov: the Rogue dodges 20% of soldiers' single-target blows (not heroes') and deals 60% more to castles
 const ULT_CROWD = 4; // free casting: an ultimate also fires with this many enemies in its reach (or any enemy hero, or any enemy in sudden death)
 const FLICKER_R = 3.5; // Flicker Strike reach in tiles (was 5)
 const TREE_V2 = {

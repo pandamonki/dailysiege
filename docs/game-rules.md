@@ -115,8 +115,6 @@ practice games always stamp all of them (`js/sim/plans.js`).
   Arcane Mastery also adds attack damage, Disrupt and Empowered Synergies stronger, Arcane Missiles every 3rd attack fires 3 bolts for 75% (falling
   back on the target); Fireball and Chain Lightning hit softer and recharge slower (8s, 10s); Taunting Shout lower; Headshot back to its `TREE_V2`
   values; Grounding Totem, Command Banner and Vanish stronger (all in `TREE_V5`).
-- **The Rogue in battle (27 Nov):** it dodges 20% of soldiers' single-target blows on top of its own dodge (`ROGUE_DODGE`; never heroes', castles' or
-  area hits) and deals 60% more to castles (`ROGUE_CASTLE`). It used to win hero duels but die first in battles, worn down by soldiers.
 - **Weak trees buffed (27 Nov):** Totemic (a Grounding Totem every 10s, was 14; stronger War Drum Pulse), Shadow (Smoke Bomb longer, Shadow Dance
   80% of Ambush, was 60%), Trapper (Spike Trap hits harder, Net Shot recharges in 14s, was 20), Berserker (Cleave and Bloodthirst stronger) and
   Tactician (Sapper Coordination stronger, Rallying Charge +30% damage, was 20%).
