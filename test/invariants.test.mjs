@@ -462,3 +462,10 @@ test("bot heroes: most march with the bulk of their army (same zone), never stan
   assert.ok(r.flankArmies >= 5, `too few flank-heavy bots to judge (${r.flankArmies} of ${r.all})`);
   assert.ok(r.withArmy / r.flankArmies >= .6, `only ${r.withArmy} of ${r.flankArmies} flank-heavy bots' heroes went with their army`);
 });
+
+test("Rogue pace: 0.2 tiles a second faster than the Archer, at most 10% faster while hidden, and Flicker Strike reaches 3.5 tiles", () => {
+  const r = JSON.parse(sim.run(`JSON.stringify({ rogue: CHAMP_V3.rogue.spd, archer: CHAMP_V3.archer.spd, mage: CHAMP_V3.mage.spd, flick: FLICKER_R, shadow: Math.max(...TREE_V2.rogue.Shadowstep[0]) * TALENT_X })`));
+  assert.ok(Math.abs(r.rogue - Math.max(r.archer, r.mage) - .2) < 1e-9, `rogue ${r.rogue}, archer ${r.archer}, mage ${r.mage}`);
+  assert.equal(r.flick, 3.5);
+  assert.ok(Math.abs(r.shadow - 10) < 1e-9, `Shadowstep tops out at ${r.shadow}%`);
+});
