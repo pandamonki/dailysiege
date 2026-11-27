@@ -54,7 +54,7 @@ const TREES = {
   shaman: [
     { id: "storm", name: "Storm", role: "Magic burst", nodes: [
       TN("Static Surge", "passive", "shaman_a2", "Basic attacks deal +{0}% damage and arc to 1 enemy within 2 tiles for {1}%.", [[4, 7, 10], [30, 40, 50]]),
-      TN("Chain Lightning", "trigger", "shaman_a2", "A bolt chains up to {0} targets for {1} + attack x.5 magic damage (x.85 per jump) and slows them 20% for 4s. Casts itself when an enemy is within 4.5 tiles, starting where they cluster most.", [[3, 4, 4], [80, 100, 120]], ["#9fd0ff", "bolt", "bolt", 1, "t"], 9),
+      TN("Chain Lightning", "trigger", "shaman_a2", "A bolt chains up to {0} targets for {1} + attack x.5 magic damage (x.85 per jump) and slows them 20% for 4s. Casts itself when an enemy is within 4.5 tiles, starting where they cluster most.", [[3, 4, 4], [80, 100, 120]], ["#9fd0ff", "bolt", "bolt", 1, "t"], 10),
       TN("Thunderclap", "trigger", "shaman_a2", "Blasts nearby enemies for {0} + attack x.4 magic damage and slows them 25% for 2s. Casts itself when an enemy is within 1.5 tiles.", [[30, 45]], ["#9fd0ff", "bolt", "nova", 1.6], 10),
       TN("Conductive Discharge", "synergy", "shaman_a2", "Targets hit by Chain Lightning take +{0}% damage from allied bowmen, mages, snipers and centaurs for 8s.", [[12, 20]]),
       TN("Overload", "passive", "shaman_a2", "Chain Lightning jumps to 2 more targets."),
@@ -106,7 +106,7 @@ const TREES = {
   mage: [
     { id: "pyromancy", name: "Pyromancy", role: "Burst and burn", nodes: [
       TN("Ignite", "passive", "mage_a1", "Spells and abilities add a burn worth {0}% of their damage over 4s.", [[8, 12, 15]]),
-      TN("Fireball", "trigger", "mage_a1", "Blasts enemies for {0} + attack in radius 1.3. Soldiers are stunned .5s. Casts itself when an enemy is within 4.5 tiles, aimed where they cluster most.", [[90, 125, 165]], ["#ff7a2a", "fire", "burst", 1.3, "t"], 7),
+      TN("Fireball", "trigger", "mage_a1", "Blasts enemies for {0} + attack in radius 1.3. Soldiers are stunned .5s. Casts itself when an enemy is within 4.5 tiles, aimed where they cluster most.", [[90, 125, 165]], ["#ff7a2a", "fire", "burst", 1.3, "t"], 8),
       TN("Combustion", "passive", "mage_a1", "When a burning enemy dies it explodes for {0} magic damage within 1 tile.", [[30, 45]]),
       TN("Melt Armour", "synergy", "mage_a1", "Burning enemies take +{0}% physical damage.", [[10, 15]]),
       TN("Pyroblast", "passive", "mage_a1", "Fireball deals 50% more to its centre target if that is a hero."),
@@ -121,7 +121,7 @@ const TREES = {
       TN("Blizzard", "ultimate", "mage_ult", "An 8s blizzard of radius 4 that slows 50%, cuts attack speed 30% and freezes enemies with damage. Casts itself when an enemy hero is within 6 tiles, 4+ enemies are, or any enemy is in sudden death.", [], ["#8fd8ff", "snow", "nova", 4, "t"]),
     ] },
     { id: "arcane", name: "Arcane", role: "Utility", nodes: [
-      TN("Arcane Mastery", "passive", "mage_a3", "+{0} tiles of attack and spell reach. Your units within 3 tiles gain +{1}% magic resist.", [[.3, .4, .5], [5, 8, 10]]),
+      TN("Arcane Mastery", "passive", "mage_a3", "+{0} tiles of attack and spell reach and +{2}% attack damage. Your units within 3 tiles gain +{1}% magic resist.", [[.3, .4, .5], [5, 8, 10]]),
       TN("Disrupt", "trigger", "mage_a3", "A pulse silences enemies within 2 tiles for {0}s. Casts itself when an enemy is within 2 tiles.", [[.8, 1.4, 2]], ["#b48cff", "bolt", "nova", 2], 16),
       TN("Mana Shield", "trigger", "mage_a3", "Gains a shield of {0}% max health for 6s. Casts itself when an enemy is within 4 tiles and you hold no shield.", [[15, 25]], ["#c9a0ff", "shield", "shield", 1], 30),
       TN("Empowered Synergies", "synergy", "mage_a3", "Your spells ignore {0}% of the target's magic resist and damage reduction. Your other abilities recharge {1}% faster.", [[20, 30], [10, 15]]),
@@ -201,8 +201,8 @@ Object.keys(TREE_V2).forEach(cls => TREES[cls].forEach(tr => tr.nodes.forEach(n 
 const TREE_V5 = {
   warrior: { "Taunting Shout": [[5, 8, 11, 14]], "Cleave": [[8, 14, 20, 26]], "Executioner's Whirlwind": [[5, 9, 13, 17]], "Bloodthirst": [[2, 3]], "Blood Rage": [[3, 5]], "Marching Cadence": [[10, 17, 24, 31]], "Command Banner": [[16, 26, 36, 46]] },
   archer: { "Eagle Eye": [[.2, .35, .5, .65], [3, 6, 9, 12]], "Headshot": [[60, 105, 150, 195]] },
-  rogue: { "Ambush": [[30, 55, 80, 105], [1, 1.25, 1.5, 1.75]], "Poisoned Blades": [[3, 5, 7, 9], [15, 25, 35, 45]], "Vanish": [[8, 5]] }, // 27 Nov: less duel burst, more health and armour (CHAMP_V5)
-  mage: { "Fireball": [[65, 105, 145, 185]], "Arcane Mastery": [[.4, .6, .8, 1], [8, 12, 16, 20]], "Disrupt": [[1, 1.6, 2.2, 2.8]], "Mana Shield": [[25, 40]], "Empowered Synergies": [[30, 45], [15, 25]] },
+  rogue: { "Ambush": [[35, 62, 90, 118], [1, 1.25, 1.5, 1.75]], "Poisoned Blades": [[3, 5, 7, 9], [15, 25, 35, 45]], "Vanish": [[8, 5]] }, // 27 Nov: less duel burst, more health and armour (CHAMP_V5)
+  mage: { "Fireball": [[65, 105, 145, 185]], "Arcane Mastery": [[.4, .6, .8, 1], [8, 12, 16, 20], [5, 9, 13, 17]], "Disrupt": [[1, 1.6, 2.2, 2.8]], "Mana Shield": [[25, 40]], "Empowered Synergies": [[30, 45], [15, 25]] },
   shaman: { "Grounding Totem": [[9, 15, 21, 27], [8, 14, 20, 26]], "Static Surge": [[5, 9, 13, 17], [30, 45, 60, 75]], "Chain Lightning": [[3, 4, 4, 5], [60, 100, 140, 180]] },
 };
 TREES.warrior[1].nodes[5].desc5 = "For 5s you cannot drop below 1 health, ignore crowd control, attack 50% faster, and your attacks splash and stun soldiers. Heals 15% on cast. Casts itself when an enemy hero is within 2.5 tiles, 4+ enemies are, or any enemy is in sudden death.";

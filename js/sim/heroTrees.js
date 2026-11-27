@@ -65,7 +65,7 @@ function makeTreeKit(X) {
     if (c === "warrior") { if (rk(e, 0, 0)) { const f = 1 + V(e, 0, 0, 0) / 100; e.maxhp *= f; e.physRed = V(e, 0, 0, 1) / 100; } if (rk(e, 1, 4)) e.ccShort = .4; }
     if (c === "archer") { if (rk(e, 0, 0)) { e.range += V(e, 0, 0, 0); e.dmgV3 = 1 + V(e, 0, 0, 1) / 100; } if (rk(e, 1, 0)) { e.spd *= 1 + V(e, 1, 0, 0) / 100; e.dodge.melee = V(e, 1, 0, 1) / 100; } }
     if (c === "rogue") { if (rk(e, 2, 0)) e.dodge.all = V(e, 2, 0, 0) / 100; }
-    if (c === "mage") { if (rk(e, 2, 0)) { e.range += V(e, 2, 0, 0); e.reachBonus = V(e, 2, 0, 0); } if (rk(e, 2, 3)) e.cdScale = 1 - V(e, 2, 3, 1) / 100; }
+    if (c === "mage") { if (rk(e, 2, 0)) { e.range += V(e, 2, 0, 0); e.reachBonus = V(e, 2, 0, 0); if (V2(e) === 5) e.dmgV3 = 1 + V(e, 2, 0, 2) / 100; } if (rk(e, 2, 3)) e.cdScale = 1 - V(e, 2, 3, 1) / 100; }
     e.kc = [];
     for (let bi = 0; bi < 3; bi++) if (rk(e, bi, 5)) e.kc.push([bi, 5]);
     for (let bi = 0; bi < 3; bi++) [1, 2].forEach(i => { if (rk(e, bi, i) && TREES[c][bi].nodes[i].kind === "trigger") e.kc.push([bi, i]); });
