@@ -210,7 +210,9 @@ function abilLines(k, r) {
 
 const PATCHES = [
   { v: "v1.31: free casting", date: "27 Nov", fixes: [], balance: [
-    "Rogue: 580 health and 14% armour (was 510 and 8%); Ambush and Poisoned Blades deal less. Arcane: longer reach, stronger Disrupt and Empowered Synergies, Arcane Missiles every 3rd attack at 75%. Fireball, Taunting Shout weaker; Headshot, Grounding Totem and the Archer's attack stronger.",
+    "Rogue: 580 health and 14% armour (was 510 and 8%); Ambush and Poisoned Blades deal less.",
+    "Arcane: longer reach and extra attack damage, stronger Disrupt, Arcane Missiles every 3rd attack. Fireball and Chain Lightning softer and slower to recharge.",
+    "Taunting Shout weaker; Headshot, Grounding Totem, Command Banner, Vanish and the Archer's attack stronger.",
   ], changes: [
     "Hero skills cast whenever they are ready and an enemy is in reach. Ultimates cast when an enemy hero is in reach, 4+ enemies are, or in sudden death.",
   ] },

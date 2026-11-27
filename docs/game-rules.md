@@ -112,8 +112,9 @@ practice games always stamp all of them (`js/sim/plans.js`).
   Marksman, Rogue, Mage and Shaman nodes), and a shorter Avatar of War (`AVATAR_V5`: 5s, 15% heal, 35% splash). Tuned on 1,800
   bot battles of 8 lords: every class wins 11 to 14.5%.
 - Hero balance (27 Nov, tested with `tools/hero-lab.mjs`): Rogue 580 health and 14% armour (`CHAMP_V5`), Ambush and Poisoned Blades lower; Archer attack 25;
-  Arcane Mastery, Disrupt and Empowered Synergies stronger and Arcane Missiles every 3rd attack for 75% (falling back on the target); Fireball and
-  Taunting Shout lower; Headshot back to its `TREE_V2` values; Grounding Totem stronger (all in `TREE_V5`).
+  Arcane Mastery also adds attack damage, Disrupt and Empowered Synergies stronger, Arcane Missiles every 3rd attack fires 3 bolts for 75% (falling
+  back on the target); Fireball and Chain Lightning hit softer and recharge slower (8s, 10s); Taunting Shout lower; Headshot back to its `TREE_V2`
+  values; Grounding Totem, Command Banner and Vanish stronger (all in `TREE_V5`). 300 bot wars after the pass: every class wins 10 to 16%.
 - Resting at home (from 22 Nov, `HOME_HEAL` in `js/sim/battle.js`): a hero within 2.5 tiles of its own castle that has neither hit nor
   been hit for 2 seconds heals 8% of its health a second, until full or until a hit stops it. Not in sudden death or once its castle
   has fallen. A hero that falls back to heal (its stance) still heals 10% a second at home as before, whatever the fighting.
