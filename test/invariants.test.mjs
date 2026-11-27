@@ -436,3 +436,11 @@ test("base skills: a hero casts its base skill only once it has learned it, and 
   const want = ["warrior:Ground Slam", "shaman:Healing Wave", "rogue:Flicker Strike", "mage:Teleport", "archer:Piercing Shot"];
   assert.deepEqual(want.filter(k => !withBase[k]), [], "every class's base skill fires: " + JSON.stringify(withBase));
 });
+
+test("fixed reach: a plan cannot change how far its fighters reach (melee 2 tiles, ranged 3, 5 within an army already being fought)", () => {
+  const r = JSON.parse(sim.run(`(() => { const a = ${ZWAR(41, 4)}, b = ${ZWAR(41, 4, "plans.forEach(p => { p.engage = 5; });")};
+    return JSON.stringify({ same: battleHash(a.full) === battleHash(b.full), fast: battleHash(a.full) === battleHash(a.fast), places: a.full.results.map(x => x.place).sort((x, y) => x - y) }); })()`));
+  assert.ok(r.same, "an old reach setting in a plan changed the battle");
+  assert.ok(r.fast, "fast and full runs disagree");
+  assert.deepEqual(r.places, [1, 2, 3, 4, 5, 6, 7, 8]);
+});

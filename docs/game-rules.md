@@ -165,6 +165,10 @@ practice games always stamp all of them (`js/sim/plans.js`).
 - **Hero stance:** sets when the hero alone goes home to heal (aggressive 12%, skirmish 30%, cautious 45% health).
   Soldiers never retreat on their own. Mage and Archer heroes take a short step back when a melee fighter hits them.
 - **Combat groups:** what the hero, melee, ranged and healers go for first within their reach.
+- **Reach is fixed** (no setting): melee fighters, heroes included, stop for an enemy within 2 tiles, ranged fighters within 3
+  (`ENGAGE_MELEE`, `ENGAGE_RANGED` in `js/sim/battle.js`). Anyone who is struck answers the attacker (up to 4 tiles). Once a
+  fighter is fighting an army (its current target's lord, or whoever just struck it), it may pick any fighter of that army within
+  5 tiles (`ENGAGED_R`) by its combat group's priorities. Otherwise it follows its lord's targets and plans.
 - From 19 Nov an enemy siege engine within 3 tiles of a castle becomes the first target of that castle's defenders.
 - Before 20 Nov: a "heading", up to 5 if-then battle commands, and per-soldier orders (escort, attack a lord). These
   only apply to replays of older battles.
@@ -228,7 +232,7 @@ Practice and real wars from the 26 Nov battle (`TUNE_V1_FROM` in `js/config/orde
   human archer on a horse), purple Dark Elf, hooded Necromancer and Skeleton Guard. Only a small accent shows the lord's colour.
 - **The Rogue fights like every hero:** it no longer has its own 7-tile hunt for Mages and Archers (or the backline hunt while hidden);
   like every hero it picks targets by its lord's Combat settings: the hero's target order (heroes, melee, ranged, lowest health and
-  so on) and the Combat reach, 1 to 5 tiles, 2 to start with. Its finishing blows on weakened enemies stay.
+  so on) and the fixed reach (2 tiles for melee). Its finishing blows on weakened enemies stay.
 - **Bots answer their attacker:** a bot whose castle was some lord's #1 target in the last battle takes the Front plan that beats that
   lord's Front plan, and, if that lord is its neighbour, screens that side and moves a soldier there (`botReact` in `js/sim/bots.js`).
   Practice rivals do the same with the player's orders from the last practice battle.

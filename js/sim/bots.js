@@ -64,7 +64,7 @@ const BOT_WAVES = { hunter: [["enemy_hero", 0, "hero"], ["hero_dies", 0, "defaul
 const botWavesOpen = dayNo => (dayNo >= 6 ? 3 : dayNo >= 4 ? 2 : dayNo >= 2 ? 1 : 0);
 const botWaves = (seed, kinds, dayNo, sup, extra = 0, lvlUp = 0) => { const st = BOT_STYLES[(seed >> 1) % BOT_STYLES.length].name, n = Math.max(0, Math.min(sup ? WAVE_SLOTS * botWavesOpen(dayNo) : GARRISON_SOLDIERS, Math.floor(dayNo * 1.5) + extra)), ulvl = Math.min(3, 1 + Math.floor((dayNo - 1) / 2) + lvlUp); // extra, lvlUp: a bot's build trades reinforcements and training against items and defences
   return BOT_WAVES[st].map(([when, at, order], i) => ({ when, at: at || 60, order, units: [...Array(Math.max(0, Math.min(WAVE_SLOTS, n - i * WAVE_SLOTS)))].map((_, k) => ({ type: kinds[Math.floor(hash(seed, i * 3 + k, 41 + dayNo) * kinds.length)], lvl: ulvl, id: null, hp: 1 })) })); };
-const botCombat = seed => { const st = BOT_STYLES[(seed >> 1) % BOT_STYLES.length]; return { gprio: cleanGprio(st.gprio), engage: 1 + (seed >> 3) % 3, heading: st.heading }; };
+const botCombat = seed => { const st = BOT_STYLES[(seed >> 1) % BOT_STYLES.length]; return { gprio: cleanGprio(st.gprio), heading: st.heading }; };
 
 // One bot lord's orders for one day. uid: its seat id; cls: its hero; i: its place in the roster (its castle is L.castles[i]);
 // ids: everyone in the roster, in order; L: the seat layout; zone: the tiles it may deploy on; dayNo: 1 to 7; lvl: its hero's level that day.
