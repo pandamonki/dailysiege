@@ -36,7 +36,7 @@ const TREES = {
     ] },
     { id: "berserker", name: "Berserker", role: "Burst", nodes: [
       TN("Cleave", "passive", "warrior_a1", "Basic attacks also hit up to 2 enemies within 1.2 tiles of the target for {0}% damage.", [[20, 28, 35]]),
-      TN("Executioner's Whirlwind", "trigger", "warrior_a1", "Spin for 2s, hitting everything within 1.6 tiles for {0} + attack x.4 every .5s. A hero kill refunds half the cooldown. Casts itself when an enemy is within 1.5 tiles.", [[22, 30, 38]], ["#d9d9e0", "slash", "arc", 1.8], 10),
+      TN("Executioner's Whirlwind", "trigger", "warrior_a1", "Spin for 2s, hitting everything within 1.6 tiles for {0} + attack x.4 every .5s. A hero kill refunds half the cooldown. Casts itself when 2+ enemies or an enemy hero are within 1.5 tiles.", [[22, 30, 38]], ["#d9d9e0", "slash", "arc", 1.8], 10),
       TN("Bloodthirst", "passive", "warrior_a1", "Each kill heals you for {0}% of your max health.", [[3, 5]]),
       TN("Blood Rage", "synergy", "warrior_a3", "Kills by you or your melee soldiers within 3 tiles give +{0}% attack speed, up to 6 stacks. Stacks fade 6s after the last kill.", [[4, 5]]),
       TN("Unstoppable", "passive", "warrior_a3", "Slows and roots on you last 40% shorter. Below 30% health you deal +15% damage."),
@@ -54,8 +54,8 @@ const TREES = {
   shaman: [
     { id: "storm", name: "Storm", role: "Magic burst", nodes: [
       TN("Static Surge", "passive", "shaman_a2", "Basic attacks deal +{0}% damage and arc to 1 enemy within 2 tiles for {1}%.", [[4, 7, 10], [30, 40, 50]]),
-      TN("Chain Lightning", "trigger", "shaman_a2", "A bolt chains up to {0} targets for {1} + attack x.5 magic damage (x.85 per jump) and slows them 20% for 4s. Casts itself when an enemy is within 4.5 tiles, starting where they cluster most.", [[3, 4, 4], [80, 100, 120]], ["#9fd0ff", "bolt", "bolt", 1, "t"], 10),
-      TN("Thunderclap", "trigger", "shaman_a2", "Blasts nearby enemies for {0} + attack x.4 magic damage and slows them 25% for 2s. Casts itself when an enemy is within 1.5 tiles.", [[30, 45]], ["#9fd0ff", "bolt", "nova", 1.6], 10),
+      TN("Chain Lightning", "trigger", "shaman_a2", "A bolt chains up to {0} targets for {1} + attack x.5 magic damage (x.85 per jump) and slows them 20% for 4s. Casts itself on an enemy hero, or where 2+ enemies stand together, within 4.5 tiles.", [[3, 4, 4], [80, 100, 120]], ["#9fd0ff", "bolt", "bolt", 1, "t"], 10),
+      TN("Thunderclap", "trigger", "shaman_a2", "Blasts nearby enemies for {0} + attack x.4 magic damage and slows them 25% for 2s. Casts itself when 2+ enemies or an enemy hero are within 1.5 tiles.", [[30, 45]], ["#9fd0ff", "bolt", "nova", 1.6], 10),
       TN("Conductive Discharge", "synergy", "shaman_a2", "Targets hit by Chain Lightning take +{0}% damage from allied bowmen, mages, snipers and centaurs for 8s.", [[12, 20]]),
       TN("Overload", "passive", "shaman_a2", "Chain Lightning jumps to 2 more targets."),
       TN("Chrono-Storm", "ultimate", "shaman_ult", "A storm of radius 3 for 6s that pulls enemies in, burns them and cuts their attack speed by 40%. Casts itself when an enemy hero is within 5 tiles, 4+ enemies are, or any enemy is in sudden death.", [], ["#9fd0ff", "bolt", "nova", 3, "t"]),
@@ -88,7 +88,7 @@ const TREES = {
     ] },
     { id: "venom", name: "Venom", role: "Poison", nodes: [
       TN("Poisoned Blades", "passive", "rogue_a3", "Each hit adds a poison stack: {0} damage a second per stack for 6s, up to 5 stacks. Every 2nd hit also spreads a stack to the nearest other enemy within 1.5 tiles. Poisoned enemies are healed {1}% less.", [[3, 4, 5], [15, 22, 30]]),
-      TN("Caltrop Bomb", "trigger", "rogue_a3", "Throws a zone of radius 1.2 for 5s dealing {0} a second and slowing {1}%. Adds poison. Casts itself when an enemy is within 2.5 tiles.", [[6, 9, 12], [40, 50, 60]], ["#7ad84a", "drop", "swirl", 1.2], 14),
+      TN("Caltrop Bomb", "trigger", "rogue_a3", "Throws a zone of radius 1.2 for 5s dealing {0} a second and slowing {1}%. Adds poison. Casts itself when 2+ enemies or an enemy hero are within 2.5 tiles.", [[6, 9, 12], [40, 50, 60]], ["#7ad84a", "drop", "swirl", 1.2], 14),
       TN("Crippling Poison", "passive", "rogue_a3", "Poisoned enemies move {0}% slower.", [[10, 15]]),
       TN("Corrosive Agent", "synergy", "rogue_a3", "Poisoned enemies take +{0}% physical damage from all sources.", [[8, 12]]),
       TN("Weakening Toxin", "passive", "rogue_a3", "Enemies at 5 poison stacks deal 15% less damage."),
@@ -106,7 +106,7 @@ const TREES = {
   mage: [
     { id: "pyromancy", name: "Pyromancy", role: "Burst and burn", nodes: [
       TN("Ignite", "passive", "mage_a1", "Spells and abilities add a burn worth {0}% of their damage over 4s.", [[8, 12, 15]]),
-      TN("Fireball", "trigger", "mage_a1", "Blasts enemies for {0} + attack in radius 1.3. Soldiers are stunned .5s. Casts itself when an enemy is within 4.5 tiles, aimed where they cluster most.", [[90, 125, 165]], ["#ff7a2a", "fire", "burst", 1.3, "t"], 8),
+      TN("Fireball", "trigger", "mage_a1", "Blasts enemies for {0} + attack in radius 1.3. Soldiers are stunned .5s. Casts itself on 2+ enemies or an enemy hero within 4.5 tiles.", [[90, 125, 165]], ["#ff7a2a", "fire", "burst", 1.3, "t"], 8),
       TN("Combustion", "passive", "mage_a1", "When a burning enemy dies it explodes for {0} magic damage within 1 tile.", [[30, 45]]),
       TN("Melt Armour", "synergy", "mage_a1", "Burning enemies take +{0}% physical damage.", [[10, 15]]),
       TN("Pyroblast", "passive", "mage_a1", "Fireball deals 50% more to its centre target if that is a hero."),
@@ -114,7 +114,7 @@ const TREES = {
     ] },
     { id: "frost", name: "Frost", role: "Control", nodes: [
       TN("Chilling Touch", "passive", "mage_a2", "Basic attacks slow movement and attack speed by {0}% for 3s.", [[8, 12, 15]]),
-      TN("Frost Nova", "trigger", "mage_a2", "Blasts radius 2 for {0} + attack x.5 and roots for {1}s (half on heroes). Casts itself when an enemy comes within 2 tiles.", [[45, 60, 75], [1.5, 2, 2.5]], ["#8fd8ff", "snow", "nova", 2], 11),
+      TN("Frost Nova", "trigger", "mage_a2", "Blasts radius 2 for {0} + attack x.5 and roots for {1}s (half on heroes). Casts itself when 2+ enemies or an enemy hero come within 2 tiles.", [[45, 60, 75], [1.5, 2, 2.5]], ["#8fd8ff", "snow", "nova", 2], 11),
       TN("Shatter", "passive", "mage_a2", "Rooted or frozen enemies take +{0}% damage from all sources.", [[12, 20]]),
       TN("Ice Barrier", "synergy", "mage_a2", "Each Frost Nova shields you for {0}% max health and nearby allies for {1}% of theirs for 5s.", [[12, 20], [6, 10]]),
       TN("Cold Snap", "passive", "mage_a2", "Once per life, below 35% health, Frost Nova is ready again."),
@@ -132,7 +132,7 @@ const TREES = {
   archer: [
     { id: "marksman", name: "Marksman", role: "Ranged damage", nodes: [
       TN("Eagle Eye", "passive", "archer_a1", "+{0} tiles of range and +{1}% damage.", [[.2, .35, .5], [5, 9, 12]]),
-      TN("Arrow Volley", "trigger", "archer_a2", "Rains arrows (radius 1.5) for {0} + attack x.5 and slows 30% for 3s. Casts itself when an enemy is within range + 2 tiles, aimed where they cluster most.", [[30, 42, 55]], ["#c8e07a", "volley", "rain", 1.6, "t"], 9),
+      TN("Arrow Volley", "trigger", "archer_a2", "Rains arrows (radius 1.5) for {0} + attack x.5 and slows 30% for 3s. Casts itself on 2+ enemies or an enemy hero within range + 2 tiles.", [[30, 42, 55]], ["#c8e07a", "volley", "rain", 1.6, "t"], 9),
       TN("Ricochet", "passive", "archer_a1", "Basic attacks have a {0}% chance to bounce to another enemy for 50% damage.", [[15, 25]]),
       TN("Pinning Shot", "synergy", "archer_a1", "Targets hit by Arrow Volley take +{0}% damage from all pierce sources for 6s.", [[10, 15]]),
       TN("Barrage", "passive", "archer_a2", "Arrow Volley fires a second volley for half damage."),
@@ -160,11 +160,11 @@ const TREES = {
 // The base skill: one per class, the same whichever branch you grow. Three ranks, one point opens the branches. It is a short, small skill
 // (a few seconds' recharge that does not shrink with rank) so it never replaces what the branches are for. Casts itself like a trigger skill.
 const BASE_NODE = {
-  warrior: TN("Ground Slam", "trigger", "", "Slams the ground and sends a shockwave 3.5 tiles toward the nearest enemy, hitting everything in the line for {0} + attack x.6 and slowing it 25% for 2s. Casts itself when an enemy is within 3.5 tiles.", [[30, 48, 66]], ["#e2a33c", "slash", "arc", 1.6], 10),
-  shaman: TN("Healing Wave", "trigger", "", "A chain of light heals the most wounded ally within 4 tiles for {0} + attack x.6, then bounces to up to {1} more wounded allies within 2.5 tiles, each healed 20% less than the last. The chain also heals you. Casts itself when you or an ally nearby is below 90% health.", [[45, 70, 95], [2, 3, 3]], ["#ffe96a", "bolt", "bolt", 1, "t"], 9),
+  warrior: TN("Ground Slam", "trigger", "", "Slams the ground and sends a shockwave 3.5 tiles toward the nearest enemy, hitting everything in the line for {0} + attack x.6 and slowing it 25% for 2s. Casts itself when the line would hit 2+ enemies or an enemy hero.", [[30, 48, 66]], ["#e2a33c", "slash", "arc", 1.6], 10),
+  shaman: TN("Healing Wave", "trigger", "", "A chain of light heals the most wounded ally within 4 tiles for {0} + attack x.6, then bounces to up to {1} more wounded allies within 2.5 tiles, each healed 20% less than the last. The chain also heals you. Casts itself when you or an ally nearby is below 70% health.", [[45, 70, 95], [2, 3, 3]], ["#ffe96a", "bolt", "bolt", 1, "t"], 9),
   rogue: TN("Flicker Strike", "trigger", "", "Steps behind the nearest enemy hero (else backline unit, else any enemy) within 3.5 tiles and strikes it for attack x{0}. Stealth is kept. Casts itself when one is more than 1.5 tiles away.", [[.8, 1.1, 1.4]], ["#9a6bd6", "dagger", "arc", 1, "t"], 10),
-  mage: TN("Teleport", "trigger", "", "Teleports 3 tiles toward your castle and shields you for {0}% max health for 3s. Casts itself when an enemy gets within 2 tiles.", [[6, 10, 14]], ["#b48cff", "blink", "burst", 1.2], 14),
-  archer: TN("Piercing Shot", "trigger", "", "Fires an arrow through every enemy in a line for {0} + attack x.5 pierce damage. Casts itself when an enemy is in range.", [[20, 34, 48]], ["#e6e6c8", "arrow", "streak", 1, "t"], 8),
+  mage: TN("Teleport", "trigger", "", "Teleports 3 tiles toward your castle and shields you for {0}% max health for 3s. Casts itself when you are overwhelmed: 3+ enemies within 2 tiles, 20% of your health lost in 2s, or below 40% health with an enemy close.", [[6, 10, 14]], ["#b48cff", "blink", "burst", 1.2], 14),
+  archer: TN("Piercing Shot", "trigger", "", "Fires an arrow through every enemy in a line for {0} + attack x.5 pierce damage. Casts itself when the arrow would hit 2+ enemies or an enemy hero.", [[20, 34, 48]], ["#e6e6c8", "arrow", "streak", 1, "t"], 8),
 };
 Object.keys(BASE_NODE).forEach(cls => { BASE_NODE[cls].ic = `${cls}_base`; });
 // a node of a tree; bi 3 is the class's base skill
