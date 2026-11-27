@@ -737,3 +737,7 @@ Every class has one **base skill** above its three trees (`BASE_NODE` in `js/con
 - Icons: `icons/skills/<class>_base.webp` (stand-ins until the painted art is added; see the prompt pack).
 
 **Update (26 Nov 2026):** Healing Wave is now a bouncing chain of light (like Chain Lightning, but it heals) that also heals the Shaman. The per-skill "Cast when" choice was removed from the hero and orders screens: every skill casts as soon as its own condition holds and it has recharged.
+
+**Update (27 Nov 2026), free casting:** the trigger conditions above are replaced. Every active skill casts as soon as it has recharged and an enemy
+(or, for Healing Wave, an ally below 90%) is within its reach; there are no crowd sizes or health gates. Ultimates cast when an enemy hero is within
+their reach, 4+ enemies are, or any enemy is in sudden death. Each skill's current wording is in `js/config/trees.js`; `docs/game-rules.md` has the rule.

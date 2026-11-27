@@ -94,7 +94,11 @@ practice games always stamp all of them (`js/sim/plans.js`).
 - **Ultimate:** needs hero level 12 and ten points in its own tree (the base skill does not count), so it is the 12th point at the
   earliest: day 4 for a hero that levels fast (13 on day 4 needs four levels every battle), day 5 for everyone. A hero can learn only
   one ultimate. The Mage's Arcane tree has Disrupt (a silence pulse) in place of the old Blink & Disrupt.
-- Active skills and ultimates cast themselves as soon as their own condition (written in each skill's description) holds and they have recharged. There is no "Cast when" choice for skill-tree heroes (removed 26 Nov). The ultimate is still planned for a night with "Plan the ultimate for tonight".
+- **Free casting (27 Nov):** every active skill casts itself as soon as it has recharged and something is in its reach (an enemy within
+  the reach in its description; Healing Wave: an ally below 90% health; Mana Shield: an enemy within 4 tiles and no shield held). Hero-only skills
+  (Hex, Net Shot, Headshot, Dragon-Slayer Shot) still need an enemy hero. **Ultimates** wait for a moment that matters: an enemy hero
+  within their reach, 4 or more enemies within it (`ULT_CROWD`), or any enemy within it in sudden death (`ultGo` in `js/sim/heroTrees.js`).
+  There are no health gates any more (Avatar of War, Blade Fury, Ancestral Grasp, Disrupt and Mana Shield used to wait for low health). There is no "Cast when" choice for skill-tree heroes (removed 26 Nov). The ultimate is still planned for a night with "Plan the ultimate for tonight".
 - A fallen hero respawns at its castle (up to twice a battle, waiting longer at higher levels), except in sudden death.
 - From 20 Nov (`skV2`) every skill rank adds an even step worth at least about two thirds of rank 1 (`TREE_V2` in
   `js/config/trees.js`); older battles keep the old values.

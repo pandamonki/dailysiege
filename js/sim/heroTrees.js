@@ -319,6 +319,10 @@ function makeTreeKit(X) {
   // ======================================================================== the skills ========================================================================
   const FN = {};
   const nearest = (e, r) => minBy(foes(e, e.x, e.y, r), o => d(o, e));
+  const fighters = (e, x, y, r) => foes(e, x, y, r).filter(o => o.kind !== "castle"); // enemies a skill can be aimed at (castles are handled by forts)
+  // free casting (27 Nov): skills cast whenever they are ready and something is in reach. Ultimates still wait for a moment that
+  // matters: an enemy hero within their reach, sudden death with any enemy in reach, or ULT_CROWD+ enemies in reach.
+  const ultGo = (e, r) => { const f = fighters(e, e.x, e.y, r); return f.some(o => o.kind === "champ") || (X.sd() && f.length > 0) || f.length >= ULT_CROWD; };
   const clusterAt = (e, cx, cy, r) => foes(e, cx, cy, r);
   // the point near the caster where the most enemies stand, within `range` of the caster; each candidate is an enemy's position
   function densest(e, range, rad, need) {
@@ -328,36 +332,34 @@ function makeTreeKit(X) {
   }
   // ---- Warrior ----
   FN["warrior.0.1"] = (e, r) => {
-    const att = foes(e, e.x, e.y, 3).filter(o => live(o.tgt) && o.tgt !== e && o.tgt.kind !== "castle" && allied(e.pid, o.tgt.pid) && d(o, o.tgt) <= (o.range || 1.1) + .7);
-    if (att.length < 2) return false;
+    if (!fighters(e, e.x, e.y, 2).length) return false;
     foes(e, e.x, e.y, 2).forEach(o => { if (siege(o)) return; cc(o, "taunt", 3); o.tauntBy = e; ev({ ty: "taunt", id: o.id, to: e.id, dur: o.kind === "champ" ? 1.5 : 3 }); });
     const amt = addShield(e, e.maxhp * V(e, 0, 1, 0) / 100, 6);
     if (rk(e, 0, 3) && amt > 0) friendsNear(e.pid, e.x, e.y, 2).filter(o => o !== e && soldier(o)).forEach(o => addShield(o, amt * V(e, 0, 3, 1) / 100, 6));
     return true;
   };
   FN["warrior.0.2"] = (e, r) => {
-    const h = e.hitSrc; if (!h || T() - e.hitT > .5 || h.kind !== "champ" || (h.range || 1.1) >= 1.5 || !live(h) || d(e, h) > 1.7 || !hostile(e.pid, h.pid)) return false;
-    slash(h, "#7fb2ff"); deal(e, h, V(e, 0, 2, 0) + e.atk * .5, { aoe: 1, big: 1 }); cc(h, "stun", .5); e.hitSrc = null; return { x: h.x, y: h.y };
+    const near = fighters(e, e.x, e.y, 1.8), h = minBy(near.filter(o => o.kind === "champ"), o => d(o, e)) || minBy(near, o => d(o, e)); if (!h) return false;
+    slash(h, "#7fb2ff"); deal(e, h, V(e, 0, 2, 0) + e.atk * .5, { aoe: 1, big: 1 }); cc(h, "stun", .5); return { x: h.x, y: h.y };
   };
   FN["warrior.0.5"] = e => {
-    const allies = friendsNear(e.pid, e.x, e.y, 3).filter(o => soldier(o) && o.pid === e.pid);
-    if (allies.length < 3 || !foes(e, e.x, e.y, 6).some(o => (o.range || 1.1) >= 2 && o.kind !== "castle")) return false;
+    if (!ultGo(e, 6)) return false;
     const dm = { pid: e.pid, x: e.x, y: e.y, r: 2.5, until: T() + 7 }; domes.push(dm);
     addZone(e, { x: e.x, y: e.y, r: 2.5, dur: 7, every: 1, c: "#7fb2ff", k: "dome", fn: () => friendsNear(e.pid, dm.x, dm.y, 2.5).forEach(o => heal(o, o.maxhp * .03, true, e)) });
     return true;
   };
   FN["warrior.1.1"] = (e, r) => {
-    const t0 = foes(e, e.x, e.y, 1.5).find(o => o.hp / o.maxhp < .3); if (!t0 && !(foes(e, e.x, e.y, 1.5).length === 0 && forts(e, e.x, e.y, 1.6).length)) return false;
+    if (!fighters(e, e.x, e.y, 1.6).length && !forts(e, e.x, e.y, 1.6).length) return false;
     const dm = V(e, 1, 1, 0) + e.atk * .4, name = "Executioner's Whirlwind"; e.whirl = { until: T() + 2 };
     for (let k = 0; k < 4; k++) pending.push({ ab: name, at: +(T() + k * .5).toFixed(2), fn: () => { if (e.dead) return; aoe(e.x, e.y, 1.6, "#d9d9e0", .35); foes(e, e.x, e.y, 1.6).concat(forts(e, e.x, e.y, 1.6)).forEach(o => deal(e, o, dm, { aoe: 1, big: 1 })); } });
     return true;
   };
   FN["warrior.1.5"] = e => {
-    if (e.hp / e.maxhp >= .4 || foes(e, e.x, e.y, 2.5).length < 3) return false;
+    if (!ultGo(e, 2.5)) return false;
     const now = T(), v5 = !!(P[e.pid] && P[e.pid].balV5), dur = v5 ? AVATAR_V5.dur : 7; e.avatar = now + dur; setFx(e, "undying", dur); setFx(e, "ccimm", dur); setFx(e, "asbuf", dur, .5); heal(e, e.maxhp * (v5 ? AVATAR_V5.heal : .25), false, e, "Avatar of War"); return true;
   };
   FN["warrior.2.1"] = (e, r) => {
-    const o = e.tgt; if (!live(o) || !(o.kind === "champ" || siege(o)) || d(e, o) > 2) return false;
+    if (!fighters(e, e.x, e.y, 3).length && !forts(e, e.x, e.y, 2).length) return false;
     const bn = { pid: e.pid, x: e.x, y: e.y, r: 3.5, until: T() + 10, dmg: V(e, 2, 1, 0) / 100, sap: rk(e, 2, 3) ? V(e, 2, 3, 0) / 100 : 0, focus: null };
     banners.push(bn);
     addZone(e, { x: e.x, y: e.y, r: 3.5, dur: 10, every: 1, c: "#e2a33c", k: "banner", fn: () => { bn.focus = minBy(foes(e, bn.x, bn.y, 4), q => -q.hp) || null; } });
@@ -366,8 +368,8 @@ function makeTreeKit(X) {
   };
   FN["warrior.2.5"] = e => {
     const own = ents.filter(o => !o.dead && o.pid === e.pid && o.kind === "unit" && !siege(o) && !o.free);
-    if (own.length < 4) return false;
-    if (!ents.some(o => !o.dead && hostile(e.pid, o.pid) && (o.kind === "castle" || o.kind === "champ") && d(o, e) <= 7)) return false;
+    if (own.length < 2) return false;
+    if (!ultGo(e, 7) && !forts(e, e.x, e.y, 7).length) return false;
     own.forEach(o => { setFx(o, "msbuf", 8, .6); setFx(o, "atkbuf", 8, .2); setFx(o, "ccimm", 8); o.rallyUntil = T() + 8; o.rallyDone = false; });
     return true;
   };
@@ -378,51 +380,51 @@ function makeTreeKit(X) {
       hit.add(cur); from = cur; dmg *= .85; cur = minBy(foes(e, cur.x, cur.y, 2.5).concat(forts(e, cur.x, cur.y, 2.5)).filter(x => !hit.has(x)), x => d(x, from)); }
   }
   FN["shaman.0.1"] = (e, r) => {
-    const f = minBy(foes(e, e.x, e.y, 4.5 + reach(e)).filter(o => foes(e, o.x, o.y, 2).length >= 3), o => d(o, e)) || (!foes(e, e.x, e.y, 4.5 + reach(e)).length && (fortSpot(e, 4.5 + reach(e)) || {}).o); if (!f) return false;
+    const f = minBy(fighters(e, e.x, e.y, 4.5 + reach(e)), o => -foes(e, o.x, o.y, 2).length * 10 + d(o, e)) || (fortSpot(e, 4.5 + reach(e)) || {}).o; if (!f) return false;
     chain(e, f, ext([3, 4, 4], r) + (rk(e, 0, 4) ? 2 : 0), V(e, 0, 1, 1) + e.atk * .5, true, rk(e, 0, 3) ? V(e, 0, 3, 0) / 100 : 0); return true;
   };
   FN["shaman.0.2"] = (e, r) => {
-    const n = foes(e, e.x, e.y, 1.5), fc = forts(e, e.x, e.y, 1.5); if (n.length < 3 && !(n.length === 0 && fc.length)) return false;
+    const n = foes(e, e.x, e.y, 1.5), fc = forts(e, e.x, e.y, 1.5); if (!n.length && !fc.length) return false;
     aoe(e.x, e.y, 1.5, "#9fd0ff", .5); fc.forEach(c => deal(e, c, V(e, 0, 2, 0) + e.atk * .4, { aoe: 1, big: 1 })); n.forEach(o => { deal(e, o, V(e, 0, 2, 0) + e.atk * .4, { aoe: 1, big: 1 }); if (live(o)) setFx(o, "slow", 2, .25); }); return true;
   };
   FN["shaman.0.5"] = e => {
-    const p = densest(e, 5 + reach(e), 3, 5) || (!foes(e, e.x, e.y, 5 + reach(e)).length && fortSpot(e, 5 + reach(e))); if (!p) return false;
+    if (!ultGo(e, 5 + reach(e))) return false; const p = densest(e, 5 + reach(e), 3, 1); if (!p) return false;
     const dmg = (45 + e.atk * .3) / 2;
     foes(e, p.x, p.y, 3).forEach(o => pull(o, p.x, p.y, 1.5));
     addZone(e, { x: p.x, y: p.y, r: 3, dur: 6, every: .5, c: "#9fd0ff", k: "storm", fn: z => { foes(e, z.x, z.y, z.r).forEach(o => { deal(e, o, dmg, { aoe: 1 }); setFx(o, "asdown", .6, .4); }); forts(e, z.x, z.y, z.r).forEach(c => deal(e, c, dmg, { aoe: 1 })); } });
     return { x: p.x, y: p.y };
   };
   FN["shaman.1.1"] = (e, r) => {
-    if (!foes(e, e.x, e.y, 3).some(o => o.kind === "champ" || siege(o))) return false;
+    if (!fighters(e, e.x, e.y, 3).length) return false;
     const n = ext([2, 3, 3], r), dur = V(e, 1, 1, 1);
     foes(e, e.x, e.y, 3).sort((a, b) => d(a, e) - d(b, e) || a.id - b.id).slice(0, n).forEach(o => { cc(o, "root", dur); aoe(o.x, o.y, .6, "#8a5a2b", .6); }); return true;
   };
   FN["shaman.1.5"] = e => {
-    const near = friendsNear(e.pid, e.x, e.y, 3); if (near.length < 4 || foes(e, e.x, e.y, 3).length < 3) return false;
+    if (!ultGo(e, 3)) return false;
     const o = add({ owner: e, pid: e.pid, kind: "totem", key: "relic", armour: "heavy", x: e.x + .5, y: e.y, maxhp: e.maxhp * 2.5, atk: 0, range: 0, as: 1, spd: 0, armor: .2, life: T() + 8, v3: 1, relic: 1, nextPulse: T() + 2 });
     o.hp = o.maxhp; o.hx = o.x; o.hy = o.y; relics.push(o); totems.push(o); return { x: o.x, y: o.y };
   };
   FN["shaman.2.1"] = (e, r) => {
-    if (e.hp / e.maxhp >= .5) return false; const ns = foes(e, e.x, e.y, 3).sort((a, b) => d(a, e) - d(b, e) || a.id - b.id).slice(0, 3); if (!ns.length) return false;
+    const ns = foes(e, e.x, e.y, 3).sort((a, b) => d(a, e) - d(b, e) || a.id - b.id).slice(0, 3); if (!ns.length) return false;
     let tot = 0; ns.forEach(o => { shot(o, e, "#c9a0ff", 2); tot += deal(e, o, V(e, 2, 1, 0) + e.atk * .5, { aoe: 1, big: 1 }); }); addShield(e, tot, 6); return true;
   };
   FN["shaman.2.2"] = (e, r) => {
-    const h = foes(e, e.x, e.y, 3).find(o => o.kind === "champ" && o.hp / o.maxhp < .5 && !fxv(o, "weaken")); if (!h) return false;
+    const h = foes(e, e.x, e.y, 3).find(o => o.kind === "champ" && !fxv(o, "weaken")); if (!h) return false;
     setFx(h, "weaken", V(e, 2, 2, 0)); return { x: h.x, y: h.y };
   };
   FN["shaman.2.5"] = e => {
-    const nf = foes(e, e.x, e.y, 3); if (!foes(e, e.x, e.y, 4).some(o => o.kind === "champ") && nf.length < 4 && !(nf.length === 0 && forts(e, e.x, e.y, 2.5).length)) return false;
+    if (!ultGo(e, 4) && !forts(e, e.x, e.y, 2.5).length) return false;
     foes(e, e.x, e.y, 2).forEach(o => cc(o, "stun", 1.5));
     [-1, 0, 1].forEach(s => { const w = add({ owner: e, pid: e.pid, kind: "summon", key: "wolf", atype: "blade", armour: "medium", x: e.x + s * .5, y: e.y + .3, maxhp: 630, atk: 48, range: 1.1, as: .8, spd: 2.5, armor: .15, life: T() + 30, healOwner: .15 }); w.hp = w.maxhp; w.hx = w.x; w.hy = w.y; });
     aoe(e.x, e.y, 2.2, "#bfe3ff", .9); ev({ ty: "ultfx", k: "spirit", x: e.x, y: e.y, r: 2.2, col: P[e.pid].color, dur: 1.8 }); return true;
   };
   // ---- Rogue ----
   FN["rogue.0.2"] = (e, r) => {
-    const n = foes(e, e.x, e.y, 2); if (n.length < 3) return false;
+    const n = fighters(e, e.x, e.y, 2); if (!n.length) return false;
     aoe(e.x, e.y, 2, "#55525e", 1.4); n.forEach(o => { setFx(o, "blind", V(e, 0, 2, 0), .4); if (o.tgt === e) o.tgt = null; if (o.aggro && o.aggro.src === e) o.aggro = null; }); return true;
   };
   FN["rogue.0.5"] = e => {
-    const bl = foes(e, e.x, e.y, 6).filter(backline); if (bl.length < 3) return false;
+    if (!ultGo(e, 6)) return false; const all = fighters(e, e.x, e.y, 6), bl = all.filter(backline).length ? all.filter(backline) : all; if (!bl.length) return false;
     const order2 = bl.sort((a, b) => d(a, e) - d(b, e) || a.id - b.id).slice(0, 5), rankA = Math.max(1, rk(e, 0, 1)), dm = (nodeVal("rogue", 0, 1, 0, rankA, V2(e)) + e.atk) * 1.8 * .6;
     hide(e, 4, false);
     order2.forEach((v, k) => pending.push({ ab: "Shadow Dance", at: +(T() + .8 * (k + 1)).toFixed(2), fn: () => {
@@ -431,26 +433,26 @@ function makeTreeKit(X) {
     return true;
   };
   FN["rogue.1.1"] = (e, r) => {
-    const m = foes(e, e.x, e.y, 2.5).filter(o => (o.range || 1.1) < 1.5 && (o.kind === "unit" || o.kind === "champ" || o.kind === "summon")); if (m.length < 3) return false;
+    const m = fighters(e, e.x, e.y, 2.5); if (!m.length) return false;
     const cx = m.reduce((s, o) => s + o.x, 0) / m.length, cy = m.reduce((s, o) => s + o.y, 0) / m.length, dps = V(e, 1, 1, 0), sl = V(e, 1, 1, 1) / 100, seen = new Map();
     addZone(e, { x: cx, y: cy, r: 1.2, dur: 5, every: 1, c: "#7ad84a", k: "poison", fn: z => foes(e, z.x, z.y, z.r).forEach(o => { deal(e, o, dps, { aoe: 1, atype: "pure", noFinish: 1 }); setFx(o, "slow", 1.1, sl); if (seen.get(o) !== T()) { seen.set(o, T()); addPoison(e, o, 1); } }) });
     return { x: cx, y: cy };
   };
   FN["rogue.1.5"] = e => {
-    const p = densest(e, 4 + 2, 2, 5); if (!p) return false;
+    if (!ultGo(e, 6)) return false; const p = densest(e, 4 + 2, 2, 1); if (!p) return false;
     const dps = (30 + e.atk * .4) / 2;
     addZone(e, { x: p.x, y: p.y, r: 2, dur: 7, every: .5, c: "#7ad84a", k: "poison", fn: z => foes(e, z.x, z.y, z.r).forEach(o => { deal(e, o, dps, { aoe: 1, atype: "pure", noFinish: 1 }); addPoison(e, o, 1); setFx(o, "blind", .6, .4); }) });
     return { x: p.x, y: p.y };
   };
   FN["rogue.2.5"] = e => {
-    if (e.hp / e.maxhp >= .7) return false; const h = foes(e, e.x, e.y, 1.5).find(o => o.kind === "champ"); if (!h) return false;
+    if (!ultGo(e, 1.8)) return false; const near = fighters(e, e.x, e.y, 1.8), h = minBy(near.filter(o => o.kind === "champ"), o => d(o, e)) || minBy(near, o => d(o, e)); if (!h) return false;
     setFx(e, "bladefury", 5);
     for (let k = 0; k < 8; k++) pending.push({ ab: "Blade Fury", at: +(T() + .6 * (k + 1)).toFixed(2), fn: () => { if (e.dead || h.dead || d(e, h) > 2.4) return; slash(h, "#ff4a4a"); deal(e, h, e.atk * 1.4, { aoe: 1, big: 1, pierce: 1, noFinish: 1 }); } });
     return { x: h.x, y: h.y };
   };
   // ---- Mage ----
   FN["mage.0.1"] = (e, r) => {
-    const p = densest(e, 4.5 + reach(e), 1.3, 3) || (!foes(e, e.x, e.y, 4.5 + reach(e)).length && fortSpot(e, 4.5 + reach(e))); if (!p) return false;
+    const p = densest(e, 4.5 + reach(e), 1.3, 1) || fortSpot(e, 4.5 + reach(e)); if (!p) return false;
     shot(e, p.o, "#ff8a2a", 3);
     forts(e, p.x, p.y, 1.3).forEach(c => deal(e, c, V(e, 0, 1, 0) + e.atk, { aoe: 1, big: 1 }));
     foes(e, p.x, p.y, 1.3).forEach(o => { let dm = V(e, 0, 1, 0) + e.atk; if (o === p.o && o.kind === "champ" && rk(e, 0, 4)) dm *= 1.5; deal(e, o, dm, { aoe: 1, big: 1 }); if (live(o) && o.kind !== "champ") cc(o, "stun", .5); });
@@ -459,7 +461,7 @@ function makeTreeKit(X) {
   FN["mage.0.5"] = e => {
     let best = null, bn = 0;
     const cand = foes(e, e.x, e.y, 9);
-    cand.forEach(o => { if (d(o, e) > 6 + reach(e)) return; const n = foes(e, o.x, o.y, 3).length; if (n >= 5 && n > bn) { best = { x: o.x, y: o.y }; bn = n; } });
+    if (ultGo(e, 6 + reach(e))) cand.forEach(o => { if (d(o, e) > 6 + reach(e) || o.kind === "castle") return; const n = foes(e, o.x, o.y, 3).length + (o.kind === "champ" ? 1 : 0); if (n > bn) { best = { x: o.x, y: o.y }; bn = n; } });
     if (!best) ents.forEach(c => { if (!c.dead && c.kind === "castle" && hostile(e.pid, c.pid) && d(c, e) <= 6 + reach(e) + 2 && !best) best = { x: c.x, y: c.y }; });
     if (!best) return false;
     const x = best.x, y = best.y; ev({ ty: "warn", x, y, r: 3, c: "#ff5a2a", dur: 1.6 }); ev({ ty: "ultfx", k: "meteorfall", x, y, r: 3, dur: 1.6 });
@@ -472,34 +474,31 @@ function makeTreeKit(X) {
     return { x, y };
   };
   FN["mage.1.1"] = (e, r) => {
-    if (!foes(e, e.x, e.y, 2).some(o => (o.range || 1.1) < 1.5 && (o.kind === "unit" || o.kind === "champ" || o.kind === "summon"))) return false;
+    if (!fighters(e, e.x, e.y, 2).length) return false;
     aoe(e.x, e.y, 2, "#9fd8ff", .8); const sh = rk(e, 1, 2) ? V(e, 1, 2, 0) / 100 : 0;
     foes(e, e.x, e.y, 2).forEach(o => { deal(e, o, V(e, 1, 1, 0) + e.atk * .5, { aoe: 1, big: 1 }); if (live(o)) { cc(o, "root", V(e, 1, 1, 1)); if (sh) o.shatter = V(e, 1, 2, 0) / 100; } });
     if (rk(e, 1, 3)) { addShield(e, e.maxhp * V(e, 1, 3, 0) / 100, 5); friendsNear(e.pid, e.x, e.y, 2).filter(o => o !== e && o.kind !== "castle").forEach(o => addShield(o, o.maxhp * V(e, 1, 3, 1) / 100, 5)); }
     return true;
   };
   FN["mage.1.5"] = e => {
-    const p = densest(e, 6 + reach(e), 4, 6) || (!foes(e, e.x, e.y, 6 + reach(e)).length && fortSpot(e, 6 + reach(e))); if (!p) return false;
+    const p = (ultGo(e, 6 + reach(e)) && densest(e, 6 + reach(e), 4, 1)) || (!foes(e, e.x, e.y, 6 + reach(e)).length && fortSpot(e, 6 + reach(e))); if (!p) return false;
     const dps = (25 + e.atk * .3) / 2;
     addZone(e, { x: p.x, y: p.y, r: 4, dur: 8, every: .5, c: "#8fd8ff", k: "blizzard", fn: z => { foes(e, z.x, z.y, z.r).forEach(o => { deal(e, o, dps, { aoe: 1 }); setFx(o, "slow", .6, .5); setFx(o, "asdown", .6, .3); }); forts(e, z.x, z.y, z.r).forEach(c => deal(e, c, dps, { aoe: 1 })); } });
     return { x: p.x, y: p.y };
   };
   FN["mage.2.1"] = (e, r) => { // Disrupt
-    const lh = e.lastHurt; if (!lh || T() - lh.t > .6 || e.hp / e.maxhp >= .7) return false;
-    if (!(lh.ab || (lh.src && (lh.src.range || 1.1) < 1.5))) return false;
-    const near = foes(e, e.x, e.y, 2); if (!near.length) return false;
+    const near = fighters(e, e.x, e.y, 2); if (!near.length) return false;
     aoe(e.x, e.y, 2, "#b48cff", .6); near.forEach(o => setFx(o, "silence", V(e, 2, 1, 0))); e.lastHurt = null; return { x: e.x, y: e.y };
   };
-  FN["mage.2.2"] = (e, r) => { if (e.hp / e.maxhp >= .5) return false; addShield(e, e.maxhp * V(e, 2, 2, 0) / 100, 6); return true; };
+  FN["mage.2.2"] = (e, r) => { if (!fighters(e, e.x, e.y, 4).length || shieldAmt(e) > 0) return false; addShield(e, e.maxhp * V(e, 2, 2, 0) / 100, 6); return true; };
   FN["mage.2.5"] = e => {
-    const al = friendsNear(e.pid, e.x, e.y, 5).filter(o => o.kind !== "totem"), eh = foes(e, e.x, e.y, 5);
-    if (!((al.length >= 4 && eh.filter(o => o.kind === "champ").length >= 2) || eh.length >= 6)) return false;
+    if (!ultGo(e, 5)) return false;
     addZone(e, { x: e.x, y: e.y, r: 5, dur: 6, every: .5, c: "#c9a0ff", k: "warp", fn: z => { friendsNear(e.pid, z.x, z.y, z.r).forEach(o => { setFx(o, "asbuf", .6, .5); setFx(o, "msbuf", .6, .5); }); foes(e, z.x, z.y, z.r).forEach(o => { if (o.kind === "champ") setFx(o, "cdfreeze", .6); }); } });
     return true;
   };
   // ---- Ranger ----
   FN["archer.0.1"] = (e, r) => {
-    const p = densest(e, e.range + 2, 1.5, 3) || (!foes(e, e.x, e.y, e.range + 2).length && fortSpot(e, e.range + 2)); if (!p) return false;
+    const p = densest(e, e.range + 2, 1.5, 1) || fortSpot(e, e.range + 2); if (!p) return false;
     const dm = V(e, 0, 1, 0) + e.atk * .5, vp = rk(e, 0, 3) ? V(e, 0, 3, 0) / 100 : 0;
     const volley = half => { aoe(p.x, p.y, 1.5, "#d9c38a", .5); forts(e, p.x, p.y, 1.5).forEach(c => deal(e, c, dm * (half ? .5 : 1), { aoe: 1, big: 1 })); foes(e, p.x, p.y, 1.5).forEach(o => { deal(e, o, dm * (half ? .5 : 1), { aoe: 1, big: 1 }); if (live(o) && !half) { setFx(o, "slow", 3, .3); if (vp) setFx(o, "vulnpierce", 6, vp); } }); };
     ev({ ty: "shot", x1: e.x, y1: e.y - .35, x2: p.x, y2: p.y - .35, c: "#f1e6c0", w: 2 }); volley(false);
@@ -508,18 +507,18 @@ function makeTreeKit(X) {
   };
   FN["archer.0.5"] = e => {
     const atFort = V4 && live(e.tgt) && e.tgt.kind === "castle";
-    if (!live(e.tgt) || d(e, e.tgt) > e.range + 1.5 || (foes(e, e.tgt.x, e.tgt.y, 3).length < 4 && !atFort)) return false;
+    if (!live(e.tgt) || d(e, e.tgt) > e.range + 1.5 || (!ultGo(e, e.range + 1.5) && !atFort)) return false;
     const x = e.tgt.x, y = e.tgt.y, dm = 106; log(`${X.poss(e.pid)} Ranger looses a Rain of Feathered Death.`);
     for (let i = 0; i < 14; i++) pending.push({ ab: "Rain of Feathered Death", at: +(T() + i * .4).toFixed(2), fn: () => { ev({ ty: "ultfx", k: "arrowwave", x, y, r: 3.4, dur: .85 }); aoe(x, y, 3.4, "#d9c38a", .4); foes(e, x, y, 3.4).forEach(o => { deal(e, o, dm, { aoe: 1 }); setFx(o, "asdown", 1, .4); }); forts(e, x, y, 3.4).forEach(c => deal(e, c, dm * .5, { aoe: 1 })); } });
     return true;
   };
   FN["archer.1.1"] = (e, r) => {
-    if (!foes(e, e.x, e.y, 2).some(o => (o.range || 1.1) < 1.5 && (o.kind === "unit" || o.kind === "champ" || o.kind === "summon"))) return false;
+    if (!fighters(e, e.x, e.y, 2.5).length) return false;
     dropTrap(e, e.x, e.y, r); return true;
   };
-  FN["archer.1.2"] = (e, r) => { const h = foes(e, e.x, e.y, 3).find(o => o.kind === "champ"); if (!h) return false; shot(e, h, "#c9a46a", 2); setFx(h, "root", V(e, 1, 2, 0)); txt(h, "Netted", "#e8cf9a"); return { x: h.x, y: h.y }; };
+  FN["archer.1.2"] = (e, r) => { const h = foes(e, e.x, e.y, e.range + .5).find(o => o.kind === "champ"); if (!h) return false; shot(e, h, "#c9a46a", 2); setFx(h, "root", V(e, 1, 2, 0)); txt(h, "Netted", "#e8cf9a"); return { x: h.x, y: h.y }; };
   FN["archer.1.5"] = e => {
-    const fs = foes(e, e.x, e.y, 5); if (fs.length < 4) return false;
+    if (!ultGo(e, 5)) return false; const fs = fighters(e, e.x, e.y, 5); if (!fs.length) return false;
     const cx = fs.reduce((s, o) => s + o.x, 0) / fs.length, cy = fs.reduce((s, o) => s + o.y, 0) / fs.length, L = hyp(cx - e.x, cy - e.y) || 1, ux = (cx - e.x) / L, uy = (cy - e.y) / L, px = -uy, py = ux;
     const tier = Math.max(1, Math.min(3, P[e.pid].castleTier || 1)), blocked = (tx, ty) => { const c0 = Math.floor(tx), r0 = Math.floor(ty); if (c0 < 0 || r0 < 0 || c0 >= NN || r0 >= NN) return true; if (hyp(tx - NN / 2, ty - NN / 2) <= CTR_R + .5) return true;
       if (walls.some(w => w.x0 === c0 && w.y0 === r0 && w.hp > 0)) return true; if (ents.some(o => !o.dead && o.kind === "castle" && Math.floor(o.x) === c0 && Math.floor(o.y) === r0)) return true; if (ents.some(o => !o.dead && o.kind !== "totem" && hyp(o.x - (c0 + .5), o.y - (r0 + .5)) < .55)) return true; return false; };
@@ -538,7 +537,7 @@ function makeTreeKit(X) {
     return { x: h.x, y: h.y };
   };
   FN["archer.2.5"] = e => {
-    const h = foes(e, e.x, e.y, 9).filter(o => o.kind === "champ" && (o.hp / o.maxhp < .5 || X.isBounty(o.pid))).sort((a, b) => d(a, e) - d(b, e) || a.id - b.id)[0]; if (!h) return false;
+    const h = foes(e, e.x, e.y, 9).filter(o => o.kind === "champ").sort((a, b) => (X.isBounty(b.pid) - X.isBounty(a.pid)) || (a.hp / a.maxhp - b.hp / b.maxhp) || d(a, e) - d(b, e) || a.id - b.id)[0]; if (!h) return false;
     const x = h.x, y = h.y; ev({ ty: "warn", x, y, r: .9, c: "#ffd36a", dur: 1 });
     pending.push({ ab: "Dragon-Slayer Shot", at: +(T() + 1).toFixed(2), fn: () => {
       if (e.dead || h.dead) return; const L = hyp(h.x - e.x, h.y - e.y) || 1, ux = (h.x - e.x) / L, uy = (h.y - e.y) / L;
@@ -552,25 +551,25 @@ function makeTreeKit(X) {
     const rg = 3.5, fs = foes(e, e.x, e.y, rg + .5).filter(o => o.kind !== "castle");
     const line = o => { const L = d(o, e) || 1, ux = (o.x - e.x) / L, uy = (o.y - e.y) / L; return { ux, uy, hit: fs.filter(q => { const px = q.x - e.x, py = q.y - e.y, pr = px * ux + py * uy; return pr > 0 && pr <= rg + .4 && Math.abs(px * uy - py * ux) <= .8; }) }; };
     let best = null; fs.forEach(o => { if (d(o, e) > rg) return; const l = line(o), sc = l.hit.length * 10 + (o.kind === "champ" ? 5 : 0) - d(o, e) / 10; if (!best || sc > best.sc) best = { o, l, sc }; });
-    if (!best || (best.l.hit.length < 2 && best.o.kind !== "champ")) return false;
+    if (!best) return false;
     const { ux, uy, hit } = best.l, dm = V(e, 3, 0, 0) + e.atk * .6;
     [1, 2, 3].forEach(k => aoe(e.x + ux * k, e.y + uy * k, .8, "#e2a33c", .5));
     hit.forEach(q => { deal(e, q, dm, { aoe: 1, big: 1 }); if (live(q) && !siege(q)) setFx(q, "slow", 2, .25); }); return { x: e.x + ux * 1.5, y: e.y + uy * 1.5 };
   };
   FN["rogue.3.0"] = e => { // Flicker Strike
-    const c = ents.filter(o => !o.dead && o.kind !== "castle" && o.kind !== "totem" && !siege(o) && hostile(e.pid, o.pid) && X.fighting(o.pid) && X.vis(o, e) && d(o, e) > 2 && d(o, e) <= FLICKER_R && (o.kind === "champ" || backline(o)));
-    const hs = c.filter(o => o.kind === "champ"), t = minBy(hs.length ? hs : c, o => d(o, e)); if (!t) return false;
+    const c = ents.filter(o => !o.dead && o.kind !== "castle" && o.kind !== "totem" && !siege(o) && hostile(e.pid, o.pid) && X.fighting(o.pid) && X.vis(o, e) && d(o, e) > 1.5 && d(o, e) <= FLICKER_R);
+    const hs = c.filter(o => o.kind === "champ"), bl = c.filter(backline), t = minBy(hs.length ? hs : bl.length ? bl : c, o => d(o, e)); if (!t) return false;
     const L = d(e, t) || 1, nx = t.x + (t.x - e.x) / L * .5, ny = t.y + (t.y - e.y) / L * .5; if (X.wallAt(e, nx, ny)) return false;
     ev({ ty: "ultfx", k: "assassin", x0: e.x, y0: e.y, x: t.x, y: t.y, r: 1, dur: .5 }); e.x = nx; e.y = ny; slash(t, "#9a6bd6");
     deal(e, t, e.atk * V(e, 3, 0, 0), { aoe: 1, big: 1, noFinish: 1, keepStealth: 1 }); return { x: t.x, y: t.y };
   };
   FN["mage.3.0"] = e => { // Teleport
-    if (e.orphan || !foes(e, e.x, e.y, 1.5).some(o => (o.range || 1.1) < 1.5 && o.kind !== "castle" && !siege(o))) return false;
+    if (e.orphan || !fighters(e, e.x, e.y, 2).some(o => !siege(o))) return false;
     const sx = e.x, sy = e.y, p = P[e.pid]; X.blink(e, p.castle.x, p.castle.y); addShield(e, e.maxhp * V(e, 3, 0, 0) / 100, 3); return { x: sx, y: sy };
   };
   FN["shaman.3.0"] = e => { // Healing Wave: a chain of light that heals the most wounded ally, then bounces to more, and ends on the Shaman
     const hurt = o => !o.dead && (o.kind === "unit" || o.kind === "summon" || o.kind === "champ") && o.hp / o.maxhp < 1, near = (x, y, r) => friendsNear(e.pid, x, y, r).concat([e]).filter((o, k, a) => a.indexOf(o) === k);
-    let t = minBy(near(e.x, e.y, 4).filter(o => hurt(o) && o.hp / o.maxhp < .7), o => o.hp / o.maxhp); if (!t) return false;
+    let t = minBy(near(e.x, e.y, 4).filter(o => hurt(o) && o.hp / o.maxhp < .9), o => o.hp / o.maxhp); if (!t) return false;
     const first = t, bounces = nodeVal("shaman", 3, 0, 1, rk(e, 3, 0), V2(e)), used = [t]; let amt = V(e, 3, 0, 0) + e.atk * .6, from = e;
     for (let k = 0; k <= bounces; k++) {
       if (t !== e) shot(from, t, "#fff2a0", 3); heal(t, amt, false, e, "Healing Wave"); from = t; amt *= .8;
@@ -583,7 +582,7 @@ function makeTreeKit(X) {
     const rg = e.range + 1, fs = foes(e, e.x, e.y, rg).filter(o => o.kind !== "castle");
     const line = o => { const L = d(o, e) || 1, ux = (o.x - e.x) / L, uy = (o.y - e.y) / L; return { ux, uy, hit: fs.filter(q => { const px = q.x - e.x, py = q.y - e.y, pr = px * ux + py * uy; return pr > 0 && pr <= rg + .3 && Math.abs(px * uy - py * ux) <= .6; }) }; };
     let best = null; fs.forEach(o => { const l = line(o), sc = l.hit.length * 10 + (o.kind === "champ" ? 5 : 0) - d(o, e) / 10; if (!best || sc > best.sc) best = { o, l, sc }; });
-    if (!best || (best.l.hit.length < 2 && best.o.kind !== "champ")) return false;
+    if (!best) return false;
     const { ux, uy, hit } = best.l, dm = V(e, 3, 0, 0) + e.atk * .5;
     ev({ ty: "shot", x1: e.x, y1: e.y - .35, x2: e.x + ux * rg, y2: e.y + uy * rg - .35, c: "#e6e6c8", w: 3 }); hit.forEach(q => deal(e, q, dm, { aoe: 1, big: 1 })); return { x: best.o.x, y: best.o.y };
   };
