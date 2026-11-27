@@ -179,11 +179,13 @@ test("Placement v2: one point per place, last scores 1, and the winner gets 2 mo
 
 test("emergency waves: never closer than the gap, and a falling castle sends every wave it has time for", () => {
   for (const [g, d] of GAMES) {
-    const r = JSON.parse(sim.run(`(() => { const { full } = ${WAR(g, d)}; return JSON.stringify({ gap: full.waveGap || WAVE_EMERGENCY_GAP, lords: full.results.map(x => ({ fell: x.fellAt, w: full.stats[x.pid].waves })) }); })()`));
+    const r = JSON.parse(sim.run(`(() => { const { full } = ${WAR(g, d)}; const low = pid => { const ci = full.meta.findIndex(m => m.kind === "castle" && m.pid === pid); if (ci < 0) return null; const max = full.frames[0].d[ci * 4 + 2], f = full.frames.find(f => f.d.length > ci * 4 + 2 && f.d[ci * 4 + 2] > 0 && f.d[ci * 4 + 2] < max * WAVE_EMERGENCY[2]); return f ? f.t : null; };
+      return JSON.stringify({ gap: full.waveGap || WAVE_EMERGENCY_GAP, lords: full.results.map(x => ({ fell: x.fellAt, low: low(x.pid), w: full.stats[x.pid].waves })) }); })()`));
     r.lords.forEach((x, i) => {
       x.w.forEach((s, j) => { if (j) assert.ok(s - x.w[j - 1] >= r.gap, `game ${g} lord ${i}: waves at ${x.w.join(", ")}`); });
       const last = x.w.length ? x.w[x.w.length - 1] : -99; // a fallen castle has crossed every mark: once the gap after its last wave is over, the next must go
-      if (x.fell != null && x.fell > Math.max(last + r.gap, 0) + 1) assert.equal(x.w.length, 3, `game ${g} lord ${i}: fell at ${x.fell} with waves at ${x.w.join(", ")}`);
+      // a castle blown from above the last mark to nothing in one blow (a Meteor Strike, say) never crossed it, so it owes no third wave
+      if (x.fell != null && x.low != null && x.fell > Math.max(last + r.gap, x.low, 0) + 1) assert.equal(x.w.length, 3, `game ${g} lord ${i}: fell at ${x.fell} with waves at ${x.w.join(", ")}`);
     });
   }
 });
@@ -386,7 +388,7 @@ test("zones v1: soldiers never stay stuck behind their own walls", () => {
         for (let a = 0; a < fr.length; a++) { const s0 = at(fr[a], j); if (!s0) continue; let b = a, still = true;
           while (b + 1 < fr.length && fr[b + 1].t - fr[a].t <= 8) { b++; const q = at(fr[b], j); if (!q || Math.hypot(q[0] - s0[0], q[1] - s0[1]) > .3) { still = false; break; } }
           if (!still || fr[b].t - fr[a].t < 8) continue;
-          const foe = fr.slice(a, b + 1).some(f => full.meta.some((m2, j2) => m2.pid !== p.pid && (m2.kind === "unit" || m2.kind === "champ") && (() => { const q = at(f, j2); return q && Math.hypot(q[0] - s0[0], q[1] - s0[1]) <= 2.5; })())) // anyone it fought during those seconds
+          const foe = fr.slice(a, b + 1).some(f => full.meta.some((m2, j2) => m2.pid !== p.pid && (m2.kind === "unit" || m2.kind === "champ") && (() => { const q = at(f, j2); return q && Math.hypot(q[0] - s0[0], q[1] - s0[1]) <= Math.max(2.5, ((UNIT_SIM[m.key] || {}).range || 0) + .5); })())) // anyone it fought during those seconds (a sniper shoots from 4.5 tiles)
             || plans.some(q => q.pid !== p.pid && (() => { const f = full.results.find(x => x.pid === q.pid); return f.fellAt == null || f.fellAt > fr[b].t; })() && Math.hypot(q.castle[1] + .5 - s0[0], q.castle[0] + .5 - s0[1]) <= 2.5); // castles aren't in the frames: a standing enemy castle within reach counts
           if (!foe) { out.push(m.key + " at " + s0.map(v => v.toFixed(1)) + " from " + fr[a].t.toFixed(0) + "s"); break; } } });
       return JSON.stringify(out); })()`));
