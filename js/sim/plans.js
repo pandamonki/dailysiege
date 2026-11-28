@@ -22,7 +22,7 @@ function buildPlans() {
     const picks = {}; c.abilities.forEach((a, j) => picks[a.key] = a.choice[hash(i, j, 77) > .5 ? 1 : 0][0]);
     const rot = Math.floor(hash(i, 5, 3) * PRIORITIES.length);
     plans.push({
-      pid: rv.id, name: rv.name, color: rv.color, cls: rv.cls, castle: rv.pos, leader: rv.id === LEADER, level: Math.min(heroMaxLvl(heroV3Now(), true), pracLvl(DAY)), ranks: autoRanks(Math.min(MAX_HERO_LVL, 2 * DAY - 1), i + 3), ...(heroV3Now() ? { tree: autoTree(pracLvl(DAY), i + 3, rv.cls) } : {}), picks, items: botItemsN(i, Math.max(0, Math.min(ITEM_SLOTS, Math.floor(hash(i, 6, 31) * 4) + BOT_BUILDS[botBuild(i, botSeed(RIVALS.map(r => r.id).join("|")) % 4)].items))), castleTier: rv.ctier || 1, banner: rv.banner || null,
+      pid: rv.id, name: rv.name, color: rv.color, cls: rv.cls, castle: rv.pos, leader: rv.id === LEADER, level: Math.min(heroMaxLvl(heroV3Now(), true), pracLvl(DAY)), ranks: autoRanks(Math.min(MAX_HERO_LVL, 2 * DAY - 1), i + 3), ...(heroV3Now() ? { tree: autoTree(pracLvl(DAY), i + 3, rv.cls) } : {}), picks, items: pracBotItems(i, DAY), castleTier: rv.ctier || 1, banner: rv.banner || null,
       triggers: { a1: TRIGGERS[1], a2: TRIGGERS[2], a3: TRIGGERS[0], ult: TRIGGERS[1] },
       gear: { weapon: Math.floor(hash(i, 1, 21) * 3), armour: Math.floor(hash(i, 2, 22) * 3), charm: Math.floor(hash(i, 3, 23) * 2) },
       defences: { walls: hash(i, 4, 24) > .6 ? 1 : 0, tower: hash(i, 5, 25) > .6 ? 1 : 0 },
@@ -44,3 +44,5 @@ function buildPlans() {
   plans.forEach(p => { p.itemV5 = true; p.survV1 = true; p.siegeV1 = true; p.trapV2 = true; p.sdV2 = true; p.wallV2 = true; p.engV2 = true; p.ordV2 = true; p.skV2 = true; p.shellV2 = true; p.itemV6 = true; p.auraV2 = true; p.allyV2 = true; p.placeV2 = true; p.waveV2 = true; p.waveV3 = true; p.waveV4 = true; p.balV5 = true; p.finV2 = true; p.lvlV2 = true; p.zoneV1 = true; p.timeV1 = true; p.tuneV1 = true; }); // practice always fights with the flat items
   return plans;
 }
+// a practice rival's items on a day: as many as a live bot of its build would have, from the tiers that day allows
+function pracBotItems(i, day) { return botItemsN(i, Math.max(0, Math.min(ITEM_SLOTS, Math.floor(day / 2) + BOT_BUILDS[botBuild(i, botSeed(RIVALS.map(r => r.id).join("|")) % 4)].items)), day); }

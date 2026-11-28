@@ -357,7 +357,7 @@ test("zones v1: an attack on a lord beside you goes straight along the flank; an
   // lord 0's footmen, all in the Front, march on one lord; the other lords keep only their heroes, in their Guard. How near the hill do the footmen pass on the way (until they reach the target)?
   const run = which => JSON.parse(sim.run(`(() => { const { full, plans, L } = ${ZWAR(20, 4, `{ const p = plans[0], bs = sideNeighbours(plans.map(q => q.castle), 0, L.N), far = plans.findIndex((q, k) => k && !bs.includes(k));
       p.targets = [plans["${which}" === "beside" ? bs[0] : far].pid]; p.front = "assault"; p.waves = null;
-      plans.forEach((q, i) => { q.timeV1 = true; if (!i) return; const [cr, cc] = q.castle; q.pieces = [{ kind: "champ", r: cr + 1, c: cc }]; q.waves = null; });
+      plans.forEach((q, i) => { q.timeV1 = true; q.items = []; if (!i) return; const [cr, cc] = q.castle; q.pieces = [{ kind: "champ", r: cr + 1, c: cc }]; q.waves = null; });
       p.pieces = p.pieces.filter(q => q.kind === "champ" || q.kind === "unit").map(q => q.kind === "unit" ? { ...q, type: "footman" } : q).filter(q => q.kind !== "unit" || zoneOfTile(p.castle[0], p.castle[1], q.r, q.c) === "front"); }`)};
     const p = plans[0], q = plans.find(x => x.pid === p.targets[0]), tx = q.castle[1] + .5, ty = q.castle[0] + .5, mid = L.N / 2, out = [];
     full.meta.forEach((m, j) => { if (m.pid !== p.pid || m.kind !== "unit" || m.key !== "footman") return; const i = j * 4; let near = 99, done = false;
@@ -501,4 +501,11 @@ test("poison spreads: a Venom Rogue's Poisoned Blades pass a stack to a nearby e
     const res = runBattle([side("a", "rogue", venom, [{ kind: "champ", r: m, c: m - 1 }]), side("b", "warrior", emptyTree(), [{ kind: "champ", r: m, c: m + 4 }, ...[0, 1, 2].map(k => ({ kind: "unit", type: "knight", lvl: 3, hp: 1, r: m - 1 + k, c: m + 1 }))])], 5, { fast: false, duel: {}, N: L.N, ultV2: true, balV2: true, balV3: true, suddenV1: true, treesV1: true, heroV3: true, dayNo: 4 } /* no target-list rules: a lone duel */);
     return res.events.filter(e => e.ty === "shot" && e.c === "#7ad84a").length; })()`);
   assert.ok(n >= 2, `poison spread ${n} times against three knights side by side`);
+});
+
+test("bot items follow the week: tier 1 on days 1 and 2, tier 2 from day 3, late-game tier 3 only from day 5", () => {
+  const r = JSON.parse(sim.run(`(() => { const out = {}; for (let d = 1; d <= 7; d++) { let top = 0; for (let s = 0; s < 400; s++) botItemsN(s, ITEM_SLOTS, d).forEach(k => { top = Math.max(top, ITEMS[k].tier || 1); }); out[d] = top; } return JSON.stringify(out); })()`));
+  [1, 2].forEach(d => assert.equal(r[d], 1, `day ${d}: a tier ${r[d]} item`));
+  [3, 4].forEach(d => assert.equal(r[d], 2, `day ${d}: top tier ${r[d]}`));
+  [5, 6, 7].forEach(d => assert.equal(r[d], 3, `day ${d}: top tier ${r[d]}`));
 });

@@ -37,7 +37,10 @@ function autoTree(lvl, seed, cls, slot) { // slot: the bot's place in the roster
 }
 
 const BOT_ITEM_POOL = ["boots", "gauntlets", "ringprot", "salve", "elixir", "net", "frostdagger", "fang", "banner", "standard", "thornmail", "scroll"];
-function botItems(i) { const n = Math.floor(hash(i, 6, 31) * 4), out = []; for (let j = 0; j < n; j++) { const k = BOT_ITEM_POOL[Math.floor(hash(i, j + 1, 32) * BOT_ITEM_POOL.length)]; if (!out.includes(k)) out.push(k); } return out; }
+// a bot's items follow the week like a player's gold would: tier 1 on days 1 and 2, tier 2 from day 3, the late-game tier 3 (auras, Rune) from day 5
+const botItemTier = dayNo => dayNo >= 5 ? 3 : dayNo >= 3 ? 2 : 1;
+const botItemPool = dayNo => BOT_ITEM_POOL.filter(k => (ITEMS[k].tier || 1) <= botItemTier(dayNo));
+function botItems(i, dayNo) { const P = botItemPool(dayNo), n = Math.floor(hash(i, 6, 31) * 4), out = []; for (let j = 0; j < n; j++) { const k = P[Math.floor(hash(i, j + 1, 32) * P.length)]; if (!out.includes(k)) out.push(k); } return out; }
 
 // ----- Bot lords: seats in a real game that play themselves -----
 // A host can fill empty seats with bots. A bot is an ordinary registered lord with { bot: true } on its public profile.
@@ -89,7 +92,7 @@ const BOT_ORDERS = { warband: ["slayer", "none"], fortress: ["conquest", "castle
 const BOT_BUILD_KEYS = ["warband", "fortress", "champion", "mixed"];
 const botBuild = (slot, offset) => BOT_BUILD_KEYS[((slot || 0) + (offset || 0)) % 4]; // by seat, turned by a number fixed for the game, so every game has each build about equally often
 const botArmy = (B, dayNo) => ({ waves: B.units * 2, lvl: B.units > 0 && dayNo >= 3 ? 1 : 0 }); // a warband sends more and better-trained reinforcements; the others fewer
-const botItemsN = (seed, n) => { const out = []; for (let j = 0; out.length < n && j < 40; j++) { const k = BOT_ITEM_POOL[Math.floor(hash(seed, j + 1, 32) * BOT_ITEM_POOL.length)]; if (!out.includes(k)) out.push(k); } return out; };
+const botItemsN = (seed, n, dayNo) => { const P = botItemPool(dayNo), out = []; for (let j = 0; out.length < n && j < 40; j++) { const k = P[Math.floor(hash(seed, j + 1, 32) * P.length)]; if (!out.includes(k)) out.push(k); } return out; };
 // a tower's stage by day: an Archer Tower Lv1, Lv2 once the castle reaches the tier for it (day 3), and one of the five level 3 towers from day 5
 const botTowerKey = (seed, k, dayNo, tier) => { if (dayNo < 3 || tier < TOWER_UP.tower.tier) return "tower"; if (dayNo < 5 || tier < TOWER_UP.tower2.tier) return "tower2"; const to = TOWER_UP.tower2.to; return to[Math.floor(hash(seed, k, 63) * to.length)]; };
 // A bot's defences for a day, placed on the way in from the middle: a wall line across the approach with a gap in it, a trap in the gap and more just behind,
@@ -153,7 +156,7 @@ function lordBotPlan({ uid, cls, i, ids, L, zone, dayNo, lvl, v2, v3, fair, pick
   const near = ids.map((id, k) => ({ id, d: id === uid ? 1e9 : hyp(L.castles[k][0] - me[0], L.castles[k][1] - me[1]) })).filter(x => x.id !== uid).sort((a, b) => fair || pick ? (Math.round(a.d * 1e6) - Math.round(b.d * 1e6)) || (hash(seed, botSeed(a.id), dayNo) - hash(seed, botSeed(b.id), dayNo)) || (a.id < b.id ? -1 : 1) : (a.d - b.d) || (a.id < b.id ? -1 : 1)).map(x => x.id); // fair: equally near rivals are put in order by a draw for this bot and day, not by name
   const out = { cls, sealed: true, ...(v3 ? { ranks: { a1: 0, a2: 0, a3: 0, ult: 0 }, tree: autoTree(lvl, seed, cls, i) } : { ranks: autoRanks(lvl, seed) }), picks, triggers: { a1: TRIGGERS[1], a2: TRIGGERS[2], a3: TRIGGERS[0], ult: TRIGGERS[1] },
     gear: { weapon: Math.min(2, Math.floor(dayNo / 3)), armour: Math.min(2, Math.floor((dayNo + 1) / 3)), charm: dayNo >= 5 ? 1 : 0 }, defences: { walls: dayNo >= 3 ? 1 : 0, tower: dayNo >= 5 && seed % 2 ? 1 : 0 },
-    items: defV2 ? botItemsN(seed, Math.max(0, Math.min(ITEM_SLOTS, Math.floor(dayNo / 2) + B.items))) : botItems(seed).slice(0, Math.floor(dayNo / 2)), build: defV2 ? build : undefined, armyPlan: BOT_ORDERS[build][0], fallback: BOT_ORDERS[build][1], castleTier: tier, stance: BOT_STANCES[seed % BOT_STANCES.length], prio: PRIORITIES.slice(rot).concat(PRIORITIES.slice(0, rot)), rules: [{ if: IFS[0], then: THENS[0] }],
+    items: defV2 ? botItemsN(seed, Math.max(0, Math.min(ITEM_SLOTS, Math.floor(dayNo / 2) + B.items)), dayNo) : botItems(seed, dayNo).slice(0, Math.floor(dayNo / 2)), build: defV2 ? build : undefined, armyPlan: BOT_ORDERS[build][0], fallback: BOT_ORDERS[build][1], castleTier: tier, stance: BOT_STANCES[seed % BOT_STANCES.length], prio: PRIORITIES.slice(rot).concat(PRIORITIES.slice(0, rot)), rules: [{ if: IFS[0], then: THENS[0] }],
     pieces, targets: pick ? botPicks(uid, seed, near, ranks) : near, tmode: "list", heading: "near", offers: {}, replies: {}, terms: {}, bids: {}, pacts: [], hostile: [], betray: {}, bot: true, ...(v2 ? { ...botCombat(seed), waves: botWaves(seed, kinds, dayNo, sup, AR.waves, AR.lvl) } : {}),
     ...(BZ ? { front: RE ? RE.front : BZ.front, ...(RE ? { react: RE.from } : {}), temper: BOT_TEMPER[BOT_STANCES[seed % BOT_STANCES.length]] || "steady" } : {}) };
   return out;
