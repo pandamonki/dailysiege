@@ -430,6 +430,9 @@ Practice and real wars from the 26 Nov battle (`TUNE_V1_FROM` in `js/config/orde
 - Bot lords plan themselves from their seat, the day and their build: warband (more reinforcements, few defences),
   fortress (traps, towers, a trapped wall line), champion (more items) or mixed. From 20 Nov each build also has its
   own army plan and fall-back (`js/sim/bots.js`).
+- A bot's items follow the week: half a day's count (rounded down) plus its build's extra (champion +2, mixed 0, warband and
+  fortress -1), drawn only from tier 1 items on days 1 and 2, tier 2 from day 3 and the late-game tier 3 (auras, Rune of
+  Homecoming) from day 5 (`botItemPool`). Practice rivals use the same rule.
 
 ## How to play (the guide)
 

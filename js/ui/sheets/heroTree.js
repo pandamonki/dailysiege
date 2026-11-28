@@ -84,7 +84,7 @@ function rivalHeroData(r) {
   if (!r || !seeArmies()) return null;
   if (isLive()) { const p = r.seen; return p && p.cls ? { cls: p.cls, level: p.level || 1, tree: p.tree || null, ranks: p.ranks || {}, items: (p.items || []).filter(Boolean), gear: p.gear || {} } : null; }
   const i = RIVALS.indexOf(r), lv = Math.max(1, 2 * (DAY - 1) - 1), v3 = heroV3Now(); // practice bots: rebuilt the way their orders were made
-  return { cls: r.cls, level: Math.min(heroMaxLvl(v3), lv), tree: v3 ? autoTree(lv, i + 3, r.cls) : null, ranks: autoRanks(Math.min(MAX_HERO_LVL, lv), i + 3), items: botItems(i), gear: { weapon: Math.floor(hash(i, 1, 21) * 3), armour: Math.floor(hash(i, 2, 22) * 3), charm: Math.floor(hash(i, 3, 23) * 2) } };
+  return { cls: r.cls, level: Math.min(heroMaxLvl(v3), lv), tree: v3 ? autoTree(lv, i + 3, r.cls) : null, ranks: autoRanks(Math.min(MAX_HERO_LVL, lv), i + 3), items: pracBotItems(i, Math.max(1, DAY - 1)), gear: { weapon: Math.floor(hash(i, 1, 21) * 3), armour: Math.floor(hash(i, 2, 22) * 3), charm: Math.floor(hash(i, 3, 23) * 2) } };
 }
 function rTreeNode(cls, tree, bi, i, on) {
   const node = TREES[cls][bi].nodes[i], rank = (tree[TREE_BKEY[bi]] || [])[i] || 0, st = rank >= TREE_MAX[i] ? "maxed" : rank > 0 ? "learned" : "locked", side = i === 2 || i === 4;
