@@ -47,14 +47,13 @@ function wHeroState(W, uid, week, dayKey) {
 }
 // Carry-forward: if a lord has not sealed orders for the day, their latest sealed orders of the week are fought again.
 function wLatestPlan(W, p, dayKey, inclusive) {
-  const keys = Object.keys(p.plans || {}).filter(k => (inclusive ? k <= dayKey : k < dayKey) && k >= wWeekOf(W, dayKey)).sort();
-  // The latest sealed orders stand until new ones are sealed. A lord who sealed and then reopened the orders to draft changes is fought on the copy they sealed (`sealedPlan`), not the draft.
-  // From BAL_V2_FROM a lord who has never sealed anything this week is fought on their latest draft, so the lock seals it for them; before it, drafts were never fought.
-  const v2 = balV2For(dayKey), standing = q => (q && q.sealed ? q : q && v2 && q.sealedPlan ? q.sealedPlan : null);
-  const sealed = keys.filter(k => standing(p.plans[k]));
-  if (sealed.length) return standing(p.plans[sealed[sealed.length - 1]]);
-  const drafts = v2 ? keys.filter(k => p.plans[k]) : [];
-  return drafts.length ? p.plans[drafts[drafts.length - 1]] : null;
+  const keys = Object.keys(p.plans || {}).filter(k => (inclusive ? k <= dayKey : k < dayKey) && k >= wWeekOf(W, dayKey) && p.plans[k]).sort();
+  // The lord's newest orders are fought, sealed or not: the lock seals them. A day's draft replaces earlier days' sealed orders (it was planned
+  // from them, with that day's purchases on top). The one exception: a lord who sealed and then reopened that day's orders to draft changes
+  // is fought on the copy they sealed (`sealedPlan`), as the seal screen tells them, unless they seal again.
+  if (!keys.length) return null;
+  const q = p.plans[keys[keys.length - 1]];
+  return q.sealed ? q : q.sealedPlan || q;
 }
 function wCarriedPairs(W, dayKey) {
   const week = wWeekOf(W, dayKey); if (dayKey === week) return [];

@@ -40,6 +40,9 @@ practice games always stamp all of them (`js/sim/plans.js`).
 
 - A war is seven daily battles. Each day lords plan (spend gold, place soldiers, set orders) and seal their orders
   before the lock; the server then fights the battle and everyone watches the replay. Day 7 is worth the most points.
+- The lock fights each lord's newest saved orders, sealed or not (`wLatestPlan` in `js/net/world.js`): a day's draft replaces
+  earlier days' sealed orders, so what you bought that day always fights. The one exception: orders sealed and then reopened
+  the same day stand as sealed until you seal again (the seal screen says so).
 - Up to 12 lords; new hosted wars default to 10 (`js/config/seats.js`). Empty seats can be filled with bot lords.
 - Hosts can delete a war (everything in it, for everyone) and, on the Your wars page, press "Clean up broken wars": it removes leftover wars they host that have no host membership and no battles (for example one that came back half-empty after a delete), and drops dead entries from their war list. Real wars are never touched. While a war is being deleted, the deleting device stops saving into it.
 - Practice is a private sandbox against bots, with every current rule on and skill-tree heroes by default.

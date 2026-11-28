@@ -29,15 +29,7 @@ test("the same saved game always gives the same battle, and fighting does not al
   assert.equal(a.day, 1); assert.equal(a.week, D1); assert.equal(a.results.length, 4);
 });
 
-test("until 12 Nov 2026 only sealed orders are fought; a lord with none gets marked stand-in orders with their chosen hero", () => {
-  const OLD = "2026-11-02", W = world(["a", "b"]); W.config.startDate = OLD; ids.forEach(id => { W.players[id].state.week = OLD; W.players[id].plans = Object.fromEntries(Object.entries(W.players[id].plans).map(([, v]) => [OLD, v])); });
-  W.players.c.plans[OLD] = { ...world(ids).players.c.plans[D1], sealed: false }; // c drafted but did not seal
-  const { plans } = buildBattleInputs(W, OLD);
-  assert.deepEqual(J(plans.map(p => !!p.noOrders)), J([false, false, true, true]));
-  assert.equal(plans[3].cls, "rogue"); assert.deepEqual(J(plans[3].pieces.map(p => p.kind)), J(["champ"]));
-});
-
-test("from 12 Nov 2026 the lock seals the latest orders: a lord who drafted but did not seal is fought on the draft", () => {
+test("the lock seals the latest orders: a lord who drafted but did not seal is fought on the draft", () => {
   const W = world(["a", "b"]); W.players.c.plans[D1] = { ...world(ids).players.c.plans[D1], sealed: false };
   const { plans } = buildBattleInputs(W, D1);
   assert.deepEqual(J(plans.map(p => !!p.noOrders)), J([false, false, false, true])); // d never saved anything
@@ -52,6 +44,17 @@ test("yesterday's sealed orders carry forward, and the standings going in are re
   assert.deepEqual(J(doc.inputs.plans[0].gear), J(W.players.a.plans[D1].gear));
   assert.deepEqual(J(Object.keys(doc.inputs.ranks).sort()), J(ids));
   assert.ok(doc.inputs.plans[0].level > 1, "heroes carry their levels into day 2");
+});
+
+test("a newer unsealed draft replaces earlier sealed orders; orders sealed then reopened the same day stand until sealed again", () => {
+  const W = world(ids), D2 = addDays(D1, 1); W.battles[D1] = fightDay(W, D1, 1);
+  const base = W.players.a.plans[D1], extra = { kind: "unit", id: "new1", type: "footman", lvl: 1, r: base.pieces[0].r, c: base.pieces[0].c };
+  W.players.a.plans[D2] = { ...J(base), items: ["boots"], pieces: [...J(base.pieces), extra], sealed: false }; // bought today, saved, not sealed
+  let a = buildBattleInputs(W, D2).plans[0];
+  assert.deepEqual(J(a.items), ["boots"], "today's purchases are fought");
+  W.players.a.plans[D2] = { ...J(base), items: ["boots"], sealed: false, sealedPlan: { ...J(base), items: ["fang"], sealed: true } }; // sealed today, then reopened to draft
+  a = buildBattleInputs(W, D2).plans[0];
+  assert.deepEqual(J(a.items), ["fang"], "the copy sealed today stands while changes are drafted");
 });
 
 test("lords who have left, are unregistered, or are beyond the seat limit do not fight", () => {
@@ -163,11 +166,7 @@ test("once they seal again, the new orders replace the old", () => {
   assert.equal(buildBattleInputs(W, D1).plans.find(p => p.pid === "a").stance, "cautious"); assert.notEqual(sealedCopy.stance, "cautious");
 });
 
-test("yesterday's sealed orders beat today's unsealed draft; a lord who never sealed is fought on their draft", () => {
-  const W = world(ids); W.battles[D1] = fightDay(W, D1, 1); const D2 = addDays(D1, 1);
-  W.players.a.plans[D2] = { ...W.players.a.plans[D1], sealed: false, pieces: [], stance: "cautious" }; // a drafted a wrecked day 2 and did not seal
-  const plans = buildBattleInputs(W, D2).plans;
-  assert.ok(plans.find(p => p.pid === "a").pieces.length > 1 && plans.find(p => p.pid === "a").stance !== "cautious", "day 1's sealed orders are still in effect");
+test("a lord who never sealed is fought on their draft", () => {
   const W2 = world([]); W2.players.b.plans[D1] = { ...world(ids).players.b.plans[D1], sealed: false };
   assert.ok(buildBattleInputs(W2, D1).plans.find(p => p.pid === "b").pieces.length > 1, "never sealed: the draft is used");
 });
